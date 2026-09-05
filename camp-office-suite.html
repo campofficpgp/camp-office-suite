@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Suite | کیمپ آفس سویٹ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1F4E78;
+    --navy-dark:#153A5B;
+    --navy-tint:#EAF0F5;
+    --amber:#B8860B;
+    --amber-tint:#FBF3DF;
+    --bg:#F4F3EF;
+    --surface:#FFFFFF;
+    --border:#DBD7CE;
+    --border-strong:#BEC7CE;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--navy-dark);
+    font-family:"Noto Nastaliq Urdu","Merriweather",Georgia,serif;
+    min-height:100vh;
+  }
+  body.lang-en{font-family:"Merriweather",Georgia,serif;}
+  header{
+    background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%);
+    color:#fff;border-bottom:3px solid var(--amber);
+    padding:28px 20px 24px;text-align:center;position:relative;
+  }
+  header .stamp{
+    width:64px;height:64px;border:2px solid var(--amber);border-radius:50%;
+    margin:0 auto 10px;display:flex;align-items:center;justify-content:center;
+    font-size:26px;color:var(--amber);background:rgba(255,255,255,.06);
+  }
+  header h1{margin:0;font-size:26px;font-weight:700;}
+  header .sub{margin-top:6px;font-size:14px;color:#CFE0EC;font-family:Georgia,serif;}
+  .langbtn{
+    position:absolute;top:18px;left:18px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);
+    color:#fff;padding:7px 14px;border-radius:20px;font-size:13px;cursor:pointer;
+    font-family:Georgia,serif;
+  }
+  body.lang-en .langbtn{right:18px;left:auto;}
+  .langbtn:hover{background:rgba(255,255,255,.24);}
+  main{max-width:1000px;margin:0 auto;padding:32px 20px 20px;}
+  .intro{text-align:center;color:var(--navy);max-width:640px;margin:0 auto 28px;font-size:15px;line-height:1.9;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:24px 20px;text-align:center;box-shadow:0 1px 3px rgba(21,58,91,.08);
+    display:flex;flex-direction:column;
+  }
+  .card .icon{
+    width:52px;height:52px;border-radius:50%;background:var(--navy-tint);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+    font-size:24px;color:var(--navy);
+  }
+  .card h2{margin:0 0 8px;font-size:18px;color:var(--navy-dark);}
+  .card p{margin:0 0 18px;font-size:13.5px;color:#555;line-height:1.8;flex-grow:1;font-family:Georgia,serif;}
+  body.lang-en .card p{font-family:Georgia,serif;}
+  .card a.btn{
+    display:inline-block;background:var(--navy);color:#fff;text-decoration:none;
+    padding:10px 22px;border-radius:6px;font-size:14px;font-weight:700;
+    font-family:Georgia,serif;letter-spacing:.3px;
+  }
+  .card a.btn:hover{background:var(--navy-dark);}
+  .card .tag{
+    display:inline-block;background:var(--amber-tint);color:var(--amber);
+    font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;
+    margin-bottom:10px;font-family:Georgia,serif;letter-spacing:.5px;
+  }
+  footer{
+    margin-top:40px;padding:24px 20px 30px;text-align:center;
+    border-top:1px solid var(--border);color:#6b6b6b;font-size:13px;
+    font-family:Georgia,serif;line-height:2;
+  }
+  footer strong{color:var(--navy-dark);}
+  [data-en]{display:none;}
+  body.lang-en [data-ur]{display:none;}
+  body.lang-en [data-en]{display:inline;}
+  body.lang-en [data-en-block]{display:block;}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="langbtn" onclick="toggleLang()">
+    <span data-ur>English</span><span data-en>اردو</span>
+  </button>
+  <div class="stamp">CO</div>
+  <h1><span data-ur>کیمپ آفس سویٹ</span><span data-en>Camp Office Suite</span></h1>
+  <div class="sub">
+    <span data-ur>پراسیکیوٹر جنرل پنجاب، کیمپ آفس، سپریم کورٹ آف پاکستان</span>
+    <span data-en>Prosecutor General Punjab — Camp Office, Supreme Court of Pakistan</span>
+  </div>
+</header>
+
+<main>
+  <p class="intro">
+    <span data-ur>دفتر کے تمام آن لائن سسٹمز ایک ہی جگہ سے — نیچے دیے گئے کسی بھی سسٹم پر کلک کر کے اسے کھولیں۔ ہر سسٹم کا اپنا الگ لاگ ان اور ڈیٹا محفوظ ہے۔</span>
+    <span data-en>All of the office's online systems in one place — click any system below to open it. Each system keeps its own separate login and data.</span>
+  </p>
+
+  <div class="cards">
+
+    <div class="card">
+      <span class="tag" data-ur>اکاؤنٹس</span><span class="tag" data-en>ACCOUNTS</span>
+      <div class="icon">📒</div>
+      <h2><span data-ur>بل رجسٹر سسٹم</span><span data-en>Bill Register System</span></h2>
+      <p>
+        <span data-ur>Contingent Bill، Cash Book، Stock Book، Ledger &amp; Budget اور ملازمین کا مکمل ریکارڈ۔</span>
+        <span data-en>Contingent Bill, Cash Book, Stock Book, Ledger &amp; Budget, and the complete employee record.</span>
+      </p>
+      <a class="btn" href="https://campofficpgp.github.io/bill-register-system/" target="_blank" rel="noopener">
+        <span data-ur>سسٹم کھولیں</span><span data-en>Open System</span>
+      </a>
+    </div>
+
+    <div class="card">
+      <span class="tag" data-ur>کیس نوٹس</span><span class="tag" data-en>CASE NOTICES</span>
+      <div class="icon">📨</div>
+      <h2><span data-ur>کیس نوٹس سسٹم</span><span data-en>Case Notice System</span></h2>
+      <p>
+        <span data-ur>I.O. اور SHO کے لیے حاضری نوٹس، کاز لسٹ اور کیس تفصیلات کی تیاری۔</span>
+        <span data-en>Appearance notices for the I.O. and SHO, cause list entries, and case detail preparation.</span>
+      </p>
+      <a class="btn" href="https://campofficpgp.github.io/case-notice-system/" target="_blank" rel="noopener">
+        <span data-ur>سسٹم کھولیں</span><span data-en>Open System</span>
+      </a>
+    </div>
+
+    <div class="card">
+      <span class="tag" data-ur>ریکارڈ / ڈسپیچ</span><span class="tag" data-en>RECORD / DISPATCH</span>
+      <div class="icon">🗂️</div>
+      <h2><span data-ur>ڈیلی کیس مینجمنٹ سسٹم</span><span data-en>Daily Case Management System</span></h2>
+      <p>
+        <span data-ur>Cases، Hearings، Results، ڈاک ان/آؤٹ، ٹوکن رجسٹر اور ملازمین کا روزانہ ریکارڈ۔</span>
+        <span data-en>Cases, Hearings, Results, Dak In/Out, Token Register, and daily employee records.</span>
+      </p>
+      <a class="btn" href="https://ahmedkhakis.github.io/daily-case-management-system/" target="_blank" rel="noopener">
+        <span data-ur>سسٹم کھولیں</span><span data-en>Open System</span>
+      </a>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div><strong data-ur>فوکل پرسن:</strong><strong data-en>Focal Person:</strong> Rashid Mehmood — 051-9202466</div>
+  <div>
+    <span data-ur>کیمپ آفس پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد</span>
+    <span data-en>Camp Office Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</span>
+  </div>
+</footer>
+
+<script>
+function toggleLang(){
+  document.body.classList.toggle('lang-en');
+  var isEn = document.body.classList.contains('lang-en');
+  document.documentElement.lang = isEn ? 'en' : 'ur';
+  document.documentElement.dir = isEn ? 'ltr' : 'rtl';
+  try{ localStorage.setItem('cos_lang', isEn ? 'en' : 'ur'); }catch(e){}
+}
+try{
+  if(localStorage.getItem('cos_lang') === 'en'){
+    document.body.classList.add('lang-en');
+    document.documentElement.lang = 'en';
+    document.documentElement.dir = 'ltr';
+  }
+}catch(e){}
+</script>
+
+</body>
+</html>

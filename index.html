@@ -273,6 +273,9 @@
     <button class="side-item" data-key="dcms" onclick="openItem('dcms')">
       <span class="ic">🗂️</span><span data-ur>ڈیلی کیس مینجمنٹ سسٹم</span><span data-en>Daily Case Management System</span>
     </button>
+    <button class="side-item" data-key="recsec" onclick="openItem('recsec')">
+      <span class="ic">📚</span><span data-ur>ریکارڈ سیکشن سسٹم</span><span data-en>Record Section System</span>
+    </button>
 
     <div class="side-group-label"><span data-ur>کیسز و عملہ</span><span data-en>Cases &amp; Staff</span></div>
     <button class="side-item" data-key="case" onclick="openItem('case')">
@@ -347,18 +350,21 @@
 
 <script>
 var SYSTEMS = {
-  bill:    { ur:"بل رجسٹر سسٹم", en:"Bill Register System", url:"https://campofficpgp.github.io/bill-register-system/", ic:"📒",
+  bill:    { ur:"بل رجسٹر سسٹم", en:"Bill Register System", url:"bill-register-system/", ic:"📒",
              descUr:"Contingent Bill، Cash Book، Stock Book، Ledger &amp; Budget اور ملازمین کا مکمل ریکارڈ۔",
              descEn:"Contingent Bill, Cash Book, Stock Book, Ledger &amp; Budget, and the complete employee record." },
-  case:    { ur:"کیس نوٹس سسٹم", en:"Case Notice System", url:"https://campofficpgp.github.io/case-notice-system/", ic:"📨",
+  case:    { ur:"کیس نوٹس سسٹم", en:"Case Notice System", url:"case-notice-system/", ic:"📨",
              descUr:"I.O. اور SHO کے لیے حاضری نوٹس، کاز لسٹ اور کیس تفصیلات کی تیاری۔",
              descEn:"Appearance notices for the I.O. and SHO, cause list entries, and case detail preparation." },
-  dcms:    { ur:"ڈیلی کیس مینجمنٹ سسٹم", en:"Daily Case Management System", url:"https://ahmedkhakis.github.io/daily-case-management-system/", ic:"🗂️",
+  dcms:    { ur:"ڈیلی کیس مینجمنٹ سسٹم", en:"Daily Case Management System", url:"daily-case-management-system/", ic:"🗂️",
              descUr:"Cases، Hearings، Results، ڈاک ان/آؤٹ، ٹوکن رجسٹر اور ملازمین کا روزانہ ریکارڈ۔",
              descEn:"Cases, Hearings, Results, Dak In/Out, Token Register, and daily employee records." },
-  gallery: { ur:"کیمپ آفس گیلری", en:"Camp Office Gallery", url:"https://ahmedkhakis.github.io/camp-office-gallery/", ic:"🖼️",
+  gallery: { ur:"کیمپ آفس گیلری", en:"Camp Office Gallery", url:"camp-office-gallery/", ic:"🖼️",
              descUr:"دفتری تصاویر کی گیلری اور ہر ملازم کا اپنا الگ پروفائل اکاؤنٹ۔",
-             descEn:"Office photo gallery and each staff member's own separate profile account." }
+             descEn:"Office photo gallery and each staff member's own separate profile account." },
+  recsec:  { ur:"ریکارڈ سیکشن سسٹم", en:"Record Section System", url:"record-section-system/", ic:"📚",
+             descUr:"J.P، Appeal، State Petition سمیت 9 رجسٹرز اور File Movement Register کا مکمل ریکارڈ۔",
+             descEn:"9 registers including J.P, Appeal, and State Petition, plus the complete File Movement Register." }
 };
 
 var navHistory = [];
@@ -375,7 +381,7 @@ function greetingHtml(){
 
 function aboutHtml(){
   var cardsHtml = '';
-  ['bill','case','dcms','gallery'].forEach(function(k){
+  ['bill','case','dcms','recsec','gallery'].forEach(function(k){
     var s = SYSTEMS[k];
     cardsHtml += '<div class="mini-card" onclick="openItem(\'' + k + '\')">' +
       '<div class="ic-badge">' + s.ic + '</div>' +
@@ -393,7 +399,7 @@ function aboutHtml(){
         '<span data-en data-en-block>Every digital system used by the Camp Office, Prosecutor General Punjab is now available in one place. Pick any system from the list on the left — it opens instantly, right here on this page, with no extra tab to manage. Each system keeps its own separate, secure sign-in.</span>' +
       '</p>' +
       '<div class="stat-row">' +
-        '<div class="stat-chip"><span class="num">4</span><span class="lbl"><span data-ur>ڈیجیٹل<br>سسٹمز</span><span data-en>Digital<br>Systems</span></span></div>' +
+        '<div class="stat-chip"><span class="num">5</span><span class="lbl"><span data-ur>ڈیجیٹل<br>سسٹمز</span><span data-en>Digital<br>Systems</span></span></div>' +
         '<div class="stat-chip"><span class="num">2</span><span class="lbl"><span data-ur>زبانیں<br>(اردو/English)</span><span data-en>Languages<br>(Urdu/English)</span></span></div>' +
         '<div class="stat-chip"><span class="num">1</span><span class="lbl"><span data-ur>مشترکہ<br>پورٹل</span><span data-en>Unified<br>Portal</span></span></div>' +
       '</div>' +

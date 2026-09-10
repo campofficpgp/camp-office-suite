@@ -227,6 +227,34 @@
   .modal-actions{display:flex;gap:10px;margin-top:18px;}
   .modal-actions .tbtn{flex:1;justify-content:center;}
   .modal-hint{font-size:12px;color:#8a8a88;margin-top:6px;}
+  .modal-field textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:8px;font-size:13.5px;
+    font-family:inherit;box-sizing:border-box;resize:vertical;
+  }
+
+  /* ===== Announcement Banner (shown on the portal's Home/About screen only) ===== */
+  .announce-banner{
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(90deg,var(--amber-tint) 0%, var(--surface) 100%);
+    border:1px solid var(--amber);border-radius:12px;
+    padding:9px 16px;margin-bottom:18px;overflow:hidden;
+    animation:riseIn .35s ease both;
+  }
+  .announce-banner .flag-ic{width:36px;height:36px;object-fit:contain;flex:none;border-radius:6px;}
+  .announce-banner .marquee{flex:1;min-width:0;overflow:hidden;}
+  .announce-banner .marquee-track{
+    display:inline-block;white-space:nowrap;font-weight:700;font-size:14px;color:var(--navy-dark);
+    animation:bannerScroll 20s linear infinite;
+  }
+  .announce-banner .marquee:hover .marquee-track{animation-play-state:paused;}
+  @keyframes bannerScroll{
+    0%{transform:translateX(100%);}
+    100%{transform:translateX(-100%);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .announce-banner .marquee-track{animation:none;white-space:normal;}
+    .announce-banner .marquee{overflow:visible;}
+  }
 
   @media (max-width: 720px){
     .shell{flex-direction:column;}
@@ -296,6 +324,9 @@
     <div class="side-group-label" id="adminGroupLabel" style="display:none;"><span data-ur>انتظامیہ</span><span data-en>Administration</span></div>
     <button class="side-item" id="sideItemBackup" data-key="backup" onclick="openItem('backup')" style="display:none;">
       <span class="ic">🗄️</span><span data-ur>بیک اپ سینٹر</span><span data-en>Backup Center</span>
+    </button>
+    <button class="side-item" id="sideItemBanner" data-key="banner" onclick="openItem('banner')" style="display:none;">
+      <span class="ic">📣</span><span data-ur>اعلانات کی پٹی</span><span data-en>Announcement Banner</span>
     </button>
   </aside>
 
@@ -391,6 +422,7 @@ function aboutHtml(){
       '</div>';
   });
   return '<div class="about-pane"><div class="about-wrap">' +
+    '<div id="announcementBannerSlot"></div>' +
     '<div class="hero-card">' +
       '<div class="hero-eyebrow">🕐 ' + greetingHtml() + '</div>' +
       '<h2><span data-ur>کیمپ آفس ڈیجیٹل پورٹل میں خوش آمدید</span><span data-en>Welcome to the Camp Office Digital Portal</span></h2>' +
@@ -484,7 +516,51 @@ function adsHtml(){
     '</div></div>';
 }
 
-var STATIC_PANELS = { about: aboutHtml, contact: contactHtml, help: helpHtml, backup: backupHtml, ads: adsHtml };
+function bannerHtml(){
+  return '<div class="about-pane"><div class="about-wrap">' +
+    '<div class="hero-card">' +
+      '<div class="hero-eyebrow">📣 <span data-ur>صرف Administrator کے لیے</span><span data-en>Administrator Only</span></div>' +
+      '<h2><span data-ur>اعلانات کی پٹی</span><span data-en>Announcement Banner</span></h2>' +
+      '<p class="lede">' +
+        '<span data-ur>یہ پٹی صرف اس مشترکہ پورٹل کے "تعارف" (ہوم) صفحے پر نظر آتی ہے — پانچوں سسٹمز میں نہیں۔ عام حالات میں خالی/غیر فعال رہے — کسی خاص دن یا ایونٹ (مثلاً 14 اگست) پر پیغام لکھ کر فعال کر دیں، اور ایونٹ ختم ہونے پر دوبارہ غیر فعال کر دیں۔</span>' +
+        '<span data-en data-en-block>This banner appears only on the shared portal’s "About" (Home) screen — not inside the five systems. It normally stays empty/inactive; write a message and activate it for a special day or event (e.g. August 14), then deactivate it again once the event is over.</span>' +
+      '</p>' +
+    '</div>' +
+    '<div class="hero-card" style="margin-top:18px;">' +
+      '<div class="modal-field">' +
+        '<label style="display:flex;align-items:center;gap:8px;font-size:14px;">' +
+          '<input type="checkbox" id="bannerActiveInput" style="width:auto;">' +
+          '<span data-ur>پٹی فعال ہے (تعارف صفحے پر دکھائیں)</span><span data-en>Banner is active (show on About screen)</span>' +
+        '</label>' +
+      '</div>' +
+      '<div class="modal-field">' +
+        '<label><span data-ur>پیغام (اردو)</span><span data-en>Message (Urdu)</span></label>' +
+        '<textarea id="bannerTextUrInput" rows="2" placeholder="مثال: 14 اگست، یومِ آزادی مبارک ہو!"></textarea>' +
+      '</div>' +
+      '<div class="modal-field">' +
+        '<label><span data-ur>پیغام (انگلش)</span><span data-en>Message (English)</span></label>' +
+        '<textarea id="bannerTextEnInput" rows="2" placeholder="e.g. Happy Independence Day, August 14!"></textarea>' +
+      '</div>' +
+      '<div class="modal-field">' +
+        '<label><span data-ur>تصویر/جھنڈا (اختیاری)</span><span data-en>Image/Flag (optional)</span></label>' +
+        '<input type="file" id="bannerImageInput" accept="image/*">' +
+        '<div class="modal-hint"><span data-ur>یہ چھوٹی سی تصویر پٹی کے شروع میں ساکن (بغیر حرکت) دکھائی دے گی۔</span><span data-en data-en-block>This small image is shown fixed at the start of the banner (it does not scroll).</span></div>' +
+        '<div id="bannerImagePreviewWrap" style="margin-top:8px;display:none;align-items:center;">' +
+          '<img id="bannerImagePreview" src="" style="width:44px;height:44px;object-fit:contain;border-radius:8px;border:1px solid var(--border);">' +
+          '<button type="button" class="tbtn" style="margin-inline-start:10px;padding:5px 10px;font-size:12px;" onclick="removeBannerImage()"><span data-ur>تصویر ہٹائیں</span><span data-en>Remove image</span></button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="modal-hint" id="bannerStatusMsg"></div>' +
+      '<div class="modal-actions">' +
+        '<button class="tbtn" id="bannerDeactivateBtn" onclick="deactivateAnnouncementBannerNow()"><span data-ur>ابھی غیر فعال کریں</span><span data-en>Deactivate Now</span></button>' +
+        '<button class="tbtn" id="bannerSaveBtn" onclick="saveAnnouncementBanner()"><span>💾</span> <span data-ur>محفوظ کریں</span><span data-en>Save</span></button>' +
+      '</div>' +
+      '<p class="lede backup-note" id="bannerLastInfo" style="margin-top:14px;"></p>' +
+    '</div>' +
+    '</div></div>';
+}
+
+var STATIC_PANELS = { about: aboutHtml, contact: contactHtml, help: helpHtml, backup: backupHtml, ads: adsHtml, banner: bannerHtml };
 
 function render(key, pushHistory){
   if(pushHistory && key !== current){
@@ -502,12 +578,13 @@ function render(key, pushHistory){
   var curTitle = document.getElementById('curTitle');
   backBtn.disabled = navHistory.length === 0;
 
-  if(key === 'backup' && !portalIsAdmin()){
+  if((key === 'backup' || key === 'banner') && !portalIsAdmin()){
     key = current = 'about';
     view.innerHTML = STATIC_PANELS.about();
     refreshBtn.disabled = true;
     curTitle.innerHTML = '';
     document.querySelectorAll('.side-item').forEach(function(b){ b.classList.toggle('active', b.dataset.key === 'about'); });
+    loadAnnouncementBanner();
     return;
   }
   if(STATIC_PANELS[key]){
@@ -516,6 +593,8 @@ function render(key, pushHistory){
     curTitle.innerHTML = '';
     if(key === 'backup') loadBackupMeta();
     if(key === 'ads') loadAds();
+    if(key === 'banner') loadBannerAdminForm();
+    if(key === 'about') loadAnnouncementBanner();
   } else {
     var s = SYSTEMS[key];
     view.innerHTML = '<iframe src="' + s.url + '" title="' + s.en + '"></iframe>';
@@ -591,10 +670,12 @@ function portalIsAdmin(){ return !!(PORTAL_CURRENT_USER && PORTAL_CURRENT_USER.r
 
 function setBackupTabVisible(visible){
   var btn = document.getElementById('sideItemBackup');
+  var bannerBtn = document.getElementById('sideItemBanner');
   var label = document.getElementById('adminGroupLabel');
   if(btn) btn.style.display = visible ? 'flex' : 'none';
+  if(bannerBtn) bannerBtn.style.display = visible ? 'flex' : 'none';
   if(label) label.style.display = visible ? 'block' : 'none';
-  if(!visible && current === 'backup') openItem('about');
+  if(!visible && (current === 'backup' || current === 'banner')) openItem('about');
 }
 
 function refreshAdminUI(){
@@ -865,6 +946,162 @@ function deleteAd(id){
   portalDb.collection("advertisements").doc(id).delete().then(function(){
     loadAds();
   }).catch(function(err){ alert("Could not delete: " + err.message); });
+}
+
+/* ================= ANNOUNCEMENT BANNER (Item 14) =================
+   Shown only on the shared portal's "About" (Home) screen — not inside the five
+   systems. Off/empty by default; an Administrator can activate it with a message
+   (Urdu and/or English) and an optional small image/flag for a special day or
+   event, then deactivate it again afterward. Single shared document, same
+   Cloudinary unsigned-upload pattern as Advertisements (no API Secret here). */
+var ANNOUNCEMENT_REF = null;
+var BANNER_REMOVE_IMAGE = false;
+
+function announcementRef(){
+  if(!ANNOUNCEMENT_REF) ANNOUNCEMENT_REF = portalDb.collection("appData_announcement").doc("current");
+  return ANNOUNCEMENT_REF;
+}
+
+function loadAnnouncementBanner(){
+  var slot = document.getElementById('announcementBannerSlot');
+  if(!slot) return;
+  announcementRef().get().then(function(snap){
+    renderAnnouncementBannerSlot(snap.exists ? snap.data() : null);
+  }).catch(function(){ /* banner is non-critical — fail silently */ });
+}
+
+function renderAnnouncementBannerSlot(data){
+  var slot = document.getElementById('announcementBannerSlot');
+  if(!slot) return;
+  if(!data || !data.active || (!data.textUr && !data.textEn)){
+    slot.innerHTML = '';
+    return;
+  }
+  var imgHtml = data.imageURL ? ('<img class="flag-ic" src="' + esc(data.imageURL) + '" alt="">') : '';
+  var urHtml = data.textUr ? '<span data-ur>' + esc(data.textUr) + '</span>' : '';
+  var enHtml = data.textEn ? '<span data-en>' + esc(data.textEn) + '</span>' : '';
+  slot.innerHTML = '<div class="announce-banner">' + imgHtml +
+    '<div class="marquee"><div class="marquee-track">' + urHtml + enHtml + '</div></div>' +
+    '</div>';
+}
+
+function loadBannerAdminForm(){
+  if(!portalIsAdmin()) return;
+  BANNER_REMOVE_IMAGE = false;
+  var statusEl = document.getElementById('bannerStatusMsg');
+  var infoEl = document.getElementById('bannerLastInfo');
+  if(statusEl) statusEl.textContent = '';
+  announcementRef().get().then(function(snap){
+    var data = snap.exists ? snap.data() : null;
+    document.getElementById('bannerActiveInput').checked = !!(data && data.active);
+    document.getElementById('bannerTextUrInput').value = (data && data.textUr) || '';
+    document.getElementById('bannerTextEnInput').value = (data && data.textEn) || '';
+    var previewWrap = document.getElementById('bannerImagePreviewWrap');
+    var previewImg = document.getElementById('bannerImagePreview');
+    if(data && data.imageURL){
+      previewImg.src = data.imageURL;
+      previewWrap.style.display = 'flex';
+    } else {
+      previewWrap.style.display = 'none';
+    }
+    if(infoEl){
+      if(data && data.updatedAt){
+        var ts = data.updatedAt.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt);
+        var dateStr = ts.toLocaleDateString('en-GB') + ' — ' + ts.toLocaleTimeString();
+        infoEl.innerHTML = '<span data-ur><b>آخری تبدیلی:</b> ' + dateStr + ' (' + esc(data.updatedBy || '—') + ')</span>' +
+          '<span data-en data-en-block><b>Last updated:</b> ' + dateStr + ' (by ' + esc(data.updatedBy || '—') + ')</span>';
+      } else {
+        infoEl.innerHTML = '<span data-ur>ابھی تک کوئی پیغام محفوظ نہیں کیا گیا۔</span><span data-en data-en-block>No message has been saved yet.</span>';
+      }
+    }
+  }).catch(function(err){
+    if(statusEl) statusEl.textContent = "Could not load: " + err.message;
+  });
+}
+
+function removeBannerImage(){
+  BANNER_REMOVE_IMAGE = true;
+  var previewWrap = document.getElementById('bannerImagePreviewWrap');
+  var fileInput = document.getElementById('bannerImageInput');
+  if(previewWrap) previewWrap.style.display = 'none';
+  if(fileInput) fileInput.value = '';
+}
+
+function saveAnnouncementBanner(){
+  if(!portalIsAdmin()) return;
+  var active = document.getElementById('bannerActiveInput').checked;
+  var textUr = document.getElementById('bannerTextUrInput').value.trim();
+  var textEn = document.getElementById('bannerTextEnInput').value.trim();
+  var file = document.getElementById('bannerImageInput').files[0];
+  var statusEl = document.getElementById('bannerStatusMsg');
+  var saveBtn = document.getElementById('bannerSaveBtn');
+
+  if(active && !textUr && !textEn){
+    statusEl.textContent = "Please enter a message (Urdu and/or English) before activating.";
+    return;
+  }
+  if(file && !/^image\//.test(file.type)){ statusEl.textContent = "Please choose an image file."; return; }
+  if(file && file.size > 8*1024*1024){ statusEl.textContent = "Please choose an image smaller than 8 MB."; return; }
+
+  saveBtn.disabled = true;
+  statusEl.innerHTML = '<span data-ur>محفوظ ہو رہا ہے…</span><span data-en data-en-block>Saving…</span>';
+
+  function writeDoc(imageFields){
+    var data = { active: active, textUr: textUr, textEn: textEn,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(), updatedBy: PORTAL_CURRENT_USER.email };
+    for(var k in imageFields) data[k] = imageFields[k];
+    if(BANNER_REMOVE_IMAGE && !file){
+      data.imageURL = firebase.firestore.FieldValue.delete();
+      data.bannerCloudinaryPublicId = firebase.firestore.FieldValue.delete();
+    }
+    announcementRef().set(data, { merge: true }).then(function(){
+      saveBtn.disabled = false;
+      BANNER_REMOVE_IMAGE = false;
+      statusEl.innerHTML = '<span data-ur style="color:#1a7a1a;">✅ محفوظ ہو گیا۔</span><span data-en data-en-block style="color:#1a7a1a;">✅ Saved.</span>';
+      loadBannerAdminForm();
+      if(current === 'about') loadAnnouncementBanner();
+    }).catch(function(err){
+      saveBtn.disabled = false;
+      statusEl.textContent = "Error: " + err.message;
+    });
+  }
+
+  if(!file){
+    writeDoc({});
+    return;
+  }
+
+  statusEl.textContent = "Uploading… 0%";
+  var formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://api.cloudinary.com/v1_1/" + CLOUDINARY_CLOUD_NAME + "/image/upload", true);
+  xhr.upload.onprogress = function(e){
+    if(e.lengthComputable) statusEl.textContent = "Uploading… " + Math.round((e.loaded / e.total) * 100) + "%";
+  };
+  xhr.onload = function(){
+    var res;
+    try{ res = JSON.parse(xhr.responseText); }catch(e){ res = null; }
+    if(xhr.status < 200 || xhr.status >= 300 || !res || !res.secure_url){
+      saveBtn.disabled = false;
+      var msg = (res && res.error && res.error.message) ? res.error.message : ("HTTP " + xhr.status);
+      statusEl.textContent = "Upload failed: " + msg;
+      return;
+    }
+    writeDoc({ imageURL: res.secure_url, bannerCloudinaryPublicId: res.public_id || "" });
+  };
+  xhr.onerror = function(){
+    saveBtn.disabled = false;
+    statusEl.textContent = "Upload failed: network error.";
+  };
+  xhr.send(formData);
+}
+
+function deactivateAnnouncementBannerNow(){
+  if(!portalIsAdmin()) return;
+  document.getElementById('bannerActiveInput').checked = false;
+  saveAnnouncementBanner();
 }
 </script>
 

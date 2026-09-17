@@ -67,6 +67,28 @@
   .side-item:hover{background:var(--navy-tint);}
   .side-item.active{background:var(--navy-tint);border-inline-end-color:var(--amber);font-weight:700;color:var(--navy);}
 
+  /* ===== Sidebar collapse/expand ===== */
+  .sidebar-toggle-close{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+    background:var(--navy-tint);border:none;border-bottom:1px solid var(--border);
+    padding:9px 18px;margin-bottom:6px;font-size:12.5px;font-weight:700;color:var(--navy-dark);
+    cursor:pointer;font-family:inherit;
+  }
+  .sidebar-toggle-close:hover{background:#DCE7EF;}
+  .sidebar-toggle-open{
+    display:none;
+    position:fixed;top:92px;inset-inline-start:0;z-index:80;
+    background:var(--navy);color:#fff;border:none;border-radius:0 8px 8px 0;
+    padding:12px 10px;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(21,58,91,.25);
+    font-family:inherit;gap:6px;
+  }
+  .sidebar-toggle-open:hover{background:var(--navy-dark);}
+  body.sidebar-hidden aside.sidebar{display:none;}
+  body.sidebar-hidden .sidebar-toggle-open{display:flex;align-items:center;}
+  @media (max-width:720px){
+    .sidebar-toggle-open{top:auto;bottom:14px;border-radius:8px;}
+  }
+
   /* ===== Main area ===== */
   main.content{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg);}
   .toolbar{
@@ -287,6 +309,9 @@
 
 <div class="shell">
   <aside class="sidebar" id="sidebar">
+    <button type="button" id="sidebarCollapseBtn" class="sidebar-toggle-close" title="Hide menu / مینو چھپائیں">
+      <span><span data-ur>مینو چھپائیں</span><span data-en>Hide menu</span></span><span>◀</span>
+    </button>
     <button class="side-item active" data-key="about" onclick="openItem('about')">
       <span class="ic">🏠</span><span data-ur>تعارف</span><span data-en>About</span>
     </button>
@@ -334,6 +359,7 @@
       <span class="ic">📣</span><span data-ur>اعلانات کی پٹی</span><span data-en>Announcement Banner</span>
     </button>
   </aside>
+  <button type="button" id="sidebarExpandBtn" class="sidebar-toggle-open" title="Show menu / مینو دکھائیں">☰ <span><span data-ur>مینو دکھائیں</span><span data-en>Show menu</span></span></button>
 
   <main class="content">
     <div class="toolbar">
@@ -637,6 +663,21 @@ try{
     document.documentElement.dir = 'ltr';
   }
 }catch(e){}
+
+/* ---------------- Sidebar collapse/expand ---------------- */
+(function(){
+  var collapseBtn = document.getElementById('sidebarCollapseBtn');
+  var expandBtn = document.getElementById('sidebarExpandBtn');
+  function setSidebarHidden(hidden){
+    document.body.classList.toggle('sidebar-hidden', hidden);
+    try{ localStorage.setItem('cos_sidebarHidden', hidden ? '1' : '0'); }catch(e){}
+  }
+  if(collapseBtn) collapseBtn.addEventListener('click', function(){ setSidebarHidden(true); });
+  if(expandBtn) expandBtn.addEventListener('click', function(){ setSidebarHidden(false); });
+  try{
+    if(localStorage.getItem('cos_sidebarHidden') === '1') setSidebarHidden(true);
+  }catch(e){}
+})();
 
 /* ================= BACKUP CENTER (hidden, Administrator-only) =================
    Same shared Firebase project as the 5 systems. This portal page has no login

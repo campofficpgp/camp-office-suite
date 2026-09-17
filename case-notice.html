@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Notice — Camp Office PG Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar), same set used across
+     the project (Weekly Court Roster / Daily Case Entry / Case Notice). Theme 1 (Official Navy &
+     Gold) is the default set in :root above; the rest override the same tokens so every existing
+     rule that already reads var(--navy)/var(--gold)/etc. re-colors and re-shapes itself. */
+  body[data-theme="2"]{ /* Maroon & Silver — Judicial Formal */
+    --navy:#5c1a1a; --navy2:#7a2727; --navy3:#3d1010;
+    --gold:#9a9a9a; --gold-light:#c2c2c2; --gold-deep:#707070;
+    --bg:#f5f1ee; --card:#ffffff; --border:#e6dedb; --text:#241a1a; --muted:#6b5f5f;
+    --radius-lg:4px; --radius-sm:3px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:180deg;
+  }
+  body[data-theme="3"]{ /* Emerald & Cream — Classic Government */
+    --navy:#0f3d2e; --navy2:#155c46; --navy3:#0a2b20;
+    --gold:#c9a227; --gold-light:#e0bf55; --gold-deep:#96791b;
+    --bg:#f6f3ea; --card:#fffdf7; --border:#e3ddc8; --text:#1c2620; --muted:#5e6b62;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+  }
+  body[data-theme="4"]{ /* Charcoal & Bronze — Modern Minimal */
+    --navy:#2b2b2e; --navy2:#3d3d40; --navy3:#1a1a1c;
+    --gold:#b5793a; --gold-light:#d59a5e; --gold-deep:#8a5a26;
+    --bg:#f4f4f2; --card:#ffffff; --border:#e2e2e0; --text:#222224; --muted:#7a7a7c;
+    --radius-lg:16px; --radius-sm:10px; --font-head:"Trebuchet MS",Verdana,sans-serif;
+    --topbar-grad-angle:135deg;
+  }
+  body[data-theme="5"]{ /* Forest & Ivory — Soft Professional */
+    --navy:#254d32; --navy2:#356b45; --navy3:#173322;
+    --gold:#d1a85c; --gold-light:#e6c688; --gold-deep:#a3813f;
+    --bg:#f8f5ec; --card:#fffdf9; --border:#e8e0cd; --text:#20291f; --muted:#6c7566;
+    --radius-lg:12px; --radius-sm:8px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:145deg;
+  }
+  body[data-theme="6"]{ /* Slate & Amber — High Contrast */
+    --navy:#1e293b; --navy2:#334155; --navy3:#0f172a;
+    --gold:#f59e0b; --gold-light:#fbbf24; --gold-deep:#b45309;
+    --bg:#eef1f5; --card:#ffffff; --border:#94a3b8; --text:#0f172a; --muted:#475569;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:100deg;
+  }
+  body[data-theme="7"]{ /* Pakistan Green & Gold — National */
+    --navy:#01411c; --navy2:#046a2e; --navy3:#022e14;
+    --gold:#f4c430; --gold-light:#ffe08a; --gold-deep:#c9960a;
+    --bg:#f2f7f0; --card:#ffffff; --border:#d9e6d3; --text:#132316; --muted:#5b6b5c;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:4px; --accent-stripe-color:var(--gold);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:30px; height:30px; flex-shrink:0; display:inline-flex;}
+  .brand-logo svg{width:100%; height:100%; display:block;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+
+  .wrap{max-width:1080px; margin:0 auto; padding:22px 20px 60px;}
+
+  .assumption-note{background:#fdf0e0; border-left:3px solid #c46a1c; border-radius:0 8px 8px 0; padding:12px 16px; margin-bottom:20px; font-size:12px; color:#5a3d1a;}
+  [dir="rtl"] .assumption-note{border-left:none; border-right:3px solid #c46a1c; border-radius:8px 0 0 8px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+  .field textarea{resize:vertical; min-height:56px;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.whatsapp{background:#25D366; color:#fff; border-color:#1eb959;}
+  .btn.whatsapp:hover{background:#1eb959;}
+  .btn.email{background:#2a5db0; color:#fff; border-color:#24519a;}
+  .btn.email:hover{background:#24519a;}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.notice-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:960px;}
+  table.notice-table th{background:var(--navy); color:#fff; text-align:left; padding:10px 10px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.notice-table td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; white-space:nowrap;}
+  table.notice-table td.wrap-cell{white-space:normal; max-width:180px;}
+  table.notice-table tr:last-child td{border-bottom:none;}
+  table.notice-table tr:hover td{background:#faf8f2;}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:720px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  /* Printable notice preview */
+  .notice-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:34px 38px; font-size:14px; direction:rtl; text-align:right; line-height:2;}
+  .notice-sheet .office-head{font-weight:700; font-size:16px; white-space:pre-line; line-height:1.4;}
+  .notice-sheet .office-sub{font-size:12.5px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* Notice letterhead (office-head/office-sub) is editable in place — same ✎ edit / ↺ reset
+     pattern as the office heading in the Weekly Court Roster and Daily Case Entry tools, so it
+     always shows the same office address and can still be fixed right here at preview time. */
+  .notice-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .notice-sheet .office-head-row{margin-bottom:18px;}
+  .notice-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .notice-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .notice-sheet .office-sub-row{margin-bottom:18px;}
+  .notice-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .notice-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .notice-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:220px; font-family:inherit; text-align:center;}
+  .notice-sheet .meta-row{display:flex; gap:10px; margin-bottom:4px; direction:ltr; text-align:left; font-size:13px;}
+  .notice-sheet .meta-row .k{font-weight:700; min-width:190px;}
+  .notice-sheet .body-text{margin:18px 0; font-size:14.5px;}
+  .notice-sheet .sign-block{direction:ltr; text-align:left; margin-top:26px; font-size:13px; line-height:1.7;}
+  .notice-sheet hr{border:none; border-top:1px dashed var(--border); margin:18px 0;}
+
+  /* Prepared by / Approved by sign-off stamps — added alongside the notice's own signatory
+     block above. Each is a small editable (✎ edit, ✕ clear) Name/Designation/Office-Address
+     block, same pattern as the Weekly Court Roster and Daily Case Entry tools. */
+  .notice-sheet .p-sign{direction:ltr; text-align:left; display:flex; justify-content:space-between; align-items:flex-start; margin-top:18px; padding-top:14px; border-top:1px dashed var(--border); font-size:12.5px; gap:16px;}
+  .notice-sheet .p-stamp-block{flex:1; min-width:0;}
+  .notice-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  .notice-sheet .p-stamp-line{font-size:11.5px; color:var(--text); line-height:1.5; white-space:pre-line;}
+  .notice-sheet .p-stamp-line:first-child{font-weight:700;}
+  .notice-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .notice-sheet .p-stamp-icons{margin-top:4px;}
+  .notice-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  .notice-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .notice-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .notice-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+
+  [dir="rtl"] table.notice-table th, [dir="rtl"] table.notice-table td{text-align:right;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{position:absolute; top:0; left:0; width:100%;}
+    #printArea .heading-icon{display:none;}
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span data-en="Camp Office Prosecutor General Punjab — Case Notice" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب — کیس نوٹس">Camp Office Prosecutor General Punjab — Case Notice</span></div>
+    <div class="right-controls">
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="assumption-note" data-en="Note: I built this from the sample notice you sent (Crl.P.L.A 869/2026 — The State Vs Salman Azam) plus the same field style used in Case Entry. Police Station, District and Tehsil lists are starter lists only — please add/correct via each field's (+ Add/Edit) link." data-ur="نوٹ: یہ آپ کے بھیجے ہوئے نمونہ نوٹس (Crl.P.L.A 869/2026 — The State Vs Salman Azam) اور Case Entry والے فیلڈ اسٹائل سے بنایا ہے۔ Police Station، District اور Tehsil کی فہرستیں ابتدائی ہیں — ہر فیلڈ کے (+ Add/Edit) لنک سے درست/شامل کر لیں۔">Note: I built this from the sample notice you sent (Crl.P.L.A 869/2026 — The State Vs Salman Azam) plus the same field style used in Case Entry. Police Station, District and Tehsil lists are starter lists only — please add/correct via each field's (+ Add/Edit) link.</div>
+
+    <div class="search-box">
+      <div class="lbl" data-en="Notice Lookup — filter the list below" data-ur="نوٹس تلاش — نیچے فہرست فلٹر کریں">Notice Lookup — filter the list below</div>
+      <div class="search-grid">
+        <div class="field"><label data-en="By Case No" data-ur="کیس نمبر سے">By Case No</label><select id="byCaseNo"></select></div>
+        <div class="field"><label data-en="By District" data-ur="ضلع سے">By District</label><select id="byDistrict"></select></div>
+        <div class="field"><label data-en="By Police Station" data-ur="تھانہ سے">By Police Station</label><select id="byStation"></select></div>
+        <div class="field"><label data-en="By Bench No" data-ur="بینچ نمبر سے">By Bench No</label><select id="byBench"></select></div>
+      </div>
+      <div class="count" id="count"></div>
+      <div style="margin-top:12px;">
+        <div class="btn primary" onclick="openAddForm()" data-en="+ Add New Notice" data-ur="+ نیا نوٹس شامل کریں">+ Add New Notice</div>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="notice-table">
+        <thead>
+          <tr>
+            <th data-en="Case No" data-ur="کیس نمبر">Case No</th>
+            <th data-en="Versus" data-ur="بمقابلہ">Versus</th>
+            <th data-en="Nature" data-ur="نوعیت">Nature</th>
+            <th data-en="FIR No" data-ur="ایف آئی آر نمبر">FIR No</th>
+            <th data-en="Police Station" data-ur="تھانہ">Police Station</th>
+            <th data-en="District" data-ur="ضلع">District</th>
+            <th data-en="Bench" data-ur="بینچ">Bench</th>
+            <th data-en="Hearing Date" data-ur="تاریخ سماعت">Hearing Date</th>
+            <th data-en="Actions" data-ur="اعمال">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="noticeTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Add / Edit Notice Modal -->
+  <div class="modal-overlay" id="noticeForm">
+    <div class="modal-panel">
+      <div class="modal-close"><span onclick="closeNoticeForm()">✕</span></div>
+      <div class="search-box">
+        <div class="lbl" id="formTitle" data-en="Add New Notice" data-ur="نیا نوٹس شامل کریں">Add New Notice</div>
+        <input type="hidden" id="nId">
+        <div class="search-grid">
+          <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type <span class="manage-link" onclick="openListManage('type')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nType"></select></div>
+          <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="number" id="nCaseNo" placeholder="e.g. 869"></div>
+          <div class="field"><label data-en="Year" data-ur="سال">Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nYear"></select></div>
+          <div class="field" style="grid-column:1 / -1;"><label data-en="Title of Case" data-ur="کیس کا عنوان">Title of Case</label><input type="text" id="nTitle" placeholder="e.g. The State"></div>
+          <div class="field" style="grid-column:1 / -1;"><label data-en="Versus" data-ur="بمقابلہ">Versus</label><input type="text" id="nVersus" placeholder="e.g. Salman Azam"></div>
+          <div class="field"><label data-en="Nature / Relief" data-ur="نوعیت / ریلیف">Nature / Relief <span class="manage-link" onclick="openListManage('relief')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nRelief"></select></div>
+          <div class="field"><label data-en="FIR No" data-ur="ایف آئی آر نمبر">FIR No</label><input type="text" id="nFirNo" placeholder="e.g. 201"></div>
+          <div class="field"><label data-en="FIR Year" data-ur="ایف آئی آر سال">FIR Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nFirYear"></select></div>
+          <div class="field" style="grid-column:1 / -1;"><label data-en="Under Section (U/S)" data-ur="زیر دفعہ (یو/ایس)">Under Section (U/S)</label><input type="text" id="nSections" placeholder="e.g. 7ATA, 341, 188, 186, 506, 353, 109, 148, 149 PPC"></div>
+          <div class="field"><label data-en="District" data-ur="ضلع">District <span class="manage-link" onclick="openListManage('district')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nDistrict"></select></div>
+          <div class="field"><label data-en="Tehsil" data-ur="تحصیل">Tehsil <span class="manage-link" onclick="openListManage('tehsil')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nTehsil"></select></div>
+          <div class="field"><label data-en="Police Station" data-ur="تھانہ">Police Station <span class="manage-link" onclick="openListManage('station')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nStation"></select></div>
+          <div class="field"><label data-en="Bench No" data-ur="بینچ نمبر">Bench No <span class="manage-link" onclick="openListManage('bench')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nBench"></select></div>
+          <div class="field"><label data-en="Serial No. of Cause List" data-ur="کاز لسٹ سیریل نمبر">Serial No. of Cause List <span style="font-weight:400; color:var(--muted); font-size:10.5px;" data-en="(optional)" data-ur="(اختیاری)">(optional)</span></label><input type="text" id="nSerialNo" placeholder="e.g. 12"></div>
+          <div class="field"><label data-en="Hearing Date (Supreme Court)" data-ur="تاریخ سماعت (سپریم کورٹ)">Hearing Date (Supreme Court)</label><input type="date" id="nHearing"></div>
+          <div class="field"><label data-en="Notice Date" data-ur="نوٹس کی تاریخ">Notice Date</label><input type="date" id="nDate"></div>
+          <div class="field"><label data-en="Signatory Name" data-ur="دستخط کنندہ کا نام">Signatory Name <span class="manage-link" onclick="openListManage('signatory')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nSignatory"></select></div>
+          <div class="field"><label data-en="Signatory Designation" data-ur="دستخط کنندہ کا عہدہ">Signatory Designation</label><input type="text" id="nDesig" placeholder="e.g. Focal Person Punjab Police, Supreme Court Islamabad"></div>
+          <div class="field"><label data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</label><input type="text" id="nMobile" placeholder="e.g. 03009769052"></div>
+          <div class="field"><label data-en="Office No" data-ur="آفس نمبر">Office No</label><input type="text" id="nOffice" placeholder="e.g. 0519202466"></div>
+        </div>
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
+          <div class="btn primary" onclick="saveNotice()" data-en="Save Notice" data-ur="نوٹس محفوظ کریں">Save Notice</div>
+          <div class="btn ghost" onclick="closeNoticeForm()" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+        </div>
+        <div class="disclaimer" data-en="This saves to this page's list only, for review — it is not yet saved to a live database." data-ur="یہ صرف اس صفحے کی فہرست میں محفوظ ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔">This saves to this page's list only, for review — it is not yet saved to a live database.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage dropdown options -->
+  <div class="modal-overlay" id="listManageModal">
+    <div class="modal-panel" style="max-width:440px;">
+      <div class="modal-close"><span onclick="closeListManage()">✕</span></div>
+      <div class="search-box">
+        <div class="lbl" id="listManageTitle">Manage Options</div>
+        <div id="listManageItems" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;"></div>
+        <div style="margin-top:10px;">
+          <div class="btn ghost" onclick="addListManageRow()" data-en="+ Add New" data-ur="+ نیا شامل کریں">+ Add New</div>
+        </div>
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
+          <div class="btn primary" onclick="saveListManage()" data-en="Save" data-ur="محفوظ کریں">Save</div>
+          <div class="btn ghost" onclick="closeListManage()" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notice Preview / Print Modal -->
+  <div class="modal-overlay" id="previewModal">
+    <div class="modal-panel" style="max-width:720px;">
+      <div class="modal-close"><span onclick="closePreview()">✕</span></div>
+      <div style="padding:0 20px 20px;">
+        <div id="printArea" class="notice-sheet"></div>
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
+          <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
+          <div class="btn whatsapp" onclick="shareNotice('whatsapp')" data-en="🟢 Send via WhatsApp" data-ur="🟢 واٹس ایپ پر بھیجیں">🟢 Send via WhatsApp</div>
+          <div class="btn email" onclick="shareNotice('email')" data-en="✉️ Send via Email" data-ur="✉️ ای میل پر بھیجیں">✉️ Send via Email</div>
+          <div class="btn ghost" onclick="downloadNoticeImage()" data-en="⬇️ Download Image" data-ur="⬇️ تصویر ڈاؤن لوڈ کریں">⬇️ Download Image</div>
+          <div class="btn ghost" onclick="closePreview()" data-en="Close" data-ur="بند کریں">Close</div>
+        </div>
+        <div class="disclaimer" data-en="WhatsApp/Email will open with the notice details as text and the notice image will download automatically — if it doesn't attach itself, just attach the downloaded image manually (one extra tap)." data-ur="واٹس ایپ/ای میل کھلتے ہی نوٹس کی تفصیل ٹیکسٹ کے طور پر آ جائے گی اور نوٹس کی تصویر خودکار ڈاؤن لوڈ ہو جائے گی — اگر خودکار اٹیچ نہ ہو تو ڈاؤن لوڈ شدہ تصویر کو خود منسلک کر لیں۔">WhatsApp/Email will open with the notice details as text and the notice image will download automatically — if it doesn't attach itself, just attach the downloaded image manually (one extra tap).</div>
+      </div>
+    </div>
+  </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  var isUrdu = false;
+  var PUNJAB_EMBLEM_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="var(--navy)" stroke="var(--gold)" stroke-width="2.2"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="0.6" opacity="0.55"/><circle cx="43" cy="27" r="8.5" fill="var(--gold-light)"/><circle cx="46.3" cy="24.3" r="7" fill="var(--navy)"/><g transform="translate(58,22) scale(0.62)"><path d="M0,-8 L2.3,-2.6 L8,-2.5 L3.4,1.2 L5,7 L0,3.6 L-5,7 L-3.4,1.2 L-8,-2.5 L-2.3,-2.6 Z" fill="var(--gold-light)"/></g><path d="M27,42 Q32.5,37.5 38,42 T49,42 T60,42 T71,42 T73,42" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,47 Q32.5,42.5 38,47 T49,47 T60,47 T71,47 T73,47" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,52 Q32.5,47.5 38,52 T49,52 T60,52 T71,52 T73,52" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,57 Q32.5,52.5 38,57 T49,57 T60,57 T71,57 T73,57" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="1"/><path d="M27,62 Q32.5,57.5 38,62 T49,62 T60,62 T71,62 T73,62" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/><path d="M63.16,93.03 Q67.40,84.90 59.23,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M63.98,91.14 Q64.62,90.98 65.43,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.98,91.14 Q63.54,90.64 63.27,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q65.15,88.60 65.85,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q63.94,88.47 63.44,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q65.20,86.15 65.75,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q63.91,86.27 63.17,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q64.78,83.65 65.13,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q63.46,84.02 62.48,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q63.89,81.10 64.03,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q62.56,81.71 61.39,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q62.53,78.52 62.48,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q61.23,79.34 59.87,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q75.07,79.88 69.75,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M65.86,89.79 Q66.52,89.85 67.52,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M65.86,89.79 Q65.61,89.17 65.70,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q68.86,86.35 69.89,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q67.81,85.74 67.78,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q70.58,82.88 71.58,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q69.38,82.41 69.18,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q71.67,79.45 72.58,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q70.33,79.16 69.90,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q72.11,76.04 72.87,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q70.66,76.01 69.96,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q71.90,72.68 72.43,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q70.39,72.94 69.40,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q80.94,73.74 75.68,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M67.33,88.16 Q67.99,88.24 69.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M67.33,88.16 Q67.10,87.54 67.22,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q71.60,83.21 72.65,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q70.57,82.57 70.60,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q74.37,78.31 75.42,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q73.20,77.75 73.09,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q76.31,73.52 77.31,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q74.99,73.11 74.68,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q77.39,68.84 78.27,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q75.95,68.65 75.39,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q77.61,64.27 78.30,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q76.08,64.35 75.24,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q32.60,84.90 40.77,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M36.02,91.14 Q36.46,90.64 36.73,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.02,91.14 Q35.38,90.98 34.57,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q36.06,88.47 36.56,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q34.85,88.60 34.15,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q36.09,86.27 36.83,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q34.80,86.15 34.25,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q36.54,84.02 37.52,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q35.22,83.65 34.87,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q37.44,81.71 38.61,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q36.11,81.10 35.97,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q38.77,79.34 40.13,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q37.47,78.52 37.52,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q24.93,79.88 30.25,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M34.14,89.79 Q34.39,89.17 34.30,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M34.14,89.79 Q33.48,89.85 32.48,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q32.19,85.74 32.22,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q31.14,86.35 30.11,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q30.62,82.41 30.82,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q29.42,82.88 28.42,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q29.67,79.16 30.10,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q28.33,79.45 27.42,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q29.34,76.01 30.04,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q27.89,76.04 27.13,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q29.61,72.94 30.60,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q28.10,72.68 27.57,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q19.06,73.74 24.32,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M32.67,88.16 Q32.90,87.54 32.78,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M32.67,88.16 Q32.01,88.24 31.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q29.43,82.57 29.40,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q28.40,83.21 27.35,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q26.80,77.75 26.91,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q25.63,78.31 24.58,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q25.01,73.11 25.32,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q23.69,73.52 22.69,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q24.05,68.65 24.61,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q22.61,68.84 21.73,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q23.92,64.35 24.76,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q22.39,64.27 21.70,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M45,84 Q50,80.5 55,84 Q52,87 50,90.5 Q48,87 45,84 Z" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="0.5"/><text x="50" y="73" font-size="8.5" fill="var(--gold-light)" text-anchor="middle">حکومتِ پنجاب</text></svg>';
+
+  var CASE_TYPES = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','Other'];
+  var RELIEFS = [
+    'Pre Arrest - Cancellation of Bail (COB)', 'Post Arrest - Cancellation of Bail (COB)',
+    'Bail Before Arrest', 'Bail After Arrest', 'Interim Bail', 'Bail on Medical Grounds',
+    'Grant of Bail', 'Suspension of Sentence', 'Extension of Bail', 'Death Sentence',
+    'Life Imprisonment', 'Acquittal', 'Setting Aside of Acquittal', 'Leave to Appeal', 'Other'
+  ];
+  var BENCH_NOS = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+  var DISTRICTS = ['Attock','Bahawalnagar','Bahawalpur','Bhakkar','Chakwal','Chiniot','Dera Ghazi Khan','Faisalabad','Gujranwala','Gujrat','Hafizabad','Jhang','Jhelum','Kasur','Khanewal','Khushab','Lahore','Layyah','Lodhran','Mandi Bahauddin','Mianwali','Multan','Muzaffargarh','Narowal','Nankana Sahib','Okara','Pakpattan','Rahim Yar Khan','Rajanpur','Rawalpindi','Sahiwal','Sargodha','Sheikhupura','Sialkot','Toba Tek Singh','Vehari'];
+  var SIGNATORIES = ['Rashid Mahmood — Focal Person Punjab Police, Supreme Court Islamabad'];
+
+  // Tehsils grouped by District — starter lists, please verify/correct via each District's (+ Add/Edit) on the Tehsil field.
+  var DISTRICT_TEHSILS = {
+    'Attock': ['Attock','Fateh Jang','Hasan Abdal','Hazro','Jand','Pindi Gheb'],
+    'Bahawalnagar': ['Bahawalnagar','Chishtian','Fort Abbas','Haroonabad','Minchinabad'],
+    'Bahawalpur': ['Bahawalpur City','Bahawalpur Saddar','Ahmedpur East','Hasilpur','Khairpur Tamewali','Yazman'],
+    'Bhakkar': ['Bhakkar','Darya Khan','Kaloor Kot','Mankera'],
+    'Chakwal': ['Chakwal','Choa Saidan Shah','Kallar Kahar','Talagang','Lawa'],
+    'Chiniot': ['Chiniot','Bhawana','Lalian'],
+    'Dera Ghazi Khan': ['Dera Ghazi Khan','Taunsa','Kot Chutta'],
+    'Faisalabad': ['Faisalabad City','Faisalabad Saddar','Chak Jhumra','Jaranwala','Samundri','Tandlianwala'],
+    'Gujranwala': ['Gujranwala City','Gujranwala Saddar','Kamoke','Nowshera Virkan','Wazirabad'],
+    'Gujrat': ['Gujrat','Kharian','Sarai Alamgir'],
+    'Hafizabad': ['Hafizabad','Pindi Bhattian'],
+    'Jhang': ['Jhang','Ahmed Pur Sial','Shorkot','18-Hazari'],
+    'Jhelum': ['Jhelum','Pind Dadan Khan','Sohawa','Dina'],
+    'Kasur': ['Kasur','Chunian','Kot Radha Kishan','Pattoki'],
+    'Khanewal': ['Khanewal','Jahanian','Kabirwala','Mian Channu'],
+    'Khushab': ['Khushab','Noorpur Thal','Quaidabad','Naushera'],
+    'Lahore': ['Lahore City','Lahore Cantt','Model Town','Raiwind','Shalimar'],
+    'Layyah': ['Layyah','Chaubara','Karor Lal Esan'],
+    'Lodhran': ['Lodhran','Dunyapur','Kahror Pakka'],
+    'Mandi Bahauddin': ['Mandi Bahauddin','Malakwal','Phalia'],
+    'Mianwali': ['Mianwali','Isakhel','Piplan'],
+    'Multan': ['Multan City','Multan Saddar','Jalalpur Pirwala','Shujabad'],
+    'Muzaffargarh': ['Muzaffargarh','Alipur','Jatoi','Kot Addu'],
+    'Narowal': ['Narowal','Shakargarh','Zafarwal'],
+    'Nankana Sahib': ['Nankana Sahib','Sangla Hill','Shah Kot'],
+    'Okara': ['Okara','Depalpur','Renala Khurd'],
+    'Pakpattan': ['Pakpattan','Arifwala'],
+    'Rahim Yar Khan': ['Rahim Yar Khan','Khanpur','Liaquatpur','Sadiqabad'],
+    'Rajanpur': ['Rajanpur','Jampur','Rojhan'],
+    'Rawalpindi': ['Rawalpindi','Gujar Khan','Kahuta','Kallar Syedan','Murree','Taxila'],
+    'Sahiwal': ['Sahiwal','Chichawatni'],
+    'Sargodha': ['Sargodha','Bhalwal','Kot Momin','Shahpur','Silanwali'],
+    'Sheikhupura': ['Sheikhupura','Ferozewala','Muridke','Sharaqpur'],
+    'Sialkot': ['Sialkot','Daska','Pasrur','Sambrial'],
+    'Toba Tek Singh': ['Toba Tek Singh','Gojra','Kamalia','Pirmahal'],
+    'Vehari': ['Vehari','Burewala','Mailsi']
+  };
+
+  // Police Stations grouped by District — starter lists (only what we have real data for so far), please add the rest via each District's (+ Add/Edit) on the Police Station field.
+  var DISTRICT_STATIONS = {
+    'Pakpattan': ['City Arifwala','Saddar Pakpattan','City Pakpattan'],
+    'Lahore': ['Model Town Lahore','Civil Lines Lahore']
+  };
+
+  function yearRange(){
+    var years = [];
+    var current = new Date().getFullYear();
+    for(var y = current; y >= 2006; y--) years.push(String(y));
+    return years;
+  }
+  var YEARS = yearRange();
+
+  var LIST_CONFIGS = {
+    type:      { arr: CASE_TYPES, formSelectId: 'nType',      titleEn: 'Manage Case Types',       titleUr: 'کیس کی اقسام کا انتظام' },
+    year:      { arr: YEARS,      formSelectId: null,         titleEn: 'Manage Years',            titleUr: 'سالوں کا انتظام' },
+    relief:    { arr: RELIEFS,    formSelectId: 'nRelief',    titleEn: 'Manage Nature / Relief',  titleUr: 'نوعیت / ریلیف کا انتظام' },
+    bench:     { arr: BENCH_NOS,  formSelectId: 'nBench',     titleEn: 'Manage Bench Numbers',    titleUr: 'بینچ نمبروں کا انتظام' },
+    district:  { arr: DISTRICTS,  formSelectId: 'nDistrict',  titleEn: 'Manage Districts',        titleUr: 'اضلاع کا انتظام' },
+    signatory: { arr: SIGNATORIES,formSelectId: 'nSignatory', titleEn: 'Manage Signatories',      titleUr: 'دستخط کنندگان کا انتظام' }
+  };
+  // Tehsil and Police Station are managed per-District (see openListManage/saveListManage special-casing below), not through LIST_CONFIGS.
+  var currentManageDistrict = null;
+
+  function fillSelect(sel, options, withBlank){
+    sel.innerHTML = withBlank ? '<option value="">—</option>' : '';
+    options.forEach(function(o){ sel.innerHTML += '<option value="'+o+'">'+o+'</option>'; });
+  }
+
+  function uniqueSorted(arr){ return Array.from(new Set(arr)).filter(Boolean).sort(); }
+
+  function populateStaticDropdowns(){
+    fillSelect(document.getElementById('nType'), CASE_TYPES, false);
+    fillSelect(document.getElementById('nYear'), YEARS, false);
+    fillSelect(document.getElementById('nFirYear'), YEARS, false);
+    fillSelect(document.getElementById('nRelief'), RELIEFS, false);
+    fillSelect(document.getElementById('nDistrict'), DISTRICTS, false);
+    fillSelect(document.getElementById('nBench'), BENCH_NOS, false);
+    fillSelect(document.getElementById('nSignatory'), SIGNATORIES, false);
+    refreshTehsilStationOptions();
+  }
+
+  // Cascading: Tehsil + Police Station options depend on the selected District.
+  function refreshTehsilStationOptions(keepTehsil, keepStation){
+    var d = document.getElementById('nDistrict').value;
+    var tSel = document.getElementById('nTehsil');
+    var sSel = document.getElementById('nStation');
+    if(!d){
+      tSel.innerHTML = '<option value="">'+(isUrdu?'— پہلے ضلع منتخب کریں —':'— Select District First —')+'</option>';
+      sSel.innerHTML = '<option value="">'+(isUrdu?'— پہلے ضلع منتخب کریں —':'— Select District First —')+'</option>';
+      return;
+    }
+    var tArr = DISTRICT_TEHSILS[d] || [];
+    var sArr = DISTRICT_STATIONS[d] || [];
+    fillSelect(tSel, tArr, true);
+    fillSelect(sSel, sArr, true);
+    if(keepTehsil){
+      if(tArr.indexOf(keepTehsil) === -1) tSel.innerHTML += '<option value="'+keepTehsil+'">'+keepTehsil+'</option>';
+      tSel.value = keepTehsil;
+    }
+    if(keepStation){
+      if(sArr.indexOf(keepStation) === -1) sSel.innerHTML += '<option value="'+keepStation+'">'+keepStation+'</option>';
+      sSel.value = keepStation;
+    }
+  }
+
+  function makeListManageRow(value){
+    var row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '6px';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = value || '';
+    input.style.cssText = 'flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12.5px;';
+    var del = document.createElement('div');
+    del.className = 'btn danger';
+    del.style.cssText = 'padding:5px 10px; font-size:11px; cursor:pointer;';
+    del.textContent = '✕';
+    del.onclick = function(){ row.remove(); };
+    row.appendChild(input);
+    row.appendChild(del);
+    return row;
+  }
+
+  var currentListKey = null;
+
+  function openListManage(key){
+    currentListKey = key;
+    var box = document.getElementById('listManageItems');
+    box.innerHTML = '';
+
+    if(key === 'tehsil' || key === 'station'){
+      var d = document.getElementById('nDistrict').value;
+      if(!d){
+        alert(isUrdu ? 'پہلے District منتخب کریں، پھر اس ضلع کی تحصیل/تھانہ کی فہرست میں ترمیم کریں' : 'Please select a District first, then manage that District\'s Tehsil/Police Station list');
+        currentListKey = null;
+        return;
+      }
+      currentManageDistrict = d;
+      var mapObj = (key === 'tehsil') ? DISTRICT_TEHSILS : DISTRICT_STATIONS;
+      if(!mapObj[d]) mapObj[d] = [];
+      var titleEn = (key === 'tehsil' ? 'Manage Tehsils — ' : 'Manage Police Stations — ') + d;
+      var titleUr = (key === 'tehsil' ? 'تحصیلوں کا انتظام — ' : 'تھانوں کا انتظام — ') + d;
+      document.getElementById('listManageTitle').textContent = isUrdu ? titleUr : titleEn;
+      mapObj[d].forEach(function(val){ box.appendChild(makeListManageRow(val)); });
+      document.getElementById('listManageModal').classList.add('open');
+      return;
+    }
+
+    var cfg = LIST_CONFIGS[key];
+    document.getElementById('listManageTitle').textContent = isUrdu ? cfg.titleUr : cfg.titleEn;
+    cfg.arr.forEach(function(val){ box.appendChild(makeListManageRow(val)); });
+    document.getElementById('listManageModal').classList.add('open');
+  }
+
+  function addListManageRow(){
+    document.getElementById('listManageItems').appendChild(makeListManageRow(''));
+  }
+
+  function closeListManage(){
+    document.getElementById('listManageModal').classList.remove('open');
+    currentListKey = null;
+  }
+
+  function saveListManage(){
+    if(!currentListKey) return;
+    var inputs = document.querySelectorAll('#listManageItems input[type="text"]');
+    var values = [];
+    inputs.forEach(function(inp){
+      var v = inp.value.trim();
+      if(v && values.indexOf(v) === -1) values.push(v);
+    });
+
+    if(currentListKey === 'tehsil' || currentListKey === 'station'){
+      var mapObj = (currentListKey === 'tehsil') ? DISTRICT_TEHSILS : DISTRICT_STATIONS;
+      var keepTehsil = document.getElementById('nTehsil').value;
+      var keepStation = document.getElementById('nStation').value;
+      mapObj[currentManageDistrict] = values;
+      closeListManage();
+      refreshTehsilStationOptions(keepTehsil, keepStation);
+      return;
+    }
+
+    var cfg = LIST_CONFIGS[currentListKey];
+    cfg.arr.length = 0;
+    Array.prototype.push.apply(cfg.arr, values);
+    if(cfg.formSelectId){
+      var sel = document.getElementById(cfg.formSelectId);
+      var currentSelected = sel.value;
+      fillSelect(sel, cfg.arr, false);
+      if(values.indexOf(currentSelected) !== -1) sel.value = currentSelected;
+    }
+    if(currentListKey === 'year'){
+      var selY1 = document.getElementById('nYear'), selY2 = document.getElementById('nFirYear');
+      [selY1, selY2].forEach(function(sel){
+        var cur = sel.value;
+        fillSelect(sel, YEARS, false);
+        if(YEARS.indexOf(cur) !== -1) sel.value = cur;
+      });
+    }
+    closeListManage();
+  }
+
+  // Sample / dummy notice only — seeded from the sample notice you shared (Crl.P.L.A 869/2026).
+  var NOTICES = [
+    { id: 1, type: 'Crl.P.L.A.', caseNo: '869', year: '2026', title: 'The State', versus: 'Salman Azam', relief: 'Pre Arrest - Cancellation of Bail (COB)', firNo: '201', firYear: '2025', sections: '7ATA, 341, 188, 186, 506, 353, 109, 148, 149 PPC', station: 'City Arifwala', tehsil: 'Arifwala', district: 'Pakpattan', bench: 'III', srNo: '—', hearing: '2026-08-28', date: '2026-08-24', signatory: 'Rashid Mahmood — Focal Person Punjab Police, Supreme Court Islamabad', desig: 'Focal Person Punjab Police, Supreme Court Islamabad', mobile: '03009769052', office: '0519202466' }
+  ];
+  var nextId = 2;
+
+  function populateFilters(){
+    var byCaseNo = document.getElementById('byCaseNo');
+    byCaseNo.innerHTML = '<option value="">—</option>';
+    NOTICES.slice().sort(function(a,b){ return a.caseNo.localeCompare(b.caseNo); }).forEach(function(n){
+      byCaseNo.innerHTML += '<option value="'+n.id+'">'+n.type+' '+n.caseNo+'/'+n.year+' — '+n.title+' Vs '+n.versus+'</option>';
+    });
+    fillSelect(document.getElementById('byDistrict'), uniqueSorted(NOTICES.map(function(n){return n.district;})), true);
+    fillSelect(document.getElementById('byStation'), uniqueSorted(NOTICES.map(function(n){return n.station;})), true);
+    fillSelect(document.getElementById('byBench'), uniqueSorted(NOTICES.map(function(n){return n.bench;})), true);
+    document.getElementById('count').textContent = NOTICES.length + ' notice(s) loaded';
+  }
+
+  function renderTable(){
+    var caseNoF = document.getElementById('byCaseNo').value;
+    var districtF = document.getElementById('byDistrict').value;
+    var stationF = document.getElementById('byStation').value;
+    var benchF = document.getElementById('byBench').value;
+
+    var list = NOTICES.filter(function(n){
+      if(caseNoF && String(n.id) !== caseNoF) return false;
+      if(districtF && n.district !== districtF) return false;
+      if(stationF && n.station !== stationF) return false;
+      if(benchF && n.bench !== benchF) return false;
+      return true;
+    });
+
+    var body = document.getElementById('noticeTableBody');
+    body.innerHTML = '';
+    list.forEach(function(n){
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>'+n.type+' '+n.caseNo+'/'+n.year+'</td>' +
+        '<td class="wrap-cell">'+n.title+' Vs '+n.versus+'</td>' +
+        '<td class="wrap-cell">'+n.relief+'</td>' +
+        '<td>'+n.firNo+'/'+n.firYear+'</td>' +
+        '<td class="wrap-cell">'+n.station+'</td>' +
+        '<td>'+n.district+'</td>' +
+        '<td>'+n.bench+'</td>' +
+        '<td>'+(n.hearing || '—')+'</td>' +
+        '<td><div class="row-actions">' +
+          '<div class="btn primary" onclick="openPreview('+n.id+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
+          '<div class="btn ghost" onclick="openEditForm('+n.id+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
+          '<div class="btn danger" onclick="deleteNotice('+n.id+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>' +
+        '</div></td>';
+      body.appendChild(tr);
+    });
+  }
+
+  ['byCaseNo','byDistrict','byStation','byBench'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', renderTable);
+  });
+
+  document.getElementById('nDistrict').addEventListener('change', function(){
+    refreshTehsilStationOptions();
+  });
+
+  function openAddForm(){
+    document.getElementById('nId').value = '';
+    document.getElementById('formTitle').textContent = isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice';
+    ['nCaseNo','nTitle','nVersus','nFirNo','nSections','nHearing','nDate','nDesig','nMobile','nOffice','nSerialNo'].forEach(function(id){
+      document.getElementById(id).value = '';
+    });
+    ['nType','nYear','nFirYear','nRelief','nDistrict','nBench','nSignatory'].forEach(function(id){
+      document.getElementById(id).selectedIndex = 0;
+    });
+    refreshTehsilStationOptions();
+    document.getElementById('noticeForm').classList.add('open');
+  }
+
+  function openEditForm(id){
+    var n = NOTICES.find(function(x){ return x.id === id; });
+    if(!n) return;
+    document.getElementById('nId').value = n.id;
+    document.getElementById('formTitle').textContent = isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice';
+    document.getElementById('nType').value = n.type;
+    document.getElementById('nCaseNo').value = n.caseNo;
+    document.getElementById('nYear').value = n.year;
+    document.getElementById('nTitle').value = n.title;
+    document.getElementById('nVersus').value = n.versus;
+    document.getElementById('nRelief').value = n.relief;
+    document.getElementById('nFirNo').value = n.firNo;
+    document.getElementById('nFirYear').value = n.firYear;
+    document.getElementById('nSections').value = n.sections;
+    document.getElementById('nDistrict').value = n.district;
+    document.getElementById('nBench').value = n.bench;
+    document.getElementById('nSerialNo').value = n.srNo || '';
+    refreshTehsilStationOptions(n.tehsil, n.station);
+    document.getElementById('nHearing').value = n.hearing;
+    document.getElementById('nDate').value = n.date;
+    document.getElementById('nSignatory').value = n.signatory;
+    document.getElementById('nDesig').value = n.desig;
+    document.getElementById('nMobile').value = n.mobile;
+    document.getElementById('nOffice').value = n.office;
+    document.getElementById('noticeForm').classList.add('open');
+  }
+
+  function closeNoticeForm(){
+    document.getElementById('noticeForm').classList.remove('open');
+  }
+
+  function saveNotice(){
+    var idVal = document.getElementById('nId').value;
+    var caseNo = document.getElementById('nCaseNo').value.trim();
+    var title = document.getElementById('nTitle').value.trim();
+    var versus = document.getElementById('nVersus').value.trim();
+    if(!caseNo || !title || !versus){
+      alert(isUrdu ? 'کیس نمبر، عنوان اور بمقابلہ ضروری ہیں' : 'Case No, Title and Versus are required');
+      return;
+    }
+
+    var data = {
+      type: document.getElementById('nType').value,
+      caseNo: caseNo,
+      year: document.getElementById('nYear').value,
+      title: title,
+      versus: versus,
+      relief: document.getElementById('nRelief').value,
+      firNo: document.getElementById('nFirNo').value.trim() || '—',
+      firYear: document.getElementById('nFirYear').value,
+      sections: document.getElementById('nSections').value.trim() || '—',
+      station: document.getElementById('nStation').value,
+      tehsil: document.getElementById('nTehsil').value,
+      district: document.getElementById('nDistrict').value,
+      bench: document.getElementById('nBench').value,
+      srNo: document.getElementById('nSerialNo').value.trim() || '—',
+      hearing: document.getElementById('nHearing').value,
+      date: document.getElementById('nDate').value,
+      signatory: document.getElementById('nSignatory').value,
+      desig: document.getElementById('nDesig').value.trim() || '—',
+      mobile: document.getElementById('nMobile').value.trim() || '—',
+      office: document.getElementById('nOffice').value.trim() || '—'
+    };
+
+    if(idVal){
+      var existing = NOTICES.find(function(x){ return x.id === parseInt(idVal,10); });
+      if(existing) Object.assign(existing, data);
+    } else {
+      data.id = nextId++;
+      NOTICES.push(data);
+    }
+
+    populateFilters();
+    renderTable();
+    closeNoticeForm();
+  }
+
+  function deleteNotice(id){
+    if(!confirm(isUrdu ? 'کیا آپ واقعی اس نوٹس کو حذف کرنا چاہتے ہیں؟' : 'Are you sure you want to delete this notice?')) return;
+    NOTICES = NOTICES.filter(function(n){ return n.id !== id; });
+    populateFilters();
+    renderTable();
+  }
+
+  function formatDateUr(d){
+    if(!d) return '—';
+    var parts = d.split('-');
+    return parts.length === 3 ? (parts[2] + '.' + parts[1] + '.' + parts[0]) : d;
+  }
+
+  var currentPreviewNotice = null;
+
+  function escapeAttr(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+  function escapeHtml(s){ return escapeAttr(s); }
+
+  // Prepared by / Approved by sign-off stamps — added alongside the notice's own signatory
+  // block, at the user's request, so this same feature appears wherever anything is printed
+  // across the project. Each stamp is a Name / Designation / Office Address block, editable
+  // (✎) or clearable (✕) as a whole, right at preview/print time.
+  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var editingStamp = null; // 'left' | 'right' | null
+
+  // Notice letterhead heading — replaces the old fixed "از دفتر پراسیکیوٹر جنرل پنجاب / Office of
+  // the Prosecutor General Punjab" text with the same office address used across the project, and
+  // makes it editable in place (✎ edit / ↺ reset), same pattern as the other camp office tools.
+  var DEFAULT_HEADING_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
+  var DEFAULT_HEADING_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var headingEn = DEFAULT_HEADING_EN;
+  var headingUr = DEFAULT_HEADING_UR;
+  var editingPrintField = null; // 'en' | 'ur' | null
+
+  function printHeaderRowHtml(fieldKey, value, textClass){
+    if(editingPrintField === fieldKey){
+      var rows = (value.match(/\n/g) || []).length + 1;
+      return '<div class="p-head-edit-row '+textClass+'-row" data-field="'+fieldKey+'">' +
+        '<textarea class="print-heading-input" data-field="'+fieldKey+'" rows="'+rows+'">'+escapeHtml(value)+'</textarea>' +
+        '<span class="heading-icon print-save" data-field="'+fieldKey+'" title="'+(isUrdu?'محفوظ کریں':'Save')+'">✓</span>' +
+        '<span class="heading-icon print-cancel" data-field="'+fieldKey+'" title="'+(isUrdu?'منسوخ':'Cancel')+'">✕</span>' +
+        '</div>';
+    }
+    return '<div class="p-head-edit-row '+textClass+'-row" data-field="'+fieldKey+'">' +
+      '<span class="'+textClass+'">'+escapeHtml(value)+'</span>' +
+      '<span class="heading-icon print-edit" data-field="'+fieldKey+'" title="'+(isUrdu?'ترمیم':'Edit')+'">✎</span>' +
+      '<span class="heading-icon print-reset" data-field="'+fieldKey+'" title="'+(isUrdu?'ڈیفالٹ پر واپس':'Reset to default')+'">↺</span>' +
+      '</div>';
+  }
+  function buildNoticeLetterheadHtml(){
+    // Show only the currently active language's heading line (not both stacked) — matches
+    // whichever language the page is toggled to (اردو/English). The notice body text itself
+    // stays fixed Urdu (a legal notice format), independent of this heading.
+    var fieldKey = isUrdu ? 'ur' : 'en';
+    var value = isUrdu ? headingUr : headingEn;
+    return '<div class="p-logo">'+PUNJAB_EMBLEM_SVG+'</div>' + printHeaderRowHtml(fieldKey, value, 'office-head');
+  }
+
+  function stampBlockHtml(side, stamp){
+    if(editingStamp === side){
+      return '<div class="p-stamp-block editing" data-side="'+side+'">' +
+        '<input type="text" class="stamp-input" data-side="'+side+'" data-field="name" value="'+escapeAttr(stamp.name)+'" placeholder="'+(isUrdu?'نام':'Name')+'">' +
+        '<input type="text" class="stamp-input" data-side="'+side+'" data-field="designation" value="'+escapeAttr(stamp.designation)+'" placeholder="'+(isUrdu?'عہدہ':'Designation')+'">' +
+        '<textarea class="stamp-input" data-side="'+side+'" data-field="address" rows="'+((stamp.address.match(/\n/g)||[]).length+1)+'" placeholder="'+(isUrdu?'دفتر کا پتہ':'Office Address')+'">'+escapeHtml(stamp.address)+'</textarea>' +
+        '<div class="p-stamp-icons">' +
+        '<span class="heading-icon stamp-save" data-side="'+side+'" title="'+(isUrdu?'محفوظ کریں':'Save')+'">✓ '+(isUrdu?'محفوظ':'Save')+'</span>' +
+        '<span class="heading-icon stamp-cancel" data-side="'+side+'" title="'+(isUrdu?'منسوخ':'Cancel')+'">✕ '+(isUrdu?'منسوخ':'Cancel')+'</span>' +
+        '</div></div>';
+    }
+    var lines = [stamp.name, stamp.designation, stamp.address].filter(function(v){ return v && v.trim(); });
+    var body = lines.length ? lines.map(function(l){ return '<div class="p-stamp-line">'+escapeHtml(l)+'</div>'; }).join('') :
+      '<div class="p-stamp-line p-stamp-empty">'+(isUrdu?'— خالی —':'— empty —')+'</div>';
+    return '<div class="p-stamp-block" data-side="'+side+'">' + body +
+      '<div class="p-stamp-icons">' +
+      '<span class="heading-icon stamp-edit" data-side="'+side+'" title="'+(isUrdu?'ترمیم':'Edit')+'">✎</span>' +
+      '<span class="heading-icon stamp-clear" data-side="'+side+'" title="'+(isUrdu?'صاف کریں':'Clear')+'">✕</span>' +
+      '</div></div>';
+  }
+  function buildSignHtml(){
+    return '<div class="p-sign">' + stampBlockHtml('left', stampLeft) + stampBlockHtml('right', stampRight) + '</div>';
+  }
+
+  function openPreview(id){
+    var n = NOTICES.find(function(x){ return x.id === id; });
+    if(!n) return;
+    currentPreviewNotice = n;
+    var html =
+      buildNoticeLetterheadHtml() +
+      '<div class="meta-row"><span class="k">'+n.type+' No.</span><span>'+n.caseNo+'/'+n.year+'&nbsp;&nbsp;&nbsp;'+n.title+' Vs '+n.versus+'</span></div>' +
+      '<div class="meta-row"><span class="k">Nature</span><span>'+n.relief+'</span></div>' +
+      '<div class="meta-row"><span class="k">FIR No.</span><span>'+n.firNo+'/'+n.firYear+'</span></div>' +
+      '<div class="meta-row"><span class="k">U/S</span><span>'+n.sections+'</span></div>' +
+      '<div class="meta-row"><span class="k">Police Station &amp; District</span><span>'+n.station+', Tehsil '+(n.tehsil||'—')+', District '+n.district+'</span></div>' +
+      '<div class="meta-row"><span class="k">Bench</span><span>'+n.bench+'&nbsp;&nbsp;&nbsp;Sr. No. of Cause List: '+(n.srNo||'—')+'</span></div>' +
+      '<div class="meta-row"><span class="k">Date</span><span>'+formatDateUr(n.date)+'</span></div>' +
+      '<hr>' +
+      '<div class="body-text">مقدمہ بالا کیس مورخہ ' + formatDateUr(n.hearing) + ' کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے پراسیکیوٹر جنرل پنجاب آفس اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔</div>' +
+      '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>' +
+      buildSignHtml();
+    document.getElementById('printArea').innerHTML = html;
+    document.getElementById('previewModal').classList.add('open');
+    var activePrintInput = document.querySelector('.print-heading-input') || document.querySelector('.stamp-input');
+    if(activePrintInput){ activePrintInput.focus(); activePrintInput.select(); }
+  }
+
+  document.getElementById('printArea').addEventListener('click', function(e){
+    if(!currentPreviewNotice) return;
+    if(e.target.classList.contains('print-edit')){
+      editingPrintField = e.target.dataset.field;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('print-reset')){
+      var rf = e.target.dataset.field;
+      if(rf === 'en'){ headingEn = DEFAULT_HEADING_EN; } else { headingUr = DEFAULT_HEADING_UR; }
+      editingPrintField = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('print-save')){
+      var inp = document.querySelector('.print-heading-input');
+      var val = inp ? inp.value.trim() : '';
+      var sf = e.target.dataset.field;
+      if(val){ if(sf === 'en'){ headingEn = val; } else { headingUr = val; } }
+      editingPrintField = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('print-cancel')){
+      editingPrintField = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('stamp-edit')){
+      editingStamp = e.target.dataset.side;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('stamp-clear')){
+      var clSide = e.target.dataset.side;
+      var clStamp = (clSide === 'left') ? stampLeft : stampRight;
+      clStamp.name = ''; clStamp.designation = ''; clStamp.address = '';
+      editingStamp = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('stamp-save')){
+      var svSide = e.target.dataset.side;
+      var svStamp = (svSide === 'left') ? stampLeft : stampRight;
+      document.querySelectorAll('.stamp-input[data-side="'+svSide+'"]').forEach(function(inp){
+        svStamp[inp.dataset.field] = inp.value.trim();
+      });
+      editingStamp = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+    if(e.target.classList.contains('stamp-cancel')){
+      editingStamp = null;
+      openPreview(currentPreviewNotice.id);
+      return;
+    }
+  });
+  document.getElementById('printArea').addEventListener('keydown', function(e){
+    if(e.target.classList.contains('stamp-input')){
+      if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){ e.preventDefault(); var ss = document.querySelector('.stamp-save'); if(ss) ss.click(); }
+      if(e.key === 'Escape'){ e.preventDefault(); var sc = document.querySelector('.stamp-cancel'); if(sc) sc.click(); }
+    }
+    if(e.target.classList.contains('print-heading-input')){
+      if(e.key === 'Escape'){ e.preventDefault(); var pc = document.querySelector('.print-cancel'); if(pc) pc.click(); }
+    }
+  });
+
+  function closePreview(){
+    editingStamp = null;
+    editingPrintField = null;
+    document.getElementById('previewModal').classList.remove('open');
+  }
+
+  function noticeFileName(n, ext){
+    var safeType = n.type.replace(/[^A-Za-z0-9]/g, '');
+    return 'Notice_' + safeType + '_' + n.caseNo + '_' + n.year + '.' + ext;
+  }
+
+  function buildNoticeShareText(n){
+    return (n.type + ' No. ' + n.caseNo + '/' + n.year + ' — ' + n.title + ' Vs ' + n.versus) + '\n' +
+      'Nature: ' + n.relief + '\n' +
+      'FIR No: ' + n.firNo + '/' + n.firYear + '\n' +
+      'Police Station: ' + n.station + ', Tehsil: ' + (n.tehsil || '—') + ', District: ' + n.district + '\n' +
+      'Bench: ' + n.bench + (n.srNo && n.srNo !== '—' ? ('  |  Sr. No. of Cause List: ' + n.srNo) : '') + '\n' +
+      'Hearing Date: ' + formatDateUr(n.hearing);
+  }
+
+  function generateNoticeCanvas(){
+    return html2canvas(document.getElementById('printArea'), { backgroundColor: '#ffffff', scale: 2 });
+  }
+
+  function downloadNoticeImage(){
+    if(!currentPreviewNotice || typeof html2canvas === 'undefined'){
+      alert(isUrdu ? 'تصویر بنانے کی سہولت لوڈ نہیں ہو سکی — انٹرنیٹ کنکشن چیک کریں' : 'Image tool failed to load — please check your internet connection');
+      return;
+    }
+    generateNoticeCanvas().then(function(canvas){
+      var link = document.createElement('a');
+      link.download = noticeFileName(currentPreviewNotice, 'png');
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }).catch(function(){
+      alert(isUrdu ? 'تصویر بنانے میں مسئلہ ہوا' : 'Could not generate the notice image');
+    });
+  }
+
+  function shareNotice(channel){
+    if(!currentPreviewNotice) return;
+    var n = currentPreviewNotice;
+    var text = buildNoticeShareText(n);
+
+    if(typeof html2canvas === 'undefined'){
+      openShareFallback(channel, text);
+      return;
+    }
+
+    generateNoticeCanvas().then(function(canvas){
+      canvas.toBlob(function(blob){
+        if(!blob){ openShareFallback(channel, text); return; }
+        var file;
+        try{ file = new File([blob], noticeFileName(n, 'png'), { type: 'image/png' }); }catch(e){ file = null; }
+
+        if(file && navigator.canShare && navigator.canShare({ files: [file] })){
+          navigator.share({ files: [file], title: (isUrdu ? 'کیس نوٹس' : 'Case Notice'), text: text }).catch(function(){ /* user cancelled — no error needed */ });
+          return;
+        }
+
+        // Fallback: download the image, then open WhatsApp/Email with the details pre-filled.
+        var link = document.createElement('a');
+        link.download = noticeFileName(n, 'png');
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        setTimeout(function(){ openShareFallback(channel, text); }, 400);
+      }, 'image/png');
+    }).catch(function(){
+      openShareFallback(channel, text);
+    });
+  }
+
+  function openShareFallback(channel, text){
+    if(channel === 'whatsapp'){
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+      alert(isUrdu ? 'نوٹس کی تصویر ڈاؤن لوڈ ہو چکی ہے — واٹس ایپ میں 📎 (Attach) بٹن سے وہ تصویر منسلک کر دیں۔' : 'The notice image has been downloaded — please attach it in WhatsApp using the 📎 attach button.');
+    } else {
+      var subject = currentPreviewNotice ? (currentPreviewNotice.type + ' Notice ' + currentPreviewNotice.caseNo + '/' + currentPreviewNotice.year) : 'Case Notice';
+      window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
+      alert(isUrdu ? 'نوٹس کی تصویر ڈاؤن لوڈ ہو چکی ہے — ای میل میں اسے attachment کے طور پر منسلک کر دیں۔' : 'The notice image has been downloaded — please attach it to your email.');
+    }
+  }
+
+  // Theme picker — 7 selectable design styles (colors, corner rounding, heading font, topbar
+  // gradient/accent), same set used across the project. Purely a CSS-variable swap (see the
+  // body[data-theme="N"] blocks above), so switching just sets one attribute on <body>.
+  var THEMES = [
+    { id:'1', nameEn:'Navy & Gold (Official)', nameUr:'نیوی و گولڈ (سرکاری)', navy:'#12203f', gold:'#c8952a' },
+    { id:'2', nameEn:'Maroon & Silver (Judicial)', nameUr:'مرون و سلور (عدالتی)', navy:'#5c1a1a', gold:'#9a9a9a' },
+    { id:'3', nameEn:'Emerald & Cream (Classic)', nameUr:'زمردی و کریم (کلاسیک)', navy:'#0f3d2e', gold:'#c9a227' },
+    { id:'4', nameEn:'Charcoal & Bronze (Modern)', nameUr:'چارکول و برونز (ماڈرن)', navy:'#2b2b2e', gold:'#b5793a' },
+    { id:'5', nameEn:'Forest & Ivory (Soft)', nameUr:'فارسٹ و آئیوری (سوفٹ)', navy:'#254d32', gold:'#d1a85c' },
+    { id:'6', nameEn:'Slate & Amber (High Contrast)', nameUr:'سلیٹ و ایمبر (ہائی کنٹراسٹ)', navy:'#1e293b', gold:'#f59e0b' },
+    { id:'7', nameEn:'Pakistan Green & Gold (National)', nameUr:'پاکستان سبز و گولڈ (قومی)', navy:'#01411c', gold:'#f4c430' }
+  ];
+  var currentTheme = '1';
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){
+    document.getElementById('themePicker').classList.toggle('open');
+  }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+    renderTable();
+    renderThemePicker();
+  }
+
+  document.getElementById('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
+  populateStaticDropdowns();
+  populateFilters();
+  renderTable();
+  renderThemePicker();
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed</div>
+</body>
+</html>

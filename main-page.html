@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Suite — Prosecutor General Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0;}
+  body{background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,Arial,sans-serif; line-height:1.5;}
+  a{text-decoration:none; color:inherit;}
+
+  /* ---------- Announcement ticker ---------- */
+  .ticker{background:var(--gold); color:var(--navy3); font-size:12.5px; font-weight:600; padding:6px 0; overflow:hidden; white-space:nowrap;}
+  .ticker span{display:inline-block; padding-left:100%; animation:scroll 22s linear infinite;}
+  @keyframes scroll{ from{transform:translateX(0);} to{transform:translateX(-100%);} }
+
+  /* ---------- Hero ---------- */
+  .hero{background:radial-gradient(1200px 500px at 50% -10%, var(--navy2), var(--navy) 60%, var(--navy3)); color:#fff; padding:34px 24px 46px; position:relative;}
+  .hero-top{max-width:1120px; margin:0 auto; display:flex; justify-content:flex-end;}
+  .lang-btn{background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.35); color:#fff; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:600; cursor:pointer; backdrop-filter:blur(2px);}
+  .lang-btn:hover{background:rgba(255,255,255,0.22);}
+  .hero-main{max-width:1120px; margin:18px auto 0; display:flex; align-items:center; gap:26px; flex-wrap:wrap;}
+
+  .crest{width:92px; height:92px; flex:none;}
+  .hero-text h1{margin:0; font-size:25px; font-weight:700; letter-spacing:.2px;}
+  .hero-text p.subtitle{margin:5px 0 0; font-size:13.5px; color:#cfd7ec; font-weight:500;}
+  .hero-text p.loc{margin:2px 0 0; font-size:11.5px; color:#a9b4d1;}
+
+  .hero-rule{max-width:1120px; margin:26px auto 0; border-top:1px solid rgba(255,255,255,.18);}
+  .hero-stats{max-width:1120px; margin:20px auto 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px;}
+  .stat{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:12px 16px;}
+  .stat .n{font-size:20px; font-weight:700; color:var(--gold-light);}
+  .stat .l{font-size:11.5px; color:#c6cee6; margin-top:2px;}
+
+  /* ---------- Main content ---------- */
+  .wrap{max-width:1120px; margin:0 auto; padding:36px 24px 20px;}
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:6px;}
+  .section-head h2{font-size:18px; margin:0; color:var(--navy);}
+  .section-head .tag{font-size:11.5px; color:var(--muted);}
+
+  .menu-list{background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .menu-row{display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--border); transition:background .12s;}
+  .menu-row:last-child{border-bottom:none;}
+  .menu-row:hover{background:#f8f6ef;}
+  .menu-ico{width:30px; font-size:17px; flex:none; text-align:center;}
+  .menu-text{flex:1;}
+  .menu-text b{font-size:13.5px; color:var(--navy); display:block;}
+  .menu-text span{font-size:11.5px; color:var(--muted);}
+  .menu-arrow{color:var(--gold-deep); font-weight:700; font-size:14px; flex:none;}
+  .menu-row.soon{opacity:.6; cursor:not-allowed;}
+  .menu-badge{background:#eee6cf; color:var(--gold-deep); font-size:10.5px; font-weight:700; padding:4px 9px; border-radius:12px; flex:none;}
+
+  .menu-list.minor .menu-row{padding:12px 18px;}
+  .minor-wrap{margin-top:20px;}
+
+  footer{margin-top:40px; border-top:1px solid var(--border); background:#eeebe2; padding:22px 24px; text-align:center;}
+  footer .off{font-size:12px; color:var(--navy); font-weight:600;}
+  footer .addr{font-size:11px; color:var(--muted); margin-top:3px;}
+  footer .cp{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  [dir="rtl"] .ticker span{animation:scrollRtl 22s linear infinite;}
+  @keyframes scrollRtl{ from{transform:translateX(0);} to{transform:translateX(100%);} }
+  body[dir="rtl"] .hero-main, body[dir="rtl"] .menu-row{direction:rtl;}
+  body[dir="rtl"] .menu-arrow{transform:scaleX(-1);}
+</style>
+</head>
+<body>
+
+  <div class="ticker" id="ticker"><span data-en="📢  Announcement: Duty Roster 35/2026 updated  •  Budget FY 2026–27 pay-slip templates now available  •  Camp Office Gallery open for staff uploads" data-ur="📢  اعلان: ڈیوٹی روسٹر 35/2026 اپڈیٹ ہو گیا  •  مالی سال 2026–27 کے پے سلپ ٹیمپلیٹس دستیاب ہیں  •  کیمپ آفس گیلری عملے کی اپ لوڈز کے لیے کھلی ہے">📢  Announcement: Duty Roster 35/2026 updated  •  Budget FY 2026–27 pay-slip templates now available  •  Camp Office Gallery open for staff uploads</span></div>
+
+  <div class="hero">
+    <div class="hero-top">
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+    </div>
+    <div class="hero-main">
+      <svg class="crest" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="47" fill="none" stroke="#e8b94f" stroke-width="2.2"/>
+        <circle cx="50" cy="50" r="40" fill="#0f1c38" stroke="#c8952a" stroke-width="1"/>
+        <path id="wheatL" d="M14 50 C14 34, 22 20, 34 12" fill="none" stroke="#e8b94f" stroke-width="2"/>
+        <path id="wheatR" d="M86 50 C86 34, 78 20, 66 12" fill="none" stroke="#e8b94f" stroke-width="2"/>
+        <g fill="#e8b94f">
+          <ellipse cx="16" cy="46" rx="3.4" ry="1.6" transform="rotate(-40 16 46)"/>
+          <ellipse cx="19" cy="38" rx="3.4" ry="1.6" transform="rotate(-25 19 38)"/>
+          <ellipse cx="24" cy="30" rx="3.4" ry="1.6" transform="rotate(-10 24 30)"/>
+          <ellipse cx="30" cy="22" rx="3.4" ry="1.6" transform="rotate(5 30 22)"/>
+          <ellipse cx="84" cy="46" rx="3.4" ry="1.6" transform="rotate(40 84 46)"/>
+          <ellipse cx="81" cy="38" rx="3.4" ry="1.6" transform="rotate(25 81 38)"/>
+          <ellipse cx="76" cy="30" rx="3.4" ry="1.6" transform="rotate(10 76 30)"/>
+          <ellipse cx="70" cy="22" rx="3.4" ry="1.6" transform="rotate(-5 70 22)"/>
+        </g>
+        <path d="M40 46 a11 11 0 1 0 15 15 a13 13 0 1 1 -15 -15 Z" fill="#e8b94f"/>
+        <path d="M63 44 l2.6 5.4 5.9 0.7 -4.3 4.1 1.1 5.9 -5.3 -2.9 -5.3 2.9 1.1 -5.9 -4.3 -4.1 5.9 -0.7 Z" fill="#e8b94f"/>
+        <path d="M20 78 Q30 72 40 78 T60 78 T80 78" fill="none" stroke="#c8952a" stroke-width="2"/>
+        <path d="M20 84 Q30 78 40 84 T60 84 T80 84" fill="none" stroke="#c8952a" stroke-width="1.4" opacity=".7"/>
+      </svg>
+      <div class="hero-text">
+        <h1 data-en="Camp Office — Prosecutor General Punjab" data-ur="کیمپ آفس — پراسیکیوٹر جنرل پنجاب">Camp Office — Prosecutor General Punjab</h1>
+        <p class="subtitle" data-en="Unified Office Systems Portal" data-ur="مشترکہ دفتری نظام پورٹل">Unified Office Systems Portal</p>
+        <p class="loc" data-en="Supreme Court of Pakistan, Islamabad" data-ur="سپریم کورٹ آف پاکستان، اسلام آباد">Supreme Court of Pakistan, Islamabad</p>
+      </div>
+    </div>
+    <div class="hero-rule"></div>
+    <div class="hero-stats">
+      <div class="stat"><div class="n">06</div><div class="l" data-en="Active systems (1 coming soon)" data-ur="فعال سسٹمز (1 آنے والا ہے)">Active systems (1 coming soon)</div></div>
+      <div class="stat"><div class="n">3</div><div class="l" data-en="Access levels" data-ur="رسائی کی سطحیں">Access levels</div></div>
+      <div class="stat"><div class="n">EN / اردو</div><div class="l" data-en="Bilingual throughout" data-ur="ہر جگہ دو زبانیں">Bilingual throughout</div></div>
+      <div class="stat"><div class="n">24/7</div><div class="l" data-en="Online access" data-ur="آن لائن رسائی">Online access</div></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section-head">
+      <h2 data-en="Office Systems" data-ur="دفتری سسٹمز">Office Systems</h2>
+      <div class="tag" data-en="Click a system to open it" data-ur="کھولنے کے لیے کسی بھی سسٹم پر کلک کریں">Click a system to open it</div>
+    </div>
+    <div class="menu-list">
+      <a class="menu-row" href="weekly-roster.html">
+        <div class="menu-ico">🗂️</div>
+        <div class="menu-text">
+          <b data-en="Weekly Court Roster" data-ur="ویکلی کورٹ روسٹر">Weekly Court Roster</b>
+          <span data-en="Duty roster, cause list, connected cases" data-ur="ڈیوٹی روسٹر، کاز لسٹ، منسلک مقدمات">Duty roster, cause list, connected cases</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+      <a class="menu-row" href="case-entry.html">
+        <div class="menu-ico">📋</div>
+        <div class="menu-text">
+          <b data-en="Daily Case Entry" data-ur="یومیہ کیس انٹری">Daily Case Entry</b>
+          <span data-en="Daily case entries, monthly progress report" data-ur="یومیہ کیس انٹری، ماہانہ پیش رفت رپورٹ">Daily case entries, monthly progress report</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+      <a class="menu-row" href="case-notice.html">
+        <div class="menu-ico">📨</div>
+        <div class="menu-text">
+          <b data-en="Case Notice System" data-ur="کیس نوٹس سسٹم">Case Notice System</b>
+          <span data-en="Cause list notices, bench &amp; serial numbering, I.O./S.H.O. dispatch" data-ur="کاز لسٹ نوٹسز، بینچ و سیریل نمبرنگ، آئی او/ایس ایچ او کو ارسال">Cause list notices, bench &amp; serial numbering, I.O./S.H.O. dispatch</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+      <a class="menu-row soon" href="#" onclick="return comingSoon(event, 'Bill Register System', 'بل رجسٹر سسٹم');">
+        <div class="menu-ico">🧾</div>
+        <div class="menu-text">
+          <b data-en="Bill Register System" data-ur="بل رجسٹر سسٹم">Bill Register System</b>
+          <span data-en="Contingent bills, cash book, stock book, ledger & budget, employee pay slips" data-ur="کنٹینجنٹ بل، کیش بک، اسٹاک بک، لیجر و بجٹ، پے سلپس">Contingent bills, cash book, stock book, ledger &amp; budget, employee pay slips</span>
+        </div>
+        <div class="menu-badge" data-en="Coming Soon" data-ur="آنے والا ہے">Coming Soon</div>
+      </a>
+      <a class="menu-row" href="gallery.html">
+        <div class="menu-ico">🖼️</div>
+        <div class="menu-text">
+          <b data-en="Camp Office Gallery" data-ur="کیمپ آفس گیلری">Camp Office Gallery</b>
+          <span data-en="Office photos with staff accounts and upload tracking" data-ur="عملے کے اکاؤنٹس اور اپ لوڈ ٹریکنگ کے ساتھ دفتری تصاویر">Office photos with staff accounts and upload tracking</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+      <a class="menu-row" href="employee-directory.html">
+        <div class="menu-ico">🗂️</div>
+        <div class="menu-text">
+          <b data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</b>
+          <span data-en="Staff records, add/edit employees, user accounts" data-ur="عملے کا ریکارڈ، ایمپلائی شامل/تبدیل کریں، یوزر اکاؤنٹس">Staff records, add/edit employees, user accounts</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+      <a class="menu-row" href="chat-system.html">
+        <div class="menu-ico">💬</div>
+        <div class="menu-text">
+          <b data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</b>
+          <span data-en="Internal team messaging, file &amp; voice notes" data-ur="اندرونی ٹیم پیغام رسانی، فائل و آواز کے نوٹس">Internal team messaging, file &amp; voice notes</span>
+        </div>
+        <div class="menu-arrow">›</div>
+      </a>
+    </div>
+
+    <div class="minor-wrap">
+      <div class="menu-list minor">
+        <a class="menu-row" href="#"><div class="menu-ico">ℹ️</div><div class="menu-text"><b data-en="About" data-ur="تعارف">About</b><span data-en="Office &amp; mandate" data-ur="دفتر اور دائرہ کار">Office &amp; mandate</span></div><div class="menu-arrow">›</div></a>
+        <a class="menu-row" href="#"><div class="menu-ico">☎️</div><div class="menu-text"><b data-en="Contact Us" data-ur="رابطہ">Contact Us</b><span data-en="Reach the office" data-ur="دفتر سے رابطہ کریں">Reach the office</span></div><div class="menu-arrow">›</div></a>
+        <a class="menu-row" href="#"><div class="menu-ico">❓</div><div class="menu-text"><b data-en="Help" data-ur="مدد">Help</b><span data-en="Guides &amp; FAQs" data-ur="رہنمائی و سوالات">Guides &amp; FAQs</span></div><div class="menu-arrow">›</div></a>
+        <a class="menu-row" href="#"><div class="menu-ico">💾</div><div class="menu-text"><b data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</b><span data-en="Data backups" data-ur="ڈیٹا بیک اپ">Data backups</span></div><div class="menu-arrow">›</div></a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="off" data-en="Camp Office Prosecutor General Punjab" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب">Camp Office Prosecutor General Punjab</div>
+    <div class="addr" data-en="Supreme Court of Pakistan, Islamabad" data-ur="سپریم کورٹ آف پاکستان، اسلام آباد">Supreme Court of Pakistan, Islamabad</div>
+    <div class="cp">© Iftikhar Ahmed</div>
+  </footer>
+
+<script>
+  var isUrdu = false;
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+  }
+
+  function comingSoon(e, nameEn, nameUr){
+    e.preventDefault();
+    alert(isUrdu ? (nameUr + ' — یہ سسٹم ابھی نئے متحدہ سسٹم میں شامل نہیں ہوا، جلد آنے والا ہے۔') : (nameEn + ' — not yet part of the new unified system. Coming soon.'));
+    return false;
+  }
+</script>
+</body>
+</html>

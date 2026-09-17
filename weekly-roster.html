@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Court Roster — Camp Office PG Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar). Theme 1 (Official
+     Navy & Gold) is the default set in :root above; the rest override the same tokens so every
+     existing rule that already reads var(--navy)/var(--gold)/etc. re-colors and re-shapes itself
+     automatically, with no separate per-theme markup needed. */
+  body[data-theme="2"]{ /* Maroon & Silver — Judicial Formal */
+    --navy:#5c1a1a; --navy2:#7a2727; --navy3:#3d1010;
+    --gold:#9a9a9a; --gold-light:#c2c2c2; --gold-deep:#707070;
+    --bg:#f5f1ee; --card:#ffffff; --border:#e6dedb; --text:#241a1a; --muted:#6b5f5f;
+    --radius-lg:4px; --radius-sm:3px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:180deg;
+  }
+  body[data-theme="3"]{ /* Emerald & Cream — Classic Government */
+    --navy:#0f3d2e; --navy2:#155c46; --navy3:#0a2b20;
+    --gold:#c9a227; --gold-light:#e0bf55; --gold-deep:#96791b;
+    --bg:#f6f3ea; --card:#fffdf7; --border:#e3ddc8; --text:#1c2620; --muted:#5e6b62;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+  }
+  body[data-theme="4"]{ /* Charcoal & Bronze — Modern Minimal */
+    --navy:#2b2b2e; --navy2:#3d3d40; --navy3:#1a1a1c;
+    --gold:#b5793a; --gold-light:#d59a5e; --gold-deep:#8a5a26;
+    --bg:#f4f4f2; --card:#ffffff; --border:#e2e2e0; --text:#222224; --muted:#7a7a7c;
+    --radius-lg:16px; --radius-sm:10px; --font-head:"Trebuchet MS",Verdana,sans-serif;
+    --topbar-grad-angle:135deg;
+  }
+  body[data-theme="5"]{ /* Forest & Ivory — Soft Professional */
+    --navy:#254d32; --navy2:#356b45; --navy3:#173322;
+    --gold:#d1a85c; --gold-light:#e6c688; --gold-deep:#a3813f;
+    --bg:#f8f5ec; --card:#fffdf9; --border:#e8e0cd; --text:#20291f; --muted:#6c7566;
+    --radius-lg:12px; --radius-sm:8px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:145deg;
+  }
+  body[data-theme="6"]{ /* Slate & Amber — High Contrast */
+    --navy:#1e293b; --navy2:#334155; --navy3:#0f172a;
+    --gold:#f59e0b; --gold-light:#fbbf24; --gold-deep:#b45309;
+    --bg:#eef1f5; --card:#ffffff; --border:#94a3b8; --text:#0f172a; --muted:#475569;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:100deg;
+  }
+  body[data-theme="7"]{ /* Pakistan Green & Gold — National */
+    --navy:#01411c; --navy2:#046a2e; --navy3:#022e14;
+    --gold:#f4c430; --gold-light:#ffe08a; --gold-deep:#c9960a;
+    --bg:#f2f7f0; --card:#ffffff; --border:#d9e6d3; --text:#132316; --muted:#5b6b5c;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:4px; --accent-stripe-color:var(--gold);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:30px; height:30px; flex-shrink:0; display:inline-flex;}
+  .brand-logo svg{width:100%; height:100%; display:block;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+  #pageHeadingBox{display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  #pageHeadingBox .heading-icon{cursor:pointer; color:var(--gold); font-weight:700; font-size:12px; opacity:.85;}
+  #pageHeadingBox .heading-icon:hover{opacity:1;}
+  #pageHeadingBox .page-heading-text{white-space:pre-line; line-height:1.35;}
+  #pageHeadingBox input, #pageHeadingBox textarea{font-size:13px; font-weight:600; padding:3px 6px; border-radius:5px; border:1px solid var(--gold); color:var(--navy); min-width:280px; font-family:inherit;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .wrap{max-width:1200px; margin:0 auto; padding:22px 20px 60px;}
+
+  .assumption-note{background:#fdf0e0; border-left:3px solid #c46a1c; border-radius:0 8px 8px 0; padding:12px 16px; margin-bottom:20px; font-size:12px; color:#5a3d1a;}
+  [dir="rtl"] .assumption-note{border-left:none; border-right:3px solid #c46a1c; border-radius:8px 0 0 8px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.gold{background:var(--gold); color:var(--navy3); border-color:var(--gold-deep);}
+  .btn.gold:hover{background:var(--gold-light);}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:560px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  /* Bench tabs — one bench at a time, so the page stays short */
+  .bench-tabs{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px;}
+  .bench-tab{padding:7px 14px; border:1px solid var(--border); border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:var(--navy);}
+  .bench-tab.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+
+  .bench-legend-row{border:1px solid var(--border); border-radius:var(--radius-lg); padding:12px 14px; background:#fbfbf9;}
+  .bench-legend-row .bl-name{font-weight:700; color:var(--navy); font-size:13.5px; margin-bottom:8px;}
+  .bl-grid{display:grid; grid-template-columns:2fr 1fr; gap:16px; align-items:start;}
+  @media (max-width:640px){ .bl-grid{grid-template-columns:1fr;} }
+  .bl-sub-lbl{font-size:10.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.3px; margin-bottom:5px;}
+  .officer-select{width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; background:#fff;}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.roster-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:1050px;}
+  table.roster-table th{background:var(--navy); color:#fff; text-align:center; padding:9px 8px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.roster-table td{padding:8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); vertical-align:top;}
+  table.roster-table tr:last-child td{border-bottom:none;}
+  td.day-cell{min-width:175px;}
+  .row-del-bench{cursor:pointer; color:#a33a3a; font-weight:700; font-size:11px; float:right;}
+  [dir="rtl"] .row-del-bench{float:left;}
+
+  .chip-list{display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px;}
+  .chip{background:#eef1f8; color:var(--navy); border:1px solid var(--border); border-radius:12px; padding:2px 6px 2px 9px; font-size:10px; display:inline-flex; align-items:center; gap:4px; line-height:1.5; white-space:pre-line;}
+  .chip.small{font-size:9.5px; padding:1px 5px 1px 8px;}
+  .chip .chip-x{cursor:pointer; color:#a33a3a; font-weight:700; font-size:10px;}
+  /* Each Sr.No. entry for the day gets its own clearly bordered block, stacked one under another
+     (like separate cells/blocks in an Excel sheet), instead of chips wrapping side by side. */
+  .case-chip-list{display:flex; flex-direction:column; gap:6px; margin-bottom:5px;}
+  .case-chip-list .chip.small{display:flex; align-items:flex-start; justify-content:space-between; gap:6px; width:100%; border-radius:6px; padding:5px 8px; box-sizing:border-box;}
+  .case-chip-list .chip.small .chip-x{flex-shrink:0; margin-top:1px;}
+  .add-judge-select{width:100%; font-size:11px; padding:5px 6px; border:1px solid var(--border); border-radius:5px; background:#fff; margin-top:2px; color:var(--muted);}
+  /* Exception-note list: each note is its own row with edit (✎) / delete (✕), same add-edit-delete
+     pattern as the Judges chips and connected-case blocks elsewhere on the page. */
+  .judges-notes-list{display:flex; flex-direction:column; gap:4px; margin-top:6px;}
+  .judges-note-row{display:flex; align-items:flex-start; gap:5px; padding:4px 6px; border:1px solid #e0bcbc; border-radius:5px; background:#fdf2f2;}
+  .judges-note-row .jn-text{flex:1; font-size:10.5px; color:#a33a3a;}
+  .judges-note-row .jn-edit{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; flex-shrink:0;}
+  .judges-note-row .jn-del{cursor:pointer; color:#a33a3a; font-weight:700; font-size:10px; flex-shrink:0;}
+  .judges-note-row.editing{background:#fff; border-color:var(--border); padding:0;}
+  .jn-edit-input{width:100%; font-size:10.5px; padding:5px 6px; border:1px solid var(--gold-deep); border-radius:5px; background:#fff;}
+  .jn-add-btn{margin-top:4px; font-size:10px !important; padding:3px 8px !important; display:inline-block; width:auto;}
+
+  .case-add-form{margin-top:4px; padding:5px; border:1px dashed var(--border); border-radius:6px; background:#fbfbf9;}
+  .case-add-form select, .case-add-form input{display:block; font-size:10px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; background:#fff; width:100%; margin-bottom:3px;}
+  /* When Case Type / Nature of Case is focused, it expands into a full inline list (instead of the
+     device's own popup) so every option is guaranteed visible — some phones/embedded browsers only
+     show a few options in the native popup. */
+  .case-type-select.expanded-select, .case-nature-select.expanded-select{position:relative; z-index:20; height:auto; max-height:160px; overflow-y:auto; box-shadow:0 4px 10px rgba(0,0,0,.18); border-color:var(--gold-deep);}
+  .case-add-btn, .case-addrow-btn{font-size:9.5px !important; padding:3px 0 !important; text-align:center; width:100%;}
+  .case-addrow-btn{margin-bottom:5px; color:var(--gold-deep);}
+  .case-number-rows{display:flex; flex-direction:column; gap:4px;}
+  .case-number-row{position:relative; padding:5px 16px 3px 4px; border:1px solid var(--border); border-radius:5px; background:#fff;}
+  [dir="rtl"] .case-number-row{padding:5px 4px 3px 16px;}
+  .case-number-row select, .case-number-row input{margin-bottom:3px;}
+  .case-number-row .mini-label{font-size:9px; color:var(--muted); margin-bottom:2px;}
+  .case-row-del{position:absolute; top:3px; right:4px; cursor:pointer; color:#a33a3a; font-weight:700; font-size:10px;}
+  [dir="rtl"] .case-row-del{right:auto; left:4px;}
+  /* A "done" case-number-row collapses into one compact summary line */
+  .case-number-row.closed{display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding:5px 24px 5px 8px; background:#f3f1ea;}
+  [dir="rtl"] .case-number-row.closed{padding:5px 8px 5px 24px;}
+  .case-row-summary{font-size:10.5px; color:var(--navy); font-weight:700;}
+  .case-row-edit{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px;}
+  .case-number-row.closed .case-row-del{top:5px;}
+
+  .print-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:30px 34px; font-size:13px;}
+  .print-sheet .p-head{font-weight:700; font-size:15px; white-space:pre-line; line-height:1.4;}
+  .print-sheet .p-sub{font-size:12px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* The letterhead lines double as an inline editor (✎ edit / ↺ reset) right on the print sheet. */
+  .print-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .print-sheet .p-head-row{margin-bottom:16px;}
+  .print-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .print-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .print-sheet .p-sub-row{margin-bottom:16px;}
+  .print-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .print-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .print-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:260px; font-family:inherit; text-align:center;}
+  .print-sheet .p-week{display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; font-weight:600;}
+  .print-sheet table{width:100%; border-collapse:collapse; font-size:11.5px;}
+  .print-sheet th{background:var(--navy); color:#fff; padding:6px; font-size:10.5px;}
+  .print-sheet td{padding:6px; border:1px solid var(--border); vertical-align:top;}
+  .print-sheet .p-sign{display:flex; justify-content:space-between; align-items:flex-start; margin-top:24px; font-size:12.5px; gap:16px;}
+  /* Sign-off stamps: left = prepared by, right = approved by. Each is a small editable
+     Name/Designation/Office-Address block (✎ edit, ✕ clear). */
+  .print-sheet .p-stamp-block{flex:1; min-width:0;}
+  .print-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  [dir="rtl"] .print-sheet .p-stamp-block[data-side="right"]{text-align:left;}
+  .print-sheet .p-stamp-line{font-size:11.5px; color:var(--navy); line-height:1.5; white-space:pre-line;}
+  .print-sheet .p-stamp-line:first-child{font-weight:700;}
+  .print-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .print-sheet .p-stamp-icons{margin-top:4px;}
+  .print-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
+  .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+  /* Each Sr.No. entry in the print/preview sheet gets its own separated block, same as the on-screen
+     grid, so multiple cases on the same day don't run together into one line. */
+  .print-sheet .p-case-block{color:#1c3363; font-size:10px; padding-bottom:3px; margin-bottom:3px; border-bottom:1px dashed #d8d3c4;}
+  .print-sheet .p-case-block:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+  .print-sheet .p-note-line{color:#a33a3a; font-size:10px; display:block;}
+  /* "All Benches" print mode puts each bench in its own .p-page and forces a page break after it
+     (except the last one), so each bench prints on a separate sheet of paper. On screen, a dashed
+     divider marks where one printed page ends and the next begins. */
+  .print-sheet .p-page-break{padding-bottom:20px; margin-bottom:20px; border-bottom:2px dashed #c9c2a8;}
+  .print-sheet .p-page-break{page-break-after:always; break-after:page;}
+
+  .saved-report-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; font-size:12.5px; flex-wrap:wrap;}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  [dir="rtl"] table.roster-table th, [dir="rtl"] table.roster-table td{text-align:right;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #rosterPrintArea, #rosterPrintArea *{visibility:visible;}
+    #rosterPrintArea{position:absolute; top:0; left:0; width:100%;}
+    #rosterPrintArea .heading-icon{display:none;}
+    #rosterPrintArea .p-page-break{border-bottom:none; padding-bottom:0; margin-bottom:0;}
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span id="pageHeadingBox"></span></div>
+    <div class="right-controls">
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="assumption-note" data-en="Note: This is a SAMPLE to check the idea, seeded from the Cause List 35 PDF you sent (week of 07–11 Sep 2026 — Bench I, II, III and Shariat Appellate Bench II). The 'Judges on Bench' text is only a reference note taken from that PDF — please double check/correct it. One Court/Bench is shown at a time below (use the tabs) to keep the page short; Officer is set once for the whole week." data-ur="نوٹ: یہ صرف آئیڈیا چیک کرنے کے لیے ایک نمونہ (SAMPLE) ہے، آپ کی بھیجی ہوئی Cause List 35 پی ڈی ایف سے بنایا ہے (ہفتہ 07–11 ستمبر 2026 — بینچ I، II، III اور شریعت اپیلٹ بینچ II)۔ 'Judges on Bench' والا متن صرف حوالے کے لیے ہے — براہ کرم چیک/درست کر لیں۔ نیچے ایک وقت میں صرف ایک کورٹ/بینچ دکھائی جاتی ہے (ٹیبز سے بدلیں) تاکہ پیج چھوٹی رہے؛ آفیسر پورے ہفتے کے لیے ایک ہی بار سیٹ ہوتا ہے۔">Note: This is a SAMPLE to check the idea, seeded from the Cause List 35 PDF you sent (week of 07–11 Sep 2026 — Bench I, II, III and Shariat Appellate Bench II). The 'Judges on Bench' text is only a reference note taken from that PDF — please double check/correct it. One Court/Bench is shown at a time below (use the tabs) to keep the page short; Officer is set once for the whole week.</div>
+
+    <div class="search-box">
+      <div class="lbl" data-en="Select Week" data-ur="ہفتہ منتخب کریں">Select Week</div>
+      <div class="search-grid">
+        <div class="field"><label data-en="Week Starting (Monday)" data-ur="ہفتہ شروع (پیر)">Week Starting (Monday)</label><input type="date" id="weekStart" value="2026-09-07"></div>
+        <div class="field" style="display:flex; align-items:flex-end;"><div class="btn primary" onclick="buildWeek()" data-en="Build This Week's Grid" data-ur="اس ہفتے کا گرڈ بنائیں">Build This Week's Grid</div></div>
+        <div class="field" style="display:flex; align-items:flex-end;"><div class="btn ghost" onclick="openSavedRosters()" data-en="📁 Saved Rosters" data-ur="📁 محفوظ شدہ روسٹرز">📁 Saved Rosters</div></div>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+        <div class="lbl" style="margin:0;" data-en="Court / Bench (one at a time)" data-ur="عدالت / بینچ (ایک وقت میں ایک)">Court / Bench (one at a time)</div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <div class="btn ghost" onclick="addBenchRow()" data-en="+ Add Court/Bench" data-ur="+ نئی عدالت/بینچ شامل کریں">+ Add Court/Bench</div>
+          <span class="manage-link" onclick="openListManage('officer')" data-en="(+ Add/Edit Officers)" data-ur="(+ آفیسرز شامل/ترمیم)">(+ Add/Edit Officers)</span>
+          <span class="manage-link" onclick="openListManage('judges')" data-en="(+ Add/Edit Judges)" data-ur="(+ ججز شامل/ترمیم)">(+ Add/Edit Judges)</span>
+        </div>
+      </div>
+      <div id="benchTabs" class="bench-tabs"></div>
+      <div id="benchLegendList"></div>
+    </div>
+
+    <div class="search-box">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+        <div class="lbl" style="margin:0;" data-en="Weekly Grid — Notes &amp; Connected Cases" data-ur="ہفتہ وار گرڈ — نوٹس اور متعلقہ کیسز">Weekly Grid — Notes &amp; Connected Cases</div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <span class="manage-link" onclick="openListManage('rosteryear')" data-en="(+ Years)" data-ur="(+ سال)">(+ Years)</span>
+          <span class="manage-link" onclick="openListManage('nature')" data-en="(+ Nature Codes)" data-ur="(+ کیس کی نوعیت کوڈز)">(+ Nature Codes)</span>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="roster-table" id="rosterTable"></table>
+      </div>
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="btn gold" onclick="saveCurrentRoster()" data-en="💾 Save This Week's Roster" data-ur="💾 اس ہفتے کا روسٹر محفوظ کریں">💾 Save This Week's Roster</div>
+        <div class="btn ghost" onclick="printCurrentRoster('active')" data-en="🖨️ Print / Preview (This Bench Only)" data-ur="🖨️ پرنٹ / پیش منظر (صرف یہ بینچ)">🖨️ Print / Preview (This Bench Only)</div>
+        <div class="btn ghost" onclick="printCurrentRoster('all')" data-en="🖨️ Print / Preview (All Benches — each on its own page)" data-ur="🖨️ پرنٹ / پیش منظر (تمام بینچز — ہر ایک الگ صفحے پر)">🖨️ Print / Preview (All Benches — each on its own page)</div>
+      </div>
+      <div class="disclaimer" data-en="This saves to this page's list only, for review — it is not yet saved to a live database." data-ur="یہ صرف اس صفحے کی فہرست میں محفوظ ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔">This saves to this page's list only, for review — it is not yet saved to a live database.</div>
+    </div>
+
+  </div>
+
+  <!-- Manage dropdown options -->
+  <div class="modal-overlay" id="listManageModal">
+    <div class="modal-panel" style="max-width:440px;">
+      <div class="modal-close"><span onclick="closeListManage()">✕</span></div>
+      <div class="search-box">
+        <div class="lbl" id="listManageTitle">Manage Options</div>
+        <div id="listManageItems" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;"></div>
+        <div style="margin-top:10px;">
+          <div class="btn ghost" onclick="addListManageRow()" data-en="+ Add New" data-ur="+ نیا شامل کریں">+ Add New</div>
+        </div>
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
+          <div class="btn primary" onclick="saveListManage()" data-en="Save" data-ur="محفوظ کریں">Save</div>
+          <div class="btn ghost" onclick="closeListManage()" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Rosters Modal -->
+  <div class="modal-overlay" id="savedRostersModal">
+    <div class="modal-panel" style="max-width:560px;">
+      <div class="modal-close"><span onclick="closeSavedRosters()">✕</span></div>
+      <div class="search-box">
+        <div class="lbl" data-en="Saved Weekly Rosters" data-ur="محفوظ شدہ ہفتہ وار روسٹرز">Saved Weekly Rosters</div>
+        <div id="savedRostersList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print / Preview Modal -->
+  <div class="modal-overlay" id="rosterPrintModal">
+    <div class="modal-panel" style="max-width:900px;">
+      <div class="modal-close"><span onclick="closeRosterPrint()">✕</span></div>
+      <div style="padding:0 20px 20px;">
+        <div id="rosterPrintArea" class="print-sheet"></div>
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
+          <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
+          <div class="btn ghost" onclick="closeRosterPrint()" data-en="Close" data-ur="بند کریں">Close</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var isUrdu = false;
+  var PUNJAB_EMBLEM_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="var(--navy)" stroke="var(--gold)" stroke-width="2.2"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="0.6" opacity="0.55"/><circle cx="43" cy="27" r="8.5" fill="var(--gold-light)"/><circle cx="46.3" cy="24.3" r="7" fill="var(--navy)"/><g transform="translate(58,22) scale(0.62)"><path d="M0,-8 L2.3,-2.6 L8,-2.5 L3.4,1.2 L5,7 L0,3.6 L-5,7 L-3.4,1.2 L-8,-2.5 L-2.3,-2.6 Z" fill="var(--gold-light)"/></g><path d="M27,42 Q32.5,37.5 38,42 T49,42 T60,42 T71,42 T73,42" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,47 Q32.5,42.5 38,47 T49,47 T60,47 T71,47 T73,47" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,52 Q32.5,47.5 38,52 T49,52 T60,52 T71,52 T73,52" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,57 Q32.5,52.5 38,57 T49,57 T60,57 T71,57 T73,57" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="1"/><path d="M27,62 Q32.5,57.5 38,62 T49,62 T60,62 T71,62 T73,62" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/><path d="M63.16,93.03 Q67.40,84.90 59.23,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M63.98,91.14 Q64.62,90.98 65.43,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.98,91.14 Q63.54,90.64 63.27,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q65.15,88.60 65.85,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q63.94,88.47 63.44,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q65.20,86.15 65.75,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q63.91,86.27 63.17,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q64.78,83.65 65.13,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q63.46,84.02 62.48,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q63.89,81.10 64.03,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q62.56,81.71 61.39,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q62.53,78.52 62.48,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q61.23,79.34 59.87,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q75.07,79.88 69.75,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M65.86,89.79 Q66.52,89.85 67.52,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M65.86,89.79 Q65.61,89.17 65.70,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q68.86,86.35 69.89,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q67.81,85.74 67.78,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q70.58,82.88 71.58,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q69.38,82.41 69.18,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q71.67,79.45 72.58,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q70.33,79.16 69.90,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q72.11,76.04 72.87,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q70.66,76.01 69.96,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q71.90,72.68 72.43,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q70.39,72.94 69.40,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q80.94,73.74 75.68,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M67.33,88.16 Q67.99,88.24 69.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M67.33,88.16 Q67.10,87.54 67.22,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q71.60,83.21 72.65,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q70.57,82.57 70.60,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q74.37,78.31 75.42,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q73.20,77.75 73.09,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q76.31,73.52 77.31,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q74.99,73.11 74.68,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q77.39,68.84 78.27,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q75.95,68.65 75.39,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q77.61,64.27 78.30,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q76.08,64.35 75.24,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q32.60,84.90 40.77,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M36.02,91.14 Q36.46,90.64 36.73,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.02,91.14 Q35.38,90.98 34.57,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q36.06,88.47 36.56,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q34.85,88.60 34.15,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q36.09,86.27 36.83,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q34.80,86.15 34.25,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q36.54,84.02 37.52,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q35.22,83.65 34.87,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q37.44,81.71 38.61,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q36.11,81.10 35.97,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q38.77,79.34 40.13,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q37.47,78.52 37.52,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q24.93,79.88 30.25,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M34.14,89.79 Q34.39,89.17 34.30,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M34.14,89.79 Q33.48,89.85 32.48,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q32.19,85.74 32.22,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q31.14,86.35 30.11,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q30.62,82.41 30.82,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q29.42,82.88 28.42,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q29.67,79.16 30.10,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q28.33,79.45 27.42,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q29.34,76.01 30.04,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q27.89,76.04 27.13,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q29.61,72.94 30.60,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q28.10,72.68 27.57,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q19.06,73.74 24.32,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M32.67,88.16 Q32.90,87.54 32.78,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M32.67,88.16 Q32.01,88.24 31.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q29.43,82.57 29.40,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q28.40,83.21 27.35,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q26.80,77.75 26.91,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q25.63,78.31 24.58,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q25.01,73.11 25.32,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q23.69,73.52 22.69,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q24.05,68.65 24.61,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q22.61,68.84 21.73,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q23.92,64.35 24.76,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q22.39,64.27 21.70,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M45,84 Q50,80.5 55,84 Q52,87 50,90.5 Q48,87 45,84 Z" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="0.5"/><text x="50" y="73" font-size="8.5" fill="var(--gold-light)" text-anchor="middle">حکومتِ پنجاب</text></svg>';
+  var activeBenchIndex = 0;
+
+  // Officer (APG/DPG) — same starter list used in the Case Entry / Monthly Progress Report module,
+  // kept as its own list here since this is a standalone sample (no live database linking the files yet).
+  var OFFICERS = [
+    'Tariq Siddique — APG', 'Ahmad Raza Gilani — APG', 'Rai Akhtar Hussain — APG',
+    'M. Irfan Zia — DPG', 'Ms. Memoona Ehsan Ul Haq — DPG', 'Sajjad Hussain — DPG', 'Mirza Abid Majeed — DPG'
+  ];
+
+  var DAYS_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  var DAYS_UR = ['پیر','منگل','بدھ','جمعرات','جمعہ'];
+
+  // Judges list — starter names taken from Cause List 35. Manage/add-edit via the (+ Add/Edit Judges) link.
+  var JUDGES = [
+    'Justice Yahya Afridi, HCJ', 'Justice Malik Shahzad Ahmad Khan', 'Justice Miangul Hassan Aurangzeb',
+    'Justice Jamal Khan Mandokhail', 'Justice Munib Akhtar', 'Justice Shahid Waheed',
+    'Justice Naeem Akhter Afghan', 'Justice Muhammad Hashim Khan Kakar',
+    'Dr. Khalid Masud (Ad-hoc Member)', 'Dr. Qibla Ayaz (Ad-hoc Member)'
+  ];
+
+  // Connected Case: each case number is its own block — [Case Type button] + [No. — typed manually] /
+  // [Year dropdown] + [Nature of Case button, its own per case number]. Fill one, it "closes" into a
+  // one-line summary, then "+ Connected Case No." opens a fresh block for the next one (2nd, 3rd, ...).
+  // These lists are each a STARTER/sample list — manage/add-edit them via the links above.
+  var CASE_TYPES2 = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','J.P.','Review Petition','C.P.','Other'];
+
+  function rosterYearRange(){
+    var years = [];
+    var current = new Date().getFullYear();
+    for(var y = current + 1; y >= 2006; y--) years.push(String(y));
+    return years;
+  }
+  var ROSTER_YEARS = rosterYearRange();
+
+  // Nature-of-Case short codes — starter set matching the office's Relief Sought terms (e.g. BBA = Bail
+  // Before Arrest, BAA = Bail After Arrest, COB = Cancellation of Bail, LI = Life Imprisonment). Add/edit
+  // via (+ Nature Codes).
+  var NATURE_CODES = ['BBA', 'BAA', 'COB', 'IB', 'GOB', 'SOS', 'LI', 'EOS', 'ACQ', 'Other'];
+
+  var LIST_CONFIGS = {
+    officer: { arr: OFFICERS, titleEn: 'Manage Officers (APG/DPG)', titleUr: 'آفیسرز (اے پی جی/ڈی پی جی) کا انتظام' },
+    judges: { arr: JUDGES, titleEn: 'Manage Judges', titleUr: 'ججز کا انتظام' },
+    rosteryear: { arr: ROSTER_YEARS, titleEn: 'Manage Years', titleUr: 'سالوں کا انتظام' },
+    nature: { arr: NATURE_CODES, titleEn: 'Manage Nature-of-Case Codes', titleUr: 'کیس کی نوعیت کے کوڈز کا انتظام' }
+  };
+
+  // Seeded from Cause List 35 (week of 07–11 Sep 2026) — Bench names + a best-effort "judges on bench"
+  // list, split into: judgesList = the main composition (Mon–Thu unless noted), judgesNotes = a list of
+  // free-text exceptions for any mid-week change(s) — each one addable/editable/deletable on its own
+  // (please verify/correct).
+  var BENCHES = [
+    { id: 1, name: 'Bench - I',
+      judgesList: ['Justice Yahya Afridi, HCJ', 'Justice Malik Shahzad Ahmad Khan', 'Justice Miangul Hassan Aurangzeb'],
+      judgesNotes: ['Fri: Justice Jamal Khan Mandokhail; Justice Malik Shahzad Ahmad Khan'] },
+    { id: 2, name: 'Bench - II',
+      judgesList: ['Justice Munib Akhtar', 'Justice Jamal Khan Mandokhail'],
+      judgesNotes: ['From Thu: Justice Shahid Waheed; Justice Naeem Akhter Afghan; Justice Muhammad Hashim Khan Kakar'] },
+    { id: 3, name: 'Bench - III',
+      judgesList: ['Justice Naeem Akhter Afghan', 'Justice Muhammad Hashim Khan Kakar'],
+      judgesNotes: ['Wed: adds Justice Shahid Waheed'] },
+    { id: 4, name: 'Shariat Appellate Bench - II',
+      judgesList: ['Justice Jamal Khan Mandokhail', 'Justice Shahid Waheed', 'Justice Malik Shahzad Ahmad Khan', 'Dr. Khalid Masud (Ad-hoc Member)', 'Dr. Qibla Ayaz (Ad-hoc Member)'],
+      judgesNotes: ['Sits after 11:00 am'] }
+  ];
+  var nextBenchId = 5;
+
+  var SAVED_ROSTERS = [];
+  var nextRosterId = 1;
+  // { weekStart, dates:[...5], benches: [{id,name,judgesList,judgesNotes,officer, days:[{note,cases:[]}x5]}] }
+  var currentRoster = null;
+
+  function fillSelect(sel, options, withBlank, selected){
+    sel.innerHTML = withBlank ? '<option value="">—</option>' : '';
+    options.forEach(function(o){
+      sel.innerHTML += '<option value="'+o+'"'+(o===selected?' selected':'')+'>'+o+'</option>';
+    });
+  }
+
+  function escapeAttr(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatDate(d){
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return String(d.getDate()).padStart(2,'0') + '-' + months[d.getMonth()] + '-' + d.getFullYear();
+  }
+
+  function weekDatesFrom(mondayStr){
+    var start = new Date(mondayStr + 'T00:00:00');
+    var dates = [];
+    for(var i = 0; i < 5; i++){
+      var d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
+  }
+
+  function buildWeek(){
+    var weekStart = document.getElementById('weekStart').value;
+    if(!weekStart){ alert(isUrdu ? 'پہلے ہفتہ منتخب کریں' : 'Please pick a week first'); return; }
+    var dates = weekDatesFrom(weekStart);
+
+    // Preserve existing note/case assignments and the Officer-for-the-week if a roster is already built
+    // and the bench still exists.
+    var prevByBench = {};
+    var prevOfficerByBench = {};
+    if(currentRoster){
+      currentRoster.benches.forEach(function(b){
+        prevByBench[b.name] = b.days;
+        prevOfficerByBench[b.name] = b.officer;
+      });
+    }
+
+    var benches = BENCHES.map(function(b){
+      var days = [];
+      for(var i = 0; i < 5; i++){
+        var prev = prevByBench[b.name] && prevByBench[b.name][i];
+        days.push({
+          cases: prev && prev.cases ? prev.cases.slice() : []
+        });
+      }
+      // judgesList/judgesNotes come fresh from BENCHES (the master list) each time, so an edit you make
+      // to a bench's judges is saved to the bench itself and carries over next time you build a week.
+      // Officer is per-week (shown once for the whole week, not synced to the master bench).
+      return {
+        id: b.id, name: b.name,
+        judgesList: b.judgesList.slice(), judgesNotes: (b.judgesNotes || []).slice(),
+        officer: prevOfficerByBench[b.name] || '',
+        days: days
+      };
+    });
+
+    currentRoster = { weekStart: weekStart, dates: dates.map(formatDate), benches: benches };
+    renderAll(currentRoster);
+  }
+
+  function dayHeadName(i){ return isUrdu ? DAYS_UR[i] : DAYS_EN[i]; }
+
+  // One Type/No./Year/Nature block for the case-add mini-form (a fresh, editable "open" block).
+  // A Sr. No. can have more than one case number "connected" with it (e.g. a main petition plus a
+  // Crl.M.A./J.P. filed with it), each with its OWN Case Type + No. + Year + Nature.
+  function openCaseRowHtml(prefill){
+    prefill = prefill || {};
+    var html = '<div class="case-number-row">' +
+      '<span class="case-row-del" title="'+(isUrdu?'یہ کیس نمبر ہٹائیں':'Remove this case number')+'">✕</span>' +
+      '<select class="case-type-select"><option value="">'+(isUrdu?'کیس کی قسم':'Case Type')+'</option>' +
+      CASE_TYPES2.map(function(t){ return '<option value="'+escapeAttr(t)+'"'+(t===prefill.type?' selected':'')+'>'+t+'</option>'; }).join('') +
+      '</select>' +
+      '<input type="text" class="case-no-input" value="'+escapeAttr(prefill.no||'')+'" placeholder="'+(isUrdu?'کیس نمبر':'Case No.')+'">' +
+      '<select class="case-year-select"><option value="">'+(isUrdu?'سال':'Year')+'</option>' +
+      ROSTER_YEARS.map(function(y){ return '<option value="'+y+'"'+(y===prefill.year?' selected':'')+'>'+y+'</option>'; }).join('') +
+      '</select>' +
+      '<select class="case-nature-select"><option value="">'+(isUrdu?'کیس کی نوعیت':'Nature of Case')+'</option>' +
+      NATURE_CODES.map(function(n){ return '<option value="'+escapeAttr(n)+'"'+(n===prefill.nature?' selected':'')+'>'+n+'</option>'; }).join('') +
+      '</select>' +
+      '</div>';
+    return html;
+  }
+
+  function closedCaseRowHtml(summary){
+    return '<span class="case-row-summary">'+escapeHtml(summary)+'</span>' +
+      '<span class="case-row-edit" title="'+(isUrdu?'ترمیم کریں':'Edit')+'">✎</span>' +
+      '<span class="case-row-del" title="'+(isUrdu?'یہ کیس نمبر ہٹائیں':'Remove this case number')+'">✕</span>';
+  }
+
+  // Closes any still-open (editable) row inside this container into a compact summary. A completely
+  // blank open row is simply dropped. Returns false (and leaves things as-is) if any open row has some
+  // fields filled but not all — the caller should alert and not proceed in that case.
+  function tryCloseOpenRows(container){
+    var openRows = container.querySelectorAll('.case-number-row:not(.closed)');
+    var ok = true;
+    Array.prototype.forEach.call(openRows, function(row){
+      var t = row.querySelector('.case-type-select').value;
+      var n = row.querySelector('.case-no-input').value.trim();
+      var y = row.querySelector('.case-year-select').value;
+      var nat = row.querySelector('.case-nature-select').value;
+      if(!t && !n && !y){ row.remove(); return; }
+      if(!t || !n || !y){ ok = false; return; }
+      row.dataset.type = t; row.dataset.no = n; row.dataset.year = y; row.dataset.nature = nat || '';
+      row.classList.add('closed');
+      var summary = t + n + '/' + y + (nat ? ' (' + nat + ')' : '');
+      row.innerHTML = closedCaseRowHtml(summary);
+    });
+    return ok;
+  }
+
+  function syncBenchToMaster(bi){
+    if(!currentRoster) return;
+    var b = currentRoster.benches[bi];
+    var master = BENCHES.find(function(x){ return x.id === b.id; });
+    if(master){ master.judgesList = b.judgesList.slice(); master.judgesNotes = (b.judgesNotes || []).slice(); }
+  }
+
+  function renderAll(r){
+    renderBenchTabs(r);
+    renderBenchLegend(r);
+    renderRosterTable(r);
+  }
+
+  function renderBenchTabs(r){
+    var box = document.getElementById('benchTabs');
+    if(activeBenchIndex >= r.benches.length) activeBenchIndex = Math.max(0, r.benches.length - 1);
+    var html = '';
+    r.benches.forEach(function(b, bi){
+      html += '<span class="bench-tab'+(bi===activeBenchIndex?' active':'')+'" data-bi="'+bi+'">'+escapeHtml(b.name)+'</span>';
+    });
+    box.innerHTML = html;
+  }
+  document.getElementById('benchTabs').addEventListener('click', function(e){
+    if(!currentRoster || !e.target.classList.contains('bench-tab')) return;
+    activeBenchIndex = parseInt(e.target.dataset.bi,10);
+    renderBenchTabs(currentRoster);
+    renderBenchLegend(currentRoster);
+    renderRosterTable(currentRoster);
+  });
+
+  // Exception notes (e.g. "Fri: adds Justice ...") are a per-bench LIST — each one can be added,
+  // edited (✎) or deleted (✕) on its own. editingNoteKey tracks which single note (if any) is
+  // currently open for editing, as "<benchIndex>-<noteIndex>".
+  var editingNoteKey = null;
+  function judgesNoteRowHtml(bi, ni, text, editing){
+    if(editing){
+      return '<div class="judges-note-row editing" data-bi="'+bi+'" data-nidx="'+ni+'">' +
+        '<input type="text" class="jn-edit-input" data-bi="'+bi+'" data-nidx="'+ni+'" value="'+escapeAttr(text)+'" placeholder="'+(isUrdu?'مثلاً: جمعہ کو جسٹس ... شامل':'e.g. Fri: adds Justice ...')+'">' +
+        '</div>';
+    }
+    return '<div class="judges-note-row" data-bi="'+bi+'" data-nidx="'+ni+'">' +
+      '<span class="jn-text">'+escapeHtml(text)+'</span>' +
+      '<span class="jn-edit" data-bi="'+bi+'" data-nidx="'+ni+'" title="'+(isUrdu?'ترمیم کریں':'Edit')+'">✎</span>' +
+      '<span class="jn-del" data-bi="'+bi+'" data-nidx="'+ni+'" title="'+(isUrdu?'یہ نوٹ حذف کریں':'Remove this note')+'">✕</span>' +
+      '</div>';
+  }
+
+  // Bench name + Judges + Officer (once per week) for the ACTIVE bench only.
+  function renderBenchLegend(r){
+    var box = document.getElementById('benchLegendList');
+    var b = r.benches[activeBenchIndex];
+    if(!b){ box.innerHTML = ''; return; }
+    var bi = activeBenchIndex;
+    box.innerHTML = '<div class="bench-legend-row">' +
+      '<div class="bl-name">'+escapeHtml(b.name)+' <span class="row-del-bench" data-bi="'+bi+'" title="'+(isUrdu?'یہ بینچ حذف کریں':'Remove this bench')+'">✕</span></div>' +
+      '<div class="bl-grid">' +
+      '<div>' +
+      '<div class="bl-sub-lbl">'+(isUrdu?'جج':'Judges')+'</div>' +
+      '<div class="chip-list">' +
+      b.judgesList.map(function(j, ji){
+        return '<span class="chip" data-bi="'+bi+'" data-jidx="'+ji+'">'+escapeHtml(j)+' <span class="chip-x" data-kind="judge" data-bi="'+bi+'" data-jidx="'+ji+'">✕</span></span>';
+      }).join('') +
+      '</div>' +
+      '<select class="add-judge-select" data-bi="'+bi+'"><option value="">'+(isUrdu?'+ جج شامل کریں':'+ Add Judge')+'</option>' +
+      JUDGES.filter(function(j){ return b.judgesList.indexOf(j) === -1; }).map(function(j){ return '<option value="'+escapeAttr(j)+'">'+j+'</option>'; }).join('') +
+      '</select>' +
+      '<div class="bl-sub-lbl" style="margin-top:8px;">'+(isUrdu?'اضافی نوٹ (رعایتی تبدیلی)':'Exception Notes')+'</div>' +
+      '<div class="judges-notes-list">' +
+      b.judgesNotes.map(function(note, ni){
+        return judgesNoteRowHtml(bi, ni, note, editingNoteKey === (bi+'-'+ni));
+      }).join('') +
+      '</div>' +
+      '<div class="btn ghost jn-add-btn" data-bi="'+bi+'">'+(isUrdu?'+ نوٹ شامل کریں':'+ Add Note')+'</div>' +
+      '</div>' +
+      '<div>' +
+      '<div class="bl-sub-lbl">'+(isUrdu?'آفیسر (اس ہفتے)':'Officer (This Week)')+'</div>' +
+      '<select class="officer-select" data-bi="'+bi+'"><option value="">—</option>' +
+      OFFICERS.map(function(o){ return '<option value="'+escapeAttr(o)+'"'+(o===b.officer?' selected':'')+'>'+o+'</option>'; }).join('') +
+      '</select>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
+    var activeInput = box.querySelector('.jn-edit-input');
+    if(activeInput){ activeInput.focus(); activeInput.select(); }
+  }
+
+  function commitNoteEdit(inputEl){
+    var bi = parseInt(inputEl.dataset.bi,10), ni = parseInt(inputEl.dataset.nidx,10);
+    var val = inputEl.value.trim();
+    if(!currentRoster || !currentRoster.benches[bi]) return;
+    if(val){ currentRoster.benches[bi].judgesNotes[ni] = val; }
+    else { currentRoster.benches[bi].judgesNotes.splice(ni,1); }
+    editingNoteKey = null;
+    syncBenchToMaster(bi);
+    renderBenchLegend(currentRoster);
+  }
+
+  document.getElementById('benchLegendList').addEventListener('change', function(e){
+    if(!currentRoster) return;
+    if(e.target.classList.contains('officer-select')){
+      var obi = parseInt(e.target.dataset.bi,10);
+      currentRoster.benches[obi].officer = e.target.value;
+    }
+    if(e.target.classList.contains('add-judge-select') && e.target.value){
+      var jbi = parseInt(e.target.dataset.bi,10);
+      currentRoster.benches[jbi].judgesList.push(e.target.value);
+      syncBenchToMaster(jbi);
+      renderBenchLegend(currentRoster);
+    }
+  });
+  document.getElementById('benchLegendList').addEventListener('focusout', function(e){
+    if(e.target.classList.contains('jn-edit-input')){ commitNoteEdit(e.target); }
+  });
+  document.getElementById('benchLegendList').addEventListener('keydown', function(e){
+    if(e.target.classList.contains('jn-edit-input') && (e.key === 'Enter' || e.key === 'Escape')){
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+  document.getElementById('benchLegendList').addEventListener('click', function(e){
+    if(!currentRoster) return;
+    if(e.target.classList.contains('row-del-bench')){
+      var bi = parseInt(e.target.dataset.bi,10);
+      if(!confirm(isUrdu ? 'یہ بینچ اس ہفتے کے روسٹر سے حذف کریں؟' : "Remove this bench from this week's roster?")) return;
+      currentRoster.benches.splice(bi,1);
+      renderAll(currentRoster);
+      return;
+    }
+    if(e.target.classList.contains('chip-x') && e.target.dataset.kind === 'judge'){
+      var jbi = parseInt(e.target.dataset.bi,10), jidx = parseInt(e.target.dataset.jidx,10);
+      currentRoster.benches[jbi].judgesList.splice(jidx,1);
+      syncBenchToMaster(jbi);
+      renderBenchLegend(currentRoster);
+    }
+    if(e.target.classList.contains('jn-edit')){
+      var ebi = parseInt(e.target.dataset.bi,10), eni = parseInt(e.target.dataset.nidx,10);
+      editingNoteKey = ebi+'-'+eni;
+      renderBenchLegend(currentRoster);
+    }
+    if(e.target.classList.contains('jn-del')){
+      var dbi = parseInt(e.target.dataset.bi,10), dni = parseInt(e.target.dataset.nidx,10);
+      currentRoster.benches[dbi].judgesNotes.splice(dni,1);
+      syncBenchToMaster(dbi);
+      renderBenchLegend(currentRoster);
+    }
+    if(e.target.classList.contains('jn-add-btn')){
+      var abi2 = parseInt(e.target.dataset.bi,10);
+      currentRoster.benches[abi2].judgesNotes.push('');
+      editingNoteKey = abi2+'-'+(currentRoster.benches[abi2].judgesNotes.length-1);
+      renderBenchLegend(currentRoster);
+    }
+  });
+
+  // Grid (day columns) for the ACTIVE bench only.
+  function renderRosterTable(r){
+    var t = document.getElementById('rosterTable');
+    var b = r.benches[activeBenchIndex];
+    if(!b){ t.innerHTML = ''; return; }
+    var bi = activeBenchIndex;
+    var html = '<thead><tr><th style="text-align:'+(isUrdu?'right':'left')+';">'+escapeHtml(b.name)+'</th>';
+    for(var i = 0; i < 5; i++){ html += '<th>'+dayHeadName(i)+'<br>'+r.dates[i]+'</th>'; }
+    html += '</tr></thead><tbody><tr>' +
+      '<td class="day-cell" style="background:#f7f5ec; font-weight:600; color:var(--navy);">'+(isUrdu?'روزانہ':'Daily')+'</td>';
+    for(var i = 0; i < 5; i++){
+      var day = b.days[i];
+      html += '<td class="day-cell">' +
+        '<div class="case-chip-list">' +
+        day.cases.map(function(c, ci){
+          return '<span class="chip small" data-bi="'+bi+'" data-di="'+i+'" data-cidx="'+ci+'">'+escapeHtml(c)+' <span class="chip-x" data-kind="case" data-bi="'+bi+'" data-di="'+i+'" data-cidx="'+ci+'">✕</span></span>';
+        }).join('') +
+        '</div>' +
+        '<div class="case-add-form" data-bi="'+bi+'" data-di="'+i+'">' +
+        '<input type="text" class="case-srno-input" placeholder="'+(isUrdu?'کاز لسٹ سیریل نمبر':'Cause List Sr. No.')+'">' +
+        '<div class="case-number-rows">' + openCaseRowHtml() + '</div>' +
+        '<div class="btn ghost case-addrow-btn" data-bi="'+bi+'" data-di="'+i+'">'+(isUrdu?'+ متعلقہ کیس نمبر':'+ Connected Case No.')+'</div>' +
+        '<div class="btn ghost case-add-btn" data-bi="'+bi+'" data-di="'+i+'">'+(isUrdu?'+ شامل کریں':'+ Add')+'</div>' +
+        '</div>' +
+        '</td>';
+    }
+    html += '</tr></tbody>';
+    t.innerHTML = html;
+  }
+
+  document.getElementById('rosterTable').addEventListener('click', function(e){
+    if(!currentRoster) return;
+    if(e.target.classList.contains('chip-x') && e.target.dataset.kind === 'case'){
+      var cbi = parseInt(e.target.dataset.bi,10), cdi = parseInt(e.target.dataset.di,10), cidx = parseInt(e.target.dataset.cidx,10);
+      currentRoster.benches[cbi].days[cdi].cases.splice(cidx,1);
+      renderRosterTable(currentRoster);
+      return;
+    }
+    if(e.target.classList.contains('case-addrow-btn')){
+      var rowsWrap = e.target.parentElement.querySelector('.case-number-rows');
+      if(!tryCloseOpenRows(rowsWrap)){
+        alert(isUrdu ? 'براہ کرم اس کیس نمبر کی قسم، نمبر اور سال مکمل کریں، پھر نیا شامل کریں' : "Please complete this case number's Type, No. and Year before adding another");
+        return;
+      }
+      rowsWrap.insertAdjacentHTML('beforeend', openCaseRowHtml());
+      return;
+    }
+    if(e.target.classList.contains('case-row-del')){
+      e.target.closest('.case-number-row').remove();
+      return;
+    }
+    if(e.target.classList.contains('case-row-edit')){
+      var row = e.target.closest('.case-number-row');
+      var prefill = { type: row.dataset.type, no: row.dataset.no, year: row.dataset.year, nature: row.dataset.nature };
+      row.outerHTML = openCaseRowHtml(prefill);
+      return;
+    }
+    if(e.target.classList.contains('case-add-btn')){
+      var abi = parseInt(e.target.dataset.bi,10), adi = parseInt(e.target.dataset.di,10);
+      var form = e.target.closest('.case-add-form');
+      var srNoVal = form.querySelector('.case-srno-input').value.trim();
+      var rowsContainer = form.querySelector('.case-number-rows');
+      if(!tryCloseOpenRows(rowsContainer)){
+        alert(isUrdu ? 'براہ کرم ہر کیس نمبر کی قسم، نمبر اور سال مکمل کریں' : 'Please complete Case Type, No. and Year for every case number');
+        return;
+      }
+      var closedRows = rowsContainer.querySelectorAll('.case-number-row.closed');
+      var items = [];
+      Array.prototype.forEach.call(closedRows, function(row){
+        items.push(row.dataset.type + row.dataset.no + '/' + row.dataset.year + (row.dataset.nature ? ' (' + row.dataset.nature + ')' : ''));
+      });
+      if(!srNoVal || items.length === 0){
+        alert(isUrdu ? 'براہ کرم کاز لسٹ سیریل نمبر درج کریں اور کم از کم ایک کیس نمبر مکمل کریں' : 'Please enter the Cause List Sr. No. and complete at least one case number');
+        return;
+      }
+      // legal-citation convention (e.g. "Crl.M.A.321/2026 in Crl.P.L.A.45/2026") — "in" kept in both
+      // languages, not translated. Each connected case gets its own line (2nd case on line 2, 3rd on
+      // line 3, ...) so a chain of several connected cases doesn't run together into one mixed-up line.
+      var caseStr = srNoVal + '. ' + items[0];
+      for(var ii = 1; ii < items.length; ii++){ caseStr += '\nin ' + items[ii]; }
+      currentRoster.benches[abi].days[adi].cases.push(caseStr);
+      renderRosterTable(currentRoster);
+    }
+  });
+
+  // Case Type / Nature of Case: on some phones/embedded browsers the device's own dropdown
+  // popup only shows a few options at a time. To guarantee the FULL list is always visible,
+  // expand the <select> itself into an inline scrollable list while it's focused/open, then
+  // collapse it back to a normal one-line dropdown once a value is chosen or it loses focus.
+  function isExpandableCaseSelect(el){
+    return el && (el.classList.contains('case-type-select') || el.classList.contains('case-nature-select'));
+  }
+  document.getElementById('rosterTable').addEventListener('focusin', function(e){
+    if(isExpandableCaseSelect(e.target)){
+      e.target.setAttribute('size', Math.min(e.target.options.length, 8));
+      e.target.classList.add('expanded-select');
+    }
+  });
+  document.getElementById('rosterTable').addEventListener('focusout', function(e){
+    if(isExpandableCaseSelect(e.target)){
+      e.target.removeAttribute('size');
+      e.target.classList.remove('expanded-select');
+    }
+  });
+  document.getElementById('rosterTable').addEventListener('change', function(e){
+    if(isExpandableCaseSelect(e.target)){
+      e.target.blur();
+    }
+  });
+
+  function addBenchRow(){
+    var nameEn = prompt(isUrdu ? 'نئی عدالت/بینچ کا نام لکھیں' : 'Enter the new Court/Bench name');
+    if(!nameEn || !nameEn.trim()) return;
+    var newBench = { id: nextBenchId++, name: nameEn.trim(), judgesList: [], judgesNotes: [] };
+    BENCHES.push(newBench);
+    if(currentRoster){
+      currentRoster.benches.push({ id: newBench.id, name: newBench.name, judgesList: [], judgesNotes: [], officer: '', days: [
+        {cases:[]},{cases:[]},{cases:[]},{cases:[]},{cases:[]}
+      ] });
+      activeBenchIndex = currentRoster.benches.length - 1;
+      renderAll(currentRoster);
+    }
+  }
+
+  // ---------- Manage Officers ----------
+  function makeListManageRow(value){
+    var row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '6px';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = value || '';
+    input.style.cssText = 'flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:12.5px;';
+    var del = document.createElement('div');
+    del.className = 'btn danger';
+    del.style.cssText = 'padding:5px 10px; font-size:11px; cursor:pointer;';
+    del.textContent = '✕';
+    del.onclick = function(){ row.remove(); };
+    row.appendChild(input);
+    row.appendChild(del);
+    return row;
+  }
+
+  var currentListKey = null;
+
+  function openListManage(key){
+    currentListKey = key;
+    var cfg = LIST_CONFIGS[key];
+    document.getElementById('listManageTitle').textContent = isUrdu ? cfg.titleUr : cfg.titleEn;
+    var box = document.getElementById('listManageItems');
+    box.innerHTML = '';
+    cfg.arr.forEach(function(val){ box.appendChild(makeListManageRow(val)); });
+    document.getElementById('listManageModal').classList.add('open');
+  }
+  function addListManageRow(){
+    document.getElementById('listManageItems').appendChild(makeListManageRow(''));
+  }
+  function closeListManage(){
+    document.getElementById('listManageModal').classList.remove('open');
+    currentListKey = null;
+  }
+  function saveListManage(){
+    if(!currentListKey) return;
+    var cfg = LIST_CONFIGS[currentListKey];
+    var inputs = document.querySelectorAll('#listManageItems input[type="text"]');
+    var values = [];
+    inputs.forEach(function(inp){
+      var v = inp.value.trim();
+      if(v && values.indexOf(v) === -1) values.push(v);
+    });
+    cfg.arr.length = 0;
+    Array.prototype.push.apply(cfg.arr, values);
+    if(currentRoster) renderAll(currentRoster);
+    closeListManage();
+  }
+
+  // ---------- Save / View / Print ----------
+  function saveCurrentRoster(){
+    if(!currentRoster){ alert(isUrdu ? 'پہلے ہفتہ بنائیں' : 'Please build a week first'); return; }
+    var snapshot = JSON.parse(JSON.stringify(currentRoster));
+    snapshot.savedAt = new Date().toISOString().slice(0,16).replace('T',' ');
+    var existingIdx = SAVED_ROSTERS.findIndex(function(r){ return r.weekStart === snapshot.weekStart; });
+    if(existingIdx !== -1){
+      snapshot.id = SAVED_ROSTERS[existingIdx].id;
+      SAVED_ROSTERS[existingIdx] = snapshot;
+      alert(isUrdu ? 'اس ہفتے کا روسٹر پہلے سے موجود تھا — اپڈیٹ کر دیا گیا' : 'A roster for this week already existed — it has been updated');
+    } else {
+      snapshot.id = nextRosterId++;
+      SAVED_ROSTERS.push(snapshot);
+      alert(isUrdu ? 'روسٹر محفوظ ہو گیا' : 'Roster saved');
+    }
+  }
+
+  function openSavedRosters(){
+    var box = document.getElementById('savedRostersList');
+    box.innerHTML = '';
+    if(SAVED_ROSTERS.length === 0){
+      box.innerHTML = '<div style="padding:14px; text-align:center; color:var(--muted); font-size:12.5px;">'+(isUrdu?'ابھی کوئی روسٹر محفوظ نہیں ہوا':'No rosters saved yet')+'</div>';
+    } else {
+      SAVED_ROSTERS.slice().sort(function(a,b){ return b.weekStart.localeCompare(a.weekStart); }).forEach(function(r){
+        var row = document.createElement('div');
+        row.className = 'saved-report-row';
+        row.innerHTML = '<div><b>'+(isUrdu?'ہفتہ شروع':'Week of')+': '+r.dates[0]+' – '+r.dates[4]+'</b><br><span style="color:var(--muted); font-size:11.5px;">'+(isUrdu?'محفوظ شدہ':'saved')+': '+r.savedAt+'</span></div><div class="row-actions"></div>';
+        var actions = row.querySelector('.row-actions');
+        var viewBtn = document.createElement('div');
+        viewBtn.className = 'btn ghost';
+        viewBtn.textContent = isUrdu ? 'دیکھیں' : 'View';
+        viewBtn.onclick = function(){ viewSavedRoster(r.id); };
+        var delBtn = document.createElement('div');
+        delBtn.className = 'btn danger';
+        delBtn.textContent = isUrdu ? 'حذف کریں' : 'Delete';
+        delBtn.onclick = function(){ deleteSavedRoster(r.id); };
+        actions.appendChild(viewBtn);
+        actions.appendChild(delBtn);
+        box.appendChild(row);
+      });
+    }
+    document.getElementById('savedRostersModal').classList.add('open');
+  }
+  function closeSavedRosters(){ document.getElementById('savedRostersModal').classList.remove('open'); }
+
+  function viewSavedRoster(id){
+    var r = SAVED_ROSTERS.find(function(x){ return x.id === id; });
+    if(!r) return;
+    currentRoster = JSON.parse(JSON.stringify(r));
+    activeBenchIndex = 0;
+    document.getElementById('weekStart').value = r.weekStart;
+    renderAll(currentRoster);
+    closeSavedRosters();
+  }
+  function deleteSavedRoster(id){
+    if(!confirm(isUrdu ? 'یہ محفوظ شدہ روسٹر حذف کریں؟' : 'Delete this saved roster?')) return;
+    SAVED_ROSTERS = SAVED_ROSTERS.filter(function(r){ return r.id !== id; });
+    openSavedRosters();
+  }
+
+  // Print/Preview can show either just the bench you currently have selected (tab), or ALL
+  // benches together with each bench starting on its OWN printed page (page-break-after).
+  // The print-sheet letterhead (Urdu line + English line below it) is the SAME editable heading
+  // shown in the top bar (headingEn/headingUr) — so it always reads the same everywhere, and each
+  // line can also be fixed right here at print time (✎ edit, ↺ reset), without leaving this screen.
+  // Only the FIRST page's letterhead is made editable (editing it updates headingEn/headingUr for
+  // every page at once, so a second editable copy would just be confusing).
+  var editingPrintField = null; // 'en' | 'ur' | null
+  var printMode = 'active'; // 'active' | 'all' — remembered so re-renders (edit/save/reset) keep the same view
+
+  // Sign-off stamps at the bottom of the print sheet — left = prepared by, right = approved by.
+  // Each stamp is a Name / Designation / Office Address block, editable (✎) or clearable (✕) as a
+  // whole. Only the FIRST printed page's stamps are editable, same reasoning as the letterhead.
+  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var editingStamp = null; // 'left' | 'right' | null
+  function stampBlockHtml(side, stamp, editable){
+    if(editable && editingStamp === side){
+      return '<div class="p-stamp-block editing" data-side="'+side+'">' +
+        '<input type="text" class="stamp-input" data-side="'+side+'" data-field="name" value="'+escapeAttr(stamp.name)+'" placeholder="'+(isUrdu?'نام':'Name')+'">' +
+        '<input type="text" class="stamp-input" data-side="'+side+'" data-field="designation" value="'+escapeAttr(stamp.designation)+'" placeholder="'+(isUrdu?'عہدہ':'Designation')+'">' +
+        '<textarea class="stamp-input" data-side="'+side+'" data-field="address" rows="'+((stamp.address.match(/\n/g)||[]).length+1)+'" placeholder="'+(isUrdu?'دفتر کا پتہ':'Office Address')+'">'+escapeHtml(stamp.address)+'</textarea>' +
+        '<div class="p-stamp-icons">' +
+        '<span class="heading-icon stamp-save" data-side="'+side+'" title="'+(isUrdu?'محفوظ کریں':'Save')+'">✓ '+(isUrdu?'محفوظ':'Save')+'</span>' +
+        '<span class="heading-icon stamp-cancel" data-side="'+side+'" title="'+(isUrdu?'منسوخ':'Cancel')+'">✕ '+(isUrdu?'منسوخ':'Cancel')+'</span>' +
+        '</div></div>';
+    }
+    var lines = [stamp.name, stamp.designation, stamp.address].filter(function(v){ return v && v.trim(); });
+    var body = lines.length ? lines.map(function(l){ return '<div class="p-stamp-line">'+escapeHtml(l)+'</div>'; }).join('') :
+      '<div class="p-stamp-line p-stamp-empty">'+(isUrdu?'— خالی —':'— empty —')+'</div>';
+    var icons = editable ? ('<div class="p-stamp-icons">' +
+      '<span class="heading-icon stamp-edit" data-side="'+side+'" title="'+(isUrdu?'ترمیم':'Edit')+'">✎</span>' +
+      '<span class="heading-icon stamp-clear" data-side="'+side+'" title="'+(isUrdu?'صاف کریں':'Clear')+'">✕</span>' +
+      '</div>') : '';
+    return '<div class="p-stamp-block" data-side="'+side+'">' + body + icons + '</div>';
+  }
+  function buildSignHtml(editable){
+    return '<div class="p-sign">' + stampBlockHtml('left', stampLeft, editable) + stampBlockHtml('right', stampRight, editable) + '</div>';
+  }
+  function printHeaderRowHtml(fieldKey, value, textClass, editable){
+    if(!editable){
+      return '<div class="p-head-edit-row '+textClass+'-row"><span class="'+textClass+'">'+escapeHtml(value)+'</span></div>';
+    }
+    if(editingPrintField === fieldKey){
+      var rows = (value.match(/\n/g) || []).length + 1;
+      return '<div class="p-head-edit-row '+textClass+'-row" data-field="'+fieldKey+'">' +
+        '<textarea class="print-heading-input" data-field="'+fieldKey+'" rows="'+rows+'">'+escapeHtml(value)+'</textarea>' +
+        '<span class="heading-icon print-save" data-field="'+fieldKey+'" title="'+(isUrdu?'محفوظ کریں':'Save')+'">✓</span>' +
+        '<span class="heading-icon print-cancel" data-field="'+fieldKey+'" title="'+(isUrdu?'منسوخ':'Cancel')+'">✕</span>' +
+        '</div>';
+    }
+    return '<div class="p-head-edit-row '+textClass+'-row" data-field="'+fieldKey+'">' +
+      '<span class="'+textClass+'">'+escapeHtml(value)+'</span>' +
+      '<span class="heading-icon print-edit" data-field="'+fieldKey+'" title="'+(isUrdu?'ترمیم':'Edit')+'">✎</span>' +
+      '<span class="heading-icon print-reset" data-field="'+fieldKey+'" title="'+(isUrdu?'ڈیفالٹ پر واپس':'Reset to default')+'">↺</span>' +
+      '</div>';
+  }
+  function buildLetterheadHtml(r, editable){
+    // Show only the currently active language's heading line (not both stacked) — matches
+    // whichever language the page is toggled to (اردو/English).
+    var fieldKey = isUrdu ? 'ur' : 'en';
+    var value = isUrdu ? headingUr : headingEn;
+    return '<div class="p-logo">'+PUNJAB_EMBLEM_SVG+'</div>' +
+      printHeaderRowHtml(fieldKey, value, 'p-head', editable) +
+      '<div class="p-week"><span>Week</span><span>'+r.dates[0]+' – '+r.dates[4]+'</span></div>';
+  }
+  function buildBenchTableHtml(benches, r){
+    var html = '<table><thead><tr><th style="text-align:left;">Court / Bench / Officer</th>';
+    for(var i=0;i<5;i++){ html += '<th>'+DAYS_EN[i]+'<br>'+r.dates[i]+'</th>'; }
+    html += '</tr></thead><tbody>';
+    benches.forEach(function(b){
+      var judgesLine = (b.judgesList && b.judgesList.length) ? b.judgesList.join(', ') : '';
+      var notesHtml = (b.judgesNotes && b.judgesNotes.length) ?
+        b.judgesNotes.map(function(note){ return '<span class="p-note-line">'+escapeHtml(note)+'</span>'; }).join('') : '';
+      html += '<tr><td><b>'+escapeHtml(b.name)+'</b>' +
+        (b.officer ? ('<br><span style="color:var(--navy); font-size:11px; font-weight:600;">'+escapeHtml(b.officer)+'</span>') : '') +
+        (judgesLine ? ('<br><span style="color:#666; font-size:10.5px;">'+escapeHtml(judgesLine)+'</span>') : '') +
+        (notesHtml ? ('<br>'+notesHtml) : '') +
+        '</td>';
+      b.days.forEach(function(d){
+        var casesHtml = (d.cases && d.cases.length) ? d.cases.map(function(c){
+          return '<div class="p-case-block">'+escapeHtml(c).replace(/\n/g,'<br>')+'</div>';
+        }).join('') : '';
+        html += '<td>' + (casesHtml || '—') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+  function buildPrintPageHtml(benches, r, editableHeader, isLastPage){
+    return '<div class="p-page'+(isLastPage?'':' p-page-break')+'">' +
+      buildLetterheadHtml(r, editableHeader) +
+      buildBenchTableHtml(benches, r) +
+      buildSignHtml(editableHeader) +
+      '</div>';
+  }
+  function printCurrentRoster(mode){
+    if(!currentRoster){ alert(isUrdu ? 'پہلے ہفتہ بنائیں' : 'Please build a week first'); return; }
+    if(mode){ printMode = mode; }
+    var r = currentRoster;
+    var html;
+    if(printMode === 'active'){
+      var activeBench = r.benches[activeBenchIndex];
+      if(!activeBench){ alert(isUrdu ? 'پہلے کوئی بینچ منتخب کریں' : 'Please select a bench first'); return; }
+      html = buildPrintPageHtml([activeBench], r, true, true);
+    } else {
+      html = r.benches.map(function(b, bi){
+        return buildPrintPageHtml([b], r, bi === 0, bi === r.benches.length - 1);
+      }).join('');
+    }
+    document.getElementById('rosterPrintArea').innerHTML = html;
+    document.getElementById('rosterPrintModal').classList.add('open');
+    var activePrintInput = document.querySelector('.print-heading-input') || document.querySelector('.stamp-input');
+    if(activePrintInput){ activePrintInput.focus(); activePrintInput.select(); }
+  }
+
+  document.getElementById('rosterPrintArea').addEventListener('click', function(e){
+    if(e.target.classList.contains('print-edit')){
+      editingPrintField = e.target.dataset.field;
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('print-reset')){
+      var rf = e.target.dataset.field;
+      if(rf === 'en'){ headingEn = DEFAULT_HEADING_EN; } else { headingUr = DEFAULT_HEADING_UR; }
+      editingPrintField = null;
+      renderPageHeading();
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('print-save')){
+      var inp = document.querySelector('.print-heading-input');
+      var val = inp ? inp.value.trim() : '';
+      var sf = e.target.dataset.field;
+      if(val){ if(sf === 'en'){ headingEn = val; } else { headingUr = val; } }
+      editingPrintField = null;
+      renderPageHeading();
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('print-cancel')){
+      editingPrintField = null;
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('stamp-edit')){
+      editingStamp = e.target.dataset.side;
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('stamp-clear')){
+      var clSide = e.target.dataset.side;
+      var clStamp = (clSide === 'left') ? stampLeft : stampRight;
+      clStamp.name = ''; clStamp.designation = ''; clStamp.address = '';
+      editingStamp = null;
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('stamp-save')){
+      var svSide = e.target.dataset.side;
+      var svStamp = (svSide === 'left') ? stampLeft : stampRight;
+      document.querySelectorAll('.stamp-input[data-side="'+svSide+'"]').forEach(function(inp){
+        svStamp[inp.dataset.field] = inp.value.trim();
+      });
+      editingStamp = null;
+      printCurrentRoster();
+      return;
+    }
+    if(e.target.classList.contains('stamp-cancel')){
+      editingStamp = null;
+      printCurrentRoster();
+      return;
+    }
+  });
+  document.getElementById('rosterPrintArea').addEventListener('keydown', function(e){
+    if(e.target.classList.contains('print-heading-input')){
+      // This can be more than one line (e.g. "Supreme Court Of Pakistan" on its own line), so
+      // Enter inserts a new line here — only Escape cancels; Save is via ✓.
+      if(e.key === 'Escape'){ e.preventDefault(); var c = document.querySelector('.print-cancel'); if(c) c.click(); }
+    }
+    if(e.target.classList.contains('stamp-input')){
+      // The Office Address field can be multi-line (a <textarea>), so Enter there inserts a new
+      // line instead of saving; Name/Designation stay single-line inputs where Enter still saves.
+      if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){ e.preventDefault(); var ss = document.querySelector('.stamp-save'); if(ss) ss.click(); }
+      if(e.key === 'Escape'){ e.preventDefault(); var sc = document.querySelector('.stamp-cancel'); if(sc) sc.click(); }
+    }
+  });
+
+  function closeRosterPrint(){ editingPrintField = null; editingStamp = null; document.getElementById('rosterPrintModal').classList.remove('open'); }
+
+  // Page heading (top bar) — editable in place (✎ edit, ↺ reset to default), separately for each
+  // language, so a correction to the office name doesn't need touching the file.
+  var DEFAULT_HEADING_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
+  var DEFAULT_HEADING_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var headingEn = DEFAULT_HEADING_EN;
+  var headingUr = DEFAULT_HEADING_UR;
+  var editingHeading = false;
+
+  function renderPageHeading(){
+    var box = document.getElementById('pageHeadingBox');
+    var current = isUrdu ? headingUr : headingEn;
+    if(editingHeading){
+      var rows = (current.match(/\n/g) || []).length + 1;
+      box.innerHTML = '<textarea id="headingEditInput" rows="'+rows+'">'+escapeHtml(current)+'</textarea>' +
+        '<span class="heading-icon" onclick="saveHeadingEdit()" title="'+(isUrdu?'محفوظ کریں':'Save')+'">✓</span>' +
+        '<span class="heading-icon" onclick="cancelHeadingEdit()" title="'+(isUrdu?'منسوخ':'Cancel')+'">✕</span>';
+      var inp = document.getElementById('headingEditInput');
+      inp.focus(); inp.select();
+      inp.addEventListener('keydown', function(e){
+        // Enter inserts a new line (the heading can have several) — only Escape cancels; Save is via ✓.
+        if(e.key === 'Escape'){ e.preventDefault(); cancelHeadingEdit(); }
+      });
+    } else {
+      box.innerHTML = '<span class="page-heading-text">'+escapeHtml(current)+'</span>' +
+        '<span class="heading-icon" onclick="startHeadingEdit()" title="'+(isUrdu?'عنوان میں ترمیم':'Edit heading')+'">✎</span>' +
+        '<span class="heading-icon" onclick="resetHeadingToDefault()" title="'+(isUrdu?'ڈیفالٹ عنوان پر واپس':'Reset to default heading')+'">↺</span>';
+    }
+  }
+  function startHeadingEdit(){ editingHeading = true; renderPageHeading(); }
+  function cancelHeadingEdit(){ editingHeading = false; renderPageHeading(); }
+  function saveHeadingEdit(){
+    var val = document.getElementById('headingEditInput').value.trim();
+    if(val){ if(isUrdu){ headingUr = val; } else { headingEn = val; } }
+    editingHeading = false;
+    renderPageHeading();
+  }
+  function resetHeadingToDefault(){
+    headingEn = DEFAULT_HEADING_EN;
+    headingUr = DEFAULT_HEADING_UR;
+    editingHeading = false;
+    renderPageHeading();
+  }
+
+  // Theme picker — 7 selectable design styles (colors, corner rounding, heading font, topbar
+  // gradient/accent). Purely a CSS-variable swap (see the body[data-theme="N"] blocks above), so
+  // switching just sets one attribute on <body> and every existing var(--navy)/var(--gold)/etc.
+  // rule re-colors itself — no re-render of the roster data needed.
+  var THEMES = [
+    { id:'1', nameEn:'Navy & Gold (Official)', nameUr:'نیوی و گولڈ (سرکاری)', navy:'#12203f', gold:'#c8952a' },
+    { id:'2', nameEn:'Maroon & Silver (Judicial)', nameUr:'مرون و سلور (عدالتی)', navy:'#5c1a1a', gold:'#9a9a9a' },
+    { id:'3', nameEn:'Emerald & Cream (Classic)', nameUr:'زمردی و کریم (کلاسیک)', navy:'#0f3d2e', gold:'#c9a227' },
+    { id:'4', nameEn:'Charcoal & Bronze (Modern)', nameUr:'چارکول و برونز (ماڈرن)', navy:'#2b2b2e', gold:'#b5793a' },
+    { id:'5', nameEn:'Forest & Ivory (Soft)', nameUr:'فارسٹ و آئیوری (سوفٹ)', navy:'#254d32', gold:'#d1a85c' },
+    { id:'6', nameEn:'Slate & Amber (High Contrast)', nameUr:'سلیٹ و ایمبر (ہائی کنٹراسٹ)', navy:'#1e293b', gold:'#f59e0b' },
+    { id:'7', nameEn:'Pakistan Green & Gold (National)', nameUr:'پاکستان سبز و گولڈ (قومی)', navy:'#01411c', gold:'#f4c430' }
+  ];
+  var currentTheme = '1';
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){
+    document.getElementById('themePicker').classList.toggle('open');
+  }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+    editingHeading = false;
+    renderPageHeading();
+    renderThemePicker();
+    if(currentRoster) renderAll(currentRoster);
+  }
+
+  document.getElementById('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
+  renderPageHeading();
+  renderThemePicker();
+  buildWeek();
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed</div>
+</body>
+</html>

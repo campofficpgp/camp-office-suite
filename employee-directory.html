@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Directory — Camp Office PG Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,Arial,sans-serif; line-height:1.5;}
+
+  .topbar{background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .wrap{max-width:860px; margin:0 auto; padding:22px 20px 60px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
+  .search-grid .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .search-grid select{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:6px; font-size:12.5px; background:#fbfbf9;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  .sheet{background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden;}
+  .sheet-head{display:flex; align-items:center; gap:18px; padding:22px 24px; border-bottom:2px solid var(--gold); background:#faf8f2;}
+  .photo{width:70px; height:70px; border-radius:50%; background:#e6e2d4; border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--muted); flex:none; background-size:cover; background-position:center;}
+  .photo-thumb{width:56px; height:56px; border-radius:50%; object-fit:cover; border:2px solid var(--gold); vertical-align:middle;}
+  .who h2{margin:0; font-size:18px; color:var(--navy);}
+  .who .desig{font-size:12.5px; color:var(--gold-deep); font-weight:600; margin-top:2px;}
+  .who .empno{font-size:11px; color:var(--muted); margin-top:4px;}
+
+  .sec-title{font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--gold-deep); padding:16px 24px 6px;}
+  .info-list{padding:0 24px 6px;}
+  .info-row{display:flex; justify-content:space-between; gap:16px; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .info-row:last-child{border-bottom:none;}
+  .info-row .k{color:var(--muted);}
+  .info-row .v{color:var(--text); font-weight:600; text-align:right;}
+
+  .actions{padding:18px 24px 24px; display:flex; gap:10px; flex-wrap:wrap;}
+  .btn{padding:9px 18px; border-radius:6px; font-size:13px; font-weight:600; border:1px solid var(--border); cursor:default;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.ghost{background:#fff; color:var(--navy);}
+
+  .disclaimer{margin:14px 24px 0; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  [dir="rtl"] .info-row, [dir="rtl"] .sheet-head{direction:rtl;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:12px; max-width:640px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:12px;}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">🪶 <span data-en="Camp Office Prosecutor General Punjab" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب">Camp Office Prosecutor General Punjab</span></div>
+    <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+  </div>
+
+  <div class="wrap">
+
+    <div class="search-box">
+      <div class="lbl" data-en="Employee Lookup — select, no typing" data-ur="ایمپلائی تلاش — منتخب کریں، ٹائپنگ کے بغیر">Employee Lookup — select, no typing</div>
+      <div class="search-grid">
+        <div class="field"><label data-en="By Name" data-ur="نام سے">By Name</label><select id="byName"></select></div>
+        <div class="field"><label data-en="By Employee No" data-ur="ایمپلائی نمبر سے">By Employee No</label><select id="byPers"></select></div>
+        <div class="field"><label data-en="By Scale (BPS)" data-ur="اسکیل (بی پی ایس) سے">By Scale (BPS)</label><select id="byScale"></select></div>
+        <div class="field"><label data-en="By CNIC" data-ur="شناختی کارڈ سے">By CNIC</label><select id="byCnic"></select></div>
+        <div class="field"><label data-en="By Date of Birth" data-ur="تاریخ پیدائش سے">By Date of Birth</label><select id="byDob"></select></div>
+      </div>
+      <div class="count" id="count"></div>
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <div class="btn ghost" id="addToggleBtn" onclick="toggleAddForm()" style="display:inline-block; cursor:pointer;" data-en="+ Add New Employee" data-ur="+ نیا ایمپلائی شامل کریں">+ Add New Employee</div>
+        <div class="btn ghost" id="userToggleBtn" onclick="toggleUserForm()" style="display:inline-block; cursor:pointer;" data-en="+ Create User Account" data-ur="+ نیا یوزر اکاؤنٹ بنائیں">+ Create User Account</div>
+      </div>
+    </div>
+
+    <div class="search-box" id="userListBox" style="display:none;">
+      <div class="lbl" data-en="User Accounts (Login Access)" data-ur="یوزر اکاؤنٹس (لاگ ان رسائی)">User Accounts (Login Access)</div>
+      <table class="user-table" id="userTable" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:8px 6px; border-bottom:2px solid var(--gold); color:var(--navy);" data-en="Employee" data-ur="ایمپلائی">Employee</th>
+            <th style="text-align:left; padding:8px 6px; border-bottom:2px solid var(--gold); color:var(--navy);" data-en="Username" data-ur="یوزر نام">Username</th>
+            <th style="text-align:left; padding:8px 6px; border-bottom:2px solid var(--gold); color:var(--navy);" data-en="Role" data-ur="کردار">Role</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody"></tbody>
+      </table>
+      <div class="count" id="userCount"></div>
+    </div>
+
+    <div class="modal-overlay" id="addForm">
+      <div class="modal-panel">
+        <div class="modal-close"><span onclick="toggleAddForm()">✕</span></div>
+        <div class="search-box">
+          <div class="lbl" data-en="Add New Employee — Personal Information" data-ur="نیا ایمپلائی شامل کریں — ذاتی معلومات">Add New Employee — Personal Information</div>
+          <div class="search-grid">
+            <div class="field"><label data-en="Photo" data-ur="تصویر">Photo</label><input type="file" accept="image/*" id="nPhoto"></div>
+            <div class="field"><label data-en="Name" data-ur="نام">Name</label><input type="text" id="nName" placeholder="e.g. Muhammad Ali"></div>
+            <div class="field"><label data-en="Father Name" data-ur="والد کا نام">Father Name</label><input type="text" id="nFather"></div>
+            <div class="field"><label data-en="Employee No (Pers #)" data-ur="ایمپلائی نمبر (پرس نمبر)">Employee No (Pers #)</label><input type="text" id="nPers" placeholder="e.g. 31500000"></div>
+            <div class="field"><label data-en="CNIC" data-ur="شناختی کارڈ نمبر">CNIC</label><input type="text" id="nCnic" placeholder="e.g. 3740512345678"></div>
+            <div class="field"><label data-en="Date of Birth (dd.mm.yyyy)" data-ur="تاریخ پیدائش (dd.mm.yyyy)">Date of Birth (dd.mm.yyyy)</label><input type="text" id="nDob" placeholder="e.g. 15.06.1990"></div>
+            <div class="field"><label data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="nDesig" placeholder="e.g. JUNIOR CLERK"></div>
+            <div class="field"><label data-en="Department" data-ur="شعبہ">Department</label><input type="text" id="nDept" placeholder="e.g. Law Department"></div>
+            <div class="field"><label data-en="Scale (BPS)" data-ur="اسکیل (بی پی ایس)">Scale (BPS)</label><input type="text" id="nScale" placeholder="e.g. 11"></div>
+            <div class="field"><label data-en="Service Status" data-ur="ملازمت کی حیثیت">Service Status</label>
+              <select id="nStatus"><option>Active Permanent</option><option>Active Temporary</option></select>
+            </div>
+            <div class="field"><label data-en="Length of Service" data-ur="مدتِ ملازمت">Length of Service</label><input type="text" id="nLen" placeholder="e.g. 0 Years 00 Months 000 Days"></div>
+            <div class="field"><label data-en="GPF No" data-ur="جی پی ایف نمبر">GPF No</label><input type="text" id="nGpf" placeholder="—"></div>
+            <div class="field"><label data-en="Bank" data-ur="بینک">Bank</label><input type="text" id="nBank" placeholder="e.g. HABIB BANK LIMITED"></div>
+            <div class="field"><label data-en="Account No" data-ur="اکاؤنٹ نمبر">Account No</label><input type="text" id="nAccount" placeholder="—"></div>
+            <div class="field"><label data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</label><input type="text" id="nMobile" placeholder="e.g. 03xx-xxxxxxx"></div>
+            <div class="field"><label data-en="Email" data-ur="ای میل">Email</label><input type="text" id="nEmail" placeholder="e.g. name@example.com"></div>
+          </div>
+          <div class="actions" style="padding:16px 0 0;">
+            <div class="btn primary" onclick="saveNewEmployee()" style="cursor:pointer;" data-en="Save Employee" data-ur="ایمپلائی محفوظ کریں">Save Employee</div>
+            <div class="btn ghost" onclick="toggleAddForm()" style="cursor:pointer;" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+          </div>
+          <div class="disclaimer" data-en="This adds the employee to this page's list only, for review — it is not yet saved to a live database. Once the shared database is set up, this form will save for real." data-ur="یہ صرف اس صفحے کی فہرست میں شامل ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔ مشترکہ ڈیٹا بیس بننے کے بعد یہ فارم حقیقی طور پر محفوظ کرے گا۔">This adds the employee to this page's list only, for review — it is not yet saved to a live database. Once the shared database is set up, this form will save for real.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="userForm">
+      <div class="modal-panel">
+        <div class="modal-close"><span onclick="toggleUserForm()">✕</span></div>
+        <div class="search-box">
+          <div class="lbl" data-en="Create User Account — Login Access" data-ur="نیا یوزر اکاؤنٹ — لاگ ان رسائی">Create User Account — Login Access</div>
+          <div class="search-grid">
+            <div class="field"><label data-en="Link to Employee" data-ur="ایمپلائی سے منسلک کریں">Link to Employee</label><select id="uaEmployee"></select></div>
+            <div class="field"><label data-en="Username" data-ur="یوزر نام">Username</label><input type="text" id="uaUsername" placeholder="e.g. iftikhar.ahmed"></div>
+            <div class="field"><label data-en="Password" data-ur="پاسورڈ">Password</label><input type="password" id="uaPassword"></div>
+            <div class="field"><label data-en="Confirm Password" data-ur="پاسورڈ دوبارہ لکھیں">Confirm Password</label><input type="password" id="uaPassword2"></div>
+            <div class="field"><label data-en="Role" data-ur="کردار">Role</label>
+              <select id="uaRole">
+                <option value="Administrator">Administrator</option>
+                <option value="User" selected>User</option>
+                <option value="Guest">Guest</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions" style="padding:16px 0 0;">
+            <div class="btn primary" onclick="saveUserAccount()" style="cursor:pointer;" data-en="Create Account" data-ur="اکاؤنٹ بنائیں">Create Account</div>
+            <div class="btn ghost" onclick="toggleUserForm()" style="cursor:pointer;" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+          </div>
+          <div class="disclaimer" data-en="This creates a login account in this page's list only, for review — it is not yet connected to a real login system (Firebase Authentication). Once the shared database is set up, this will become a real login." data-ur="یہ صرف اس صفحے کی فہرست میں اکاؤنٹ بناتا ہے، جانچ کے لیے — ابھی یہ کسی حقیقی لاگ ان سسٹم (Firebase Authentication) سے منسلک نہیں۔ مشترکہ ڈیٹا بیس بننے کے بعد یہ حقیقی لاگ ان بن جائے گا۔">This creates a login account in this page's list only, for review — it is not yet connected to a real login system (Firebase Authentication). Once the shared database is set up, this will become a real login.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editForm">
+      <div class="modal-panel">
+        <div class="modal-close"><span onclick="toggleEditForm()">✕</span></div>
+        <div class="search-box">
+          <div class="lbl" data-en="Edit Employee — Personal Information" data-ur="ایمپلائی میں تبدیلی — ذاتی معلومات">Edit Employee — Personal Information</div>
+          <input type="hidden" id="uPersHidden">
+          <div class="search-grid">
+            <div class="field"><label data-en="Photo" data-ur="تصویر">Photo</label><input type="file" accept="image/*" id="uPhoto"><div id="uPhotoCurrent" style="margin-top:6px; font-size:11px; color:var(--muted);"></div></div>
+            <div class="field"><label data-en="Name" data-ur="نام">Name</label><input type="text" id="uName"></div>
+            <div class="field"><label data-en="Father Name" data-ur="والد کا نام">Father Name</label><input type="text" id="uFather"></div>
+            <div class="field"><label data-en="Employee No (Pers #)" data-ur="ایمپلائی نمبر (پرس نمبر)">Employee No (Pers #)</label><input type="text" id="uPers" disabled style="background:#f0efe8;"></div>
+            <div class="field"><label data-en="CNIC" data-ur="شناختی کارڈ نمبر">CNIC</label><input type="text" id="uCnic"></div>
+            <div class="field"><label data-en="Date of Birth (dd.mm.yyyy)" data-ur="تاریخ پیدائش (dd.mm.yyyy)">Date of Birth (dd.mm.yyyy)</label><input type="text" id="uDob"></div>
+            <div class="field"><label data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="uDesig"></div>
+            <div class="field"><label data-en="Department" data-ur="شعبہ">Department</label><input type="text" id="uDept"></div>
+            <div class="field"><label data-en="Scale (BPS)" data-ur="اسکیل (بی پی ایس)">Scale (BPS)</label><input type="text" id="uScale"></div>
+            <div class="field"><label data-en="Service Status" data-ur="ملازمت کی حیثیت">Service Status</label>
+              <select id="uStatus"><option>Active Permanent</option><option>Active Temporary</option></select>
+            </div>
+            <div class="field"><label data-en="Length of Service" data-ur="مدتِ ملازمت">Length of Service</label><input type="text" id="uLen"></div>
+            <div class="field"><label data-en="GPF No" data-ur="جی پی ایف نمبر">GPF No</label><input type="text" id="uGpf"></div>
+            <div class="field"><label data-en="Bank" data-ur="بینک">Bank</label><input type="text" id="uBank"></div>
+            <div class="field"><label data-en="Account No" data-ur="اکاؤنٹ نمبر">Account No</label><input type="text" id="uAccount"></div>
+            <div class="field"><label data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</label><input type="text" id="uMobile" placeholder="e.g. 03xx-xxxxxxx"></div>
+            <div class="field"><label data-en="Email" data-ur="ای میل">Email</label><input type="text" id="uEmail" placeholder="e.g. name@example.com"></div>
+          </div>
+          <div class="actions" style="padding:16px 0 0;">
+            <div class="btn primary" onclick="saveEditEmployee()" style="cursor:pointer;" data-en="Save Changes" data-ur="تبدیلیاں محفوظ کریں">Save Changes</div>
+            <div class="btn ghost" onclick="toggleEditForm()" style="cursor:pointer;" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
+          </div>
+          <div class="disclaimer" data-en="This updates this page's list only, for review — it is not yet saved to a live database." data-ur="یہ صرف اس صفحے کی فہرست میں محفوظ ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔">This updates this page's list only, for review — it is not yet saved to a live database.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="sheet-head">
+        <div class="photo" id="pPhotoBox">👤</div>
+        <div class="who">
+          <h2 id="pName">—</h2>
+          <div class="desig" id="pDesig">—</div>
+          <div class="empno"><span data-en="Employee No" data-ur="ایمپلائی نمبر">Employee No</span>: <span id="pPers">—</span> &nbsp;·&nbsp; BPS-<span id="pScale">—</span></div>
+        </div>
+      </div>
+
+      <div class="sec-title" data-en="Personal Details" data-ur="ذاتی تفصیلات">Personal Details</div>
+      <div class="info-list">
+        <div class="info-row"><span class="k" data-en="Father Name" data-ur="والد کا نام">Father Name</span><span class="v" id="pFather">—</span></div>
+        <div class="info-row"><span class="k" data-en="CNIC" data-ur="شناختی کارڈ نمبر">CNIC</span><span class="v" id="pCnic">—</span></div>
+        <div class="info-row"><span class="k" data-en="Date of Birth" data-ur="تاریخ پیدائش">Date of Birth</span><span class="v" id="pDob">—</span></div>
+        <div class="info-row"><span class="k" data-en="Bank" data-ur="بینک">Bank</span><span class="v" id="pBank">—</span></div>
+        <div class="info-row"><span class="k" data-en="Account No" data-ur="اکاؤنٹ نمبر">Account No</span><span class="v" id="pAccount">—</span></div>
+        <div class="info-row"><span class="k" data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</span><span class="v" id="pMobile">—</span></div>
+        <div class="info-row"><span class="k" data-en="Email" data-ur="ای میل">Email</span><span class="v" id="pEmail">—</span></div>
+        <div class="info-row"><span class="k" data-en="Office" data-ur="دفتر">Office</span><span class="v" data-en="Camp Office PG Punjab, Supreme Court of Pakistan" data-ur="کیمپ آفس پی جی پنجاب، سپریم کورٹ آف پاکستان">Camp Office PG Punjab, Supreme Court of Pakistan</span></div>
+      </div>
+
+      <div class="sec-title" data-en="Employment Details" data-ur="ملازمت کی تفصیلات">Employment Details</div>
+      <div class="info-list">
+        <div class="info-row"><span class="k" data-en="Designation" data-ur="عہدہ">Designation</span><span class="v" id="eDesig">—</span></div>
+        <div class="info-row"><span class="k" data-en="Department" data-ur="شعبہ">Department</span><span class="v" id="eDept">—</span></div>
+        <div class="info-row"><span class="k" data-en="Scale (BPS)" data-ur="اسکیل (بی پی ایس)">Scale (BPS)</span><span class="v" id="eScale">—</span></div>
+        <div class="info-row"><span class="k" data-en="Service Status" data-ur="ملازمت کی حیثیت">Service Status</span><span class="v" id="eStatus">—</span></div>
+        <div class="info-row"><span class="k" data-en="Length of Service" data-ur="مدتِ ملازمت">Length of Service</span><span class="v" id="eLen">—</span></div>
+        <div class="info-row"><span class="k" data-en="GPF No" data-ur="جی پی ایف نمبر">GPF No</span><span class="v" id="eGpf">—</span></div>
+      </div>
+
+      <div class="disclaimer" data-en="Personal data only — pay & allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in." data-ur="صرف ذاتی ڈیٹا — تنخواہ اور الاؤنسز آپ کی ہدایت کے مطابق شامل نہیں۔ والد کا نام سب کے لیے خالی ہے — یہ RI4720 پے رول فائل میں کہیں موجود نہیں؛ اگر بھرنا ہے تو الگ سے بھیج دیں۔">Personal data only — pay &amp; allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in.</div>
+
+      <div class="actions">
+        <div class="btn primary" data-en="Print / Save PDF" data-ur="پرنٹ / پی ڈی ایف محفوظ کریں">Print / Save PDF</div>
+        <div class="btn ghost" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var EMP = [{"sr": 1, "pers": "31100829", "name": "MUHAMMAD JUNAID ASLAM", "designation": "PERSONAL ASSTT", "department": "Law and Parliamentary Aff", "scale": "17", "status": "Active Permanent", "cnic": "3830165334095", "gpf": "ADV01/3/025P115", "dob": "17.09.1979", "service_len": "19 Years 03 Months 025 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931589103", "father": "\u2014"}, {"sr": 2, "pers": "31459243", "name": "GHULAM ASGHAR KHAN", "designation": "SENIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740551369171", "gpf": "\u2014", "dob": "27.04.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931309403", "father": "\u2014"}, {"sr": 3, "pers": "31470373", "name": "NAVEED RASHEED", "designation": "NAIB QASID", "department": "Law and Parliamentary Aff", "scale": "02", "status": "Active Temporary", "cnic": "3740574944865", "gpf": "\u2014", "dob": "02.10.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931259203", "father": "\u2014"}, {"sr": 4, "pers": "31488741", "name": "AAMIR MUMTAZ SATTI", "designation": "SUPERINTENDENT", "department": "Law Department", "scale": "17", "status": "Active Permanent", "cnic": "3740379227451", "gpf": "\u2014", "dob": "20.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900104603", "father": "\u2014"}, {"sr": 5, "pers": "31488744", "name": "AJMAL MATEEN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740517221185", "gpf": "\u2014", "dob": "15.10.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154703", "father": "\u2014"}, {"sr": 6, "pers": "31488748", "name": "INAM ELLAHI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740503951459", "gpf": "\u2014", "dob": "04.06.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "\u2014", "account": "1300109339", "father": "\u2014"}, {"sr": 7, "pers": "31488757", "name": "IMRAN KHAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740210088909", "gpf": "\u2014", "dob": "12.04.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155703", "father": "\u2014"}, {"sr": 8, "pers": "31488760", "name": "KHURRAM RIAZ CHOUDHRI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740542015679", "gpf": "\u2014", "dob": "07.10.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154303", "father": "\u2014"}, {"sr": 9, "pers": "31488766", "name": "NISAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740505725883", "gpf": "\u2014", "dob": "12.04.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0013227900269503", "father": "\u2014"}, {"sr": 10, "pers": "31488767", "name": "RIZWAN MEHMOOD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740209979015", "gpf": "\u2014", "dob": "15.12.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154403", "father": "\u2014"}, {"sr": 11, "pers": "31488772", "name": "UMAR SULAMAN ANSARI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740538447763", "gpf": "\u2014", "dob": "15.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158003", "father": "\u2014"}, {"sr": 12, "pers": "31488774", "name": "QAISER MEHMOOD", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740548724711", "gpf": "\u2014", "dob": "01.07.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154103", "father": "\u2014"}, {"sr": 13, "pers": "31488775", "name": "NISAR JAFFAR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740504246253", "gpf": "\u2014", "dob": "04.08.1980", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155003", "father": "\u2014"}, {"sr": 14, "pers": "31488776", "name": "MUHAMMAD IRFAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740504375391", "gpf": "\u2014", "dob": "01.07.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158203", "father": "\u2014"}, {"sr": 15, "pers": "31488783", "name": "ZULFIQAR ALI", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740588962817", "gpf": "\u2014", "dob": "15.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154203", "father": "\u2014"}, {"sr": 17, "pers": "31488786", "name": "RAJA SEERAT", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740505860339", "gpf": "\u2014", "dob": "23.03.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154803", "father": "\u2014"}, {"sr": 18, "pers": "31488793", "name": "EHSAN UL HAQ", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740261348027", "gpf": "\u2014", "dob": "06.09.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154903", "father": "\u2014"}, {"sr": 19, "pers": "31488803", "name": "GHULAM QADIR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740299389845", "gpf": "\u2014", "dob": "16.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155603", "father": "\u2014"}, {"sr": 20, "pers": "31490275", "name": "AHMED RAZA GILANI", "designation": "ADDL PUBLIC PROSECUTER", "department": "Services & General Admin", "scale": "20", "status": "Active Permanent", "cnic": "3420141165653", "gpf": "ADVREG/01/P91", "dob": "27.01.1968", "service_len": "16 Years 01 Months 001 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900146003", "father": "\u2014"}, {"sr": 21, "pers": "31490328", "name": "MIRZA ABID MAJEED", "designation": "DEPUTY PROSECUTOR GENERAL", "department": "Law and Parliamentary Aff", "scale": "18", "status": "Active Permanent", "cnic": "3630204520555", "gpf": "\u2014", "dob": "01.03.1972", "service_len": "15 Years 07 Months 005 Days", "bank": "MCB BANK LIMITED", "account": "0000002010021316", "father": "\u2014"}, {"sr": 22, "pers": "31495236", "name": "NASIR ABASS AWAN", "designation": "DRIVER", "department": "Law Department", "scale": "05", "status": "Active Permanent", "cnic": "3740581722613", "gpf": "\u2014", "dob": "01.11.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931345303", "father": "\u2014"}, {"sr": 23, "pers": "31498255", "name": "IFTIKHAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "4130488788239", "gpf": "\u2014", "dob": "01.04.1977", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931263703", "father": "\u2014"}];
+
+  function uniqueSorted(arr){ return Array.from(new Set(arr)).sort(); }
+
+  function populateSelects(){
+    var byName = document.getElementById('byName');
+    var byPers = document.getElementById('byPers');
+    var byScale = document.getElementById('byScale');
+    var byCnic = document.getElementById('byCnic');
+    var byDob = document.getElementById('byDob');
+
+    [byName, byPers, byScale, byCnic, byDob].forEach(function(sel){
+      sel.innerHTML = '<option value="">—</option>';
+    });
+
+    EMP.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(e){
+      byName.innerHTML += '<option value="'+e.pers+'">'+e.name+'</option>';
+    });
+    EMP.slice().sort(function(a,b){ return a.pers.localeCompare(b.pers); }).forEach(function(e){
+      byPers.innerHTML += '<option value="'+e.pers+'">'+e.pers+' — '+e.name+'</option>';
+    });
+    uniqueSorted(EMP.map(function(e){return e.scale;})).forEach(function(s){
+      byScale.innerHTML += '<option value="'+s+'">BPS-'+s+'</option>';
+    });
+    EMP.slice().sort(function(a,b){ return a.cnic.localeCompare(b.cnic); }).forEach(function(e){
+      byCnic.innerHTML += '<option value="'+e.pers+'">'+e.cnic+'</option>';
+    });
+    EMP.slice().sort(function(a,b){ return a.dob.split('.').reverse().join('').localeCompare(b.dob.split('.').reverse().join('')); }).forEach(function(e){
+      byDob.innerHTML += '<option value="'+e.pers+'">'+e.dob+' — '+e.name+'</option>';
+    });
+
+    document.getElementById('count').textContent = EMP.length + ' employees loaded';
+
+    var uaEmployee = document.getElementById('uaEmployee');
+    if(uaEmployee){
+      var keepVal = uaEmployee.value;
+      uaEmployee.innerHTML = '';
+      EMP.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(e){
+        uaEmployee.innerHTML += '<option value="'+e.pers+'">'+e.name+' ('+e.pers+')</option>';
+      });
+      if(keepVal) uaEmployee.value = keepVal;
+    }
+  }
+
+  var USERS = [];
+
+  function toggleUserForm(){
+    document.getElementById('userForm').classList.toggle('open');
+  }
+
+  function renderUserTable(){
+    var body = document.getElementById('userTableBody');
+    body.innerHTML = '';
+    USERS.forEach(function(u){
+      body.innerHTML += '<tr>'
+        + '<td style="padding:7px 6px; border-bottom:1px solid var(--border);">'+u.employeeName+'</td>'
+        + '<td style="padding:7px 6px; border-bottom:1px solid var(--border);">'+u.username+'</td>'
+        + '<td style="padding:7px 6px; border-bottom:1px solid var(--border);">'+u.role+'</td>'
+        + '</tr>';
+    });
+    document.getElementById('userCount').textContent = USERS.length + (isUrdu ? ' یوزر اکاؤنٹس' : ' user account(s)');
+    document.getElementById('userListBox').style.display = USERS.length ? 'block' : 'none';
+  }
+
+  function saveUserAccount(){
+    var pers = document.getElementById('uaEmployee').value;
+    var emp = EMP.find(function(x){ return x.pers === pers; });
+    var username = document.getElementById('uaUsername').value.trim();
+    var pass = document.getElementById('uaPassword').value;
+    var pass2 = document.getElementById('uaPassword2').value;
+    var role = document.getElementById('uaRole').value;
+
+    if(!emp){
+      alert(isUrdu ? 'ایمپلائی منتخب کریں' : 'Please select an employee');
+      return;
+    }
+    if(!username){
+      alert(isUrdu ? 'یوزر نام ضروری ہے' : 'Username is required');
+      return;
+    }
+    if(USERS.some(function(u){ return u.username.toLowerCase() === username.toLowerCase(); })){
+      alert(isUrdu ? 'یہ یوزر نام پہلے سے موجود ہے' : 'This username already exists');
+      return;
+    }
+    if(!pass || pass.length < 4){
+      alert(isUrdu ? 'پاسورڈ کم از کم 4 حروف کا ہونا چاہیے' : 'Password must be at least 4 characters');
+      return;
+    }
+    if(pass !== pass2){
+      alert(isUrdu ? 'پاسورڈ میچ نہیں کر رہا' : 'Passwords do not match');
+      return;
+    }
+
+    USERS.push({ pers: pers, employeeName: emp.name, username: username, role: role });
+    renderUserTable();
+    toggleUserForm();
+    document.getElementById('uaUsername').value = '';
+    document.getElementById('uaPassword').value = '';
+    document.getElementById('uaPassword2').value = '';
+    document.getElementById('uaRole').value = 'User';
+  }
+
+  function findByScale(scale){
+    return EMP.filter(function(e){ return e.scale === scale; });
+  }
+
+  function showEmployee(pers){
+    var e = EMP.find(function(x){ return x.pers === pers; });
+    if(!e) return;
+    document.getElementById('pName').textContent = e.name;
+    document.getElementById('pDesig').textContent = e.designation;
+    document.getElementById('pPers').textContent = e.pers;
+    document.getElementById('pScale').textContent = e.scale;
+    document.getElementById('pCnic').textContent = e.cnic;
+    document.getElementById('pDob').textContent = e.dob;
+    document.getElementById('pFather').textContent = e.father;
+    document.getElementById('pBank').textContent = e.bank;
+    document.getElementById('pAccount').textContent = e.account;
+    document.getElementById('pMobile').textContent = e.mobile || '—';
+    document.getElementById('pEmail').textContent = e.email || '—';
+    var photoBox = document.getElementById('pPhotoBox');
+    if(e.photo){
+      photoBox.style.backgroundImage = 'url(' + e.photo + ')';
+      photoBox.textContent = '';
+    } else {
+      photoBox.style.backgroundImage = '';
+      photoBox.textContent = '👤';
+    }
+    document.getElementById('eDesig').textContent = e.designation;
+    document.getElementById('eDept').textContent = e.department;
+    document.getElementById('eScale').textContent = e.scale;
+    document.getElementById('eStatus').textContent = e.status;
+    document.getElementById('eLen').textContent = e.service_len;
+    document.getElementById('eGpf').textContent = e.gpf;
+
+    // sync all dropdowns
+    document.getElementById('byName').value = e.pers;
+    document.getElementById('byPers').value = e.pers;
+    document.getElementById('byCnic').value = e.pers;
+    document.getElementById('byDob').value = e.pers;
+  }
+
+  document.getElementById('byName').addEventListener('change', function(){ if(this.value) showEmployee(this.value); });
+  document.getElementById('byPers').addEventListener('change', function(){ if(this.value) showEmployee(this.value); });
+  document.getElementById('byCnic').addEventListener('change', function(){ if(this.value) showEmployee(this.value); });
+  document.getElementById('byDob').addEventListener('change', function(){ if(this.value) showEmployee(this.value); });
+  document.getElementById('byScale').addEventListener('change', function(){
+    var list = findByScale(this.value);
+    if(list.length) showEmployee(list[0].pers);
+  });
+
+  function toggleAddForm(){
+    document.getElementById('addForm').classList.toggle('open');
+  }
+
+  function readPhotoFile(inputId, callback){
+    var input = document.getElementById(inputId);
+    if(input && input.files && input.files[0]){
+      var reader = new FileReader();
+      reader.onload = function(ev){ callback(ev.target.result); };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      callback(null);
+    }
+  }
+
+  function saveNewEmployee(){
+    var pers = document.getElementById('nPers').value.trim();
+    var name = document.getElementById('nName').value.trim();
+    if(!pers || !name){
+      alert(isUrdu ? 'نام اور ایمپلائی نمبر ضروری ہیں' : 'Name and Employee No are required');
+      return;
+    }
+    if(EMP.some(function(e){ return e.pers === pers; })){
+      alert(isUrdu ? 'یہ ایمپلائی نمبر پہلے سے موجود ہے' : 'This Employee No already exists');
+      return;
+    }
+    readPhotoFile('nPhoto', function(photoData){
+      var newEmp = {
+        sr: EMP.length ? Math.max.apply(null, EMP.map(function(e){return e.sr;})) + 1 : 1,
+        pers: pers,
+        name: name.toUpperCase(),
+        designation: document.getElementById('nDesig').value.trim() || '—',
+        department: document.getElementById('nDept').value.trim() || '—',
+        scale: document.getElementById('nScale').value.trim() || '—',
+        status: document.getElementById('nStatus').value,
+        cnic: document.getElementById('nCnic').value.trim() || '—',
+        gpf: document.getElementById('nGpf').value.trim() || '—',
+        dob: document.getElementById('nDob').value.trim() || '—',
+        service_len: document.getElementById('nLen').value.trim() || '—',
+        bank: document.getElementById('nBank').value.trim() || '—',
+        account: document.getElementById('nAccount').value.trim() || '—',
+        father: document.getElementById('nFather').value.trim() || '—',
+        mobile: document.getElementById('nMobile').value.trim() || '—',
+        email: document.getElementById('nEmail').value.trim() || '—',
+        photo: photoData || null
+      };
+      EMP.push(newEmp);
+      populateSelects();
+      showEmployee(newEmp.pers);
+      toggleAddForm();
+      ['nName','nFather','nPers','nCnic','nDob','nDesig','nDept','nScale','nLen','nGpf','nBank','nAccount','nMobile','nEmail'].forEach(function(id){
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('nPhoto').value = '';
+    });
+  }
+
+  function toggleEditForm(){
+    document.getElementById('editForm').classList.toggle('open');
+  }
+
+  function openEditForm(){
+    var pers = document.getElementById('pPers').textContent;
+    var e = EMP.find(function(x){ return x.pers === pers; });
+    if(!e){
+      alert(isUrdu ? 'پہلے کسی ایمپلائی کو منتخب کریں' : 'Please select an employee first');
+      return;
+    }
+    document.getElementById('uPersHidden').value = e.pers;
+    document.getElementById('uPers').value = e.pers;
+    document.getElementById('uName').value = e.name;
+    document.getElementById('uFather').value = (e.father && e.father !== '—') ? e.father : '';
+    document.getElementById('uCnic').value = (e.cnic && e.cnic !== '—') ? e.cnic : '';
+    document.getElementById('uDob').value = (e.dob && e.dob !== '—') ? e.dob : '';
+    document.getElementById('uDesig').value = e.designation || '';
+    document.getElementById('uDept').value = e.department || '';
+    document.getElementById('uScale').value = e.scale || '';
+    document.getElementById('uStatus').value = e.status || 'Active Permanent';
+    document.getElementById('uLen').value = e.service_len || '';
+    document.getElementById('uGpf').value = (e.gpf && e.gpf !== '—') ? e.gpf : '';
+    document.getElementById('uBank').value = (e.bank && e.bank !== '—') ? e.bank : '';
+    document.getElementById('uAccount').value = (e.account && e.account !== '—') ? e.account : '';
+    document.getElementById('uMobile').value = (e.mobile && e.mobile !== '—') ? e.mobile : '';
+    document.getElementById('uEmail').value = (e.email && e.email !== '—') ? e.email : '';
+    document.getElementById('uPhoto').value = '';
+    document.getElementById('uPhotoCurrent').innerHTML = e.photo
+      ? (isUrdu ? 'موجودہ تصویر: ' : 'Current photo: ') + '<img class="photo-thumb" src="' + e.photo + '">'
+      : (isUrdu ? 'ابھی کوئی تصویر موجود نہیں' : 'No photo set yet');
+    toggleEditForm();
+  }
+
+  function saveEditEmployee(){
+    var pers = document.getElementById('uPersHidden').value;
+    var e = EMP.find(function(x){ return x.pers === pers; });
+    if(!e) return;
+    var name = document.getElementById('uName').value.trim();
+    if(!name){
+      alert(isUrdu ? 'نام ضروری ہے' : 'Name is required');
+      return;
+    }
+    e.name = name.toUpperCase();
+    e.father = document.getElementById('uFather').value.trim() || '—';
+    e.cnic = document.getElementById('uCnic').value.trim() || '—';
+    e.dob = document.getElementById('uDob').value.trim() || '—';
+    e.designation = document.getElementById('uDesig').value.trim() || '—';
+    e.department = document.getElementById('uDept').value.trim() || '—';
+    e.scale = document.getElementById('uScale').value.trim() || '—';
+    e.status = document.getElementById('uStatus').value;
+    e.service_len = document.getElementById('uLen').value.trim() || '—';
+    e.gpf = document.getElementById('uGpf').value.trim() || '—';
+    e.bank = document.getElementById('uBank').value.trim() || '—';
+    e.account = document.getElementById('uAccount').value.trim() || '—';
+    e.mobile = document.getElementById('uMobile').value.trim() || '—';
+    e.email = document.getElementById('uEmail').value.trim() || '—';
+    readPhotoFile('uPhoto', function(photoData){
+      if(photoData) e.photo = photoData;
+      populateSelects();
+      showEmployee(e.pers);
+      toggleEditForm();
+    });
+  }
+
+  populateSelects();
+  if(EMP.length) showEmployee(EMP[0].pers);
+  renderUserTable();
+
+  var isUrdu = false;
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+  }
+</script>
+</body>
+</html>

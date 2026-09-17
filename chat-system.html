@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Chat — Camp Office PG Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+    --radius:8px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; height:100%;}
+  body{background:var(--bg); color:var(--text); font-family:"Segoe UI",Tahoma,Arial,sans-serif; line-height:1.5;}
+
+  .topbar{background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; position:relative; z-index:70;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .wrap{max-width:760px; margin:0 auto; padding:26px 20px 60px;}
+  .note-card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px 20px; margin-bottom:20px; font-size:13px;}
+  .note-card b{color:var(--navy);}
+
+  /* ===== Chat launcher (matches the live site's floating chat button) ===== */
+  #chatToggleBtn{
+    position:fixed; bottom:26px; right:26px; width:56px; height:56px; border-radius:50%;
+    background:var(--navy); color:#fff; border:none; font-size:22px; cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,.28); z-index:50; display:flex; align-items:center; justify-content:center;
+  }
+  #chatToggleBtn:hover{background:var(--navy2);}
+
+  /* ===== Chat panel — same structure as the live Daily Case Management System ===== */
+  #chatPanel{
+    position:fixed; top:0; right:-340px; width:320px; height:100%; background:#fff;
+    box-shadow:-6px 0 24px rgba(0,0,0,.18); display:flex; flex-direction:column;
+    transition:right .22s ease; z-index:60; border-left:1px solid var(--border);
+  }
+  #chatPanel.open{ right:0; }
+  .chat-head{background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between;}
+  .chat-head .title{font-size:13.5px; font-weight:700;}
+  .chat-head .close{cursor:pointer; font-size:18px; opacity:.85;}
+
+  .chat-messages{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px; display:flex; flex-direction:column; gap:10px; background:#faf9f5;}
+  .chat-msg{max-width:88%; position:relative;}
+  .chat-msg.me{align-self:flex-end;}
+  .chat-msg.them{align-self:flex-start;}
+  .chat-msg .sender{font-size:10.5px; color:var(--gold-deep); font-weight:700; margin-bottom:2px;}
+  .chat-msg .chat-msg-bubble{background:#fff; border:1px solid var(--border); border-radius:10px; padding:7px 10px; font-size:12.5px; word-break:break-word;}
+  .chat-msg.me .chat-msg-bubble{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .chat-msg .time{font-size:9.5px; color:var(--muted); margin-top:2px;}
+  .chat-msg.me .time{text-align:right;}
+
+  /* Delete control — the piece that was missing on the live chat */
+  .chat-msg .delete-btn{
+    position:absolute; top:-6px; width:20px; height:20px; border-radius:50%;
+    background:#fff; border:1px solid var(--border); color:#a33a3a; font-size:11px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    opacity:0; transition:opacity .12s; box-shadow:0 1px 4px rgba(0,0,0,.15);
+  }
+  .chat-msg.me .delete-btn{ left:-8px; }
+  .chat-msg.them .delete-btn{ right:-8px; }
+  .chat-msg:hover .delete-btn{ opacity:1; }
+
+  .chat-input-bar{display:flex; gap:6px; padding:10px; border-top:1px solid var(--border); align-items:center;}
+  .chat-input-bar input[type="text"]{flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12.5px; min-width:0;}
+  .chat-input-bar button{border:none; background:var(--navy); color:#fff; border-radius:var(--radius); padding:0 14px; cursor:pointer; font-size:12.5px; font-weight:600; flex:none;}
+  .chat-input-bar button:hover{background:var(--navy2);}
+  .icon-btn{width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--navy); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none; padding:0 !important;}
+  .icon-btn:hover{background:#f2f0e8 !important;}
+  .icon-btn.recording{background:#c0392b !important; color:#fff; border-color:#c0392b; animation:pulseRec 1s infinite;}
+  @keyframes pulseRec{ 0%,100%{ box-shadow:0 0 0 0 rgba(192,57,43,.5); } 50%{ box-shadow:0 0 0 6px rgba(192,57,43,.15); } }
+
+  .chat-msg .chat-msg-bubble a.file-link{display:flex; align-items:center; gap:7px; color:inherit; text-decoration:none;}
+  .chat-msg .chat-msg-bubble .file-icon{font-size:18px;}
+  .chat-msg .chat-msg-bubble .file-size{font-size:10px; opacity:.75; display:block;}
+  .chat-msg .chat-msg-bubble audio{width:190px; height:30px; vertical-align:middle;}
+
+  [dir="rtl"] #chatPanel{ right:auto; left:-340px; border-left:none; border-right:1px solid var(--border);}
+  [dir="rtl"] #chatPanel.open{ left:0; right:auto; }
+  [dir="rtl"] #chatToggleBtn{ right:auto; left:26px; }
+  [dir="rtl"] .chat-msg.me{ align-self:flex-start; }
+  [dir="rtl"] .chat-msg.them{ align-self:flex-end; }
+  [dir="rtl"] .chat-msg.me .delete-btn{ left:auto; right:-8px; }
+  [dir="rtl"] .chat-msg.them .delete-btn{ right:auto; left:-8px; }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">🪶 <span data-en="Camp Office Prosecutor General Punjab — Team Chat" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب — ٹیم چیٹ">Camp Office Prosecutor General Punjab — Team Chat</span></div>
+    <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+  </div>
+
+  <button id="chatToggleBtn" onclick="toggleChat()" title="Team Chat">💬</button>
+
+  <div id="chatPanel">
+    <div class="chat-head">
+      <div class="title" data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</div>
+      <div class="close" onclick="toggleChat()">✕</div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-bar">
+      <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(this)">
+      <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
+      <button class="icon-btn" id="micBtn" onclick="toggleRecording()" title="Record voice message">🎤</button>
+      <input type="text" id="chatInput" data-en-ph="Type a message…" data-ur-ph="پیغام لکھیں…" placeholder="Type a message…">
+      <button onclick="sendMessage()" data-en="Send" data-ur="بھیجیں">Send</button>
+    </div>
+  </div>
+
+<script>
+  var isUrdu = false;
+  var currentUser = 'Iftikhar Ahmed';
+
+  var chatMsgs = [
+    { id: 1, sender: 'Aamir Mumtaz Satti', me: false, text: 'Case file No. 214 ka status update chahiye.', time: '10:12 AM' },
+    { id: 2, sender: currentUser, me: true, text: 'Ji bhai, main check kar ke bata deta hoon.', time: '10:14 AM' },
+    { id: 3, sender: 'Ghulam Asghar Khan', me: false, text: 'Duty roster is week ke liye update ho gaya hai.', time: '10:20 AM' },
+    { id: 4, sender: currentUser, me: true, text: 'Theek hai, shukriya.', time: '10:21 AM' }
+  ];
+  var nextId = 5;
+
+  function toggleChat(){
+    document.getElementById('chatPanel').classList.toggle('open');
+  }
+
+  function bubbleContentFor(m){
+    if(m.type === 'file'){
+      return '<a class="file-link" href="' + m.fileUrl + '" download="' + m.fileName + '">' +
+        '<span class="file-icon">📄</span><span>' + m.fileName + '<span class="file-size">' + m.fileSize + '</span></span></a>';
+    }
+    if(m.type === 'voice'){
+      return '<audio controls src="' + m.audioUrl + '"></audio>';
+    }
+    return m.text;
+  }
+
+  function renderChat(){
+    var box = document.getElementById('chatMessages');
+    box.innerHTML = '';
+    chatMsgs.forEach(function(m){
+      var div = document.createElement('div');
+      div.className = 'chat-msg ' + (m.me ? 'me' : 'them');
+      div.innerHTML =
+        '<div class="delete-btn" onclick="deleteMessage(' + m.id + ')" title="' + (isUrdu ? 'حذف کریں' : 'Delete') + '">✕</div>' +
+        (m.me ? '' : '<div class="sender">' + m.sender + '</div>') +
+        '<div class="chat-msg-bubble">' + bubbleContentFor(m) + '</div>' +
+        '<div class="time">' + m.time + '</div>';
+      box.appendChild(div);
+    });
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function nowStamp(){
+    var now = new Date();
+    var hh = now.getHours() % 12 || 12;
+    var mm = now.getMinutes().toString().padStart(2, '0');
+    var ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    return hh + ':' + mm + ' ' + ampm;
+  }
+
+  function formatSize(bytes){
+    if(bytes < 1024) return bytes + ' B';
+    if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  function handleFileUpload(input){
+    if(!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var url = URL.createObjectURL(file);
+    chatMsgs.push({
+      id: nextId++, sender: currentUser, me: true, type: 'file',
+      fileName: file.name, fileSize: formatSize(file.size), fileUrl: url, time: nowStamp()
+    });
+    input.value = '';
+    renderChat();
+  }
+
+  var mediaRecorder = null;
+  var audioChunks = [];
+  var isRecording = false;
+
+  function toggleRecording(){
+    if(isRecording){
+      mediaRecorder.stop();
+      return;
+    }
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      alert(isUrdu ? 'یہ براؤزر مائیکروفون سپورٹ نہیں کرتا' : 'This browser does not support microphone recording');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream){
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = function(e){ if(e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = function(){
+        var blob = new Blob(audioChunks, { type: 'audio/webm' });
+        var url = URL.createObjectURL(blob);
+        chatMsgs.push({ id: nextId++, sender: currentUser, me: true, type: 'voice', audioUrl: url, time: nowStamp() });
+        renderChat();
+        stream.getTracks().forEach(function(t){ t.stop(); });
+        isRecording = false;
+        document.getElementById('micBtn').classList.remove('recording');
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      document.getElementById('micBtn').classList.add('recording');
+    }).catch(function(err){
+      alert((isUrdu ? 'مائیکروفون تک رسائی نہیں ملی: ' : 'Could not access microphone: ') + err.message);
+    });
+  }
+
+  function deleteMessage(id){
+    chatMsgs = chatMsgs.filter(function(m){ return m.id !== id; });
+    renderChat();
+  }
+
+  function sendMessage(){
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if(!text) return;
+    chatMsgs.push({ id: nextId++, sender: currentUser, me: true, type: 'text', text: text, time: nowStamp() });
+    input.value = '';
+    renderChat();
+  }
+
+  document.getElementById('chatInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') sendMessage();
+  });
+
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.querySelectorAll('[data-en-ph]').forEach(function(el){
+      el.placeholder = isUrdu ? el.dataset.urPh : el.dataset.enPh;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+    renderChat();
+  }
+
+  renderChat();
+</script>
+</body>
+</html>

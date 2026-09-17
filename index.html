@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — Camp Office PG Punjab</title>
+<style>
+  :root{
+    --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
+    --gold:#c8952a; --gold-light:#e8b94f; --gold-deep:#9c7420;
+    --bg:#f3f1ea; --card:#ffffff; --border:#e4e0d3; --text:#1c2130; --muted:#666f80;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; height:100%;}
+  body{background:radial-gradient(circle at 30% 20%, var(--navy2), var(--navy3) 70%); color:var(--text); font-family:"Segoe UI",Tahoma,Arial,sans-serif; line-height:1.5; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;}
+
+  .lang-btn{position:fixed; top:16px; right:16px; background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; z-index:10;}
+  [dir="rtl"] .lang-btn{right:auto; left:16px;}
+
+  .auth-card{background:var(--card); border-radius:14px; width:100%; max-width:420px; box-shadow:0 24px 60px rgba(0,0,0,.35); overflow:hidden;}
+
+  .auth-head{background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:28px 26px 22px; text-align:center;}
+  .auth-head .crest{font-size:30px; margin-bottom:6px;}
+  .auth-head h1{margin:0; font-size:16px; font-weight:700;}
+  .auth-head .sub{font-size:11.5px; color:#cbd4e8; margin-top:4px;}
+
+  .tabs{display:flex; border-bottom:1px solid var(--border);}
+  .tab{flex:1; text-align:center; padding:13px 10px; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; transition:.15s;}
+  .tab.active{color:var(--navy); border-bottom-color:var(--gold);}
+
+  .panel{padding:24px 26px 26px; display:none;}
+  .panel.active{display:block;}
+
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12px; font-weight:600; color:var(--navy); margin-bottom:5px;}
+  .field input, .field select{width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:7px; font-size:13px; background:#fbfbf9;}
+  .field input:focus, .field select:focus{outline:none; border-color:var(--gold);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+
+  .remember{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; font-size:12px; color:var(--muted);}
+  .remember label{display:flex; align-items:center; gap:6px; cursor:pointer;}
+  .remember a{color:var(--gold-deep); text-decoration:none; font-weight:600; cursor:pointer;}
+
+  .btn-submit{width:100%; padding:12px; background:var(--navy); color:#fff; border:none; border-radius:7px; font-size:13.5px; font-weight:700; cursor:pointer; transition:.15s;}
+  .btn-submit:hover{background:var(--navy2);}
+
+  .msg{margin-top:14px; padding:10px 12px; border-radius:7px; font-size:12px; display:none;}
+  .msg.error{background:#fdecec; color:#a33a3a; border-left:3px solid #c0392b;}
+  .msg.success{background:#eaf6ec; color:#2c6e3f; border-left:3px solid #2e9e4f;}
+  .msg.show{display:block;}
+
+  .disclaimer{margin:0 26px 22px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2; border-radius:0 6px 6px 0;}
+
+  [dir="rtl"] body{direction:rtl;}
+  [dir="rtl"] .field label{text-align:right;}
+  [dir="rtl"] .remember a{margin-right:0;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold); border-radius:6px 0 0 6px;}
+</style>
+</head>
+<body>
+
+<button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+
+<div class="auth-card">
+  <div class="auth-head">
+    <div class="crest">🪶</div>
+    <h1 data-en="Camp Office Prosecutor General Punjab" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب">Camp Office Prosecutor General Punjab</h1>
+    <div class="sub" data-en="Supreme Court of Pakistan, Islamabad" data-ur="سپریم کورٹ آف پاکستان، اسلام آباد">Supreme Court of Pakistan, Islamabad</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab" id="tabSignIn" onclick="switchTab('signin')" data-en="Sign In" data-ur="سائن ان">Sign In</div>
+    <div class="tab active" id="tabSignUp" onclick="switchTab('signup')" data-en="Create Account" data-ur="نیا اکاؤنٹ بنائیں">Create Account</div>
+  </div>
+
+  <!-- SIGN IN -->
+  <div class="panel" id="panelSignIn">
+    <div class="field">
+      <label data-en="Username or Employee No" data-ur="یوزر نام یا ایمپلائی نمبر">Username or Employee No</label>
+      <input type="text" id="siUser" placeholder="e.g. iftikhar.ahmed">
+    </div>
+    <div class="field">
+      <label data-en="Password" data-ur="پاسورڈ">Password</label>
+      <input type="password" id="siPass">
+    </div>
+    <div class="remember">
+      <label><input type="checkbox" id="siRemember"> <span data-en="Remember me" data-ur="مجھے یاد رکھیں">Remember me</span></label>
+      <a data-en="Forgot password?" data-ur="پاسورڈ بھول گئے؟">Forgot password?</a>
+    </div>
+    <button class="btn-submit" onclick="doSignIn()" data-en="Sign In" data-ur="سائن ان کریں">Sign In</button>
+    <div class="msg" id="siMsg"></div>
+  </div>
+
+  <!-- SIGN UP -->
+  <div class="panel active" id="panelSignUp">
+    <div class="field">
+      <label data-en="Full Name" data-ur="مکمل نام">Full Name</label>
+      <input type="text" id="suName" placeholder="e.g. Muhammad Ali">
+    </div>
+    <div class="field">
+      <label data-en="CNIC No" data-ur="شناختی کارڈ نمبر">CNIC No</label>
+      <input type="text" id="suCnic" placeholder="e.g. 3740512345678">
+    </div>
+    <div class="field">
+      <label data-en="Email" data-ur="ای میل">Email</label>
+      <input type="text" id="suEmail" placeholder="e.g. name@example.com">
+    </div>
+    <div class="field">
+      <label data-en="Username" data-ur="یوزر نام">Username</label>
+      <input type="text" id="suUser" placeholder="e.g. iftikhar.ahmed">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label data-en="Password" data-ur="پاسورڈ">Password</label>
+        <input type="password" id="suPass">
+      </div>
+      <div class="field">
+        <label data-en="Confirm Password" data-ur="پاسورڈ دوبارہ">Confirm Password</label>
+        <input type="password" id="suPass2">
+      </div>
+    </div>
+    <button class="btn-submit" onclick="doSignUp()" data-en="Create Account" data-ur="اکاؤنٹ بنائیں">Create Account</button>
+    <div class="msg" id="suMsg"></div>
+  </div>
+
+  <div class="disclaimer" data-en="Draft for review only — sign-in and account creation are not yet connected to a real login system. Nothing here is live." data-ur="صرف جانچ کے لیے مسودہ — سائن اِن اور اکاؤنٹ بنانا ابھی کسی حقیقی لاگ ان سسٹم سے منسلک نہیں۔ یہاں کچھ بھی لائیو نہیں۔">Draft for review only — sign-in and account creation are not yet connected to a real login system. Nothing here is live.</div>
+</div>
+
+<script>
+  // Real employee records — used to verify Sign Up requests (BPS must be above 7 and CNIC must match)
+  var EMP = [{"sr": 1, "pers": "31100829", "name": "MUHAMMAD JUNAID ASLAM", "designation": "PERSONAL ASSTT", "department": "Law and Parliamentary Aff", "scale": "17", "status": "Active Permanent", "cnic": "3830165334095", "gpf": "ADV01/3/025P115", "dob": "17.09.1979", "service_len": "19 Years 03 Months 025 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931589103", "father": "—"}, {"sr": 2, "pers": "31459243", "name": "GHULAM ASGHAR KHAN", "designation": "SENIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740551369171", "gpf": "—", "dob": "27.04.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931309403", "father": "—"}, {"sr": 3, "pers": "31470373", "name": "NAVEED RASHEED", "designation": "NAIB QASID", "department": "Law and Parliamentary Aff", "scale": "02", "status": "Active Temporary", "cnic": "3740574944865", "gpf": "—", "dob": "02.10.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931259203", "father": "—"}, {"sr": 4, "pers": "31488741", "name": "AAMIR MUMTAZ SATTI", "designation": "SUPERINTENDENT", "department": "Law Department", "scale": "17", "status": "Active Permanent", "cnic": "3740379227451", "gpf": "—", "dob": "20.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900104603", "father": "—"}, {"sr": 5, "pers": "31488744", "name": "AJMAL MATEEN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740517221185", "gpf": "—", "dob": "15.10.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154703", "father": "—"}, {"sr": 6, "pers": "31488748", "name": "INAM ELLAHI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740503951459", "gpf": "—", "dob": "04.06.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "—", "account": "1300109339", "father": "—"}, {"sr": 7, "pers": "31488757", "name": "IMRAN KHAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740210088909", "gpf": "—", "dob": "12.04.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155703", "father": "—"}, {"sr": 8, "pers": "31488760", "name": "KHURRAM RIAZ CHOUDHRI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740542015679", "gpf": "—", "dob": "07.10.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154303", "father": "—"}, {"sr": 9, "pers": "31488766", "name": "NISAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740505725883", "gpf": "—", "dob": "12.04.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0013227900269503", "father": "—"}, {"sr": 10, "pers": "31488767", "name": "RIZWAN MEHMOOD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740209979015", "gpf": "—", "dob": "15.12.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154403", "father": "—"}, {"sr": 11, "pers": "31488772", "name": "UMAR SULAMAN ANSARI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740538447763", "gpf": "—", "dob": "15.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158003", "father": "—"}, {"sr": 12, "pers": "31488774", "name": "QAISER MEHMOOD", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740548724711", "gpf": "—", "dob": "01.07.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154103", "father": "—"}, {"sr": 13, "pers": "31488775", "name": "NISAR JAFFAR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740504246253", "gpf": "—", "dob": "04.08.1980", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155003", "father": "—"}, {"sr": 14, "pers": "31488776", "name": "MUHAMMAD IRFAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740504375391", "gpf": "—", "dob": "01.07.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158203", "father": "—"}, {"sr": 15, "pers": "31488783", "name": "ZULFIQAR ALI", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740588962817", "gpf": "—", "dob": "15.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154203", "father": "—"}, {"sr": 17, "pers": "31488786", "name": "RAJA SEERAT", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740505860339", "gpf": "—", "dob": "23.03.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154803", "father": "—"}, {"sr": 18, "pers": "31488793", "name": "EHSAN UL HAQ", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740261348027", "gpf": "—", "dob": "06.09.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154903", "father": "—"}, {"sr": 19, "pers": "31488803", "name": "GHULAM QADIR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740299389845", "gpf": "—", "dob": "16.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155603", "father": "—"}, {"sr": 20, "pers": "31490275", "name": "AHMED RAZA GILANI", "designation": "ADDL PUBLIC PROSECUTER", "department": "Services & General Admin", "scale": "20", "status": "Active Permanent", "cnic": "3420141165653", "gpf": "ADVREG/01/P91", "dob": "27.01.1968", "service_len": "16 Years 01 Months 001 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900146003", "father": "—"}, {"sr": 21, "pers": "31490328", "name": "MIRZA ABID MAJEED", "designation": "DEPUTY PROSECUTOR GENERAL", "department": "Law and Parliamentary Aff", "scale": "18", "status": "Active Permanent", "cnic": "3630204520555", "gpf": "—", "dob": "01.03.1972", "service_len": "15 Years 07 Months 005 Days", "bank": "MCB BANK LIMITED", "account": "0000002010021316", "father": "—"}, {"sr": 22, "pers": "31495236", "name": "NASIR ABASS AWAN", "designation": "DRIVER", "department": "Law Department", "scale": "05", "status": "Active Permanent", "cnic": "3740581722613", "gpf": "—", "dob": "01.11.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931345303", "father": "—"}, {"sr": 23, "pers": "31498255", "name": "IFTIKHAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "4130488788239", "gpf": "—", "dob": "01.04.1977", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931263703", "father": "—"}];
+
+  function normalizeCnic(v){
+    return (v || '').replace(/\D/g, '');
+  }
+
+  var isUrdu = false;
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      el.textContent = isUrdu ? el.dataset.ur : el.dataset.en;
+    });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+  }
+
+  function switchTab(which){
+    document.getElementById('tabSignIn').classList.toggle('active', which === 'signin');
+    document.getElementById('tabSignUp').classList.toggle('active', which === 'signup');
+    document.getElementById('panelSignIn').classList.toggle('active', which === 'signin');
+    document.getElementById('panelSignUp').classList.toggle('active', which === 'signup');
+  }
+
+  function showMsg(id, type, textEn, textUr){
+    var el = document.getElementById(id);
+    el.className = 'msg show ' + type;
+    el.textContent = isUrdu ? textUr : textEn;
+  }
+
+  function doSignIn(){
+    var user = document.getElementById('siUser').value.trim();
+    var pass = document.getElementById('siPass').value;
+    if(!user || !pass){
+      showMsg('siMsg', 'error', 'Username/Employee No and Password are required.', 'یوزر نام/ایمپلائی نمبر اور پاسورڈ ضروری ہیں۔');
+      return;
+    }
+    showMsg('siMsg', 'success', 'Signed in — opening the office portal…', 'سائن اِن ہو گیا — دفتری پورٹل کھل رہا ہے…');
+    setTimeout(function(){ window.location.href = 'main-page.html'; }, 900);
+  }
+
+  function doSignUp(){
+    var name = document.getElementById('suName').value.trim();
+    var cnic = document.getElementById('suCnic').value.trim();
+    var username = document.getElementById('suUser').value.trim();
+    var pass = document.getElementById('suPass').value;
+    var pass2 = document.getElementById('suPass2').value;
+
+    if(!name || !cnic || !username){
+      showMsg('suMsg', 'error', 'Name, CNIC No and Username are required.', 'نام، شناختی کارڈ نمبر اور یوزر نام ضروری ہیں۔');
+      return;
+    }
+    if(!pass || pass.length < 4){
+      showMsg('suMsg', 'error', 'Password must be at least 4 characters.', 'پاسورڈ کم از کم 4 حروف کا ہونا چاہیے۔');
+      return;
+    }
+    if(pass !== pass2){
+      showMsg('suMsg', 'error', 'Passwords do not match.', 'پاسورڈ میچ نہیں کر رہا۔');
+      return;
+    }
+
+    // Rule: CNIC must match an existing employee record, AND that employee's BPS (scale) must be above 7.
+    var cnicClean = normalizeCnic(cnic);
+    var emp = EMP.find(function(e){ return normalizeCnic(e.cnic) === cnicClean; });
+
+    if(!emp){
+      showMsg('suMsg', 'error',
+        'This CNIC does not match any employee record. Account cannot be created.',
+        'یہ شناختی کارڈ نمبر کسی بھی ایمپلائی ریکارڈ سے میچ نہیں کرتا۔ اکاؤنٹ نہیں بن سکتا۔');
+      return;
+    }
+
+    var scaleNum = parseInt(emp.scale, 10);
+    if(isNaN(scaleNum) || scaleNum <= 7){
+      showMsg('suMsg', 'error',
+        'Record found (' + emp.name + ', BPS-' + emp.scale + ') but BPS is 7 or below. Only BPS above 7 can create an account.',
+        'ریکارڈ مل گیا (' + emp.name + '، بی پی ایس-' + emp.scale + ') مگر بی پی ایس 7 یا اس سے کم ہے۔ صرف بی پی ایس 7 سے زیادہ والے اکاؤنٹ بنا سکتے ہیں۔');
+      return;
+    }
+
+    showMsg('suMsg', 'success',
+      'Verified against employee record (' + emp.name + ', BPS-' + emp.scale + ') — account created. Please sign in.',
+      'ایمپلائی ریکارڈ سے تصدیق ہو گئی (' + emp.name + '، بی پی ایس-' + emp.scale + ') — اکاؤنٹ بن گیا۔ براہ کرم سائن اِن کریں۔');
+    setTimeout(function(){ switchTab('signin'); }, 1200);
+  }
+</script>
+</body>
+</html>

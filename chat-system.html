@@ -84,6 +84,7 @@
   .chat-msg .chat-msg-bubble .file-icon{font-size:18px;}
   .chat-msg .chat-msg-bubble .file-size{font-size:10px; opacity:.75; display:block;}
   .chat-msg .chat-msg-bubble audio{width:190px; height:30px; vertical-align:middle;}
+  .chat-msg .chat-msg-bubble .chat-msg-image{max-width:200px; max-height:200px; border-radius:8px; display:block; cursor:pointer; object-fit:cover;}
 
   [dir="rtl"] #chatPanel{ right:auto; left:-340px; border-left:none; border-right:1px solid var(--border);}
   [dir="rtl"] #chatPanel.open{ left:0; right:auto; }
@@ -141,6 +142,9 @@
   }
 
   function bubbleContentFor(m){
+    if(m.type === 'image'){
+      return '<img class="chat-msg-image" src="' + m.fileUrl + '" alt="' + m.fileName + '" onclick="window.open(\'' + m.fileUrl + '\',\'_blank\')">';
+    }
     if(m.type === 'file'){
       return '<a class="file-link" href="' + m.fileUrl + '" download="' + m.fileName + '">' +
         '<span class="file-icon">📄</span><span>' + m.fileName + '<span class="file-size">' + m.fileSize + '</span></span></a>';
@@ -185,8 +189,9 @@
     if(!input.files || !input.files[0]) return;
     var file = input.files[0];
     var url = URL.createObjectURL(file);
+    var isImage = /^image\//.test(file.type);
     chatMsgs.push({
-      id: nextId++, sender: currentUser, me: true, type: 'file',
+      id: nextId++, sender: currentUser, me: true, type: (isImage ? 'image' : 'file'),
       fileName: file.name, fileSize: formatSize(file.size), fileUrl: url, time: nowStamp()
     });
     input.value = '';

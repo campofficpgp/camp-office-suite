@@ -58,6 +58,13 @@
   .modal-panel .search-box{margin-bottom:0; border:none; border-radius:12px;}
   .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
   .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+
+  @media print{
+    body{background:#fff;}
+    .topbar, .search-box, .modal-overlay, .actions{display:none !important;}
+    .wrap{max-width:100%; padding:0; margin:0;}
+    .sheet{border:none; border-radius:0;}
+  }
 </style>
 </head>
 <body>
@@ -231,7 +238,7 @@
       <div class="disclaimer" data-en="Personal data only — pay & allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in." data-ur="صرف ذاتی ڈیٹا — تنخواہ اور الاؤنسز آپ کی ہدایت کے مطابق شامل نہیں۔ والد کا نام سب کے لیے خالی ہے — یہ RI4720 پے رول فائل میں کہیں موجود نہیں؛ اگر بھرنا ہے تو الگ سے بھیج دیں۔">Personal data only — pay &amp; allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in.</div>
 
       <div class="actions">
-        <div class="btn primary" data-en="Print / Save PDF" data-ur="پرنٹ / پی ڈی ایف محفوظ کریں">Print / Save PDF</div>
+        <div class="btn primary" onclick="window.print()" style="cursor:pointer;" data-en="Print / Save PDF" data-ur="پرنٹ / پی ڈی ایف محفوظ کریں">Print / Save PDF</div>
         <div class="btn ghost" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
       </div>
     </div>

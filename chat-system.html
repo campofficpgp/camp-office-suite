@@ -63,13 +63,21 @@
   .chat-msg.them .delete-btn{ right:-8px; }
   .chat-msg:hover .delete-btn{ opacity:1; }
 
-  .chat-input-bar{display:flex; gap:6px; padding:10px; border-top:1px solid var(--border); align-items:center;}
+  .chat-input-bar{display:flex; flex-direction:column; gap:6px; padding:10px; border-top:1px solid var(--border); position:relative;}
+  .chat-toolbar-row{display:flex; gap:6px; align-items:center;}
+  .chat-main-row{display:flex; gap:6px; align-items:center;}
   .chat-input-bar input[type="text"]{flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius); font-size:12.5px; min-width:0;}
   .chat-input-bar button{border:none; background:var(--navy); color:#fff; border-radius:var(--radius); padding:0 14px; cursor:pointer; font-size:12.5px; font-weight:600; flex:none;}
   .chat-input-bar button:hover{background:var(--navy2);}
   .icon-btn{width:34px; height:34px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--navy); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none; padding:0 !important;}
   .icon-btn:hover{background:#f2f0e8 !important;}
   .icon-btn.recording{background:#c0392b !important; color:#fff; border-color:#c0392b; animation:pulseRec 1s infinite;}
+  .chat-emoji-picker{position:absolute; left:10px; bottom:92px; display:none; grid-template-columns:repeat(8,1fr); gap:4px;
+    background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.18); padding:8px;
+    max-width:280px; z-index:20;}
+  .chat-emoji-picker.open{display:grid;}
+  .chat-emoji-picker span{cursor:pointer; font-size:18px; text-align:center; border-radius:6px; padding:2px;}
+  .chat-emoji-picker span:hover{background:var(--bg);}
   @keyframes pulseRec{ 0%,100%{ box-shadow:0 0 0 0 rgba(192,57,43,.5); } 50%{ box-shadow:0 0 0 6px rgba(192,57,43,.15); } }
 
   .chat-msg .chat-msg-bubble a.file-link{display:flex; align-items:center; gap:7px; color:inherit; text-decoration:none;}
@@ -102,11 +110,17 @@
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-bar">
-      <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(this)">
-      <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
-      <button class="icon-btn" id="micBtn" onclick="toggleRecording()" title="Record voice message">🎤</button>
-      <input type="text" id="chatInput" data-en-ph="Type a message…" data-ur-ph="پیغام لکھیں…" placeholder="Type a message…">
-      <button onclick="sendMessage()" data-en="Send" data-ur="بھیجیں">Send</button>
+      <div class="chat-toolbar-row">
+        <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(this)">
+        <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
+        <button class="icon-btn" id="emojiBtn" onclick="toggleEmojiPicker(event)" title="Emoji">😊</button>
+        <button class="icon-btn" id="micBtn" onclick="toggleRecording()" title="Record voice message">🎤</button>
+        <div class="chat-emoji-picker" id="emojiPicker"></div>
+      </div>
+      <div class="chat-main-row">
+        <input type="text" id="chatInput" data-en-ph="Type a message…" data-ur-ph="پیغام لکھیں…" placeholder="Type a message…">
+        <button onclick="sendMessage()" data-en="Send" data-ur="بھیجیں">Send</button>
+      </div>
     </div>
   </div>
 
@@ -211,6 +225,32 @@
     }).catch(function(err){
       alert((isUrdu ? 'مائیکروفون تک رسائی نہیں ملی: ' : 'Could not access microphone: ') + err.message);
     });
+  }
+
+  var CHAT_EMOJIS = ["😀","😂","😊","😍","👍","👏","🙏","🎉","❤️","😢","😮","😡","🤔","👌","🔥","✅","❌","📌","📅","⏰","💬","☕","🙌","😴"];
+  (function(){
+    var picker = document.getElementById('emojiPicker');
+    if(picker){
+      picker.innerHTML = CHAT_EMOJIS.map(function(e){ return "<span>"+e+"</span>"; }).join("");
+      picker.addEventListener('click', function(ev){
+        if(ev.target.tagName === 'SPAN'){
+          var input = document.getElementById('chatInput');
+          input.value += ev.target.textContent;
+          input.focus();
+          picker.classList.remove('open');
+        }
+      });
+      document.addEventListener('click', function(ev){
+        var btn = document.getElementById('emojiBtn');
+        if(picker.classList.contains('open') && ev.target !== btn && !picker.contains(ev.target)){
+          picker.classList.remove('open');
+        }
+      });
+    }
+  })();
+  function toggleEmojiPicker(ev){
+    if(ev) ev.stopPropagation();
+    document.getElementById('emojiPicker').classList.toggle('open');
   }
 
   function deleteMessage(id){

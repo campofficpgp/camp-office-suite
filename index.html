@@ -464,6 +464,7 @@ document.getElementById("su_submit").addEventListener("click", function(){
   auth.createUserWithEmailAndPassword(email, pw).then(function(cred){
     return db.collection("users").doc(cred.user.uid).set({
       email: email,
+      role: "guest",
       roleV2: "viewer",
       approvalStatus: "pending",
       isActive: true,
@@ -496,7 +497,7 @@ auth.onAuthStateChanged(function(user){
       // Existing Firebase Auth user with no Firestore profile yet (e.g. signed up
       // through an old system). Create a pending profile rather than failing silently.
       return db.collection("users").doc(user.uid).set({
-        email: user.email, roleV2: "viewer", approvalStatus: "pending", isActive: true,
+        email: user.email, role: "guest", roleV2: "viewer", approvalStatus: "pending", isActive: true,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdVia: "login-rbac-prototype-autocreate"
       }, { merge: true }).then(function(){
         return db.collection("users").doc(user.uid).get();

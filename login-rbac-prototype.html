@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Sign In / Sign Up (Prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.5; }
+  body.lang-ur, body.lang-ur input, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:1100px; margin:0 auto; padding:20px; }
+  .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=email],input[type=password],input[type=text],select{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.secondary{ background:var(--amber-tint); border-color:var(--amber); color:var(--navy-dark); }
+  .btn.danger{ background:var(--danger-tint); border-color:var(--danger); color:var(--danger); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn.block{ width:100%; margin-top:16px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .toggle-row{ text-align:center; margin-top:16px; font-size:13px; }
+  .toggle-row a{ color:var(--navy); font-weight:700; cursor:pointer; text-decoration:underline; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .badge.data_entry{ background:var(--success-tint); color:var(--success); }
+  .badge.viewer{ background:var(--navy-tint); color:var(--navy); }
+  .badge.pending{ background:var(--warn-tint); color:var(--warn); }
+  .badge.approved{ background:var(--success-tint); color:var(--success); }
+  .badge.rejected{ background:var(--danger-tint); color:var(--danger); }
+  .badge.inactive{ background:#eee; color:#888; }
+  .pending-screen{ text-align:center; padding:40px 20px; }
+  .pending-screen .icon{ font-size:48px; }
+  .module-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px; margin-top:16px; }
+  .module-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 14px; text-align:center; box-shadow:var(--shadow); }
+  .module-card .emoji{ font-size:26px; }
+  .module-card .name{ font-weight:700; margin-top:6px; font-size:13px; }
+  .module-card.soon{ opacity:0.5; }
+  .module-card.active{ cursor:pointer; border-color:var(--navy); }
+  table{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+  th,td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+  th{ background:var(--navy); color:#fff; }
+  .row-actions{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .count-chip{ background:var(--navy-tint); color:var(--navy-dark); padding:4px 10px; border-radius:20px; font-size:12.5px; font-weight:700; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">🏛️ <span data-i18n="brandTitle">Camp Office Digital Portal — Prototype</span></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect">
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="note-banner" data-i18n="protoNote">
+    🧪 Prototype — this is a new, standalone test page for the future Login + Role system. It is NOT yet part of any live site. It does connect to the real Camp Office database, so please only sign up with a test email while trying it out.
+  </div>
+</div>
+
+<!-- ===================== AUTH SCREENS ===================== -->
+<div id="authScreen" class="center-wrap">
+  <div class="card" id="loginCard">
+    <h2 data-i18n="signInTitle">Sign In</h2>
+    <p class="field-hint" data-i18n="signInSub">Camp Office Digital Portal</p>
+    <label data-i18n="lblEmail">Email</label>
+    <input type="email" id="li_email" autocomplete="username">
+    <label data-i18n="lblPassword">Password</label>
+    <input type="password" id="li_password" autocomplete="current-password">
+    <div id="li_error" class="error-box hidden"></div>
+    <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
+    <div class="toggle-row">
+      <span data-i18n="noAccount">Don't have an account?</span>
+      <a id="showSignup" data-i18n="createOne">Create one</a>
+    </div>
+  </div>
+
+  <div class="card hidden" id="signupCard">
+    <h2 data-i18n="signUpTitle">Create Account</h2>
+    <p class="field-hint" data-i18n="signUpSub">New accounts start as Viewer and wait for administrator approval before they can access anything.</p>
+    <label data-i18n="lblEmail">Email</label>
+    <input type="email" id="su_email" autocomplete="username">
+    <label data-i18n="lblPassword">Password</label>
+    <input type="password" id="su_password" autocomplete="new-password">
+    <div class="field-hint" data-i18n="pwHint">At least 8 characters, including a letter and a number.</div>
+    <label data-i18n="lblPassword2">Confirm Password</label>
+    <input type="password" id="su_password2" autocomplete="new-password">
+    <div id="su_error" class="error-box hidden"></div>
+    <button class="btn primary block" id="su_submit"><span data-i18n="btnSignUp">Create Account</span></button>
+    <div class="toggle-row">
+      <span data-i18n="haveAccount">Already have an account?</span>
+      <a id="showLogin" data-i18n="signInLink">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PENDING APPROVAL SCREEN ===================== -->
+<div id="pendingScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">⏳</div>
+    <h2 data-i18n="pendingTitle">Waiting for Approval</h2>
+    <p data-i18n="pendingBody">Your account has been created but an Administrator has not approved it yet. Please contact your office Administrator, or check back later.</p>
+    <p class="field-hint" id="pendingEmailLine"></p>
+    <button class="btn block" id="pendingSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+</div>
+
+<div id="rejectedScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🚫</div>
+    <h2 data-i18n="rejectedTitle">Access Not Approved</h2>
+    <p data-i18n="rejectedBody">An Administrator has not approved this account for access. Please contact your office Administrator.</p>
+    <button class="btn block" id="rejectedSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP (after approval) ===================== -->
+<div id="mainApp" class="wrap hidden">
+  <div class="userbar">
+    <div>
+      <span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong>
+      <span id="curRoleBadge" class="badge"></span>
+    </div>
+    <button class="btn small" id="mainSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="welcomeTitle">Welcome to the Camp Office Digital Portal</h2>
+    <p class="field-hint" data-i18n="welcomeSub">This is the future single-entry dashboard shell. Modules below will be connected one at a time, in the same careful, reviewed way as this login system was.</p>
+    <div class="module-grid">
+      <div class="module-card soon"><div class="emoji">📁</div><div class="name">Case Management</div></div>
+      <div class="module-card soon"><div class="emoji">📅</div><div class="name">Weekly Court Roster</div></div>
+      <div class="module-card soon"><div class="emoji">👥</div><div class="name">Employees / Users</div></div>
+      <div class="module-card soon"><div class="emoji">🔍</div><div class="name">Search</div></div>
+      <div class="module-card soon"><div class="emoji">📊</div><div class="name">Reports</div></div>
+      <div class="module-card soon"><div class="emoji">💬</div><div class="name">Team Chat</div></div>
+      <div class="module-card soon"><div class="emoji">💾</div><div class="name">Backup / Export</div></div>
+      <div class="module-card active" id="adminControlsCard"><div class="emoji">⚙️</div><div class="name" data-i18n="adminControls">Admin Controls</div></div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="adminPanel">
+    <div class="userbar">
+      <h2 data-i18n="adminControls">Admin Controls — Users &amp; Approvals</h2>
+      <span class="count-chip" id="userCountChip"></span>
+    </div>
+    <p class="field-hint" data-i18n="adminHint">Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.</p>
+    <table>
+      <thead><tr>
+        <th data-i18n="thEmail">Email</th>
+        <th data-i18n="thStatus">Status</th>
+        <th data-i18n="thRole">Role</th>
+        <th data-i18n="thActions">Actions</th>
+      </tr></thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Firebase config — SAME project as the live Camp Office apps.
+   This prototype reads/writes the SAME `users` collection, but
+   only ever touches the NEW fields: roleV2, approvalStatus, isActive.
+   It never reads or writes the OLD `role` field used by the
+   live sites, so nothing here can break them.
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+var I18N = {
+  en: {
+    brandTitle:"Camp Office Digital Portal — Prototype",
+    protoNote:"🧪 Prototype — this is a new, standalone test page for the future Login + Role system. It is NOT yet part of any live site. It does connect to the real Camp Office database, so please only sign up with a test email while trying it out.",
+    signInTitle:"Sign In", signInSub:"Camp Office Digital Portal",
+    lblEmail:"Email", lblPassword:"Password", lblPassword2:"Confirm Password",
+    btnSignIn:"Sign In", noAccount:"Don't have an account?", createOne:"Create one",
+    signUpTitle:"Create Account",
+    signUpSub:"New accounts start as Viewer and wait for administrator approval before they can access anything.",
+    pwHint:"At least 8 characters, including a letter and a number.",
+    btnSignUp:"Create Account", haveAccount:"Already have an account?", signInLink:"Sign in",
+    pendingTitle:"Waiting for Approval",
+    pendingBody:"Your account has been created but an Administrator has not approved it yet. Please contact your office Administrator, or check back later.",
+    rejectedTitle:"Access Not Approved",
+    rejectedBody:"An Administrator has not approved this account for access. Please contact your office Administrator.",
+    btnSignOut:"Sign Out", signedInAs:"Signed in as",
+    welcomeTitle:"Welcome to the Camp Office Digital Portal",
+    welcomeSub:"This is the future single-entry dashboard shell. Modules below will be connected one at a time, in the same careful, reviewed way as this login system was.",
+    adminControls:"Admin Controls",
+    adminHint:"Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.",
+    thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions"
+  },
+  ur: {
+    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — آزمائشی نمونہ",
+    protoNote:"🧪 آزمائشی نمونہ — یہ نئے Login/Role نظام کا ایک الگ، آزمائشی صفحہ ہے۔ یہ ابھی کسی لائیو سائٹ کا حصہ نہیں۔ یہ اصل Camp Office ڈیٹا بیس سے جڑا ہے، اس لیے آزماتے وقت صرف ٹیسٹ ای میل استعمال کریں۔",
+    signInTitle:"لاگ اِن", signInSub:"کیمپ آفس ڈیجیٹل پورٹل",
+    lblEmail:"ای میل", lblPassword:"پاس ورڈ", lblPassword2:"پاس ورڈ دوبارہ لکھیں",
+    btnSignIn:"لاگ اِن کریں", noAccount:"اکاؤنٹ نہیں ہے؟", createOne:"نیا بنائیں",
+    signUpTitle:"نیا اکاؤنٹ بنائیں",
+    signUpSub:"نئے اکاؤنٹ Viewer کے طور پر شروع ہوتے ہیں اور Administrator کی منظوری کا انتظار کرتے ہیں۔",
+    pwHint:"کم از کم 8 حروف، ایک حرف اور ایک ہندسہ شامل ہو۔",
+    btnSignUp:"اکاؤنٹ بنائیں", haveAccount:"پہلے سے اکاؤنٹ ہے؟", signInLink:"لاگ اِن کریں",
+    pendingTitle:"منظوری کا انتظار",
+    pendingBody:"آپ کا اکاؤنٹ بن گیا ہے مگر ابھی Administrator نے منظور نہیں کیا۔ براہ کرم اپنے دفتر کے Administrator سے رابطہ کریں، یا بعد میں دوبارہ چیک کریں۔",
+    rejectedTitle:"رسائی منظور نہیں",
+    rejectedBody:"اس اکاؤنٹ کو ابھی رسائی کی اجازت نہیں دی گئی۔ براہ کرم اپنے دفتر کے Administrator سے رابطہ کریں۔",
+    btnSignOut:"لاگ آؤٹ", signedInAs:"لاگ اِن ہیں بطور",
+    welcomeTitle:"کیمپ آفس ڈیجیٹل پورٹل میں خوش آمدید",
+    welcomeSub:"یہ مستقبل کے مرکزی Dashboard کا خاکہ ہے۔ نیچے دیے گئے Modules ایک ایک کر کے، اسی احتیاط سے جوڑے جائیں گے جیسے یہ Login نظام بنایا گیا۔",
+    adminControls:"انتظامی کنٹرولز",
+    adminHint:"یہاں نئے اکاؤنٹس منظور کریں اور ان کا کردار مقرر کریں۔ صرف Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ صرف Super Admin کسی کو Super Admin بنا سکتا ہے۔",
+    thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال"
+  }
+};
+var ROLE_LABELS = {
+  en:{ super_admin:"Super Admin", admin:"Admin", data_entry:"Data Entry", viewer:"Viewer" },
+  ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن", data_entry:"ڈیٹا انٹری", viewer:"ناظر" }
+};
+var STATUS_LABELS = {
+  en:{ pending:"Pending", approved:"Approved", rejected:"Rejected" },
+  ur:{ pending:"زیرِ التوا", approved:"منظور شدہ", rejected:"مسترد" }
+};
+
+var currentLang = "en";
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang==="ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+  });
+}
+document.getElementById("langSelect").addEventListener("change", function(e){
+  currentLang = e.target.value; applyI18n(); if(CURRENT_DOC) renderAdminPanel();
+});
+document.getElementById("themeSelect").addEventListener("change", function(e){
+  document.documentElement.setAttribute("data-theme", e.target.value);
+});
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+/* ---------- Screen switching ---------- */
+function showOnly(id){
+  ["authScreen","pendingScreen","rejectedScreen","mainApp"].forEach(function(s){
+    document.getElementById(s).classList.toggle("hidden", s!==id);
+  });
+}
+
+/* ---------- Login / Signup form toggle ---------- */
+document.getElementById("showSignup").addEventListener("click", function(){
+  document.getElementById("loginCard").classList.add("hidden");
+  document.getElementById("signupCard").classList.remove("hidden");
+});
+document.getElementById("showLogin").addEventListener("click", function(){
+  document.getElementById("signupCard").classList.add("hidden");
+  document.getElementById("loginCard").classList.remove("hidden");
+});
+
+/* ---------- Sign In ---------- */
+document.getElementById("li_submit").addEventListener("click", function(){
+  var email = document.getElementById("li_email").value.trim();
+  var pw = document.getElementById("li_password").value;
+  var errEl = document.getElementById("li_error");
+  errEl.classList.add("hidden");
+  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
+  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
+    errEl.textContent = err.message; errEl.classList.remove("hidden");
+  });
+});
+
+/* ---------- Sign Up ---------- */
+document.getElementById("su_submit").addEventListener("click", function(){
+  var email = document.getElementById("su_email").value.trim();
+  var pw = document.getElementById("su_password").value;
+  var pw2 = document.getElementById("su_password2").value;
+  var errEl = document.getElementById("su_error");
+  errEl.classList.add("hidden");
+  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
+  if(pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)){
+    errEl.textContent = "Password should be at least 8 characters and include both a letter and a number.";
+    errEl.classList.remove("hidden"); return;
+  }
+  if(pw !== pw2){ errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); return; }
+  auth.createUserWithEmailAndPassword(email, pw).then(function(cred){
+    return db.collection("users").doc(cred.user.uid).set({
+      email: email,
+      roleV2: "viewer",
+      approvalStatus: "pending",
+      isActive: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdVia: "login-rbac-prototype"
+    }, { merge: true });
+  }).catch(function(err){
+    errEl.textContent = err.message; errEl.classList.remove("hidden");
+  });
+});
+
+/* ---------- Sign out ---------- */
+["pendingSignOut","rejectedSignOut","mainSignOut"].forEach(function(id){
+  document.getElementById(id).addEventListener("click", function(){ auth.signOut(); });
+});
+
+/* ---------- Auth state / role gating ---------- */
+var CURRENT_DOC = null;
+var CURRENT_UID = null;
+
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    CURRENT_DOC = null; CURRENT_UID = null;
+    showOnly("authScreen");
+    return;
+  }
+  CURRENT_UID = user.uid;
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    if(!doc.exists){
+      // Existing Firebase Auth user with no Firestore profile yet (e.g. signed up
+      // through an old system). Create a pending profile rather than failing silently.
+      return db.collection("users").doc(user.uid).set({
+        email: user.email, roleV2: "viewer", approvalStatus: "pending", isActive: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdVia: "login-rbac-prototype-autocreate"
+      }, { merge: true }).then(function(){
+        return db.collection("users").doc(user.uid).get();
+      });
+    }
+    return doc;
+  }).then(function(doc){
+    var data = doc.data() || {};
+    CURRENT_DOC = data;
+    if(data.isActive === false || data.approvalStatus === "rejected"){
+      showOnly("rejectedScreen");
+    } else if(data.approvalStatus !== "approved"){
+      document.getElementById("pendingEmailLine").textContent = user.email;
+      showOnly("pendingScreen");
+    } else {
+      showOnly("mainApp");
+      document.getElementById("curEmail").textContent = user.email;
+      var roleBadge = document.getElementById("curRoleBadge");
+      var role = data.roleV2 || "viewer";
+      roleBadge.textContent = (ROLE_LABELS[currentLang][role] || role);
+      roleBadge.className = "badge " + role;
+      var isAdminUp = (role === "admin" || role === "super_admin");
+      document.getElementById("adminControlsCard").classList.toggle("hidden", !isAdminUp);
+      if(isAdminUp){ renderAdminPanel(); }
+    }
+  }).catch(function(err){
+    console.error(err);
+  });
+});
+
+document.getElementById("adminControlsCard").addEventListener("click", function(){
+  var panel = document.getElementById("adminPanel");
+  panel.classList.toggle("hidden");
+  if(!panel.classList.contains("hidden")) renderAdminPanel();
+});
+
+/* ---------- Admin panel: list users, approve, set role, activate/suspend ---------- */
+function renderAdminPanel(){
+  var body = document.getElementById("usersTableBody");
+  if(!body || !CURRENT_DOC) return;
+  var myRole = CURRENT_DOC.roleV2 || "viewer";
+  if(myRole !== "admin" && myRole !== "super_admin") return;
+  db.collection("users").get().then(function(qs){
+    var rows = [];
+    qs.forEach(function(d){ rows.push(Object.assign({uid:d.id}, d.data())); });
+    document.getElementById("userCountChip").textContent = rows.length + (currentLang==="ur" ? " صارفین" : " users");
+    body.innerHTML = "";
+    rows.forEach(function(u){
+      var role = u.roleV2 || "viewer";
+      var status = u.approvalStatus || "pending";
+      var isMe = u.uid === CURRENT_UID;
+      var canEditRole = myRole === "super_admin" || (myRole === "admin" && role !== "super_admin");
+      var tr = document.createElement("tr");
+      var roleOptions = ["viewer","data_entry","admin","super_admin"].map(function(r){
+        if(r === "super_admin" && myRole !== "super_admin") return "";
+        return '<option value="'+r+'"'+(r===role?" selected":"")+'>'+(ROLE_LABELS[currentLang][r])+'</option>';
+      }).join("");
+      tr.innerHTML =
+        "<td>"+esc(u.email)+(isMe?" <span class='field-hint'>("+(currentLang==='ur'?'آپ':'you')+")</span>":"")+"</td>"+
+        "<td><span class='badge "+status+"'>"+(STATUS_LABELS[currentLang][status]||status)+"</span>"+
+          (u.isActive===false ? " <span class='badge inactive'>"+(currentLang==='ur'?'معطل':'suspended')+"</span>" : "")+"</td>"+
+        "<td>"+(canEditRole ? "<select data-role-uid='"+u.uid+"' "+(isMe?"disabled":"")+">"+roleOptions+"</select>" : "<span class='badge "+role+"'>"+(ROLE_LABELS[currentLang][role])+"</span>")+"</td>"+
+        "<td class='row-actions'>"+
+          (status!=="approved" ? "<button class='btn small secondary' data-approve-uid='"+u.uid+"'>"+(currentLang==='ur'?'منظور کریں':'Approve')+"</button>" : "")+
+          (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
+            (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
+        "</td>";
+      body.appendChild(tr);
+    });
+    body.querySelectorAll("[data-approve-uid]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        db.collection("users").doc(btn.dataset.approveUid).update({approvalStatus:"approved"}).then(renderAdminPanel);
+      });
+    });
+    body.querySelectorAll("[data-toggle-active]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var next = btn.dataset.next === "true";
+        db.collection("users").doc(btn.dataset.toggleActive).update({isActive: next}).then(renderAdminPanel);
+      });
+    });
+    body.querySelectorAll("[data-role-uid]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        db.collection("users").doc(sel.dataset.roleUid).update({roleV2: sel.value}).then(renderAdminPanel);
+      });
+    });
+  });
+}
+
+applyI18n();
+</script>
+</body>
+</html>

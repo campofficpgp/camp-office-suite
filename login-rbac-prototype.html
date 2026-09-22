@@ -435,6 +435,7 @@ function renderAdminPanel(){
         "<td>"+(canEditRole ? "<select data-role-uid='"+u.uid+"' "+(isMe?"disabled":"")+">"+roleOptions+"</select>" : "<span class='badge "+role+"'>"+(ROLE_LABELS[currentLang][role])+"</span>")+"</td>"+
         "<td class='row-actions'>"+
           (status!=="approved" ? "<button class='btn small secondary' data-approve-uid='"+u.uid+"'>"+(currentLang==='ur'?'منظور کریں':'Approve')+"</button>" : "")+
+          (status==="pending" ? "<button class='btn small danger' data-reject-uid='"+u.uid+"'>"+(currentLang==='ur'?'مسترد کریں':'Reject')+"</button>" : "")+
           (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
             (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
         "</td>";
@@ -443,6 +444,11 @@ function renderAdminPanel(){
     body.querySelectorAll("[data-approve-uid]").forEach(function(btn){
       btn.addEventListener("click", function(){
         db.collection("users").doc(btn.dataset.approveUid).update({approvalStatus:"approved"}).then(renderAdminPanel);
+      });
+    });
+    body.querySelectorAll("[data-reject-uid]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        db.collection("users").doc(btn.dataset.rejectUid).update({approvalStatus:"rejected"}).then(renderAdminPanel);
       });
     });
     body.querySelectorAll("[data-toggle-active]").forEach(function(btn){

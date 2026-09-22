@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Case Notice — Camp Office PG Punjab</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
@@ -182,9 +185,27 @@
 @media print{
   .app-footer{ display:none; }
 }
+@media print{ #authGate, .userbar-ce{ display:none !important; } }
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
 </style>
 </head>
 <body>
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
 
   <div class="topbar">
     <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span data-en="Camp Office Prosecutor General Punjab — Case Notice" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب — کیس نوٹس">Camp Office Prosecutor General Punjab — Case Notice</span></div>
@@ -195,6 +216,11 @@
       </div>
       <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
     </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div><a href="index.html">← <span data-en="Portal" data-ur="پورٹل">Portal</span></a></div>
+    <div><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
   </div>
 
   <div class="wrap">
@@ -211,7 +237,7 @@
       </div>
       <div class="count" id="count"></div>
       <div style="margin-top:12px;">
-        <div class="btn primary" onclick="openAddForm()" data-en="+ Add New Notice" data-ur="+ نیا نوٹس شامل کریں">+ Add New Notice</div>
+        <div class="btn primary needs-write" onclick="openAddForm()" data-en="+ Add New Notice" data-ur="+ نیا نوٹس شامل کریں">+ Add New Notice</div>
       </div>
     </div>
 
@@ -505,6 +531,7 @@
       var keepTehsil = document.getElementById('nTehsil').value;
       var keepStation = document.getElementById('nStation').value;
       mapObj[currentManageDistrict] = values;
+      saveListsToDb();
       closeListManage();
       refreshTehsilStationOptions(keepTehsil, keepStation);
       return;
@@ -527,20 +554,19 @@
         if(YEARS.indexOf(cur) !== -1) sel.value = cur;
       });
     }
+    saveListsToDb();
     closeListManage();
   }
 
-  // Sample / dummy notice only — seeded from the sample notice you shared (Crl.P.L.A 869/2026).
-  var NOTICES = [
-    { id: 1, type: 'Crl.P.L.A.', caseNo: '869', year: '2026', title: 'The State', versus: 'Salman Azam', relief: 'Pre Arrest - Cancellation of Bail (COB)', firNo: '201', firYear: '2025', sections: '7ATA, 341, 188, 186, 506, 353, 109, 148, 149 PPC', station: 'City Arifwala', tehsil: 'Arifwala', district: 'Pakpattan', bench: 'III', srNo: '—', hearing: '2026-08-28', date: '2026-08-24', signatory: 'Rashid Mahmood — Focal Person Punjab Police, Supreme Court Islamabad', desig: 'Focal Person Punjab Police, Supreme Court Islamabad', mobile: '03009769052', office: '0519202466' }
-  ];
-  var nextId = 2;
+  // Notices now come live from Firestore (collection: caseNotices). No sample data.
+  var NOTICES = [];
 
   function populateFilters(){
     var byCaseNo = document.getElementById('byCaseNo');
     byCaseNo.innerHTML = '<option value="">—</option>';
-    NOTICES.slice().sort(function(a,b){ return a.caseNo.localeCompare(b.caseNo); }).forEach(function(n){
-      byCaseNo.innerHTML += '<option value="'+n.id+'">'+n.type+' '+n.caseNo+'/'+n.year+' — '+n.title+' Vs '+n.versus+'</option>';
+    NOTICES.slice().sort(function(a,b){ return String(a.caseNo).localeCompare(String(b.caseNo)); }).forEach(function(n){
+      var E = escapeAttr;
+      byCaseNo.innerHTML += '<option value="'+E(n.id)+'">'+E(n.type)+' '+E(n.caseNo)+'/'+E(n.year)+' — '+E(n.title)+' Vs '+E(n.versus)+'</option>';
     });
     fillSelect(document.getElementById('byDistrict'), uniqueSorted(NOTICES.map(function(n){return n.district;})), true);
     fillSelect(document.getElementById('byStation'), uniqueSorted(NOTICES.map(function(n){return n.station;})), true);
@@ -566,19 +592,21 @@
     body.innerHTML = '';
     list.forEach(function(n){
       var tr = document.createElement('tr');
+      var E = escapeAttr;
+      var idq = "'" + String(n.id).replace(/[^A-Za-z0-9_-]/g,'') + "'";
       tr.innerHTML =
-        '<td>'+n.type+' '+n.caseNo+'/'+n.year+'</td>' +
-        '<td class="wrap-cell">'+n.title+' Vs '+n.versus+'</td>' +
-        '<td class="wrap-cell">'+n.relief+'</td>' +
-        '<td>'+n.firNo+'/'+n.firYear+'</td>' +
-        '<td class="wrap-cell">'+n.station+'</td>' +
-        '<td>'+n.district+'</td>' +
-        '<td>'+n.bench+'</td>' +
-        '<td>'+(n.hearing || '—')+'</td>' +
+        '<td>'+E(n.type)+' '+E(n.caseNo)+'/'+E(n.year)+'</td>' +
+        '<td class="wrap-cell">'+E(n.title)+' Vs '+E(n.versus)+'</td>' +
+        '<td class="wrap-cell">'+E(n.relief)+'</td>' +
+        '<td>'+E(n.firNo)+'/'+E(n.firYear)+'</td>' +
+        '<td class="wrap-cell">'+E(n.station)+'</td>' +
+        '<td>'+E(n.district)+'</td>' +
+        '<td>'+E(n.bench)+'</td>' +
+        '<td>'+E(n.hearing || '—')+'</td>' +
         '<td><div class="row-actions">' +
-          '<div class="btn primary" onclick="openPreview('+n.id+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
-          '<div class="btn ghost" onclick="openEditForm('+n.id+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
-          '<div class="btn danger" onclick="deleteNotice('+n.id+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>' +
+          '<div class="btn primary" onclick="openPreview('+idq+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
+          '<div class="btn ghost needs-write" onclick="openEditForm('+idq+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
+          '<div class="btn danger needs-delete" onclick="deleteNotice('+idq+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>' +
         '</div></td>';
       body.appendChild(tr);
     });
@@ -669,24 +697,24 @@
       office: document.getElementById('nOffice').value.trim() || '—'
     };
 
+    if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit notices'); return; }
+    var now = firebase.firestore.FieldValue.serverTimestamp();
+    data.updatedBy = CURRENT_USER.email; data.updatedAt = now;
+    var p;
     if(idVal){
-      var existing = NOTICES.find(function(x){ return x.id === parseInt(idVal,10); });
-      if(existing) Object.assign(existing, data);
+      p = db.collection('caseNotices').doc(idVal).update(data);
     } else {
-      data.id = nextId++;
-      NOTICES.push(data);
+      data.createdBy = CURRENT_USER.email; data.createdAt = now;
+      p = db.collection('caseNotices').add(data);
     }
-
-    populateFilters();
-    renderTable();
-    closeNoticeForm();
+    p.then(function(){ closeNoticeForm(); })
+     .catch(function(err){ alert((isUrdu ? 'محفوظ نہیں ہو سکا: ' : 'Could not save: ') + err.message); });
   }
 
   function deleteNotice(id){
     if(!confirm(isUrdu ? 'کیا آپ واقعی اس نوٹس کو حذف کرنا چاہتے ہیں؟' : 'Are you sure you want to delete this notice?')) return;
-    NOTICES = NOTICES.filter(function(n){ return n.id !== id; });
-    populateFilters();
-    renderTable();
+    db.collection('caseNotices').doc(String(id)).delete()
+      .catch(function(err){ alert((isUrdu ? 'حذف نہیں ہو سکا: ' : 'Could not delete: ') + err.message); });
   }
 
   function formatDateUr(d){
@@ -771,6 +799,9 @@
     var n = NOTICES.find(function(x){ return x.id === id; });
     if(!n) return;
     currentPreviewNotice = n;
+    var raw = n; n = {};
+    Object.keys(raw).forEach(function(k){ n[k] = (typeof raw[k] === 'string') ? escapeAttr(raw[k]) : raw[k]; });
+    n.signatory = n.signatory || '';
     var html =
       buildNoticeLetterheadHtml() +
       '<div class="meta-row"><span class="k">'+n.type+' No.</span><span>'+n.caseNo+'/'+n.year+'&nbsp;&nbsp;&nbsp;'+n.title+' Vs '+n.versus+'</span></div>' +
@@ -996,6 +1027,98 @@
   populateFilters();
   renderTable();
   renderThemePicker();
+
+  /* ================= Firebase: login gate + live data =================
+     Same Firebase project and login as the Camp Office portal (index.html).
+     Data:  caseNotices/{auto-id}      — one document per notice
+            lookupLists/caseNotice     — dropdown lists (districts, tehsils, stations, ...)
+     Roles (users/{uid}.roleV2): viewer = read only, data_entry = add/edit,
+     admin / super_admin = add/edit/delete + manage lists. */
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  function saveListsToDb(){
+    if(!CAN_LISTS) return;
+    db.collection('lookupLists').doc('caseNotice').set({
+      types: CASE_TYPES, years: YEARS, reliefs: RELIEFS, benches: BENCH_NOS, districts: DISTRICTS, signatories: SIGNATORIES,
+      tehsils: DISTRICT_TEHSILS, stations: DISTRICT_STATIONS,
+      updatedBy: CURRENT_USER.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(err){ alert((isUrdu ? 'فہرست محفوظ نہیں ہو سکی: ' : 'Could not save list: ') + err.message); });
+  }
+
+  function applyLists(d){
+    [['types',CASE_TYPES],['years',YEARS],['reliefs',RELIEFS],['benches',BENCH_NOS],['districts',DISTRICTS],['signatories',SIGNATORIES]].forEach(function(pair){
+      var v = d[pair[0]];
+      if(Array.isArray(v) && v.length){ pair[1].length = 0; Array.prototype.push.apply(pair[1], v); }
+    });
+    if(d.tehsils && typeof d.tehsils === 'object'){ Object.keys(d.tehsils).forEach(function(k){ DISTRICT_TEHSILS[k] = d.tehsils[k]; }); }
+    if(d.stations && typeof d.stations === 'object'){ Object.keys(d.stations).forEach(function(k){ DISTRICT_STATIONS[k] = d.stations[k]; }); }
+    populateStaticDropdowns();
+    refreshTehsilStationOptions();
+  }
+
+  function startLiveData(){
+    db.collection('lookupLists').doc('caseNotice').onSnapshot(function(doc){
+      if(doc.exists) applyLists(doc.data());
+    }, function(err){ console.error('lists', err); });
+
+    db.collection('caseNotices').onSnapshot(function(qs){
+      var arr = [];
+      qs.forEach(function(d){ var c = d.data(); c.id = d.id; arr.push(c); });
+      arr.sort(function(a,b){ return String(b.hearing||b.date||'').localeCompare(String(a.hearing||a.date||'')); });
+      NOTICES = arr;
+      var keep = document.getElementById('byCaseNo').value;
+      populateFilters();
+      if(keep) document.getElementById('byCaseNo').value = keep;
+      renderTable();
+      document.getElementById('authGate').style.display = 'none';
+    }, function(err){
+      gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true);
+    });
+
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if(!user){
+      gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+      return;
+    }
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var u = doc.exists ? doc.data() : {};
+      var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+      var legacyAdmin = u.role === 'admin';
+      if(!approved && !legacyAdmin){
+        gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+        return;
+      }
+      var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
+      CAN_WRITE = isAdm || r2 === 'data_entry';
+      CAN_DELETE = isAdm;
+      CAN_LISTS = isAdm;
+      document.body.classList.toggle('readonly-mode', !CAN_WRITE);
+      document.body.classList.toggle('no-delete', !CAN_DELETE);
+      document.body.classList.toggle('no-lists', !CAN_LISTS);
+      document.getElementById('ceUserEmail').textContent = user.email;
+      var rn = ROLE_NAMES[r2] || [r2, r2];
+      document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+      startLiveData();
+    }).catch(function(err){
+      gate('خرابی', 'Error', err.message, true);
+    });
+  });
 </script>
 
   <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>

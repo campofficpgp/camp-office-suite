@@ -565,6 +565,7 @@ function renderAdminPanel(){
           (status==="pending" ? "<button class='btn small danger' data-reject-uid='"+u.uid+"'>"+(currentLang==='ur'?'مسترد کریں':'Reject')+"</button>" : "")+
           (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
             (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
+          ((!isMe && myRole === "super_admin") ? "<button class='btn small danger' data-delete-uid='"+u.uid+"' data-email='"+esc(u.email)+"'>🗑 "+(currentLang==='ur'?'حذف کریں':'Delete')+"</button>" : "")+
         "</td>";
       body.appendChild(tr);
     });
@@ -582,6 +583,20 @@ function renderAdminPanel(){
       btn.addEventListener("click", function(){
         var next = btn.dataset.next === "true";
         db.collection("users").doc(btn.dataset.toggleActive).update({isActive: next}).then(renderAdminPanel);
+      });
+    });
+    /* Delete (Super Admin only): removes the user's profile/access record.
+       If that person signs in again, they come back only as a new "Pending" request. */
+    body.querySelectorAll("[data-delete-uid]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var em = btn.dataset.email || "";
+        var msg = currentLang==='ur'
+          ? ("کیا آپ واقعی اس یوزر کو حذف کرنا چاہتے ہیں؟\n" + em + "\n\nاس کی رسائی فوراً ختم ہو جائے گی۔ اگر یہ دوبارہ لاگ اِن کرے تو نئی درخواست کی طرح دوبارہ منظوری درکار ہوگی۔")
+          : ("Delete this user?\n" + em + "\n\nTheir access is removed immediately. If they sign in again, they will need approval again as a new request.");
+        if(!confirm(msg)) return;
+        db.collection("users").doc(btn.dataset.deleteUid).delete().then(renderAdminPanel).catch(function(err){
+          alert((currentLang==='ur' ? "حذف نہیں ہو سکا: " : "Could not delete: ") + err.message);
+        });
       });
     });
     body.querySelectorAll("[data-role-uid]").forEach(function(sel){

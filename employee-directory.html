@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Employee Directory — Camp Office PG Punjab</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
@@ -65,13 +68,37 @@
     .wrap{max-width:100%; padding:0; margin:0;}
     .sheet{border:none; border-radius:0;}
   }
+  @media print{ #authGate, .userbar-ce{ display:none !important; } }
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
+.super-only{ display:none !important; }
+body.is-super .super-only{ display:inline-block !important; }
 </style>
 </head>
 <body>
 
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
   <div class="topbar">
     <div class="brand">🪶 <span data-en="Camp Office Prosecutor General Punjab" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب">Camp Office Prosecutor General Punjab</span></div>
     <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+  </div>
+
+  <div class="userbar-ce">
+    <div><a href="index.html">← <span data-en="Portal" data-ur="پورٹل">Portal</span></a></div>
+    <div><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
   </div>
 
   <div class="wrap">
@@ -88,7 +115,7 @@
       <div class="count" id="count"></div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <div class="btn ghost" id="addToggleBtn" onclick="toggleAddForm()" style="display:inline-block; cursor:pointer;" data-en="+ Add New Employee" data-ur="+ نیا ایمپلائی شامل کریں">+ Add New Employee</div>
-        <div class="btn ghost" id="userToggleBtn" onclick="toggleUserForm()" style="display:inline-block; cursor:pointer;" data-en="+ Create User Account" data-ur="+ نیا یوزر اکاؤنٹ بنائیں">+ Create User Account</div>
+        <label class="btn ghost super-only" style="cursor:pointer;"><span data-en="⬆ Import employees (file)" data-ur="⬆ ایمپلائیز فائل سے شامل کریں">⬆ Import employees (file)</span><input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importEmployeesFile(this)"></label>
       </div>
     </div>
 
@@ -136,7 +163,7 @@
             <div class="btn primary" onclick="saveNewEmployee()" style="cursor:pointer;" data-en="Save Employee" data-ur="ایمپلائی محفوظ کریں">Save Employee</div>
             <div class="btn ghost" onclick="toggleAddForm()" style="cursor:pointer;" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
           </div>
-          <div class="disclaimer" data-en="This adds the employee to this page's list only, for review — it is not yet saved to a live database. Once the shared database is set up, this form will save for real." data-ur="یہ صرف اس صفحے کی فہرست میں شامل ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔ مشترکہ ڈیٹا بیس بننے کے بعد یہ فارم حقیقی طور پر محفوظ کرے گا۔">This adds the employee to this page's list only, for review — it is not yet saved to a live database. Once the shared database is set up, this form will save for real.</div>
+          <div class="disclaimer" data-en="Saved securely in the office database — visible only to Admin / Super Admin." data-ur="دفتری ڈیٹا بیس میں محفوظ ہوگا — صرف Admin / Super Admin دیکھ سکتے ہیں۔">Saved securely in the office database — visible only to Admin / Super Admin.</div>
         </div>
       </div>
     </div>
@@ -198,7 +225,7 @@
             <div class="btn primary" onclick="saveEditEmployee()" style="cursor:pointer;" data-en="Save Changes" data-ur="تبدیلیاں محفوظ کریں">Save Changes</div>
             <div class="btn ghost" onclick="toggleEditForm()" style="cursor:pointer;" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
           </div>
-          <div class="disclaimer" data-en="This updates this page's list only, for review — it is not yet saved to a live database." data-ur="یہ صرف اس صفحے کی فہرست میں محفوظ ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔">This updates this page's list only, for review — it is not yet saved to a live database.</div>
+          <div class="disclaimer" data-en="Changes are saved to the office database." data-ur="تبدیلیاں دفتری ڈیٹا بیس میں محفوظ ہوں گی۔">Changes are saved to the office database.</div>
         </div>
       </div>
     </div>
@@ -245,9 +272,11 @@
   </div>
 
 <script>
-  var EMP = [{"sr": 1, "pers": "31100829", "name": "MUHAMMAD JUNAID ASLAM", "designation": "PERSONAL ASSTT", "department": "Law and Parliamentary Aff", "scale": "17", "status": "Active Permanent", "cnic": "3830165334095", "gpf": "ADV01/3/025P115", "dob": "17.09.1979", "service_len": "19 Years 03 Months 025 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931589103", "father": "\u2014"}, {"sr": 2, "pers": "31459243", "name": "GHULAM ASGHAR KHAN", "designation": "SENIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740551369171", "gpf": "\u2014", "dob": "27.04.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931309403", "father": "\u2014"}, {"sr": 3, "pers": "31470373", "name": "NAVEED RASHEED", "designation": "NAIB QASID", "department": "Law and Parliamentary Aff", "scale": "02", "status": "Active Temporary", "cnic": "3740574944865", "gpf": "\u2014", "dob": "02.10.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931259203", "father": "\u2014"}, {"sr": 4, "pers": "31488741", "name": "AAMIR MUMTAZ SATTI", "designation": "SUPERINTENDENT", "department": "Law Department", "scale": "17", "status": "Active Permanent", "cnic": "3740379227451", "gpf": "\u2014", "dob": "20.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900104603", "father": "\u2014"}, {"sr": 5, "pers": "31488744", "name": "AJMAL MATEEN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740517221185", "gpf": "\u2014", "dob": "15.10.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154703", "father": "\u2014"}, {"sr": 6, "pers": "31488748", "name": "INAM ELLAHI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740503951459", "gpf": "\u2014", "dob": "04.06.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "\u2014", "account": "1300109339", "father": "\u2014"}, {"sr": 7, "pers": "31488757", "name": "IMRAN KHAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740210088909", "gpf": "\u2014", "dob": "12.04.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155703", "father": "\u2014"}, {"sr": 8, "pers": "31488760", "name": "KHURRAM RIAZ CHOUDHRI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740542015679", "gpf": "\u2014", "dob": "07.10.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154303", "father": "\u2014"}, {"sr": 9, "pers": "31488766", "name": "NISAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740505725883", "gpf": "\u2014", "dob": "12.04.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0013227900269503", "father": "\u2014"}, {"sr": 10, "pers": "31488767", "name": "RIZWAN MEHMOOD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740209979015", "gpf": "\u2014", "dob": "15.12.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154403", "father": "\u2014"}, {"sr": 11, "pers": "31488772", "name": "UMAR SULAMAN ANSARI", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740538447763", "gpf": "\u2014", "dob": "15.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158003", "father": "\u2014"}, {"sr": 12, "pers": "31488774", "name": "QAISER MEHMOOD", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740548724711", "gpf": "\u2014", "dob": "01.07.1979", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154103", "father": "\u2014"}, {"sr": 13, "pers": "31488775", "name": "NISAR JAFFAR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740504246253", "gpf": "\u2014", "dob": "04.08.1980", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155003", "father": "\u2014"}, {"sr": 14, "pers": "31488776", "name": "MUHAMMAD IRFAN", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "3740504375391", "gpf": "\u2014", "dob": "01.07.1981", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900158203", "father": "\u2014"}, {"sr": 15, "pers": "31488783", "name": "ZULFIQAR ALI", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740588962817", "gpf": "\u2014", "dob": "15.04.1982", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154203", "father": "\u2014"}, {"sr": 17, "pers": "31488786", "name": "RAJA SEERAT", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740505860339", "gpf": "\u2014", "dob": "23.03.1983", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154803", "father": "\u2014"}, {"sr": 18, "pers": "31488793", "name": "EHSAN UL HAQ", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740261348027", "gpf": "\u2014", "dob": "06.09.1986", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900154903", "father": "\u2014"}, {"sr": 19, "pers": "31488803", "name": "GHULAM QADIR", "designation": "NAIB QASID", "department": "Law Department", "scale": "02", "status": "Active Permanent", "cnic": "3740299389845", "gpf": "\u2014", "dob": "16.01.1984", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900155603", "father": "\u2014"}, {"sr": 20, "pers": "31490275", "name": "AHMED RAZA GILANI", "designation": "ADDL PUBLIC PROSECUTER", "department": "Services & General Admin", "scale": "20", "status": "Active Permanent", "cnic": "3420141165653", "gpf": "ADVREG/01/P91", "dob": "27.01.1968", "service_len": "16 Years 01 Months 001 Days", "bank": "HABIB BANK LIMITED", "account": "0019827900146003", "father": "\u2014"}, {"sr": 21, "pers": "31490328", "name": "MIRZA ABID MAJEED", "designation": "DEPUTY PROSECUTOR GENERAL", "department": "Law and Parliamentary Aff", "scale": "18", "status": "Active Permanent", "cnic": "3630204520555", "gpf": "\u2014", "dob": "01.03.1972", "service_len": "15 Years 07 Months 005 Days", "bank": "MCB BANK LIMITED", "account": "0000002010021316", "father": "\u2014"}, {"sr": 22, "pers": "31495236", "name": "NASIR ABASS AWAN", "designation": "DRIVER", "department": "Law Department", "scale": "05", "status": "Active Permanent", "cnic": "3740581722613", "gpf": "\u2014", "dob": "01.11.1978", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931345303", "father": "\u2014"}, {"sr": 23, "pers": "31498255", "name": "IFTIKHAR AHMAD", "designation": "JUNIOR CLERK", "department": "Law Department", "scale": "11", "status": "Active Permanent", "cnic": "4130488788239", "gpf": "\u2014", "dob": "01.04.1977", "service_len": "16 Years 08 Months 018 Days", "bank": "HABIB BANK LIMITED", "account": "0001967931263703", "father": "\u2014"}];
+  // Employee records are NOT stored in this file any more (personal data). They load from Firestore: employees/{pers}.
+  var EMP = [];
 
   function uniqueSorted(arr){ return Array.from(new Set(arr)).sort(); }
+  function escAttr(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;'); }
 
   function populateSelects(){
     var byName = document.getElementById('byName');
@@ -260,20 +289,21 @@
       sel.innerHTML = '<option value="">—</option>';
     });
 
-    EMP.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(e){
-      byName.innerHTML += '<option value="'+e.pers+'">'+e.name+'</option>';
+    var E = escAttr;
+    EMP.slice().sort(function(a,b){ return String(a.name).localeCompare(String(b.name)); }).forEach(function(e){
+      byName.innerHTML += '<option value="'+E(e.pers)+'">'+E(e.name)+'</option>';
     });
-    EMP.slice().sort(function(a,b){ return a.pers.localeCompare(b.pers); }).forEach(function(e){
-      byPers.innerHTML += '<option value="'+e.pers+'">'+e.pers+' — '+e.name+'</option>';
+    EMP.slice().sort(function(a,b){ return String(a.pers).localeCompare(String(b.pers)); }).forEach(function(e){
+      byPers.innerHTML += '<option value="'+E(e.pers)+'">'+E(e.pers)+' — '+E(e.name)+'</option>';
     });
     uniqueSorted(EMP.map(function(e){return e.scale;})).forEach(function(s){
-      byScale.innerHTML += '<option value="'+s+'">BPS-'+s+'</option>';
+      byScale.innerHTML += '<option value="'+E(s)+'">BPS-'+E(s)+'</option>';
     });
-    EMP.slice().sort(function(a,b){ return a.cnic.localeCompare(b.cnic); }).forEach(function(e){
-      byCnic.innerHTML += '<option value="'+e.pers+'">'+e.cnic+'</option>';
+    EMP.slice().sort(function(a,b){ return String(a.cnic).localeCompare(String(b.cnic)); }).forEach(function(e){
+      byCnic.innerHTML += '<option value="'+E(e.pers)+'">'+E(e.cnic)+'</option>';
     });
-    EMP.slice().sort(function(a,b){ return a.dob.split('.').reverse().join('').localeCompare(b.dob.split('.').reverse().join('')); }).forEach(function(e){
-      byDob.innerHTML += '<option value="'+e.pers+'">'+e.dob+' — '+e.name+'</option>';
+    EMP.slice().sort(function(a,b){ return String(a.dob).split('.').reverse().join('').localeCompare(String(b.dob).split('.').reverse().join('')); }).forEach(function(e){
+      byDob.innerHTML += '<option value="'+E(e.pers)+'">'+E(e.dob)+' — '+E(e.name)+'</option>';
     });
 
     document.getElementById('count').textContent = EMP.length + ' employees loaded';
@@ -283,7 +313,7 @@
       var keepVal = uaEmployee.value;
       uaEmployee.innerHTML = '';
       EMP.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).forEach(function(e){
-        uaEmployee.innerHTML += '<option value="'+e.pers+'">'+e.name+' ('+e.pers+')</option>';
+        uaEmployee.innerHTML += '<option value="'+escAttr(e.pers)+'">'+escAttr(e.name)+' ('+escAttr(e.pers)+')</option>';
       });
       if(keepVal) uaEmployee.value = keepVal;
     }
@@ -367,7 +397,7 @@
     document.getElementById('pEmail').textContent = e.email || '—';
     var photoBox = document.getElementById('pPhotoBox');
     if(e.photo){
-      photoBox.style.backgroundImage = 'url(' + e.photo + ')';
+      photoBox.style.backgroundImage = /^data:image\//.test(e.photo) ? 'url("' + e.photo + '")' : '';
       photoBox.textContent = '';
     } else {
       photoBox.style.backgroundImage = '';
@@ -404,7 +434,18 @@
     var input = document.getElementById(inputId);
     if(input && input.files && input.files[0]){
       var reader = new FileReader();
-      reader.onload = function(ev){ callback(ev.target.result); };
+      reader.onload = function(ev){
+        // Shrink the photo (max 320px, JPEG) so each employee record stays small in the database
+        var img = new Image();
+        img.onload = function(){
+          var sc = Math.min(1, 320 / Math.max(img.width, img.height));
+          var c = document.createElement('canvas'); c.width = Math.round(img.width*sc); c.height = Math.round(img.height*sc);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          callback(c.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = function(){ callback(null); };
+        img.src = ev.target.result;
+      };
       reader.readAsDataURL(input.files[0]);
     } else {
       callback(null);
@@ -442,13 +483,14 @@
         email: document.getElementById('nEmail').value.trim() || '—',
         photo: photoData || null
       };
-      EMP.push(newEmp);
-      populateSelects();
-      showEmployee(newEmp.pers);
-      toggleAddForm();
-      ['nName','nFather','nPers','nCnic','nDob','nDesig','nDept','nScale','nLen','nGpf','nBank','nAccount','nMobile','nEmail'].forEach(function(id){
-        document.getElementById(id).value = '';
-      });
+      newEmp.createdBy = CURRENT_USER.email; newEmp.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      db.collection('employees').doc(empDocId(newEmp.pers)).set(newEmp).then(function(){
+        PENDING_SHOW = newEmp.pers;
+        toggleAddForm();
+        ['nName','nFather','nPers','nCnic','nDob','nDesig','nDept','nScale','nLen','nGpf','nBank','nAccount','nMobile','nEmail'].forEach(function(id){
+          document.getElementById(id).value = '';
+        });
+      }).catch(function(err){ alert((isUrdu ? 'محفوظ نہیں ہو سکا: ' : 'Could not save: ') + err.message); });
       document.getElementById('nPhoto').value = '';
     });
   }
@@ -482,7 +524,7 @@
     document.getElementById('uEmail').value = (e.email && e.email !== '—') ? e.email : '';
     document.getElementById('uPhoto').value = '';
     document.getElementById('uPhotoCurrent').innerHTML = e.photo
-      ? (isUrdu ? 'موجودہ تصویر: ' : 'Current photo: ') + '<img class="photo-thumb" src="' + e.photo + '">'
+      ? (isUrdu ? 'موجودہ تصویر: ' : 'Current photo: ') + '<img class="photo-thumb" src="' + escAttr(e.photo) + '">'
       : (isUrdu ? 'ابھی کوئی تصویر موجود نہیں' : 'No photo set yet');
     toggleEditForm();
   }
@@ -512,15 +554,102 @@
     e.email = document.getElementById('uEmail').value.trim() || '—';
     readPhotoFile('uPhoto', function(photoData){
       if(photoData) e.photo = photoData;
-      populateSelects();
-      showEmployee(e.pers);
-      toggleEditForm();
+      var upd = {};
+      ['name','father','cnic','dob','designation','department','scale','status','service_len','gpf','bank','account','mobile','email','photo'].forEach(function(k){ upd[k] = (e[k] === undefined ? null : e[k]); });
+      upd.updatedBy = CURRENT_USER.email; upd.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      db.collection('employees').doc(empDocId(e.pers)).update(upd).then(function(){
+        PENDING_SHOW = e.pers;
+        toggleEditForm();
+      }).catch(function(err){ alert((isUrdu ? 'محفوظ نہیں ہو سکا: ' : 'Could not save: ') + err.message); });
     });
   }
 
   populateSelects();
-  if(EMP.length) showEmployee(EMP[0].pers);
-  renderUserTable();
+
+  /* ================= Firebase: login gate + live data =================
+     Employee records hold personal data (CNIC, bank account, DOB), so this
+     page is for Admin / Super Admin only.  Data: employees/{pers}. */
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, PENDING_SHOW = null, FIRST_LOAD = true;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function empDocId(pers){ return String(pers).replace(/[\/\.#\[\]$\s]/g,'_'); }
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  /* One-time import (Super Admin): choose the employees JSON file kept on the office computer. */
+  function importEmployeesFile(input){
+    var f = input.files && input.files[0]; if(!f) return;
+    var rd = new FileReader();
+    rd.onload = function(ev){
+      var arr;
+      try { arr = JSON.parse(ev.target.result); } catch(e){ alert(isUrdu ? 'فائل درست نہیں' : 'Invalid file'); input.value=''; return; }
+      if(!Array.isArray(arr)){ alert(isUrdu ? 'فائل درست نہیں' : 'Invalid file'); input.value=''; return; }
+      var have = {}; EMP.forEach(function(e){ have[String(e.pers)] = true; });
+      var todo = arr.filter(function(e){ return e && e.pers && !have[String(e.pers)]; });
+      if(!todo.length){ alert(isUrdu ? 'فائل کے سب ایمپلائیز پہلے سے موجود ہیں' : 'All employees in this file already exist'); input.value=''; return; }
+      if(!confirm((isUrdu ? 'کتنے نئے ایمپلائیز شامل ہوں گے: ' : 'New employees to add: ') + todo.length + (isUrdu ? '\n(جو پہلے سے موجود ہیں انہیں نہیں چھیڑا جائے گا)' : '\n(existing ones are left unchanged)'))){ input.value=''; return; }
+      var batch = db.batch();
+      todo.forEach(function(e){
+        var d = {}; Object.keys(e).forEach(function(k){ d[k] = e[k]; });
+        d.pers = String(e.pers); d.importedBy = CURRENT_USER.email; d.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        batch.set(db.collection('employees').doc(empDocId(d.pers)), d);
+      });
+      batch.commit().then(function(){ alert((isUrdu ? 'شامل ہو گئے: ' : 'Imported: ') + todo.length); })
+        .catch(function(err){ alert((isUrdu ? 'شامل نہیں ہو سکے: ' : 'Import failed: ') + err.message); });
+      input.value = '';
+    };
+    rd.readAsText(f);
+  }
+
+  function startLiveData(){
+    db.collection('employees').onSnapshot(function(qs){
+      var arr = [];
+      qs.forEach(function(d){ var e = d.data(); if(!e.pers) e.pers = d.id; arr.push(e); });
+      arr.sort(function(a,b){ return (Number(a.sr)||9999) - (Number(b.sr)||9999); });
+      EMP = arr;
+      var cur = PENDING_SHOW || document.getElementById('pPers').textContent;
+      PENDING_SHOW = null;
+      populateSelects();
+      if(EMP.some(function(e){ return String(e.pers) === String(cur); })) showEmployee(String(cur));
+      else if(EMP.length) showEmployee(String(EMP[0].pers));
+      document.getElementById('authGate').style.display = 'none';
+    }, function(err){
+      gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true);
+    });
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if(!user){
+      gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف Admin کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+      return;
+    }
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var u = doc.exists ? doc.data() : {};
+      var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+      var legacyAdmin = u.role === 'admin';
+      var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      var isAdm = legacyAdmin || ((r2 === 'admin' || r2 === 'super_admin') && approved);
+      if(!isAdm){
+        gate('صرف Admin کے لیے', 'Admin only', 'ایمپلائیز کے ریکارڈ میں ذاتی معلومات (شناختی کارڈ، بینک اکاؤنٹ) ہیں، اس لیے یہ صفحہ صرف Admin / Super Admin کھول سکتے ہیں۔', true);
+        return;
+      }
+      CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
+      document.body.classList.toggle('is-super', r2 === 'super_admin');
+      document.getElementById('ceUserEmail').textContent = user.email;
+      var rn = ROLE_NAMES[r2] || [r2, r2];
+      document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+      startLiveData();
+    }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+  });
 
   var isUrdu = false;
   function toggleLang(){

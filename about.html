@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — About</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.6; }
+  body.lang-ur, body.lang-ur input, body.lang-ur textarea, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:800px; margin:0 auto; padding:20px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=text],textarea{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); font-family:inherit; }
+  textarea{ min-height:120px; resize:vertical; }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:9px 14px; border-radius:6px; cursor:pointer; font-size:13.5px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .content-body{ white-space:pre-wrap; font-size:15px; }
+  .backlink{ color:#fff; text-decoration:none; font-size:13px; opacity:0.9; }
+  .backlink:hover{ text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">ℹ️ <span data-i18n="brandTitle">About — Camp Office Digital Portal</span></div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a class="backlink" href="index.html" data-i18n="backToHub">← Back to Hub</a>
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect">
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="signedInBar" class="userbar hidden">
+    <div><span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong> <span id="curRoleBadge" class="badge"></span></div>
+  </div>
+
+  <div class="note-banner hidden" id="dummyNote" data-i18n="dummyNote">
+    ℹ️ This is placeholder/sample text. An Administrator can edit it below.
+  </div>
+
+  <div class="card">
+    <div id="viewMode">
+      <h1 id="viewTitle">About Us</h1>
+      <p class="content-body" id="viewBody"></p>
+      <button class="btn small hidden" id="btnEdit" style="margin-top:14px;"><span data-i18n="btnEdit">✏️ Edit</span></button>
+    </div>
+
+    <div id="editMode" class="hidden">
+      <h2 data-i18n="editTitle">Edit About Content</h2>
+      <label data-i18n="lblTitleEn">Title (English)</label>
+      <input type="text" id="f_title_en">
+      <label data-i18n="lblTitleUr">Title (Urdu)</label>
+      <input type="text" id="f_title_ur">
+      <label data-i18n="lblBodyEn">Body (English)</label>
+      <textarea id="f_body_en"></textarea>
+      <label data-i18n="lblBodyUr">Body (Urdu)</label>
+      <textarea id="f_body_ur"></textarea>
+      <div id="saveError" class="error-box hidden"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="btn primary" id="btnSave"><span data-i18n="btnSave">💾 Save</span></button>
+        <button class="btn" id="btnCancel"><span data-i18n="btnCancel">Cancel</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+var DUMMY = {
+  title_en:"About Us", title_ur:"ہمارے بارے میں",
+  body_en:"Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad. This is sample/placeholder text — an Administrator can edit this page to add the office's real introduction, mandate, and background here.",
+  body_ur:"کیمپ آفس، پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد۔ یہ نمونے کے طور پر رکھا گیا متن ہے — Administrator اس صفحے کو ترمیم کر کے یہاں دفتر کا اصل تعارف، دائرہ کار، اور پس منظر شامل کر سکتے ہیں۔"
+};
+
+var I18N = {
+  en:{
+    brandTitle:"About — Camp Office Digital Portal", backToHub:"← Back to Hub",
+    signedInAs:"Signed in as", dummyNote:"ℹ️ This is placeholder/sample text. An Administrator can edit it below.",
+    btnEdit:"✏️ Edit", editTitle:"Edit About Content",
+    lblTitleEn:"Title (English)", lblTitleUr:"Title (Urdu)", lblBodyEn:"Body (English)", lblBodyUr:"Body (Urdu)",
+    btnSave:"💾 Save", btnCancel:"Cancel", savedOk:"Saved."
+  },
+  ur:{
+    brandTitle:"تعارف — کیمپ آفس ڈیجیٹل پورٹل", backToHub:"← ہب پر واپس جائیں",
+    signedInAs:"لاگ اِن ہیں بطور", dummyNote:"ℹ️ یہ نمونے کے طور پر رکھا گیا متن ہے۔ Administrator نیچے سے اسے تبدیل کر سکتے ہیں۔",
+    btnEdit:"✏️ ترمیم کریں", editTitle:"About مواد میں ترمیم",
+    lblTitleEn:"عنوان (انگریزی)", lblTitleUr:"عنوان (اردو)", lblBodyEn:"متن (انگریزی)", lblBodyUr:"متن (اردو)",
+    btnSave:"💾 محفوظ کریں", btnCancel:"منسوخ کریں", savedOk:"محفوظ ہو گیا۔"
+  }
+};
+var ROLE_LABELS = { en:{ super_admin:"Super Admin", admin:"Admin" }, ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن" } };
+var currentLang = "en";
+var IS_ADMIN = false;
+var CURRENT_DATA = null;
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang==="ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+  });
+  renderView();
+}
+document.getElementById("langSelect").addEventListener("change", function(e){ currentLang = e.target.value; applyI18n(); });
+document.getElementById("themeSelect").addEventListener("change", function(e){ document.documentElement.setAttribute("data-theme", e.target.value); });
+
+function renderView(){
+  var d = CURRENT_DATA || DUMMY;
+  document.getElementById("dummyNote").classList.toggle("hidden", !!CURRENT_DATA);
+  document.getElementById("viewTitle").textContent = (currentLang==="ur" ? d.title_ur : d.title_en) || "";
+  document.getElementById("viewBody").textContent = (currentLang==="ur" ? d.body_ur : d.body_en) || "";
+}
+
+function loadContent(){
+  db.collection("siteContent").doc("about").get().then(function(doc){
+    CURRENT_DATA = doc.exists ? doc.data() : null;
+    renderView();
+  }).catch(function(){ CURRENT_DATA = null; renderView(); });
+}
+
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    IS_ADMIN = false;
+    document.getElementById("signedInBar").classList.add("hidden");
+    document.getElementById("btnEdit").classList.add("hidden");
+    loadContent();
+    return;
+  }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var data = doc.exists ? (doc.data()||{}) : {};
+    var role = data.roleV2 || "viewer";
+    IS_ADMIN = (role === "admin" || role === "super_admin") && data.isActive !== false && data.approvalStatus === "approved";
+    document.getElementById("signedInBar").classList.remove("hidden");
+    document.getElementById("curEmail").textContent = user.email;
+    var badge = document.getElementById("curRoleBadge");
+    badge.textContent = ROLE_LABELS[currentLang][role] || role;
+    badge.className = "badge " + role;
+    document.getElementById("btnEdit").classList.toggle("hidden", !IS_ADMIN);
+    loadContent();
+  }).catch(function(){ loadContent(); });
+});
+
+document.getElementById("btnEdit").addEventListener("click", function(){
+  var d = CURRENT_DATA || DUMMY;
+  document.getElementById("f_title_en").value = d.title_en || "";
+  document.getElementById("f_title_ur").value = d.title_ur || "";
+  document.getElementById("f_body_en").value = d.body_en || "";
+  document.getElementById("f_body_ur").value = d.body_ur || "";
+  document.getElementById("viewMode").classList.add("hidden");
+  document.getElementById("editMode").classList.remove("hidden");
+});
+document.getElementById("btnCancel").addEventListener("click", function(){
+  document.getElementById("editMode").classList.add("hidden");
+  document.getElementById("viewMode").classList.remove("hidden");
+});
+document.getElementById("btnSave").addEventListener("click", function(){
+  if(!IS_ADMIN) return;
+  var errEl = document.getElementById("saveError");
+  errEl.classList.add("hidden");
+  var payload = {
+    title_en: document.getElementById("f_title_en").value.trim(),
+    title_ur: document.getElementById("f_title_ur").value.trim(),
+    body_en: document.getElementById("f_body_en").value.trim(),
+    body_ur: document.getElementById("f_body_ur").value.trim(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedByEmail: auth.currentUser.email
+  };
+  db.collection("siteContent").doc("about").set(payload, {merge:true}).then(function(){
+    CURRENT_DATA = payload;
+    document.getElementById("editMode").classList.add("hidden");
+    document.getElementById("viewMode").classList.remove("hidden");
+    renderView();
+  }).catch(function(err){
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  });
+});
+
+applyI18n();
+</script>
+</body>
+</html>

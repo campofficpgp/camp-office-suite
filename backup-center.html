@@ -142,7 +142,7 @@
     </div>
 
     <h2 data-i18n="dbBackupTitle">Database Backup / Export</h2>
-    <p class="field-hint" data-i18n="dbBackupHint">Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat, Presence). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.</p>
+    <p class="field-hint" data-i18n="dbBackupHint">Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.</p>
     <button class="btn primary" id="btnRunBackup"><span data-i18n="btnRunBackup">⬇️ Download Full Backup Now</span></button>
     <div id="backupProgress" class="field-hint hidden"></div>
     <div id="backupError" class="error-box hidden"></div>
@@ -179,12 +179,9 @@
 <script>
 /* ============================================================
    Firebase config — SAME project as the live Camp Office apps.
-   READ-ONLY on all existing app collections (users, appData_bill,
-   appData_dcms, gallery_photos, chatMessages, presence). The only
-   WRITE this page performs is adding one new document to a new
-   "backupLog" collection to record that a backup was taken.
-   Restore (which would overwrite shared data) is intentionally
-   NOT implemented in this first version — see the card above.
+   Backup/restore log entries are written to "appData_backupmeta"
+   (the collection already reserved for this in Firestore Rules —
+   admin/super_admin only, read and write).
    ============================================================ */
 var firebaseConfig = {
   apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
@@ -208,7 +205,7 @@ var I18N = {
     lastBackupLabel:"Last successful backup:",
     lastBackupNone:"No backup has been taken yet from this Backup Center.",
     dbBackupTitle:"Database Backup / Export",
-    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat, Presence). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.",
+    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.",
     btnRunBackup:"⬇️ Download Full Backup Now",
     backupRunning:"Reading data and building backup file…",
     backupDone:"✅ Backup downloaded and logged successfully.",
@@ -241,7 +238,7 @@ var I18N = {
     lastBackupLabel:"آخری کامیاب بیک اپ:",
     lastBackupNone:"اس Backup Center سے ابھی تک کوئی بیک اپ نہیں لیا گیا۔",
     dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
-    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، Presence)۔ اصل دستاویزات/تصاویر Cloudinary پر ہی رہیں گی — اس فائل میں صرف ان کے لنکس ہوں گے۔",
+    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat)۔ اصل دستاویزات/تصاویر Cloudinary پر ہی رہیں گی — اس فائل میں صرف ان کے لنکس ہوں گے۔",
     btnRunBackup:"⬇️ ابھی مکمل بیک اپ ڈاؤن لوڈ کریں",
     backupRunning:"ڈیٹا پڑھا جا رہا ہے اور بیک اپ فائل بنائی جا رہی ہے…",
     backupDone:"✅ بیک اپ کامیابی سے ڈاؤن لوڈ اور محفوظ ہو گیا۔",
@@ -335,7 +332,7 @@ auth.onAuthStateChanged(function(user){
 function renderLastBackupLine(){
   var el = document.getElementById("lastBackupLine");
   if(!el || document.getElementById("mainApp").classList.contains("hidden")) return;
-  db.collection("backupLog").orderBy("timestamp","desc").limit(1).get().then(function(qs){
+  db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(1).get().then(function(qs){
     if(qs.empty){
       el.textContent = I18N[currentLang].lastBackupNone;
       return;
@@ -346,20 +343,24 @@ function renderLastBackupLine(){
     var who = d.performedByEmail || d.performedByUserId || "?";
     el.textContent = whenStr + " — " + who;
   }).catch(function(err){
-    // backupLog collection may not exist yet (no backup taken) — treat like "none".
+    // appData_backupmeta collection may not exist yet (no backup taken) — treat like "none".
     el.textContent = I18N[currentLang].lastBackupNone;
   });
 }
 
 /* ---------- Database Backup / Export ---------- */
-var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages","presence"];
+/* "presence" (online/offline status) is intentionally excluded — it is
+   transient, per-user, real-time data with no lasting value to back up
+   or restore, and restoring another user's presence doc would always
+   be blocked by Firestore Rules (a user may only write their own). */
+var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages"];
 var KNOWN_SHARED_DOCS = [
   {collection:"appData_bill", doc:"shared", label:"bill_register"},
   {collection:"appData_dcms", doc:"shared", label:"daily_case_management"}
 ];
 
 /* Reads every known collection/doc, downloads one JSON file, and logs the
-   backup to backupLog. Returns a Promise resolving to {recordCounts, json}.
+   backup to appData_backupmeta. Returns a Promise resolving to {recordCounts, json}.
    Used both by the manual "Download Full Backup Now" button and by the
    automatic safety backup that Restore takes before writing anything. */
 function performBackup(logType){
@@ -401,7 +402,7 @@ function performBackup(logType){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    return db.collection("backupLog").add({
+    return db.collection("appData_backupmeta").add({
       type: logType,
       performedByUserId: auth.currentUser.uid,
       performedByEmail: auth.currentUser.email,
@@ -556,7 +557,7 @@ document.getElementById("btnConfirmRestore").addEventListener("click", function(
     });
 
     return Promise.all(writes).then(function(){
-      return db.collection("backupLog").add({
+      return db.collection("appData_backupmeta").add({
         type: "restore",
         performedByUserId: auth.currentUser.uid,
         performedByEmail: auth.currentUser.email,

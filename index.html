@@ -356,7 +356,25 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 var db = firebase.firestore();
+/* ---------- Security: auto-clear session when browser/tab closes ---------- */
+auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
+/* ---------- Security: auto sign-out after inactivity (shared office computer) ---------- */
+(function(){
+  var IDLE_LIMIT_MS = 10 * 60 * 1000; // 10 منٹ — چاہیں تو یہ نمبر بدل سکتے ہیں
+  var idleTimer = null;
+  function resetIdleTimer(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(function(){
+      if(auth.currentUser){ auth.signOut(); }
+    }, IDLE_LIMIT_MS);
+  }
+  ["mousemove","mousedown","keydown","touchstart","scroll","click"].forEach(function(evt){
+    document.addEventListener(evt, resetIdleTimer, true);
+  });
+  resetIdleTimer();
+})();
+  
 var I18N = {
   en: {
     brandTitle:"Camp Office Digital Portal",

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Contact Us</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.6; }
+  body.lang-ur, body.lang-ur input, body.lang-ur textarea, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:800px; margin:0 auto; padding:20px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .card + .card{ margin-top:14px; }
+  label{ display:block; font-weight:600; margin:10px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=text],textarea{ width:100%; padding:9px 11px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); font-family:inherit; }
+  textarea{ min-height:60px; resize:vertical; }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:8px 13px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.danger{ background:var(--danger-tint); border-color:var(--danger); color:var(--danger); }
+  .btn.small{ padding:5px 9px; font-size:12px; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .backlink{ color:#fff; text-decoration:none; font-size:13px; opacity:0.9; }
+  .backlink:hover{ text-decoration:underline; }
+  .contact-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .contact-row .meta{ font-size:12.5px; color:var(--muted); margin-top:3px; }
+  .contact-row .actions{ display:flex; gap:6px; flex-shrink:0; }
+  .add-card{ border-style:dashed; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">☎️ <span data-i18n="brandTitle">Contact Us — Camp Office Digital Portal</span></div>
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a class="backlink" href="index.html" data-i18n="backToHub">← Back to Hub</a>
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect">
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="signedInBar" class="userbar hidden">
+    <div><span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong> <span id="curRoleBadge" class="badge"></span></div>
+  </div>
+
+  <h1 data-i18n="pageTitle" style="margin-bottom:14px;">Contact Us</h1>
+  <div class="note-banner hidden" id="dummyNote" data-i18n="dummyNote">ℹ️ These are placeholder/sample entries. An Administrator can add, edit, or delete them below.</div>
+
+  <div id="contactList"></div>
+
+  <div class="card add-card hidden" id="addCard" style="margin-top:14px;">
+    <h3 data-i18n="addTitle">Add Contact Entry</h3>
+    <label data-i18n="lblLabelEn">Office / Section Name (English)</label>
+    <input type="text" id="f_label_en">
+    <label data-i18n="lblLabelUr">Office / Section Name (Urdu)</label>
+    <input type="text" id="f_label_ur">
+    <label data-i18n="lblPhone">Phone</label>
+    <input type="text" id="f_phone">
+    <label data-i18n="lblEmail">Email</label>
+    <input type="text" id="f_email">
+    <label data-i18n="lblAddressEn">Address (English)</label>
+    <textarea id="f_address_en"></textarea>
+    <label data-i18n="lblAddressUr">Address (Urdu)</label>
+    <textarea id="f_address_ur"></textarea>
+    <div id="addError" class="error-box hidden"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn primary" id="btnSaveNew"><span data-i18n="btnSave">💾 Save</span></button>
+      <button class="btn" id="btnCancelNew"><span data-i18n="btnCancel">Cancel</span></button>
+    </div>
+  </div>
+  <button class="btn primary hidden" id="btnShowAdd" style="margin-top:14px;"><span data-i18n="btnAdd">➕ Add Contact Entry</span></button>
+</div>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+var DUMMY_CONTACTS = [
+  { id:null, label_en:"Camp Office — Prosecutor General Punjab", label_ur:"کیمپ آفس — پراسیکیوٹر جنرل پنجاب",
+    phone:"+92-51-XXXXXXX", email:"office@example.gov.pk",
+    address_en:"Supreme Court of Pakistan, Islamabad. (Sample address — Administrator can edit this.)",
+    address_ur:"سپریم کورٹ آف پاکستان، اسلام آباد۔ (نمونے کا پتہ — Administrator اسے تبدیل کر سکتے ہیں۔)" }
+];
+
+var I18N = {
+  en:{
+    brandTitle:"Contact Us — Camp Office Digital Portal", backToHub:"← Back to Hub", pageTitle:"Contact Us",
+    signedInAs:"Signed in as", dummyNote:"ℹ️ These are placeholder/sample entries. An Administrator can add, edit, or delete them below.",
+    btnEdit:"✏️ Edit", btnDelete:"🗑️ Delete", btnAdd:"➕ Add Contact Entry", addTitle:"Add Contact Entry", editEntryTitle:"Edit Contact Entry",
+    lblLabelEn:"Office / Section Name (English)", lblLabelUr:"Office / Section Name (Urdu)",
+    lblPhone:"Phone", lblEmail:"Email", lblAddressEn:"Address (English)", lblAddressUr:"Address (Urdu)",
+    btnSave:"💾 Save", btnCancel:"Cancel", confirmDelete:"Delete this contact entry? This cannot be undone."
+  },
+  ur:{
+    brandTitle:"رابطہ — کیمپ آفس ڈیجیٹل پورٹل", backToHub:"← ہب پر واپس جائیں", pageTitle:"رابطہ کریں",
+    signedInAs:"لاگ اِن ہیں بطور", dummyNote:"ℹ️ یہ نمونے کے طور پر رکھی گئی اندراجات ہیں۔ Administrator نیچے سے شامل، ترمیم یا حذف کر سکتے ہیں۔",
+    btnEdit:"✏️ ترمیم", btnDelete:"🗑️ حذف کریں", btnAdd:"➕ رابطہ اندراج شامل کریں", addTitle:"رابطہ اندراج شامل کریں", editEntryTitle:"رابطہ اندراج میں ترمیم",
+    lblLabelEn:"دفتر/سیکشن کا نام (انگریزی)", lblLabelUr:"دفتر/سیکشن کا نام (اردو)",
+    lblPhone:"فون", lblEmail:"ای میل", lblAddressEn:"پتہ (انگریزی)", lblAddressUr:"پتہ (اردو)",
+    btnSave:"💾 محفوظ کریں", btnCancel:"منسوخ کریں", confirmDelete:"یہ رابطہ اندراج حذف کریں؟ یہ ناقابلِ واپسی ہے۔"
+  }
+};
+var ROLE_LABELS = { en:{ super_admin:"Super Admin", admin:"Admin" }, ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن" } };
+var currentLang = "en";
+var IS_ADMIN = false;
+var CONTACTS = null; /* null = not loaded yet from Firestore */
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang==="ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+  });
+  renderList();
+}
+document.getElementById("langSelect").addEventListener("change", function(e){ currentLang = e.target.value; applyI18n(); });
+document.getElementById("themeSelect").addEventListener("change", function(e){ document.documentElement.setAttribute("data-theme", e.target.value); });
+
+function renderList(){
+  var list = (CONTACTS && CONTACTS.length) ? CONTACTS : DUMMY_CONTACTS;
+  document.getElementById("dummyNote").classList.toggle("hidden", !(!CONTACTS || CONTACTS.length===0));
+  var el = document.getElementById("contactList");
+  el.innerHTML = "";
+  list.forEach(function(c){
+    var card = document.createElement("div");
+    card.className = "card";
+    var label = currentLang==="ur" ? (c.label_ur||c.label_en) : (c.label_en||c.label_ur);
+    var address = currentLang==="ur" ? (c.address_ur||c.address_en) : (c.address_en||c.address_ur);
+    card.innerHTML =
+      "<div class='contact-row'><div>"+
+        "<h3>"+esc(label)+"</h3>"+
+        (c.phone ? "<div class='meta'>☎️ "+esc(c.phone)+"</div>" : "")+
+        (c.email ? "<div class='meta'>✉️ "+esc(c.email)+"</div>" : "")+
+        (address ? "<div class='meta'>📍 "+esc(address)+"</div>" : "")+
+      "</div><div class='actions'>"+
+        (IS_ADMIN && c.id ? "<button class='btn small' data-edit='"+esc(c.id)+"'>"+I18N[currentLang].btnEdit+"</button><button class='btn small danger' data-delete='"+esc(c.id)+"'>"+I18N[currentLang].btnDelete+"</button>" : "")+
+      "</div></div>";
+    el.appendChild(card);
+  });
+  el.querySelectorAll("[data-edit]").forEach(function(btn){
+    btn.addEventListener("click", function(){ openEdit(btn.dataset.edit); });
+  });
+  el.querySelectorAll("[data-delete]").forEach(function(btn){
+    btn.addEventListener("click", function(){ deleteContact(btn.dataset.delete); });
+  });
+  document.getElementById("btnShowAdd").classList.toggle("hidden", !IS_ADMIN);
+}
+
+function loadContacts(){
+  db.collection("contacts").orderBy("createdAt","asc").get().then(function(qs){
+    var rows = [];
+    qs.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+    CONTACTS = rows;
+    renderList();
+  }).catch(function(){ CONTACTS = []; renderList(); });
+}
+
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    IS_ADMIN = false;
+    document.getElementById("signedInBar").classList.add("hidden");
+    loadContacts();
+    return;
+  }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var data = doc.exists ? (doc.data()||{}) : {};
+    var role = data.roleV2 || "viewer";
+    IS_ADMIN = (role === "admin" || role === "super_admin") && data.isActive !== false && data.approvalStatus === "approved";
+    document.getElementById("signedInBar").classList.remove("hidden");
+    document.getElementById("curEmail").textContent = user.email;
+    var badge = document.getElementById("curRoleBadge");
+    badge.textContent = ROLE_LABELS[currentLang][role] || role;
+    badge.className = "badge " + role;
+    loadContacts();
+  }).catch(function(){ loadContacts(); });
+});
+
+/* ---------- Add ---------- */
+document.getElementById("btnShowAdd").addEventListener("click", function(){
+  ["f_label_en","f_label_ur","f_phone","f_email","f_address_en","f_address_ur"].forEach(function(id){ document.getElementById(id).value = ""; });
+  document.getElementById("addError").classList.add("hidden");
+  document.getElementById("addCard").dataset.editingId = "";
+  document.getElementById("addCard").classList.remove("hidden");
+  document.getElementById("btnShowAdd").classList.add("hidden");
+});
+document.getElementById("btnCancelNew").addEventListener("click", function(){
+  document.getElementById("addCard").classList.add("hidden");
+  document.getElementById("btnShowAdd").classList.remove("hidden");
+});
+document.getElementById("btnSaveNew").addEventListener("click", function(){
+  if(!IS_ADMIN) return;
+  var errEl = document.getElementById("addError");
+  errEl.classList.add("hidden");
+  var payload = {
+    label_en: document.getElementById("f_label_en").value.trim(),
+    label_ur: document.getElementById("f_label_ur").value.trim(),
+    phone: document.getElementById("f_phone").value.trim(),
+    email: document.getElementById("f_email").value.trim(),
+    address_en: document.getElementById("f_address_en").value.trim(),
+    address_ur: document.getElementById("f_address_ur").value.trim(),
+    updatedByEmail: auth.currentUser.email
+  };
+  if(!payload.label_en && !payload.label_ur){
+    errEl.textContent = "Please enter a name in at least one language.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+  var editingId = document.getElementById("addCard").dataset.editingId;
+  var promise;
+  if(editingId){
+    promise = db.collection("contacts").doc(editingId).set(payload, {merge:true});
+  } else {
+    payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    promise = db.collection("contacts").add(payload);
+  }
+  promise.then(function(){
+    document.getElementById("addCard").classList.add("hidden");
+    document.getElementById("btnShowAdd").classList.remove("hidden");
+    loadContacts();
+  }).catch(function(err){
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  });
+});
+
+function openEdit(id){
+  var c = (CONTACTS||[]).filter(function(x){ return x.id===id; })[0];
+  if(!c) return;
+  document.getElementById("f_label_en").value = c.label_en||"";
+  document.getElementById("f_label_ur").value = c.label_ur||"";
+  document.getElementById("f_phone").value = c.phone||"";
+  document.getElementById("f_email").value = c.email||"";
+  document.getElementById("f_address_en").value = c.address_en||"";
+  document.getElementById("f_address_ur").value = c.address_ur||"";
+  document.getElementById("addError").classList.add("hidden");
+  document.getElementById("addCard").dataset.editingId = id;
+  document.getElementById("addCard").querySelector("h3").textContent = I18N[currentLang].editEntryTitle;
+  document.getElementById("addCard").classList.remove("hidden");
+  document.getElementById("btnShowAdd").classList.add("hidden");
+  document.getElementById("addCard").scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function deleteContact(id){
+  if(!IS_ADMIN) return;
+  if(!confirm(I18N[currentLang].confirmDelete)) return;
+  db.collection("contacts").doc(id).delete().then(function(){ loadContacts(); });
+}
+
+applyI18n();
+</script>
+</body>
+</html>

@@ -356,8 +356,8 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var auth = firebase.auth();
 var db = firebase.firestore();
-/* ---------- Security: auto-clear session when browser/tab closes ---------- */
-auth.setPersistence(firebase.auth.Auth.Persistence.SESSION);
+/* ---------- Security: auto-clear LOCAL when browser/tab closes ---------- */
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 /* ---------- Security: auto sign-out after inactivity (shared office computer) ---------- */
 (function(){

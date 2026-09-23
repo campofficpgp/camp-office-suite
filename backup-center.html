@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Backup Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.5; }
+  body.lang-ur, body.lang-ur input, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:20px; }
+  .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=email],input[type=password]{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn.block{ width:100%; margin-top:16px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .toggle-row{ text-align:center; margin-top:16px; font-size:13px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .pending-screen{ text-align:center; padding:40px 20px; }
+  .pending-screen .icon{ font-size:48px; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .info-banner{ background:var(--navy-tint); border:1px solid var(--navy); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .last-backup-box{ display:flex; align-items:center; gap:10px; background:var(--navy-tint); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+  .last-backup-box .emoji{ font-size:22px; }
+  ol.restore-steps li{ margin-bottom:8px; }
+  .row-count-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+  .row-count-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
+  .row-count-table td:last-child{ text-align:right; font-weight:700; }
+  .danger-banner{ background:var(--danger-tint); border:1px solid var(--danger); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--danger); margin-top:14px; font-weight:600; }
+  input[type=file]{ display:block; margin-top:6px; font-size:13px; }
+  .restore-confirm-box{ margin-top:14px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">💾 <span data-i18n="brandTitle">Camp Office Digital Portal — Backup Center (Prototype)</span></div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <select id="langSelect">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect">
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="note-banner" data-i18n="protoNote">
+    🧪 Prototype — Stage 10 (Backup Center). Reads/writes the real shared database. Only Admin / Super Admin accounts can use it. Restore replaces shared data for everyone — always read the warning before confirming.
+  </div>
+</div>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="authScreen" class="center-wrap">
+  <div class="card">
+    <h2 data-i18n="signInTitle">Sign In</h2>
+    <p class="field-hint" data-i18n="signInSub">Camp Office Digital Portal — Backup Center</p>
+    <label data-i18n="lblEmail">Email</label>
+    <input type="email" id="li_email" autocomplete="username">
+    <label data-i18n="lblPassword">Password</label>
+    <input type="password" id="li_password" autocomplete="current-password">
+    <div id="li_error" class="error-box hidden"></div>
+    <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
+    <p class="field-hint" data-i18n="signInHint">Use your existing Camp Office Portal account (the same one you use on cmpofficepgp.org).</p>
+  </div>
+</div>
+
+<!-- ===================== NOT ADMIN SCREEN ===================== -->
+<div id="notAdminScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🔒</div>
+    <h2 data-i18n="notAdminTitle">Admins Only</h2>
+    <p data-i18n="notAdminBody">The Backup Center can only be used by an Administrator or Super Administrator account.</p>
+    <button class="btn block" id="notAdminSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP (admin only) ===================== -->
+<div id="mainApp" class="wrap hidden">
+  <div class="userbar">
+    <div>
+      <span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong>
+      <span id="curRoleBadge" class="badge"></span>
+    </div>
+    <button class="btn small" id="mainSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+
+  <div class="card">
+    <div class="last-backup-box">
+      <div class="emoji">🕒</div>
+      <div>
+        <div style="font-weight:700;" data-i18n="lastBackupLabel">Last successful backup:</div>
+        <div id="lastBackupLine" class="field-hint" data-i18n="lastBackupNone">No backup has been taken yet from this Backup Center.</div>
+      </div>
+    </div>
+
+    <h2 data-i18n="dbBackupTitle">Database Backup / Export</h2>
+    <p class="field-hint" data-i18n="dbBackupHint">Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat, Presence). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.</p>
+    <button class="btn primary" id="btnRunBackup"><span data-i18n="btnRunBackup">⬇️ Download Full Backup Now</span></button>
+    <div id="backupProgress" class="field-hint hidden"></div>
+    <div id="backupError" class="error-box hidden"></div>
+    <table class="row-count-table hidden" id="recordCountTable"></table>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="restoreTitle">Restore from Backup File</h2>
+    <p class="field-hint" data-i18n="restoreIntro">Only use this if you know exactly what you are doing. Restoring replaces shared online data for everyone with the contents of the file you choose.</p>
+    <ol class="restore-steps">
+      <li data-i18n="restoreStep2">Choose a previously downloaded backup (.json) file below.</li>
+      <li data-i18n="restoreStep3">The system checks the file is a genuine backup file, and refuses it with a clear message if not.</li>
+      <li data-i18n="restoreStep5">Before restoring, the system automatically takes a fresh "safety" backup of the current data first, in case the wrong file was chosen.</li>
+      <li data-i18n="restoreStep6">When restore finishes, a confirmation message appears and it is recorded in the backup log.</li>
+    </ol>
+
+    <label data-i18n="restoreChooseLabel">Choose backup (.json) file</label>
+    <input type="file" id="restoreFileInput" accept=".json,application/json">
+    <div id="restoreFileError" class="error-box hidden"></div>
+
+    <div id="restoreConfirmBox" class="restore-confirm-box hidden">
+      <table class="row-count-table" id="restoreSummaryTable"></table>
+      <div class="danger-banner" data-i18n="restoreWarning">This will replace ALL current shared online data with this backup file. This cannot be undone. A safety backup of the current data will be taken automatically first. Continue?</div>
+      <button class="btn primary" id="btnConfirmRestore" style="margin-top:10px;"><span data-i18n="btnConfirmRestore">✅ Yes, restore now</span></button>
+      <button class="btn" id="btnCancelRestore" style="margin-top:10px;"><span data-i18n="btnCancelRestore">Cancel</span></button>
+    </div>
+
+    <div id="restoreProgress" class="field-hint hidden"></div>
+    <div id="restoreError" class="error-box hidden"></div>
+    <table class="row-count-table hidden" id="restoreResultTable"></table>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Firebase config — SAME project as the live Camp Office apps.
+   READ-ONLY on all existing app collections (users, appData_bill,
+   appData_dcms, gallery_photos, chatMessages, presence). The only
+   WRITE this page performs is adding one new document to a new
+   "backupLog" collection to record that a backup was taken.
+   Restore (which would overwrite shared data) is intentionally
+   NOT implemented in this first version — see the card above.
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+var I18N = {
+  en: {
+    brandTitle:"Camp Office Digital Portal — Backup Center",
+    protoNote:"🧪 Prototype — Stage 10 (Backup Center). Reads/writes the real shared database. Only Admin / Super Admin accounts can use it. Restore replaces shared data for everyone — always read the warning before confirming.",
+    signInTitle:"Sign In", signInSub:"Camp Office Digital Portal — Backup Center",
+    signInHint:"Use your existing Camp Office Portal account (the same one you use on cmpofficepgp.org).",
+    lblEmail:"Email", lblPassword:"Password", btnSignIn:"Sign In",
+    notAdminTitle:"Admins Only",
+    notAdminBody:"The Backup Center can only be used by an Administrator or Super Administrator account.",
+    btnSignOut:"Sign Out", signedInAs:"Signed in as",
+    lastBackupLabel:"Last successful backup:",
+    lastBackupNone:"No backup has been taken yet from this Backup Center.",
+    dbBackupTitle:"Database Backup / Export",
+    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat, Presence). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.",
+    btnRunBackup:"⬇️ Download Full Backup Now",
+    backupRunning:"Reading data and building backup file…",
+    backupDone:"✅ Backup downloaded and logged successfully.",
+    restoreTitle:"Restore from Backup File",
+    restoreIntro:"Only use this if you know exactly what you are doing. Restoring replaces shared online data for everyone with the contents of the file you choose.",
+    restoreStep2:"Choose a previously downloaded backup (.json) file below.",
+    restoreStep3:"The system checks the file is a genuine backup file, and refuses it with a clear message if not.",
+    restoreStep5:"Before restoring, the system automatically takes a fresh \"safety\" backup of the current data first, in case the wrong file was chosen.",
+    restoreStep6:"When restore finishes, a confirmation message appears and it is recorded in the backup log.",
+    restoreChooseLabel:"Choose backup (.json) file",
+    restoreBadFile:"This does not look like a genuine Backup Center file — restore stopped. No data was changed.",
+    restoreWarning:"This will replace ALL current shared online data with this backup file. This cannot be undone. A safety backup of the current data will be taken automatically first. Continue?",
+    btnConfirmRestore:"✅ Yes, restore now",
+    btnCancelRestore:"Cancel",
+    restoreRunningSafety:"Taking a safety backup of current data first…",
+    restoreRunningWrite:"Restoring data from the file, please wait…",
+    restoreDone:"✅ Restore complete. A safety backup of the data as it was just before this restore was also downloaded and logged.",
+    restoreSummaryLabel:"This file will restore:",
+    restoreFileFromLabel:"Backup file date:"
+  },
+  ur: {
+    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — بیک اپ سینٹر",
+    protoNote:"🧪 آزمائشی نمونہ — مرحلہ 10 (Backup Center)۔ یہ صفحہ اصل مشترکہ ڈیٹا بیس پڑھ اور لکھ سکتا ہے۔ صرف Admin/Super Admin اکاؤنٹ استعمال کر سکتے ہیں۔ Restore سب کا مشترکہ ڈیٹا بدل دیتا ہے — تصدیق سے پہلے انتباہ ضرور پڑھ لیں۔",
+    signInTitle:"لاگ اِن", signInSub:"کیمپ آفس ڈیجیٹل پورٹل — بیک اپ سینٹر",
+    signInHint:"اپنا موجودہ Camp Office Portal اکاؤنٹ استعمال کریں (وہی جو cmpofficepgp.org پر استعمال ہوتا ہے)۔",
+    lblEmail:"ای میل", lblPassword:"پاس ورڈ", btnSignIn:"لاگ اِن کریں",
+    notAdminTitle:"صرف ایڈمن کے لیے",
+    notAdminBody:"Backup Center صرف Administrator یا Super Administrator اکاؤنٹ استعمال کر سکتا ہے۔",
+    btnSignOut:"لاگ آؤٹ", signedInAs:"لاگ اِن ہیں بطور",
+    lastBackupLabel:"آخری کامیاب بیک اپ:",
+    lastBackupNone:"اس Backup Center سے ابھی تک کوئی بیک اپ نہیں لیا گیا۔",
+    dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
+    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، Presence)۔ اصل دستاویزات/تصاویر Cloudinary پر ہی رہیں گی — اس فائل میں صرف ان کے لنکس ہوں گے۔",
+    btnRunBackup:"⬇️ ابھی مکمل بیک اپ ڈاؤن لوڈ کریں",
+    backupRunning:"ڈیٹا پڑھا جا رہا ہے اور بیک اپ فائل بنائی جا رہی ہے…",
+    backupDone:"✅ بیک اپ کامیابی سے ڈاؤن لوڈ اور محفوظ ہو گیا۔",
+    restoreTitle:"بیک اپ فائل سے Restore",
+    restoreIntro:"یہ صرف اس وقت استعمال کریں جب آپ کو مکمل یقین ہو کہ کیا کر رہے ہیں۔ Restore سب کے لیے مشترکہ آن لائن ڈیٹا کو منتخب کردہ فائل کے مطابق بدل دیتا ہے۔",
+    restoreStep2:"نیچے پہلے سے ڈاؤن لوڈ کی گئی بیک اپ (.json) فائل منتخب کریں۔",
+    restoreStep3:"سسٹم چیک کرے گا کہ یہ ایک درست بیک اپ فائل ہے — اگر نہیں تو صاف پیغام دے کر روک دے گا۔",
+    restoreStep5:"Restore سے پہلے سسٹم خودکار طور پر موجودہ ڈیٹا کا ایک تازہ \"حفاظتی\" بیک اپ خود بنا لے گا، تاکہ غلط فائل منتخب ہونے کی صورت میں واپس جایا جا سکے۔",
+    restoreStep6:"Restore مکمل ہونے پر ایک تصدیقی پیغام آئے گا اور یہ بیک اپ لاگ میں درج ہو جائے گا۔",
+    restoreChooseLabel:"بیک اپ (.json) فائل منتخب کریں",
+    restoreBadFile:"یہ فائل درست Backup Center فائل نہیں لگتی — Restore روک دیا گیا۔ کوئی ڈیٹا تبدیل نہیں ہوا۔",
+    restoreWarning:"یہ عمل موجودہ تمام آن لائن مشترکہ ڈیٹا کو اس بیک اپ فائل سے بدل دے گا۔ یہ ناقابلِ واپسی ہے۔ پہلے خودکار طور پر موجودہ ڈیٹا کا ایک حفاظتی بیک اپ لیا جائے گا۔ جاری رکھیں؟",
+    btnConfirmRestore:"✅ ہاں، ابھی Restore کریں",
+    btnCancelRestore:"منسوخ کریں",
+    restoreRunningSafety:"پہلے موجودہ ڈیٹا کا حفاظتی بیک اپ لیا جا رہا ہے…",
+    restoreRunningWrite:"فائل سے ڈیٹا Restore ہو رہا ہے، براہ کرم انتظار کریں…",
+    restoreDone:"✅ Restore مکمل ہو گیا۔ اس Restore سے عین پہلے کا ڈیٹا بھی بطور حفاظتی بیک اپ ڈاؤن لوڈ اور محفوظ ہو گیا ہے۔",
+    restoreSummaryLabel:"یہ فائل جو Restore کرے گی:",
+    restoreFileFromLabel:"بیک اپ فائل کی تاریخ:"
+  }
+};
+var ROLE_LABELS = {
+  en:{ super_admin:"Super Admin", admin:"Admin" },
+  ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن" }
+};
+
+var currentLang = "en";
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang==="ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+  });
+}
+document.getElementById("langSelect").addEventListener("change", function(e){
+  currentLang = e.target.value; applyI18n(); renderLastBackupLine();
+});
+document.getElementById("themeSelect").addEventListener("change", function(e){
+  document.documentElement.setAttribute("data-theme", e.target.value);
+});
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function showOnly(id){
+  ["authScreen","notAdminScreen","mainApp"].forEach(function(s){
+    document.getElementById(s).classList.toggle("hidden", s!==id);
+  });
+}
+
+/* ---------- Sign In ---------- */
+document.getElementById("li_submit").addEventListener("click", function(){
+  var email = document.getElementById("li_email").value.trim();
+  var pw = document.getElementById("li_password").value;
+  var errEl = document.getElementById("li_error");
+  errEl.classList.add("hidden");
+  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
+  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
+    errEl.textContent = err.message; errEl.classList.remove("hidden");
+  });
+});
+["notAdminSignOut","mainSignOut"].forEach(function(id){
+  document.getElementById(id).addEventListener("click", function(){ auth.signOut(); });
+});
+
+/* ---------- Auth state / role gating (admin/super_admin only) ---------- */
+var CURRENT_DOC = null;
+
+auth.onAuthStateChanged(function(user){
+  if(!user){ CURRENT_DOC = null; showOnly("authScreen"); return; }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var data = doc.exists ? (doc.data() || {}) : {};
+    CURRENT_DOC = data;
+    var role = data.roleV2 || "viewer";
+    var isAdminUp = (role === "admin" || role === "super_admin");
+    if(data.isActive === false || data.approvalStatus === "rejected" || !isAdminUp){
+      showOnly("notAdminScreen");
+      return;
+    }
+    showOnly("mainApp");
+    document.getElementById("curEmail").textContent = user.email;
+    var roleBadge = document.getElementById("curRoleBadge");
+    roleBadge.textContent = (ROLE_LABELS[currentLang][role] || role);
+    roleBadge.className = "badge " + role;
+    renderLastBackupLine();
+  }).catch(function(err){
+    console.error(err);
+  });
+});
+
+/* ---------- Last successful backup line ---------- */
+function renderLastBackupLine(){
+  var el = document.getElementById("lastBackupLine");
+  if(!el || document.getElementById("mainApp").classList.contains("hidden")) return;
+  db.collection("backupLog").orderBy("timestamp","desc").limit(1).get().then(function(qs){
+    if(qs.empty){
+      el.textContent = I18N[currentLang].lastBackupNone;
+      return;
+    }
+    var d = qs.docs[0].data();
+    var when = d.timestamp && d.timestamp.toDate ? d.timestamp.toDate() : null;
+    var whenStr = when ? when.toLocaleString(currentLang==="ur" ? "ur-PK" : "en-GB") : "?";
+    var who = d.performedByEmail || d.performedByUserId || "?";
+    el.textContent = whenStr + " — " + who;
+  }).catch(function(err){
+    // backupLog collection may not exist yet (no backup taken) — treat like "none".
+    el.textContent = I18N[currentLang].lastBackupNone;
+  });
+}
+
+/* ---------- Database Backup / Export ---------- */
+var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages","presence"];
+var KNOWN_SHARED_DOCS = [
+  {collection:"appData_bill", doc:"shared", label:"bill_register"},
+  {collection:"appData_dcms", doc:"shared", label:"daily_case_management"}
+];
+
+/* Reads every known collection/doc, downloads one JSON file, and logs the
+   backup to backupLog. Returns a Promise resolving to {recordCounts, json}.
+   Used both by the manual "Download Full Backup Now" button and by the
+   automatic safety backup that Restore takes before writing anything. */
+function performBackup(logType){
+  var backup = { generatedAt: new Date().toISOString(), generatedBy: (auth.currentUser && auth.currentUser.email) || "?", collections: {}, sharedDocs: {} };
+  var recordCounts = {};
+
+  var collectionReads = KNOWN_COLLECTIONS.map(function(name){
+    return db.collection(name).get().then(function(qs){
+      var rows = [];
+      qs.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+      backup.collections[name] = rows;
+      recordCounts[name] = rows.length;
+    }).catch(function(err){
+      backup.collections[name] = {error: err.message};
+      recordCounts[name] = "error";
+    });
+  });
+
+  var docReads = KNOWN_SHARED_DOCS.map(function(item){
+    return db.collection(item.collection).doc(item.doc).get().then(function(d){
+      backup.sharedDocs[item.label] = d.exists ? d.data() : null;
+      recordCounts[item.label] = d.exists ? 1 : 0;
+    }).catch(function(err){
+      backup.sharedDocs[item.label] = {error: err.message};
+      recordCounts[item.label] = "error";
+    });
+  });
+
+  return Promise.all(collectionReads.concat(docReads)).then(function(){
+    var json = JSON.stringify(backup, null, 2);
+    var blob = new Blob([json], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var stamp = new Date().toISOString().replace(/[:.]/g,"-");
+    a.href = url;
+    a.download = "camp-office-" + logType + "-backup-" + stamp + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return db.collection("backupLog").add({
+      type: logType,
+      performedByUserId: auth.currentUser.uid,
+      performedByEmail: auth.currentUser.email,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      recordCounts: recordCounts,
+      fileSizeApprox: json.length
+    }).then(function(ref){
+      return { recordCounts: recordCounts, json: json, logId: ref.id };
+    });
+  });
+}
+
+document.getElementById("btnRunBackup").addEventListener("click", function(){
+  var btn = document.getElementById("btnRunBackup");
+  var progressEl = document.getElementById("backupProgress");
+  var errEl = document.getElementById("backupError");
+  var tableEl = document.getElementById("recordCountTable");
+  errEl.classList.add("hidden");
+  tableEl.classList.add("hidden");
+  btn.disabled = true;
+  progressEl.textContent = I18N[currentLang].backupRunning;
+  progressEl.classList.remove("hidden");
+
+  performBackup("database").then(function(result){
+    progressEl.textContent = I18N[currentLang].backupDone;
+    tableEl.innerHTML = Object.keys(result.recordCounts).map(function(k){
+      return "<tr><td>"+esc(k)+"</td><td>"+esc(result.recordCounts[k])+"</td></tr>";
+    }).join("");
+    tableEl.classList.remove("hidden");
+    renderLastBackupLine();
+  }).catch(function(err){
+    progressEl.classList.add("hidden");
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  }).finally(function(){
+    btn.disabled = false;
+  });
+});
+
+/* ---------- Restore from Backup File ---------- */
+var PENDING_RESTORE_DATA = null; /* parsed + validated backup JSON, waiting for confirm click */
+
+function isValidBackupFile(data){
+  if(!data || typeof data !== "object") return false;
+  if(!data.generatedAt || typeof data.collections !== "object" || typeof data.sharedDocs !== "object") return false;
+  /* must contain at least one field we actually recognize, so a random unrelated JSON file is rejected */
+  var knownColl = KNOWN_COLLECTIONS.some(function(c){ return Object.prototype.hasOwnProperty.call(data.collections, c); });
+  var knownDoc = KNOWN_SHARED_DOCS.some(function(d){ return Object.prototype.hasOwnProperty.call(data.sharedDocs, d.label); });
+  return knownColl || knownDoc;
+}
+
+document.getElementById("restoreFileInput").addEventListener("change", function(e){
+  var file = e.target.files && e.target.files[0];
+  var errEl = document.getElementById("restoreFileError");
+  var confirmBox = document.getElementById("restoreConfirmBox");
+  errEl.classList.add("hidden");
+  confirmBox.classList.add("hidden");
+  PENDING_RESTORE_DATA = null;
+  if(!file) return;
+
+  var reader = new FileReader();
+  reader.onload = function(){
+    var data;
+    try{
+      data = JSON.parse(reader.result);
+    } catch(err){
+      errEl.textContent = I18N[currentLang].restoreBadFile;
+      errEl.classList.remove("hidden");
+      return;
+    }
+    if(!isValidBackupFile(data)){
+      errEl.textContent = I18N[currentLang].restoreBadFile;
+      errEl.classList.remove("hidden");
+      return;
+    }
+    PENDING_RESTORE_DATA = data;
+    var rows = [];
+    rows.push("<tr><td>"+esc(I18N[currentLang].restoreFileFromLabel)+"</td><td>"+esc(new Date(data.generatedAt).toLocaleString(currentLang==="ur"?"ur-PK":"en-GB"))+"</td></tr>");
+    KNOWN_COLLECTIONS.forEach(function(name){
+      if(data.collections[name]) rows.push("<tr><td>"+esc(name)+"</td><td>"+esc((data.collections[name]||[]).length||0)+"</td></tr>");
+    });
+    KNOWN_SHARED_DOCS.forEach(function(item){
+      if(Object.prototype.hasOwnProperty.call(data.sharedDocs, item.label)) rows.push("<tr><td>"+esc(item.label)+"</td><td>"+(data.sharedDocs[item.label]?"1":"0")+"</td></tr>");
+    });
+    document.getElementById("restoreSummaryTable").innerHTML =
+      "<tr><td colspan='2' style='font-weight:700;'>"+esc(I18N[currentLang].restoreSummaryLabel)+"</td></tr>" + rows.join("");
+    confirmBox.classList.remove("hidden");
+  };
+  reader.onerror = function(){
+    errEl.textContent = I18N[currentLang].restoreBadFile;
+    errEl.classList.remove("hidden");
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById("btnCancelRestore").addEventListener("click", function(){
+  PENDING_RESTORE_DATA = null;
+  document.getElementById("restoreConfirmBox").classList.add("hidden");
+  document.getElementById("restoreFileInput").value = "";
+});
+
+/* Writes one collection's rows in batches of <=400 to stay well under
+   Firestore's 500-operation batch limit. */
+function writeCollectionBatched(name, rows){
+  var chunks = [];
+  for(var i=0; i<rows.length; i+=400){ chunks.push(rows.slice(i, i+400)); }
+  return chunks.reduce(function(p, chunk){
+    return p.then(function(){
+      var batch = db.batch();
+      chunk.forEach(function(row){
+        var id = row.id;
+        var data = Object.assign({}, row);
+        delete data.id;
+        batch.set(db.collection(name).doc(id), data);
+      });
+      return batch.commit();
+    });
+  }, Promise.resolve());
+}
+
+document.getElementById("btnConfirmRestore").addEventListener("click", function(){
+  if(!PENDING_RESTORE_DATA) return;
+  var data = PENDING_RESTORE_DATA;
+  var btn = document.getElementById("btnConfirmRestore");
+  var cancelBtn = document.getElementById("btnCancelRestore");
+  var progressEl = document.getElementById("restoreProgress");
+  var errEl = document.getElementById("restoreError");
+  var resultTableEl = document.getElementById("restoreResultTable");
+  errEl.classList.add("hidden");
+  resultTableEl.classList.add("hidden");
+  btn.disabled = true; cancelBtn.disabled = true;
+  progressEl.classList.remove("hidden");
+  progressEl.textContent = I18N[currentLang].restoreRunningSafety;
+
+  performBackup("pre_restore_safety").then(function(safetyResult){
+    progressEl.textContent = I18N[currentLang].restoreRunningWrite;
+    var writes = [];
+    var restoredCounts = {};
+
+    KNOWN_COLLECTIONS.forEach(function(name){
+      var rows = data.collections[name];
+      if(Array.isArray(rows) && rows.length){
+        restoredCounts[name] = rows.length;
+        writes.push(writeCollectionBatched(name, rows));
+      }
+    });
+    KNOWN_SHARED_DOCS.forEach(function(item){
+      if(Object.prototype.hasOwnProperty.call(data.sharedDocs, item.label) && data.sharedDocs[item.label]){
+        restoredCounts[item.label] = 1;
+        writes.push(db.collection(item.collection).doc(item.doc).set(data.sharedDocs[item.label]));
+      }
+    });
+
+    return Promise.all(writes).then(function(){
+      return db.collection("backupLog").add({
+        type: "restore",
+        performedByUserId: auth.currentUser.uid,
+        performedByEmail: auth.currentUser.email,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        recordCounts: restoredCounts,
+        restoredFromGeneratedAt: data.generatedAt,
+        safetyBackupLogId: safetyResult.logId
+      }).then(function(){
+        return restoredCounts;
+      });
+    });
+  }).then(function(restoredCounts){
+    progressEl.textContent = I18N[currentLang].restoreDone;
+    resultTableEl.innerHTML = Object.keys(restoredCounts).map(function(k){
+      return "<tr><td>"+esc(k)+"</td><td>"+esc(restoredCounts[k])+"</td></tr>";
+    }).join("");
+    resultTableEl.classList.remove("hidden");
+    document.getElementById("restoreConfirmBox").classList.add("hidden");
+    document.getElementById("restoreFileInput").value = "";
+    PENDING_RESTORE_DATA = null;
+    renderLastBackupLine();
+  }).catch(function(err){
+    progressEl.classList.add("hidden");
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  }).finally(function(){
+    btn.disabled = false; cancelBtn.disabled = false;
+  });
+});
+
+applyI18n();
+</script>
+</body>
+</html>

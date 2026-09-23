@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Chat — Camp Office PG Punjab</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
@@ -93,13 +96,33 @@
   [dir="rtl"] .chat-msg.them{ align-self:flex-end; }
   [dir="rtl"] .chat-msg.me .delete-btn{ left:auto; right:-8px; }
   [dir="rtl"] .chat-msg.them .delete-btn{ right:auto; left:-8px; }
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.upload-note{font-size:11.5px;color:var(--muted,#666);padding:2px 10px;display:none;}
 </style>
 </head>
 <body>
 
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
   <div class="topbar">
     <div class="brand">🪶 <span data-en="Camp Office Prosecutor General Punjab — Team Chat" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب — ٹیم چیٹ">Camp Office Prosecutor General Punjab — Team Chat</span></div>
     <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+  </div>
+
+  <div class="userbar-ce">
+    <div><a href="index.html">← <span data-en="Portal" data-ur="پورٹل">Portal</span></a></div>
+    <div><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
   </div>
 
   <button id="chatToggleBtn" onclick="toggleChat()" title="Team Chat">💬</button>
@@ -110,6 +133,7 @@
       <div class="close" onclick="toggleChat()">✕</div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
+    <div class="upload-note" id="uploadNote"></div>
     <div class="chat-input-bar">
       <div class="chat-toolbar-row">
         <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(this)">
@@ -127,75 +151,109 @@
 
 <script>
   var isUrdu = false;
-  var currentUser = 'Iftikhar Ahmed';
+  /* Team Chat — one shared chat for all staff (same "chatMessages" collection the
+     other office systems already use). Files & voice notes go to Cloudinary. */
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CLOUDINARY_CLOUD_NAME = "rjsudteo";
+  var CLOUDINARY_UPLOAD_PRESET = "t8euf8jm";
+  var CURRENT_USER = null, IS_ADMIN = false, chatMsgs = [];
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
-  var chatMsgs = [
-    { id: 1, sender: 'Aamir Mumtaz Satti', me: false, text: 'Case file No. 214 ka status update chahiye.', time: '10:12 AM' },
-    { id: 2, sender: currentUser, me: true, text: 'Ji bhai, main check kar ke bata deta hoon.', time: '10:14 AM' },
-    { id: 3, sender: 'Ghulam Asghar Khan', me: false, text: 'Duty roster is week ke liye update ho gaya hai.', time: '10:20 AM' },
-    { id: 4, sender: currentUser, me: true, text: 'Theek hai, shukriya.', time: '10:21 AM' }
-  ];
-  var nextId = 5;
+  function esc(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function safeUrl(u){ return /^https:\/\//.test(String(u||'')) ? esc(u) : '#'; }
 
   function toggleChat(){
     document.getElementById('chatPanel').classList.toggle('open');
   }
 
   function bubbleContentFor(m){
-    if(m.type === 'image'){
-      return '<img class="chat-msg-image" src="' + m.fileUrl + '" alt="' + m.fileName + '" onclick="window.open(\'' + m.fileUrl + '\',\'_blank\')">';
+    if(m.fileURL && m.fileType === 'image'){
+      return '<a href="' + safeUrl(m.fileURL) + '" target="_blank" rel="noopener"><img class="chat-msg-image" src="' + safeUrl(m.fileURL) + '" alt="' + esc(m.fileName) + '"></a>';
     }
-    if(m.type === 'file'){
-      return '<a class="file-link" href="' + m.fileUrl + '" download="' + m.fileName + '">' +
-        '<span class="file-icon">📄</span><span>' + m.fileName + '<span class="file-size">' + m.fileSize + '</span></span></a>';
+    if(m.fileURL){
+      return '<a class="file-link" href="' + safeUrl(m.fileURL) + '" target="_blank" rel="noopener">' +
+        '<span class="file-icon">📄</span><span>' + esc(m.fileName || 'File') + '</span></a>';
     }
-    if(m.type === 'voice'){
-      return '<audio controls src="' + m.audioUrl + '"></audio>';
+    if(m.audioURL){
+      return '<audio controls src="' + safeUrl(m.audioURL) + '"></audio>';
     }
-    return m.text;
+    return esc(m.text);
+  }
+
+  function timeOf(m){
+    var d = m.timestamp && m.timestamp.toDate ? m.timestamp.toDate() : null;
+    if(!d) return '…';
+    var hh = d.getHours() % 12 || 12, mm = String(d.getMinutes()).padStart(2,'0');
+    var today = new Date().toDateString() === d.toDateString();
+    return (today ? '' : (d.getDate() + '/' + (d.getMonth()+1) + ' ')) + hh + ':' + mm + ' ' + (d.getHours() >= 12 ? 'PM' : 'AM');
   }
 
   function renderChat(){
     var box = document.getElementById('chatMessages');
     box.innerHTML = '';
     chatMsgs.forEach(function(m){
+      var me = CURRENT_USER && m.senderUid === CURRENT_USER.uid;
       var div = document.createElement('div');
-      div.className = 'chat-msg ' + (m.me ? 'me' : 'them');
+      div.className = 'chat-msg ' + (me ? 'me' : 'them');
       div.innerHTML =
-        '<div class="delete-btn" onclick="deleteMessage(' + m.id + ')" title="' + (isUrdu ? 'حذف کریں' : 'Delete') + '">✕</div>' +
-        (m.me ? '' : '<div class="sender">' + m.sender + '</div>') +
+        (IS_ADMIN ? '<div class="delete-btn" data-del="' + esc(m.id) + '" title="' + (isUrdu ? 'حذف کریں' : 'Delete') + '">✕</div>' : '') +
+        (me ? '' : '<div class="sender">' + esc(m.senderName || m.senderEmail || '') + '</div>') +
         '<div class="chat-msg-bubble">' + bubbleContentFor(m) + '</div>' +
-        '<div class="time">' + m.time + '</div>';
+        '<div class="time">' + esc(timeOf(m)) + '</div>';
       box.appendChild(div);
     });
     box.scrollTop = box.scrollHeight;
   }
+  document.getElementById('chatMessages').addEventListener('click', function(ev){
+    var id = ev.target && ev.target.getAttribute && ev.target.getAttribute('data-del');
+    if(id) deleteMessage(id);
+  });
 
-  function nowStamp(){
-    var now = new Date();
-    var hh = now.getHours() % 12 || 12;
-    var mm = now.getMinutes().toString().padStart(2, '0');
-    var ampm = now.getHours() >= 12 ? 'PM' : 'AM';
-    return hh + ':' + mm + ' ' + ampm;
+  function postChatMessage(extra){
+    if(!CURRENT_USER) return Promise.reject(new Error('not signed in'));
+    var payload = {
+      senderUid: CURRENT_USER.uid,
+      senderEmail: CURRENT_USER.email,
+      senderName: CURRENT_USER.email.split('@')[0],
+      senderRole: IS_ADMIN ? 'admin' : 'guest',
+      text: '',
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    Object.keys(extra || {}).forEach(function(k){ payload[k] = extra[k]; });
+    return db.collection('chatMessages').add(payload);
   }
 
-  function formatSize(bytes){
-    if(bytes < 1024) return bytes + ' B';
-    if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  function uploadToCloudinary(blob, name, kind, onDone){
+    var note = document.getElementById('uploadNote');
+    var fd = new FormData();
+    fd.append('file', blob, name);
+    fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CLOUD_NAME + '/' + kind + '/upload');
+    note.style.display = 'block'; note.textContent = (isUrdu ? 'اپ لوڈ ہو رہا ہے… ' : 'Uploading… ') + '0%';
+    xhr.upload.onprogress = function(ev){ if(ev.lengthComputable) note.textContent = (isUrdu ? 'اپ لوڈ ہو رہا ہے… ' : 'Uploading… ') + Math.round(ev.loaded/ev.total*100) + '%'; };
+    xhr.onload = function(){
+      note.style.display = 'none';
+      try { var res = JSON.parse(xhr.responseText); if(res && res.secure_url){ onDone(res.secure_url); return; } } catch(e){}
+      alert(isUrdu ? 'اپ لوڈ نہیں ہو سکا' : 'Upload failed');
+    };
+    xhr.onerror = function(){ note.style.display = 'none'; alert(isUrdu ? 'اپ لوڈ نہیں ہو سکا' : 'Upload failed'); };
+    xhr.send(fd);
   }
 
   function handleFileUpload(input){
     if(!input.files || !input.files[0]) return;
     var file = input.files[0];
-    var url = URL.createObjectURL(file);
-    var isImage = /^image\//.test(file.type);
-    chatMsgs.push({
-      id: nextId++, sender: currentUser, me: true, type: (isImage ? 'image' : 'file'),
-      fileName: file.name, fileSize: formatSize(file.size), fileUrl: url, time: nowStamp()
-    });
     input.value = '';
-    renderChat();
+    if(file.size > 10*1024*1024){ alert(isUrdu ? 'فائل 10MB سے بڑی ہے' : 'File is larger than 10MB'); return; }
+    var isImage = /^image\//.test(file.type);
+    uploadToCloudinary(file, file.name, isImage ? 'image' : 'auto', function(url){
+      postChatMessage({ fileURL: url, fileName: file.name, fileType: isImage ? 'image' : 'file' })
+        .catch(function(err){ alert((isUrdu ? 'نہیں بھیجا جا سکا: ' : 'Could not send: ') + err.message); });
+    });
   }
 
   var mediaRecorder = null;
@@ -217,9 +275,9 @@
       mediaRecorder.ondataavailable = function(e){ if(e.data.size > 0) audioChunks.push(e.data); };
       mediaRecorder.onstop = function(){
         var blob = new Blob(audioChunks, { type: 'audio/webm' });
-        var url = URL.createObjectURL(blob);
-        chatMsgs.push({ id: nextId++, sender: currentUser, me: true, type: 'voice', audioUrl: url, time: nowStamp() });
-        renderChat();
+        uploadToCloudinary(blob, 'voice-note.webm', 'video', function(url){
+          postChatMessage({ audioURL: url }).catch(function(err){ alert((isUrdu ? 'نہیں بھیجا جا سکا: ' : 'Could not send: ') + err.message); });
+        });
         stream.getTracks().forEach(function(t){ t.stop(); });
         isRecording = false;
         document.getElementById('micBtn').classList.remove('recording');
@@ -259,17 +317,21 @@
   }
 
   function deleteMessage(id){
-    chatMsgs = chatMsgs.filter(function(m){ return m.id !== id; });
-    renderChat();
+    if(!IS_ADMIN) return;
+    if(!confirm(isUrdu ? 'یہ پیغام حذف کریں؟' : 'Delete this message?')) return;
+    db.collection('chatMessages').doc(String(id)).delete()
+      .catch(function(err){ alert((isUrdu ? 'حذف نہیں ہو سکا: ' : 'Could not delete: ') + err.message); });
   }
 
   function sendMessage(){
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
     if(!text) return;
-    chatMsgs.push({ id: nextId++, sender: currentUser, me: true, type: 'text', text: text, time: nowStamp() });
     input.value = '';
-    renderChat();
+    postChatMessage({ text: text }).catch(function(err){
+      alert((isUrdu ? 'نہیں بھیجا جا سکا: ' : 'Could not send: ') + err.message);
+      input.value = text;
+    });
   }
 
   document.getElementById('chatInput').addEventListener('keydown', function(e){
@@ -289,7 +351,44 @@
     renderChat();
   }
 
-  renderChat();
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if(!user){
+      gate('پہلے لاگ اِن کریں', 'Please sign in first', 'ٹیم چیٹ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+      return;
+    }
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var u = doc.exists ? doc.data() : {};
+      var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+      var legacyAdmin = u.role === 'admin';
+      if(!approved && !legacyAdmin){
+        gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+        return;
+      }
+      var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
+      IS_ADMIN = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      document.getElementById('ceUserEmail').textContent = user.email;
+      var rn = ROLE_NAMES[r2] || [r2, r2];
+      document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+      db.collection('chatMessages').orderBy('timestamp', 'desc').limit(150).onSnapshot(function(qs){
+        var arr = [];
+        qs.forEach(function(d){ var m = d.data(); m.id = d.id; arr.push(m); });
+        chatMsgs = arr.reverse();
+        renderChat();
+        document.getElementById('authGate').style.display = 'none';
+        document.getElementById('chatPanel').classList.add('open');
+      }, function(err){
+        gate('چیٹ تک رسائی نہیں', 'No access to chat', 'پیغامات لوڈ نہیں ہو سکے: ' + err.message, true);
+      });
+    }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+  });
 </script>
 </body>
 </html>

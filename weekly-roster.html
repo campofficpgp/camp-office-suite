@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Weekly Court Roster — Camp Office PG Punjab</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --navy:#12203f; --navy2:#1c3363; --navy3:#0b1730;
@@ -248,9 +251,24 @@
 @media print{
   .app-footer{ display:none; }
 }
+@media print{ #authGate, .userbar-ce{ display:none !important; } }
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
 </style>
 </head>
 <body>
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
 
   <div class="topbar">
     <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span id="pageHeadingBox"></span></div>
@@ -261,6 +279,11 @@
       </div>
       <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
     </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div><a href="index.html">← <span data-en="Portal" data-ur="پورٹل">Portal</span></a></div>
+    <div><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
   </div>
 
   <div class="wrap">
@@ -1227,6 +1250,32 @@
   renderPageHeading();
   renderThemePicker();
   buildWeek();
+
+  /* Login gate only — the roster itself works in the browser (nothing is stored). */
+  (function(){
+    var cfg = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+    if(!firebase.apps.length) firebase.initializeApp(cfg);
+    var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+    function gate(tu, te, bu){
+      document.getElementById('gateTitle').textContent = tu + ' / ' + te;
+      document.getElementById('gateBody').textContent = bu || '';
+      document.getElementById('gateLink').style.display = 'inline-block';
+      document.getElementById('authGate').style.display = 'flex';
+    }
+    firebase.auth().onAuthStateChanged(function(user){
+      if(!user){ gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔'); return; }
+      firebase.firestore().collection('users').doc(user.uid).get().then(function(doc){
+        var u = doc.exists ? doc.data() : {};
+        var ok = u.role === 'admin' || (u.approvalStatus === 'approved' && u.isActive !== false);
+        if(!ok){ gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔'); return; }
+        var r2 = u.roleV2 || (u.role === 'admin' ? 'admin' : 'viewer');
+        var rn = ROLE_NAMES[r2] || [r2, r2];
+        document.getElementById('ceUserEmail').textContent = user.email;
+        document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+        document.getElementById('authGate').style.display = 'none';
+      }).catch(function(err){ gate('خرابی', 'Error', err.message); });
+    });
+  })();
 </script>
 
   <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>

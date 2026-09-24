@@ -237,6 +237,14 @@
     #rosterPrintArea{position:absolute; top:0; left:0; width:100%;}
     #rosterPrintArea .heading-icon{display:none;}
     #rosterPrintArea .p-page-break{border-bottom:none; padding-bottom:0; margin-bottom:0;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
+       own "Print / Preview" button, #rosterPrintArea is still empty and the sheet would
+       otherwise print completely blank with no explanation. Show a plain message instead. */
+    #rosterPrintArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please use this page's own \"Print / Preview\" button first, then press Print inside that preview.\A براہ کرم پہلے اس صفحے کا اپنا \"Print / Preview\" بٹن کھولیں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
   }
 
 .app-footer{

@@ -171,6 +171,14 @@
     #printArea, #printArea *{visibility:visible;}
     #printArea{position:absolute; top:0; left:0; width:100%;}
     #printArea .heading-icon{display:none;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening a notice's own
+       "Preview" button, #printArea is still empty and the sheet would otherwise print
+       completely blank with no explanation. Show a plain message instead. */
+    #printArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please click \"Preview\" on the notice you want first, then press Print inside that preview.\A براہ کرم پہلے مطلوبہ نوٹس پر \"دیکھیں\" پر کلک کریں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
   }
 
 .app-footer{

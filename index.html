@@ -42,6 +42,9 @@
   .card + .card{ margin-top:16px; }
   label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
   input[type=email],input[type=password],input[type=text],select{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-inline-end:38px; }
+  .pw-toggle{ position:absolute; top:50%; transform:translateY(-50%); inset-inline-end:6px; background:none; border:none; cursor:pointer; font-size:16px; padding:4px 6px; line-height:1; color:var(--muted); }
   .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
   .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
   .btn.primary:hover{ background:var(--navy-dark); }
@@ -121,7 +124,10 @@
     <label data-i18n="lblEmail">Email</label>
     <input type="email" id="li_email" autocomplete="username">
     <label data-i18n="lblPassword">Password</label>
-    <input type="password" id="li_password" autocomplete="current-password">
+    <div class="pw-wrap">
+      <input type="password" id="li_password" autocomplete="current-password">
+      <button type="button" class="pw-toggle" id="li_pwToggle" aria-label="Show/Hide Password">👁</button>
+    </div>
     <div id="li_error" class="error-box hidden"></div>
     <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
     <div class="toggle-row">
@@ -146,6 +152,15 @@
       <span data-i18n="haveAccount">Already have an account?</span>
       <a id="showLogin" data-i18n="signInLink">Sign in</a>
     </div>
+  </div>
+
+  <div class="card hidden" id="authLoadErrorCard">
+    <div class="icon">⚠️</div>
+    <h2 data-i18n="authLoadErrorTitle">Could Not Load Your Profile</h2>
+    <p data-i18n="authLoadErrorBody">You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.</p>
+    <p class="field-hint" id="authLoadErrorDetail"></p>
+    <button class="btn primary block" id="authLoadRetryBtn"><span data-i18n="btnRetry">Retry</span></button>
+    <button class="btn block" id="authLoadSignOutBtn"><span data-i18n="btnSignOut">Sign Out</span></button>
   </div>
 </div>
 
@@ -394,7 +409,10 @@ var I18N = {
     welcomeSub:"This is the future single-entry dashboard shell. Modules below will be connected one at a time, in the same careful, reviewed way as this login system was.",
     adminControls:"Admin Controls",
     adminHint:"Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.",
-    thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions"
+    thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions",
+    authLoadErrorTitle:"Could Not Load Your Profile",
+    authLoadErrorBody:"You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.",
+    btnRetry:"Retry"
   },
   ur: {
     brandTitle:"کیمپ آفس ڈیجیٹل پورٹل",
@@ -414,7 +432,10 @@ var I18N = {
     welcomeSub:"یہ مستقبل کے مرکزی Dashboard کا خاکہ ہے۔ نیچے دیے گئے Modules ایک ایک کر کے، اسی احتیاط سے جوڑے جائیں گے جیسے یہ Login نظام بنایا گیا۔",
     adminControls:"انتظامی کنٹرولز",
     adminHint:"یہاں نئے اکاؤنٹس منظور کریں اور ان کا کردار مقرر کریں۔ صرف Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ صرف Super Admin کسی کو Super Admin بنا سکتا ہے۔",
-    thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال"
+    thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال",
+    authLoadErrorTitle:"پروفائل لوڈ نہیں ہو سکا",
+    authLoadErrorBody:"آپ کامیابی سے سائن اِن ہو گئے ہیں، مگر آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ عام طور پر یہ عارضی کنکشن کا مسئلہ ہوتا ہے۔",
+    btnRetry:"دوبارہ کوشش کریں"
   }
 };
 var ROLE_LABELS = {
@@ -469,6 +490,14 @@ document.getElementById("showLogin").addEventListener("click", function(){
   document.getElementById("loginCard").classList.remove("hidden");
 });
 
+/* ---------- Show/Hide Password ---------- */
+document.getElementById("li_pwToggle").addEventListener("click", function(){
+  var pwInput = document.getElementById("li_password");
+  var showing = pwInput.type === "text";
+  pwInput.type = showing ? "password" : "text";
+  this.textContent = showing ? "👁" : "🙈";
+});
+
 /* ---------- Sign In ---------- */
 document.getElementById("li_submit").addEventListener("click", function(){
   var email = document.getElementById("li_email").value.trim();
@@ -518,13 +547,26 @@ document.getElementById("su_submit").addEventListener("click", function(){
 var CURRENT_DOC = null;
 var CURRENT_UID = null;
 
-auth.onAuthStateChanged(function(user){
-  if(!user){
-    CURRENT_DOC = null; CURRENT_UID = null;
-    showOnly("authScreen");
-    return;
-  }
+function showAuthLoadError(err){
+  console.error(err);
+  showOnly("authScreen");
+  document.getElementById("loginCard").classList.add("hidden");
+  document.getElementById("signupCard").classList.add("hidden");
+  document.getElementById("authLoadErrorCard").classList.remove("hidden");
+  var detailEl = document.getElementById("authLoadErrorDetail");
+  var code = (err && err.code) ? err.code : (err === "timeout" ? "timeout" : "unknown");
+  var msg = (err && err.message) ? err.message : "";
+  detailEl.textContent = "(" + code + (msg ? " — " + msg : "") + ")";
+}
+
+function loadUserProfileAndRoute(user){
+  document.getElementById("authLoadErrorCard").classList.add("hidden");
+  document.getElementById("loginCard").classList.remove("hidden");
   CURRENT_UID = user.uid;
+  var settled = false;
+  var watchdog = setTimeout(function(){
+    if(!settled){ settled = true; showAuthLoadError("timeout"); }
+  }, 15000);
   db.collection("users").doc(user.uid).get().then(function(doc){
     if(!doc.exists){
       // Existing Firebase Auth user with no Firestore profile yet (e.g. signed up
@@ -538,6 +580,7 @@ auth.onAuthStateChanged(function(user){
     }
     return doc;
   }).then(function(doc){
+    if(settled) return; settled = true; clearTimeout(watchdog);
     var data = doc.data() || {};
     CURRENT_DOC = data;
     if(data.isActive === false || data.approvalStatus === "rejected"){
@@ -557,8 +600,26 @@ auth.onAuthStateChanged(function(user){
       if(isAdminUp){ renderAdminPanel(); }
     }
   }).catch(function(err){
-    console.error(err);
+    if(settled) return; settled = true; clearTimeout(watchdog);
+    showAuthLoadError(err);
   });
+}
+
+document.getElementById("authLoadRetryBtn").addEventListener("click", function(){
+  if(auth.currentUser){ loadUserProfileAndRoute(auth.currentUser); }
+  else { showOnly("authScreen"); document.getElementById("authLoadErrorCard").classList.add("hidden"); }
+});
+document.getElementById("authLoadSignOutBtn").addEventListener("click", function(){ auth.signOut(); });
+
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    CURRENT_DOC = null; CURRENT_UID = null;
+    document.getElementById("authLoadErrorCard").classList.add("hidden");
+    document.getElementById("loginCard").classList.remove("hidden");
+    showOnly("authScreen");
+    return;
+  }
+  loadUserProfileAndRoute(user);
 });
 
 document.getElementById("adminControlsCard").addEventListener("click", function(){

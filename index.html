@@ -237,11 +237,14 @@ html,body{overflow-x:hidden;}
     <h2 data-i18n="signInTitle">Sign In</h2>
     <p class="field-hint" data-i18n="signInSub">Camp Office Digital Portal</p>
     <label data-i18n="lblEmail">Email</label>
-    <input type="email" id="li_email" autocomplete="username">
+    <input type="email" id="li_email" autocomplete="off">
     <label data-i18n="lblPassword">Password</label>
     <div class="pw-wrap">
-      <input type="password" id="li_password" autocomplete="current-password">
+      <input type="password" id="li_password" autocomplete="off">
       <button type="button" class="pw-toggle" id="li_pwToggle" aria-label="Show/Hide Password">👁</button>
+    </div>
+    <div class="toggle-row" style="margin-top:-6px;">
+      <a id="forgotPasswordLink" data-i18n="forgotPassword" style="cursor:pointer;">Forgot password?</a>
     </div>
     <div id="li_error" class="error-box hidden"></div>
     <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
@@ -497,6 +500,9 @@ var I18N = {
     signInTitle:"Sign In", signInSub:"Camp Office Digital Portal",
     lblEmail:"Email", lblPassword:"Password", lblPassword2:"Confirm Password",
     btnSignIn:"Sign In", noAccount:"Don't have an account?", createOne:"Create one",
+    forgotPassword:"Forgot password?",
+    resetNeedsEmail:"Please enter your email address above first, then click \"Forgot password?\" again.",
+    resetSentPrefix:"A password reset link has been sent to ", resetSentSuffix:". Please check your inbox (and spam folder).",
     signUpTitle:"Create Account",
     signUpSub:"New accounts start as Viewer and wait for administrator approval before they can access anything.",
     pwHint:"At least 8 characters, including a letter and a number.",
@@ -524,6 +530,9 @@ var I18N = {
     signInTitle:"لاگ اِن", signInSub:"کیمپ آفس ڈیجیٹل پورٹل",
     lblEmail:"ای میل", lblPassword:"پاس ورڈ", lblPassword2:"پاس ورڈ دوبارہ لکھیں",
     btnSignIn:"لاگ اِن کریں", noAccount:"اکاؤنٹ نہیں ہے؟", createOne:"نیا بنائیں",
+    forgotPassword:"پاسورڈ بھول گئے؟",
+    resetNeedsEmail:"براہ کرم پہلے اوپر اپنا ای میل درج کریں، پھر دوبارہ \"پاسورڈ بھول گئے؟\" پر کلک کریں۔",
+    resetSentPrefix:"پاسورڈ ری سیٹ لنک اس پتے پر بھیج دیا گیا ہے: ", resetSentSuffix:"۔ براہ کرم اپنا ان باکس (اور اسپیم فولڈر) چیک کریں۔",
     signUpTitle:"نیا اکاؤنٹ بنائیں",
     signUpSub:"نئے اکاؤنٹ Viewer کے طور پر شروع ہوتے ہیں اور Administrator کی منظوری کا انتظار کرتے ہیں۔",
     pwHint:"کم از کم 8 حروف، ایک حرف اور ایک ہندسہ شامل ہو۔",
@@ -642,6 +651,28 @@ document.getElementById("li_submit").addEventListener("click", function(){
   if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
   auth.signInWithEmailAndPassword(email, pw).catch(function(err){
     errEl.textContent = err.message; errEl.classList.remove("hidden");
+  });
+});
+
+/* ---------- Forgot password ---------- */
+document.getElementById("forgotPasswordLink").addEventListener("click", function(){
+  var email = document.getElementById("li_email").value.trim();
+  var errEl = document.getElementById("li_error");
+  var t = I18N[currentLang] || I18N.en;
+  if(!email){
+    errEl.style.cssText = "";
+    errEl.textContent = t.resetNeedsEmail;
+    errEl.classList.remove("hidden");
+    return;
+  }
+  auth.sendPasswordResetEmail(email).then(function(){
+    errEl.style.cssText = "background:#e6f4ea; color:#1a7a1a; border-color:#1a7a1a;";
+    errEl.textContent = t.resetSentPrefix + email + t.resetSentSuffix;
+    errEl.classList.remove("hidden");
+  }).catch(function(err){
+    errEl.style.cssText = "";
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
   });
 });
 

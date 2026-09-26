@@ -435,29 +435,54 @@ html,body{overflow-x:hidden;}
     btn.disabled = true;
     var pendingEl = addMessage('ai', isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…', {pending:true});
 
-    auth.currentUser.getIdToken().then(function(token){
-      var body = { mode: 'chat', question: effectiveQuestion };
-      if(filePayload) body.file = filePayload;
-      return fetch(AI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify(body)
-      }).then(function(res){
-        return res.json().then(function(data){ return { ok: res.ok, data: data }; });
+    var body = { mode: 'chat', question: effectiveQuestion };
+    if(filePayload) body.file = filePayload;
+
+    /* The AI backend occasionally reports the underlying model as
+       overloaded/high-demand — this is a transient condition on the AI
+       provider's side, not something wrong with this page or your data.
+       Retry a couple of times with a short, increasing delay before
+       giving up and showing an error, so a brief spike doesn't dead-end
+       the user's question. */
+    function isRetryableOverload(message){
+      var m = (message || '').toLowerCase();
+      return m.indexOf('high demand') !== -1 || m.indexOf('overloaded') !== -1 || m.indexOf('temporarily unavailable') !== -1;
+    }
+    var MAX_RETRIES = 2;
+    var RETRY_DELAYS_MS = [3000, 6000];
+
+    function attemptSend(attempt){
+      auth.currentUser.getIdToken().then(function(token){
+        return fetch(AI_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(body)
+        }).then(function(res){
+          return res.json().then(function(data){ return { ok: res.ok, data: data }; });
+        });
+      }).then(function(r){
+        var errMsg = (r.data && r.data.error) || '';
+        if((!r.ok || !r.data || !r.data.answer) && isRetryableOverload(errMsg) && attempt < MAX_RETRIES){
+          pendingEl.textContent = isUrdu
+            ? ('AI سرور مصروف ہے — دوبارہ کوشش کر رہا ہوں… (' + (attempt+1) + '/' + MAX_RETRIES + ')')
+            : ('AI server is busy — retrying… (' + (attempt+1) + '/' + MAX_RETRIES + ')');
+          setTimeout(function(){ attemptSend(attempt+1); }, RETRY_DELAYS_MS[attempt]);
+          return;
+        }
+        pendingEl.remove();
+        btn.disabled = false;
+        if(!r.ok || !r.data || !r.data.answer){
+          addMessage('error', errMsg || (isUrdu ? 'خرابی پیش آئی — دوبارہ کوشش کریں۔' : 'Something went wrong — please try again.'));
+          return;
+        }
+        addMessage('ai', r.data.answer);
+      }).catch(function(err){
+        pendingEl.remove();
+        btn.disabled = false;
+        addMessage('error', (isUrdu ? 'رابطہ نہیں ہو سکا: ' : 'Could not connect: ') + err.message);
       });
-    }).then(function(r){
-      pendingEl.remove();
-      btn.disabled = false;
-      if(!r.ok || !r.data || !r.data.answer){
-        addMessage('error', (r.data && r.data.error) || (isUrdu ? 'خرابی پیش آئی — دوبارہ کوشش کریں۔' : 'Something went wrong — please try again.'));
-        return;
-      }
-      addMessage('ai', r.data.answer);
-    }).catch(function(err){
-      pendingEl.remove();
-      btn.disabled = false;
-      addMessage('error', (isUrdu ? 'رابطہ نہیں ہو سکا: ' : 'Could not connect: ') + err.message);
-    });
+    }
+    attemptSend(0);
   }
 
   document.getElementById('chatInput').addEventListener('keydown', function(e){

@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -533,6 +534,7 @@ html,body{overflow-x:hidden;}
         <div id="reportPrintArea" class="print-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
+          <div class="btn ghost" onclick="pdfDownload(document.getElementById('reportPrintArea'), 'case-report.pdf')" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
           <div class="btn ghost" onclick="closeReportPrint()" data-en="Close" data-ur="بند کریں">Close</div>
         </div>
       </div>
@@ -541,6 +543,21 @@ html,body{overflow-x:hidden;}
 
 <script>
   var isUrdu = false;
+
+  /* ================= PDF Download helper (html2pdf.js) =================
+     Snapshots a given element and saves it as a downloadable PDF file,
+     as a one-click alternative next to the existing Print button. */
+  function pdfDownload(el, filename){
+    if(!el){ alert("Nothing to export yet — open Preview first."); return; }
+    if(typeof html2pdf === "undefined"){ alert("PDF library did not load — check your internet connection and try again."); return; }
+    html2pdf().set({
+      margin: 8,
+      filename: filename || "document.pdf",
+      image: { type: "jpeg", quality: 0.97 },
+      html2canvas: { scale: 2, useCORS: true, allowTaint: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+    }).from(el).save();
+  }
 
   /* ================= Shared sidebar / mobile-drawer interactivity ================= */
   (function(){

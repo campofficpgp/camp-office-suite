@@ -411,6 +411,7 @@ html,body{overflow-x:hidden;}
         <div id="printArea" class="notice-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
+          <div class="btn ghost" onclick="downloadNoticePDF()" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
           <div class="btn whatsapp" onclick="shareNotice('whatsapp')" data-en="🟢 Send via WhatsApp" data-ur="🟢 واٹس ایپ پر بھیجیں">🟢 Send via WhatsApp</div>
           <div class="btn email" onclick="shareNotice('email')" data-en="✉️ Send via Email" data-ur="✉️ ای میل پر بھیجیں">✉️ Send via Email</div>
           <div class="btn ghost" onclick="downloadNoticeImage()" data-en="⬇️ Download Image" data-ur="⬇️ تصویر ڈاؤن لوڈ کریں">⬇️ Download Image</div>
@@ -422,6 +423,7 @@ html,body{overflow-x:hidden;}
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   var isUrdu = false;
 
@@ -1033,6 +1035,26 @@ html,body{overflow-x:hidden;}
       link.click();
     }).catch(function(){
       alert(isUrdu ? 'تصویر بنانے میں مسئلہ ہوا' : 'Could not generate the notice image');
+    });
+  }
+
+  function downloadNoticePDF(){
+    if(!currentPreviewNotice || typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined'){
+      alert(isUrdu ? 'PDF بنانے کی سہولت لوڈ نہیں ہو سکی — انٹرنیٹ کنکشن چیک کریں' : 'PDF tool failed to load — please check your internet connection');
+      return;
+    }
+    generateNoticeCanvas().then(function(canvas){
+      var pdf = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      var pageW = pdf.internal.pageSize.getWidth();
+      var pageH = pdf.internal.pageSize.getHeight();
+      var imgW = pageW - 16;
+      var imgH = canvas.height * imgW / canvas.width;
+      if(imgH > pageH - 16){ imgH = pageH - 16; imgW = canvas.width * imgH / canvas.height; }
+      var x = (pageW - imgW) / 2;
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, 8, imgW, imgH);
+      pdf.save(noticeFileName(currentPreviewNotice, 'pdf'));
+    }).catch(function(){
+      alert(isUrdu ? 'PDF بنانے میں مسئلہ ہوا' : 'Could not generate the PDF');
     });
   }
 

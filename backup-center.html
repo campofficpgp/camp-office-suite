@@ -183,18 +183,15 @@ html,body{overflow-x:hidden;}
   </div>
 </div>
 
-<!-- ===================== AUTH SCREEN ===================== -->
+<!-- ===================== AUTH SCREEN =====================
+     No independent sign-in here anymore — login happens only on the
+     main portal (index.html), which also enforces the super-admin
+     OTP step. This page just checks whether that session exists and
+     sends the browser to index.html if it doesn't. ==================== -->
 <div id="authScreen" class="center-wrap">
   <div class="card">
-    <h2 data-i18n="signInTitle">Sign In</h2>
-    <p class="field-hint" data-i18n="signInSub">Camp Office Digital Portal — Backup Center</p>
-    <label data-i18n="lblEmail">Email</label>
-    <input type="email" id="li_email" autocomplete="username">
-    <label data-i18n="lblPassword">Password</label>
-    <input type="password" id="li_password" autocomplete="current-password">
-    <div id="li_error" class="error-box hidden"></div>
-    <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
-    <p class="field-hint" data-i18n="signInHint">Use your existing Camp Office Portal account (the same one you use on cmpofficepgp.org).</p>
+    <h2 data-i18n="signInTitle">Redirecting…</h2>
+    <p class="field-hint" data-i18n="signInSub">براہ کرم پہلے مرکزی پورٹل سے سائن اِن کریں — Redirecting to the main portal sign-in…</p>
   </div>
 </div>
 
@@ -385,17 +382,9 @@ function showOnly(id){
   });
 }
 
-/* ---------- Sign In ---------- */
-document.getElementById("li_submit").addEventListener("click", function(){
-  var email = document.getElementById("li_email").value.trim();
-  var pw = document.getElementById("li_password").value;
-  var errEl = document.getElementById("li_error");
-  errEl.classList.add("hidden");
-  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
-  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
-    errEl.textContent = err.message; errEl.classList.remove("hidden");
-  });
-});
+/* ---------- Sign In ----------
+   Removed: this page no longer has its own email/password sign-in.
+   Login happens only on the main portal (index.html). ---------- */
 ["notAdminSignOut","mainSignOut"].forEach(function(id){
   document.getElementById(id).addEventListener("click", function(){ auth.signOut(); });
 });
@@ -404,7 +393,7 @@ document.getElementById("li_submit").addEventListener("click", function(){
 var CURRENT_DOC = null;
 
 auth.onAuthStateChanged(function(user){
-  if(!user){ CURRENT_DOC = null; showOnly("authScreen"); return; }
+  if(!user){ CURRENT_DOC = null; showOnly("authScreen"); window.location.replace("index.html"); return; }
   db.collection("users").doc(user.uid).get().then(function(doc){
     var data = doc.exists ? (doc.data() || {}) : {};
     CURRENT_DOC = data;

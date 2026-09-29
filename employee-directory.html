@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -409,7 +410,7 @@ body.is-super .super-only{ display:inline-block !important; }
 
       <div class="actions">
         <div class="btn primary" onclick="window.print()" style="cursor:pointer;" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-        <div class="btn ghost" onclick="window.print()" style="cursor:pointer;" title="Choose 'Save as PDF' in the print window" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+        <div class="btn ghost" onclick="downloadProfilePdf()" style="cursor:pointer;" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
         <div class="btn ghost" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
       </div>
     </div>
@@ -560,6 +561,55 @@ body.is-super .super-only{ display:inline-block !important; }
     document.getElementById('byPers').value = e.pers;
     document.getElementById('byCnic').value = e.pers;
     document.getElementById('byDob').value = e.pers;
+  }
+
+  /* ================= Real "Download PDF" — an actual file, not the print dialog =================
+     The old Download PDF button just called window.print() and relied on the user picking
+     "Save as PDF" in the browser's print window, which stamps its own header/footer onto the
+     result. This builds a real PDF file client-side (html2pdf.js) and downloads it directly —
+     no print window, no browser chrome. Temporarily flips "@media print" rules to "@media all"
+     so the existing print styling (hides topbar/search/modals/action buttons) still applies
+     while it's captured, then restores it — same technique used across the rest of the suite. */
+  function withPrintRulesActive(fn){
+    var touched = [];
+    Array.prototype.forEach.call(document.styleSheets, function(sheet){
+      var rules;
+      try{ rules = sheet.cssRules; }catch(e){ return; }
+      if(!rules) return;
+      Array.prototype.forEach.call(rules, function(rule){
+        if(rule.type === CSSRule.MEDIA_RULE && rule.media && rule.media.mediaText.indexOf("print") !== -1){
+          touched.push({rule: rule, original: rule.media.mediaText});
+          try{ rule.media.mediaText = "all"; }catch(e){/* ignore */}
+        }
+      });
+    });
+    return Promise.resolve().then(fn).finally(function(){
+      touched.forEach(function(t){
+        try{ t.rule.media.mediaText = t.original; }catch(e){/* ignore */}
+      });
+    });
+  }
+  function downloadProfilePdf(){
+    var pers = (document.getElementById('pPers').textContent || '').trim();
+    if(!pers || pers === '—'){
+      alert('پہلے ملازم منتخب کریں / Please select an employee first');
+      return;
+    }
+    var name = (document.getElementById('pName').textContent || 'Employee').replace(/[^A-Za-z0-9]+/g,'-');
+    var target = document.querySelector('.sheet');
+    withPrintRulesActive(function(){
+      return html2pdf().set({
+        margin: [12,12,12,12],
+        filename: "CampOffice-Employee-"+name+"-"+pers.replace(/[^A-Za-z0-9]+/g,'-')+".pdf",
+        image: {type:"jpeg", quality:0.98},
+        html2canvas: {scale:2, useCORS:true, logging:false},
+        jsPDF: {unit:"mm", format:"a4", orientation:"portrait"},
+        pagebreak: {mode:["css","legacy"]}
+      }).from(target).save();
+    }).catch(function(err){
+      console.error("PDF export failed:", err);
+      alert('PDF بنانے میں خرابی — دوبارہ کوشش کریں۔ / Could not build the PDF — please try again.');
+    });
   }
 
   document.getElementById('byName').addEventListener('change', function(){ if(this.value) showEmployee(this.value); });

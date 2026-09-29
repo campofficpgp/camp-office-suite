@@ -411,7 +411,7 @@ html,body{overflow-x:hidden;}
         <div id="printArea" class="notice-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-          <div class="btn ghost" onclick="window.print()" title="Choose 'Save as PDF' in the print window" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+          <div class="btn ghost" onclick="downloadNoticeAsPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
           <div class="btn whatsapp" onclick="shareNotice('whatsapp')" data-en="🟢 Send via WhatsApp" data-ur="🟢 واٹس ایپ پر بھیجیں">🟢 Send via WhatsApp</div>
           <div class="btn email" onclick="shareNotice('email')" data-en="✉️ Send via Email" data-ur="✉️ ای میل پر بھیجیں">✉️ Send via Email</div>
           <div class="btn ghost" onclick="downloadNoticeImage()" data-en="⬇️ Download Image" data-ur="⬇️ تصویر ڈاؤن لوڈ کریں">⬇️ Download Image</div>
@@ -423,6 +423,7 @@ html,body{overflow-x:hidden;}
   </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
   var isUrdu = false;
 
@@ -1018,8 +1019,54 @@ html,body{overflow-x:hidden;}
       'Hearing Date: ' + formatDateUr(n.hearing);
   }
 
+  /* Temporarily flips every "@media print" stylesheet rule to "@media all" for the instant
+     of capture — reuses the print-only hiding already built for this page (e.g. #printArea
+     .heading-icon, the tiny ✎/↺/✓/✕ edit controls) instead of duplicating it, and fixes
+     those icons showing up in the downloaded image/PDF, which html2canvas never hid on its
+     own since it only ever renders the normal on-screen (not print) styles. */
+  function withPrintRulesActive(fn){
+    var touched = [];
+    Array.prototype.forEach.call(document.styleSheets, function(sheet){
+      var rules;
+      try{ rules = sheet.cssRules; }catch(e){ return; }
+      if(!rules) return;
+      Array.prototype.forEach.call(rules, function(rule){
+        if(rule.type === CSSRule.MEDIA_RULE && rule.media && rule.media.mediaText.indexOf("print") !== -1){
+          touched.push({rule: rule, original: rule.media.mediaText});
+          try{ rule.media.mediaText = "all"; }catch(e){/* ignore */}
+        }
+      });
+    });
+    return Promise.resolve().then(fn).finally(function(){
+      touched.forEach(function(t){
+        try{ t.rule.media.mediaText = t.original; }catch(e){/* ignore */}
+      });
+    });
+  }
   function generateNoticeCanvas(){
-    return html2canvas(document.getElementById('printArea'), { backgroundColor: '#ffffff', scale: 2 });
+    return withPrintRulesActive(function(){
+      return html2canvas(document.getElementById('printArea'), { backgroundColor: '#ffffff', scale: 2 });
+    });
+  }
+  function downloadNoticeAsPdf(){
+    if(!currentPreviewNotice){
+      alert(isUrdu ? 'پہلے نوٹس دیکھیں' : 'Please preview a notice first');
+      return;
+    }
+    var target = document.getElementById('printArea');
+    withPrintRulesActive(function(){
+      return html2pdf().set({
+        margin: [12,12,12,12],
+        filename: noticeFileName(currentPreviewNotice, 'pdf'),
+        image: {type:"jpeg", quality:0.98},
+        html2canvas: {scale:2, useCORS:true, logging:false},
+        jsPDF: {unit:"mm", format:"a4", orientation:"portrait"},
+        pagebreak: {mode:["css","legacy"]}
+      }).from(target).save();
+    }).catch(function(err){
+      console.error("PDF export failed:", err);
+      alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');
+    });
   }
 
   function downloadNoticeImage(){

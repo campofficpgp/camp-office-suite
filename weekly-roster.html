@@ -8,6 +8,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -455,7 +456,7 @@ html,body{overflow-x:hidden;}
         <div id="rosterPrintArea" class="print-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-          <div class="btn ghost" onclick="window.print()" title="Choose 'Save as PDF' in the print window" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+          <div class="btn ghost" onclick="downloadRosterPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
           <div class="btn ghost" onclick="closeRosterPrint()" data-en="Close" data-ur="بند کریں">Close</div>
         </div>
       </div>
@@ -1259,6 +1260,51 @@ html,body{overflow-x:hidden;}
   });
 
   function closeRosterPrint(){ editingPrintField = null; editingStamp = null; document.getElementById('rosterPrintModal').classList.remove('open'); }
+
+  /* ================= Real "Download PDF" — an actual file, not the print dialog =================
+     See the equivalent function in the other camp-office-suite pages for the full rationale:
+     the old button just called window.print() and relied on the user picking "Save as PDF" in
+     the browser's print window, which stamps its own header/footer onto the result. */
+  function withPrintRulesActive(fn){
+    var touched = [];
+    Array.prototype.forEach.call(document.styleSheets, function(sheet){
+      var rules;
+      try{ rules = sheet.cssRules; }catch(e){ return; }
+      if(!rules) return;
+      Array.prototype.forEach.call(rules, function(rule){
+        if(rule.type === CSSRule.MEDIA_RULE && rule.media && rule.media.mediaText.indexOf("print") !== -1){
+          touched.push({rule: rule, original: rule.media.mediaText});
+          try{ rule.media.mediaText = "all"; }catch(e){/* ignore */}
+        }
+      });
+    });
+    return Promise.resolve().then(fn).finally(function(){
+      touched.forEach(function(t){
+        try{ t.rule.media.mediaText = t.original; }catch(e){/* ignore */}
+      });
+    });
+  }
+  function downloadRosterPdf(){
+    if(!currentRoster){
+      alert(isUrdu ? 'پہلے روسٹر بنائیں' : 'Please generate a roster first');
+      return;
+    }
+    var target = document.getElementById('rosterPrintArea');
+    var wk = String(currentRoster.weekStart || 'Roster').replace(/[^A-Za-z0-9]+/g,'-');
+    withPrintRulesActive(function(){
+      return html2pdf().set({
+        margin: [10,10,10,10],
+        filename: "CampOffice-WeeklyRoster-"+wk+".pdf",
+        image: {type:"jpeg", quality:0.98},
+        html2canvas: {scale:2, useCORS:true, logging:false, windowWidth: target.scrollWidth},
+        jsPDF: {unit:"mm", format:"a4", orientation:"landscape"},
+        pagebreak: {mode:["css","legacy"]}
+      }).from(target).save();
+    }).catch(function(err){
+      console.error("PDF export failed:", err);
+      alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');
+    });
+  }
 
   // Page heading (top bar) — editable in place (✎ edit, ↺ reset to default), separately for each
   // language, so a correction to the office name doesn't need touching the file.

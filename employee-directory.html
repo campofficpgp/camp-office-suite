@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -410,7 +409,7 @@ body.is-super .super-only{ display:inline-block !important; }
 
       <div class="actions">
         <div class="btn primary" onclick="window.print()" style="cursor:pointer;" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-        <div class="btn ghost" onclick="pdfDownload(document.querySelector('.sheet'), ((document.getElementById('pName')||{}).textContent||'Employee').trim()+'.pdf', '.actions')" style="cursor:pointer;" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+        <div class="btn ghost" onclick="window.print()" style="cursor:pointer;" title="Choose 'Save as PDF' in the print window" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
         <div class="btn ghost" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
       </div>
     </div>
@@ -420,25 +419,6 @@ body.is-super .super-only{ display:inline-block !important; }
   // Employee records are NOT stored in this file any more (personal data). They load from Firestore: employees/{pers}.
   var EMP = [];
 
-  /* ================= PDF Download helper (html2pdf.js) =================
-     Snapshots a given element and saves it as a downloadable PDF file,
-     as a one-click alternative next to the existing Print button.
-     ignoreSelector optionally skips an element (e.g. the on-screen action
-     buttons) that shouldn't appear inside the exported PDF. */
-  function pdfDownload(el, filename, ignoreSelector){
-    if(!el){ alert("Nothing to export yet."); return; }
-    if(typeof html2pdf === "undefined"){ alert("PDF library did not load — check your internet connection and try again."); return; }
-    html2pdf().set({
-      margin: 8,
-      filename: filename || "document.pdf",
-      image: { type: "jpeg", quality: 0.97 },
-      html2canvas: {
-        scale: 2, useCORS: true, allowTaint: true,
-        ignoreElements: ignoreSelector ? function(node){ return node.matches && node.matches(ignoreSelector); } : undefined
-      },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-    }).from(el).save();
-  }
 
   function uniqueSorted(arr){ return Array.from(new Set(arr)).sort(); }
   function escAttr(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;'); }

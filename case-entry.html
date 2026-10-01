@@ -8,7 +8,12 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- html2pdf.js 0.10.1 has a bug in this app's environment: its internal wrapper around
+     html2canvas comes back with a 0-height canvas (confirmed by testing), so every PDF it
+     builds is a blank page. html2canvas and jsPDF loaded separately here, and combined by hand
+     in downloadReportPdf(), work correctly -- see the comment there. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -1605,17 +1610,59 @@ html,body{overflow-x:hidden;}
     var mn = String(currentReport.monthName || 'Report').replace(/[^A-Za-z0-9]+/g,'-');
     var yr = currentReport.year || '';
     var filename = "CampOffice-MonthlyReport-"+mn+"-"+yr+".pdf";
+
+    /* Capture a plain off-screen COPY of the content (appended straight to <body>) rather than
+       the in-modal element itself, so the modal's own layout/visibility can't affect the
+       capture — same safe pattern used elsewhere in this project. */
+    var hostWidth = Math.max(target.scrollWidth, target.offsetWidth, 900);
+    var captureHost = document.createElement('div');
+    captureHost.className = 'print-sheet';
+    captureHost.style.cssText = 'position:absolute; left:-10000px; top:0; width:'+hostWidth+'px; background:#fff; margin:0;';
+    captureHost.innerHTML = target.innerHTML;
+    Array.prototype.forEach.call(captureHost.querySelectorAll('.heading-icon'), function(el){ el.style.display = 'none'; });
+    document.body.appendChild(captureHost);
     window.scrollTo(0,0);
-    withPrintRulesActive(function(){
-      return html2pdf().set({
-        margin: [12,12,12,12],
-        filename: filename,
-        image: {type:"jpeg", quality:0.98},
-        html2canvas: {scale:2, useCORS:true, logging:false, scrollX:0, scrollY:0},
-        jsPDF: {unit:"mm", format:"a4", orientation:"portrait"},
-        pagebreak: {mode:["css","legacy"]}
-      }).from(target).save();
+
+    /* ===== Real root cause of the blank-PDF bug =====
+       Content being missing (fixed above) wasn't the only problem. html2pdf.js 0.10.1's own
+       internal wrapper around html2canvas comes back with a canvas that is the right width but
+       0px tall in this app (confirmed directly: logged "Canvas renderer initialized (794x0)"
+       every time, regardless of what element or size was captured — even a plain unrelated
+       test div). html2canvas itself is fine when called directly; the bug is in html2pdf.js's
+       glue code. So this builds the PDF by hand with html2canvas + jsPDF (loaded separately in
+       <head>) instead of going through html2pdf.js at all. */
+    html2canvas(captureHost, {scale:2, useCORS:true, logging:false}).then(function(canvas){
+      captureHost.remove();
+      var JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      var pdf = new JsPDFCtor({unit:"mm", format:"a4", orientation:"portrait"});
+      var marginMm = 12;
+      var imgWmm = pdf.internal.pageSize.getWidth() - marginMm*2;
+      var imgHmm = canvas.height * imgWmm / canvas.width;
+      var pageHmm = pdf.internal.pageSize.getHeight() - marginMm*2;
+      var imgData = canvas.toDataURL("image/jpeg", 0.98);
+      if (imgHmm <= pageHmm) {
+        pdf.addImage(imgData, "JPEG", marginMm, marginMm, imgWmm, imgHmm);
+      } else {
+        // Taller than one A4 page (e.g. a report with many rows) — split across pages by
+        // slicing the source canvas, same as a long document would paginate when printed.
+        var pxPerPage = Math.floor(pageHmm * canvas.width / imgWmm);
+        var sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        var sctx = sliceCanvas.getContext("2d");
+        var remaining = canvas.height, y = 0, first = true;
+        while (remaining > 0) {
+          var sliceH = Math.min(pxPerPage, remaining);
+          sliceCanvas.height = sliceH;
+          sctx.clearRect(0, 0, sliceCanvas.width, sliceH);
+          sctx.drawImage(canvas, 0, y, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+          if (!first) pdf.addPage();
+          pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.98), "JPEG", marginMm, marginMm, imgWmm, sliceH * imgWmm / canvas.width);
+          y += sliceH; remaining -= sliceH; first = false;
+        }
+      }
+      pdf.save(filename);
     }).catch(function(err){
+      captureHost.remove();
       console.error("PDF export failed:", err);
       alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');
     }).finally(function(){

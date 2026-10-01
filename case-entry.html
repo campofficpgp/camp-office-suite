@@ -222,6 +222,10 @@ html,body{overflow-x:hidden;}
     body *{visibility:hidden;}
     #reportPrintArea, #reportPrintArea *{visibility:visible;}
     #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
+       to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
+       clips a wide report table. Let the body grow to the full width for the capture. */
+    html,body{overflow-x:visible !important;}
     #reportPrintArea .heading-icon{display:none;}
     /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
        own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
@@ -1591,22 +1595,31 @@ html,body{overflow-x:hidden;}
       alert(isUrdu ? 'پہلے رپورٹ بنائیں' : 'Please generate a report first');
       return;
     }
+    /* #reportPrintArea only gets its content from printCurrentReport() (the "Print / Preview"
+       button) — this Download PDF button used to capture it directly without ever populating
+       it first, so clicking Download PDF without first opening Print/Preview produced a
+       completely blank PDF. Build the preview content ourselves before capturing, so Download
+       PDF always works on its own. */
+    printCurrentReport();
     var target = document.getElementById('reportPrintArea');
     var mn = String(currentReport.monthName || 'Report').replace(/[^A-Za-z0-9]+/g,'-');
     var yr = currentReport.year || '';
     var filename = "CampOffice-MonthlyReport-"+mn+"-"+yr+".pdf";
+    window.scrollTo(0,0);
     withPrintRulesActive(function(){
       return html2pdf().set({
         margin: [12,12,12,12],
         filename: filename,
         image: {type:"jpeg", quality:0.98},
-        html2canvas: {scale:2, useCORS:true, logging:false},
+        html2canvas: {scale:2, useCORS:true, logging:false, scrollX:0, scrollY:0},
         jsPDF: {unit:"mm", format:"a4", orientation:"portrait"},
         pagebreak: {mode:["css","legacy"]}
       }).from(target).save();
     }).catch(function(err){
       console.error("PDF export failed:", err);
       alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');
+    }).finally(function(){
+      closeReportPrint();
     });
   }
 

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shared Dropdown Lists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+:root{
+  --navy:#1F4E78;
+  --navy-dark:#153A5B;
+  --navy-tint:#EAF0F5;
+  --amber:#B8860B;
+  --amber-tint:#FBF3DF;
+  --bg:#F4F3EF;
+  --surface:#FFFFFF;
+  --border:#DBD7CE;
+  --border-strong:#BEC7CE;
+  --text:#22303C;
+  --muted:#5B6B76;
+  --danger:#B3261E;
+  --danger-tint:#FBEAE9;
+  --success:#2F7D4F;
+  --success-tint:#EAF4EE;
+  --radius:8px;
+  --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Segoe UI", system-ui, -apple-system, "Noto Sans", Arial, sans-serif;
+  font-size:14px;
+  line-height:1.45;
+}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:700;margin:0;color:var(--navy-dark);}
+body.lang-ur label, body.lang-ur h1, body.lang-ur h2, body.lang-ur h3, body.lang-ur .btn,
+body.lang-ur button, body.lang-ur .field-hint, body.lang-ur .auth-sub, body.lang-ur .auth-warn,
+body.lang-ur .modal h3, body.lang-ur th, body.lang-ur .tab-btn, body.lang-ur .sub{
+  font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Noto Naskh Arabic",Tahoma,Arial,sans-serif;
+}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%);
+  color:#fff;padding:18px 24px;display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:space-between;gap:12px;border-bottom:3px solid var(--amber);
+}
+.topbar h1{color:#fff;font-size:20px;letter-spacing:.2px;}
+.topbar .sub{color:#CFE0EC;font-size:12.5px;margin-top:2px;}
+.userbar{display:flex;align-items:center;gap:10px;color:#fff;font-size:13px;flex-wrap:wrap;}
+.userbar .role-chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);border-radius:20px;padding:3px 12px;font-size:12px;}
+select#uiLangSelect{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:5px 8px;font-size:12.5px;}
+select#uiLangSelect option{color:#111;}
+
+main{width:100%;min-width:0;max-width:1200px;margin:0 auto;padding:20px 24px 60px;}
+
+.app-grid{display:flex;gap:18px;align-items:flex-start;}
+.sidebar-lists{width:230px;flex:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px;}
+.tab-btn{display:block;width:100%;text-align:left;background:none;border:none;border-radius:6px;padding:9px 11px;margin-bottom:3px;font-size:13px;font-family:inherit;color:var(--text);cursor:pointer;}
+.tab-btn:hover{background:var(--navy-tint);}
+.tab-btn.active{background:var(--navy);color:#fff;font-weight:600;}
+.sidebar-lists .add-list-btn{margin-top:8px;}
+.main-panel{flex:1;min-width:0;}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+.count-chip{background:var(--navy-tint);color:var(--navy-dark);border-radius:20px;padding:5px 14px;font-size:12.5px;}
+.unsaved-chip{background:var(--amber-tint);color:#7a5a00;border:1px solid var(--amber);border-radius:20px;padding:4px 13px;font-size:12px;display:none;}
+.unsaved-chip.show{display:inline-block;}
+
+button.btn{
+  background:var(--navy);color:#fff;border:none;border-radius:var(--radius);
+  padding:9px 18px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+button.btn:hover{background:var(--navy-dark);}
+button.btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--border-strong);}
+button.btn.ghost:hover{background:var(--navy-tint);}
+button.btn.danger{background:var(--danger);}
+button.btn.danger:hover{background:#8f1e18;}
+button.btn:disabled{opacity:.5;cursor:not-allowed;}
+button.btn.small{padding:5px 12px;font-size:12px;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px;}
+.field input,.field select,.field textarea{
+  width:100%;padding:9px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);
+  font-size:14px;font-family:inherit;box-sizing:border-box;
+}
+.field-hint{font-size:12px;color:var(--muted);margin-top:4px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:18px;}
+.card h3{font-size:13px;font-family:inherit;text-transform:uppercase;letter-spacing:.05em;color:var(--navy);margin-bottom:12px;font-weight:700;}
+
+/* ---------- Auth screens ---------- */
+.fullscreen-overlay{position:fixed;inset:0;background:linear-gradient(160deg,var(--navy) 0%, var(--navy-dark) 100%);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;}
+.auth-card{background:var(--surface);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:32px 30px;width:100%;max-width:400px;}
+.auth-sub{font-size:13px;color:var(--muted);margin:6px 0 18px;line-height:1.7;}
+.auth-error{color:var(--danger);font-size:12.5px;min-height:16px;margin-top:6px;}
+.auth-warn{margin-top:16px;font-size:12px;color:var(--muted);background:var(--navy-tint);padding:10px 12px;border-radius:var(--radius);line-height:1.7;}
+.noaccess-card{background:var(--surface);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.35);padding:32px 30px;width:100%;max-width:440px;text-align:center;}
+.noaccess-card p{color:var(--text);font-size:14px;line-height:1.7;margin:14px 0 20px;}
+
+/* ---------- List header / rename ---------- */
+.list-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+.list-title{display:flex;align-items:center;gap:8px;}
+.list-title h2{font-size:18px;}
+.list-title .pencil-btn{background:none;border:none;cursor:pointer;font-size:15px;color:var(--navy);padding:2px 4px;}
+.list-title .pencil-btn:hover{color:var(--navy-dark);}
+.rename-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;}
+.rename-row .field{margin-bottom:0;min-width:160px;flex:1;}
+
+/* ---------- Value rows ---------- */
+.value-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.value-table th,.value-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;}
+.value-table th{color:var(--muted);font-weight:600;font-size:12px;}
+.value-table td.actions-cell{white-space:nowrap;width:1%;}
+.value-table input.value-edit-input{width:100%;padding:6px 9px;border:1px solid var(--border-strong);border-radius:6px;font-size:13.5px;font-family:inherit;}
+.empty-values{color:var(--muted);padding:30px 10px;text-align:center;font-size:13.5px;}
+.add-value-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.add-value-row input{flex:1;min-width:180px;padding:9px 11px;border:1px solid var(--border-strong);border-radius:var(--radius);font-size:14px;font-family:inherit;}
+
+/* ---------- Modals ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,30,.6);display:none;align-items:center;justify-content:center;z-index:900;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:12px;padding:26px 28px;max-width:460px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.modal h3{margin-bottom:14px;font-size:17px;}
+.modal .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
+.modal p.confirm-text{font-size:13.5px;color:var(--text);line-height:1.6;}
+
+footer.appfoot{text-align:center;color:var(--muted);font-size:11.5px;padding:18px;border-top:1px solid var(--border);}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy-dark);color:#fff;padding:11px 18px;border-radius:var(--radius);box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none;max-width:340px;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:780px){
+  .app-grid{flex-direction:column;}
+  .sidebar-lists{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH: LOGIN ================= -->
+<div class="fullscreen-overlay auth-screen" id="authLoginScreen" style="display:none;">
+  <div class="auth-card">
+    <h2 data-i18n="auth_signin">Sign in</h2>
+    <div class="auth-sub" data-i18n="app_subtitle">Shared Dropdown Lists — central admin tool</div>
+    <div class="field"><label data-i18n="auth_email">Email</label><input type="email" id="login_username"></div>
+    <div class="field"><label data-i18n="auth_password">Password</label><input type="password" id="login_password"></div>
+    <button class="btn" id="loginBtn" style="width:100%;" data-i18n="auth_signin">Sign in</button>
+    <div class="auth-error" id="loginError"></div>
+    <div style="text-align:center;margin-top:10px;"><a href="#" id="forgotPasswordLink" style="font-size:12.5px;color:#1F4E78;text-decoration:underline;" data-i18n="auth_forgotPassword">Forgot password?</a></div>
+  </div>
+</div>
+
+<!-- ================= AUTH: NOT ADMIN ================= -->
+<div class="fullscreen-overlay" id="noAccessScreen" style="display:none;">
+  <div class="noaccess-card">
+    <h2 data-i18n="noaccess_title">Admin access required</h2>
+    <p data-i18n="noaccess_text">Admin access required to use this tool.</p>
+    <button class="btn ghost" id="noAccessSignOutBtn" data-i18n="btn_signout">Sign out</button>
+  </div>
+</div>
+
+<!-- ================= MAIN APP ================= -->
+<div id="appMain" style="display:none;">
+  <div class="topbar">
+    <div>
+      <h1 data-i18n="app_title">Shared Dropdown Lists / مشترکہ ڈراپ ڈاؤن فہرستیں</h1>
+      <div class="sub" data-i18n="app_subtitle3">A central place to manage reusable dropdown options shared across the camp office systems. Connecting the other systems to read from here live is a separate, upcoming step.</div>
+    </div>
+    <div class="userbar">
+      <select id="uiLangSelect"><option value="en">English</option><option value="ur">اردو</option></select>
+      <span id="whoAmI"></span>
+      <span class="role-chip" id="roleChip"></span>
+      <button class="btn ghost small" id="signOutBtn" data-i18n="btn_signout" style="color:#fff;border-color:rgba(255,255,255,.5);">Sign out</button>
+    </div>
+  </div>
+
+  <main>
+    <div class="toolbar">
+      <button class="btn" id="saveBtn" data-i18n="btn_save">Save</button>
+      <button class="btn ghost" id="undoBtn" data-i18n="btn_undo">Undo</button>
+      <button class="btn ghost" id="redoBtn" data-i18n="btn_redo">Redo</button>
+      <span class="unsaved-chip" id="unsavedChip" data-i18n="chip_unsaved">Unsaved changes</span>
+      <span class="count-chip" id="listCountChip"></span>
+    </div>
+
+    <div class="app-grid">
+      <aside class="sidebar-lists">
+        <div id="listTabs"></div>
+        <button class="btn ghost small add-list-btn" id="addListBtn" style="width:100%;display:none;" data-i18n="btn_addList">+ Add New List</button>
+      </aside>
+
+      <section class="main-panel">
+        <div id="noListsState" class="card" style="display:none;text-align:center;color:var(--muted);">
+          <span data-i18n="empty_noLists">No lists yet. Use "+ Add New List" to create the first one.</span>
+        </div>
+
+        <div id="listPanel" style="display:none;">
+          <div class="card">
+            <div class="list-header">
+              <div class="list-title">
+                <h2 id="listTitleDisplay"></h2>
+                <button class="pencil-btn" id="renameToggleBtn" title="Rename" style="display:none;">✎</button>
+              </div>
+              <button class="btn danger small" id="deleteListBtn" style="display:none;" data-i18n="btn_deleteList">Delete this list</button>
+            </div>
+            <div class="rename-row" id="renameRow" style="display:none;">
+              <div class="field"><label data-i18n="lbl_nameEn">English name</label><input type="text" id="renameNameEn"></div>
+              <div class="field"><label data-i18n="lbl_nameUr">Urdu name</label><input type="text" id="renameNameUr"></div>
+              <button class="btn small" id="renameSaveBtn" data-i18n="btn_saveRename">Save</button>
+              <button class="btn ghost small" id="renameCancelBtn" data-i18n="btn_cancel">Cancel</button>
+            </div>
+
+            <div class="add-value-row" id="addValueAdminRow" style="display:none;">
+              <input type="text" id="addValueInput" data-i18n-placeholder="ph_addValue" placeholder="Add a new value…">
+              <button class="btn small" id="addValueBtn" data-i18n="btn_addValue">Add</button>
+            </div>
+
+            <table class="value-table">
+              <thead><tr><th data-i18n="th_value">Value</th><th></th></tr></thead>
+              <tbody id="valuesBody"></tbody>
+            </table>
+            <div class="empty-values" id="emptyValuesState" style="display:none;" data-i18n="empty_noValues">No values in this list yet.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="appfoot" data-i18n="app_footer">Shared Dropdown Lists — central store for reusable dropdown options used across the camp office systems.</footer>
+  <div class="appfoot-copyright" style="text-align:center;font-size:11px;color:#8aa0b3;padding:6px 10px 14px;">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad &nbsp;|&nbsp; © افتخار احمد — کیمپ آفس، پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد</div>
+</div>
+
+<!-- ================= ADD LIST MODAL ================= -->
+<div class="modal-overlay" id="addListModal">
+  <div class="modal">
+    <h3 data-i18n="addListModal_title">Add a new list</h3>
+    <div class="field"><label data-i18n="lbl_nameEn">English name</label><input type="text" id="addListNameEn"></div>
+    <div class="field"><label data-i18n="lbl_nameUr">Urdu name</label><input type="text" id="addListNameUr"></div>
+    <div class="field-hint" id="addListError" style="color:var(--danger);"></div>
+    <div class="actions">
+      <button class="btn ghost" id="addListCancelBtn" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn" id="addListConfirmBtn" data-i18n="btn_add">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONFIRM MODAL (custom, not native confirm()) ================= -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <h3 id="confirmTitle"></h3>
+    <p class="confirm-text" id="confirmText"></p>
+    <div class="actions">
+      <button class="btn ghost" id="confirmCancelBtn" data-i18n="btn_cancel">Cancel</button>
+      <button class="btn danger" id="confirmOkBtn" data-i18n="btn_confirmDelete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   FIREBASE CONFIG — same shared project used by every other camp-office
+   system (record-section-system, bill-register-system, case-notice-system,
+   daily-case-management-system, camp-office-gallery, weekly-court-roster).
+   ===================================================================== */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project",
+  storageBucket: "camp-office-project.firebasestorage.app",
+  messagingSenderId: "246340921152",
+  appId: "1:246340921152:web:84b0a687a00a95523f23ca5"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+/* NOTE for later: Firestore Security Rules (out of scope for this file) should
+   restrict the "appData_sharedDropdowns" collection so that only an admin or
+   super_admin can WRITE to it, while any signed-in user may READ it — mirroring
+   the pattern already used for the other "appData_*" collections in this
+   project. This file only gates the UI; it cannot enforce that on its own. */
+
+/* ---------------- Helpers ---------------- */
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];}); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function toast(msg){
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(function(){ el.classList.remove("show"); }, 3200);
+}
+function slugify(name){
+  var s = String(name||"").toLowerCase().trim();
+  s = s.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if(!s) s = "list";
+  return s;
+}
+function uniqueKey(baseKey, existingKeys){
+  var key = baseKey, n = 2;
+  while(existingKeys.indexOf(key) !== -1){
+    key = baseKey + "-" + n;
+    n++;
+  }
+  return key;
+}
+
+/* ---------------- i18n ---------------- */
+var UI_LANG_STORAGE_KEY = "shareddropdowns_ui_lang";
+var I18N_UI = {
+  en: {
+    auth_signin:"Sign in", auth_signingIn:"Signing in…", app_subtitle:"Shared Dropdown Lists — central admin tool",
+    auth_email:"Email", auth_password:"Password", auth_forgotPassword:"Forgot password?",
+    btn_signout:"Sign out",
+    noaccess_title:"Admin access required",
+    noaccess_text:"Admin access required to use this tool.",
+    app_title:"Shared Dropdown Lists / مشترکہ ڈراپ ڈاؤن فہرستیں",
+    app_subtitle3:"A central place to manage reusable dropdown options shared across the camp office systems. Connecting the other systems to read from here live is a separate, upcoming step.",
+    app_footer:"Shared Dropdown Lists — central store for reusable dropdown options used across the camp office systems.",
+    btn_save:"Save", btn_undo:"Undo", btn_redo:"Redo",
+    chip_unsaved:"Unsaved changes",
+    btn_addList:"+ Add New List",
+    empty_noLists:"No lists yet. Use \"+ Add New List\" to create the first one.",
+    btn_deleteList:"Delete this list",
+    lbl_nameEn:"English name", lbl_nameUr:"Urdu name",
+    btn_saveRename:"Save", btn_cancel:"Cancel",
+    ph_addValue:"Add a new value…", btn_addValue:"Add",
+    th_value:"Value",
+    empty_noValues:"No values in this list yet.",
+    addListModal_title:"Add a new list",
+    btn_add:"Add",
+    btn_confirmDelete:"Delete",
+    confirm_deleteList_title:"Delete this list?",
+    confirm_deleteList_text:"This will remove the whole list and all its values from your unsaved changes. Click Save afterwards to make it permanent.",
+    confirm_deleteValue_title:"Delete this value?",
+    confirm_deleteValue_text:"This will remove the value from the list. Click Save afterwards to make it permanent.",
+    err_nameRequired:"Please enter both an English and an Urdu name.",
+    err_keyTaken:"A list with a very similar English name already exists; please choose a slightly different name.",
+    btn_editValue:"Edit", btn_deleteValue:"Delete", btn_saveValue:"Save",
+    unsaved_leave_warning:"You have unsaved changes. Save before leaving so they are not lost.",
+    saved_ok:"Saved."
+  },
+  ur: {
+    auth_signin:"سائن ان", auth_signingIn:"سائن اِن ہو رہا ہے…", app_subtitle:"مشترکہ ڈراپ ڈاؤن فہرستیں — مرکزی ایڈمن ٹول",
+    auth_email:"ای میل", auth_password:"پاسورڈ", auth_forgotPassword:"پاسورڈ بھول گئے؟",
+    btn_signout:"سائن آؤٹ",
+    noaccess_title:"Administrator کی رسائی درکار ہے",
+    noaccess_text:"اس ٹول کے استعمال کے لیے Administrator کی رسائی درکار ہے۔",
+    app_title:"Shared Dropdown Lists / مشترکہ ڈراپ ڈاؤن فہرستیں",
+    app_subtitle3:"یہ کیمپ آفس کے تمام سسٹمز میں مشترکہ طور پر استعمال ہونے والے ڈراپ ڈاؤن کے آپشنز کے انتظام کی مرکزی جگہ ہے۔ باقی سسٹمز کو یہاں سے لائیو ڈیٹا پڑھنے کے لیے جوڑنا ایک الگ، آنے والا مرحلہ ہے۔",
+    app_footer:"مشترکہ ڈراپ ڈاؤن فہرستیں — کیمپ آفس کے سسٹمز میں استعمال ہونے والے دوبارہ قابلِ استعمال ڈراپ ڈاؤن آپشنز کا مرکزی ذخیرہ۔",
+    btn_save:"محفوظ کریں", btn_undo:"واپس کریں", btn_redo:"دوبارہ کریں",
+    chip_unsaved:"غیر محفوظ تبدیلیاں",
+    btn_addList:"+ نئی فہرست شامل کریں",
+    empty_noLists:"ابھی کوئی فہرست موجود نہیں۔ پہلی فہرست بنانے کے لیے \"+ نئی فہرست شامل کریں\" استعمال کریں۔",
+    btn_deleteList:"یہ فہرست حذف کریں",
+    lbl_nameEn:"انگریزی نام", lbl_nameUr:"اردو نام",
+    btn_saveRename:"محفوظ کریں", btn_cancel:"منسوخ",
+    ph_addValue:"نئی ویلیو شامل کریں…", btn_addValue:"شامل کریں",
+    th_value:"ویلیو",
+    empty_noValues:"اس فہرست میں ابھی کوئی ویلیو موجود نہیں۔",
+    addListModal_title:"نئی فہرست شامل کریں",
+    btn_add:"شامل کریں",
+    btn_confirmDelete:"حذف کریں",
+    confirm_deleteList_title:"یہ فہرست حذف کریں؟",
+    confirm_deleteList_text:"اس سے پوری فہرست اور اس کی تمام ویلیوز آپ کی غیر محفوظ تبدیلیوں سے ہٹ جائیں گی۔ اسے مستقل بنانے کے لیے بعد میں \"محفوظ کریں\" دبائیں۔",
+    confirm_deleteValue_title:"یہ ویلیو حذف کریں؟",
+    confirm_deleteValue_text:"اس سے یہ ویلیو فہرست سے ہٹ جائے گی۔ اسے مستقل بنانے کے لیے بعد میں \"محفوظ کریں\" دبائیں۔",
+    err_nameRequired:"براہ کرم انگریزی اور اردو دونوں نام درج کریں۔",
+    err_keyTaken:"ایک جیسی انگریزی نام والی فہرست پہلے سے موجود ہے؛ براہ کرم تھوڑا مختلف نام منتخب کریں۔",
+    btn_editValue:"ترمیم", btn_deleteValue:"حذف کریں", btn_saveValue:"محفوظ کریں",
+    unsaved_leave_warning:"آپ کی غیر محفوظ تبدیلیاں ہیں۔ انہیں ضائع ہونے سے بچانے کے لیے پہلے محفوظ کریں۔",
+    saved_ok:"محفوظ ہو گیا۔"
+  }
+};
+function t(key){
+  var lang = document.documentElement.getAttribute("data-ui-lang") || "en";
+  return (I18N_UI[lang] && I18N_UI[lang][key]!=null) ? I18N_UI[lang][key] : (I18N_UI.en[key]||key);
+}
+function applyUILang(lang){
+  if(!I18N_UI[lang]) lang = "en";
+  document.documentElement.setAttribute("data-ui-lang", lang);
+  document.body.classList.toggle("lang-ur", lang==="ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    var val = I18N_UI[lang][key];
+    if(val!=null) el.textContent = val;
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(function(el){
+    var key = el.getAttribute("data-i18n-placeholder");
+    var val = I18N_UI[lang][key];
+    if(val!=null) el.setAttribute("placeholder", val);
+  });
+  var sel = document.getElementById("uiLangSelect");
+  if(sel) sel.value = lang;
+  try{ localStorage.setItem(UI_LANG_STORAGE_KEY, lang); }catch(e){}
+  renderListTabs();
+  renderListPanel();
+}
+document.getElementById("uiLangSelect").addEventListener("change", function(){ applyUILang(this.value); });
+(function initUILang(){
+  var saved = "en";
+  try{ saved = localStorage.getItem(UI_LANG_STORAGE_KEY) || "en"; }catch(e){}
+  applyUILang(saved);
+})();
+
+/* ================= STATE ================= */
+var CURRENT_USER = null;
+var CURRENT_ROLE = null;
+var IS_ADMIN = false;
+var LISTS = [];              /* current in-memory lists array */
+var SAVED_LISTS_JSON = "[]"; /* last-saved snapshot, to know if there are unsaved changes */
+var ACTIVE_KEY = null;       /* currently selected list key */
+var UNDO_STACK = [];
+var REDO_STACK = [];
+var SEED_BENCH = {
+  key: "bench",
+  nameEn: "Bench",
+  nameUr: "بینچ",
+  values: ["Bench - I", "Bench - II", "Bench - III", "Bench - IV", "Bench - V", "Bench - VI", "Bench - VII"]
+};
+
+function cloneLists(lists){ return JSON.parse(JSON.stringify(lists)); }
+function hasUnsavedChanges(){ return JSON.stringify(LISTS) !== SAVED_LISTS_JSON; }
+function pushUndo(){
+  UNDO_STACK.push(cloneLists(LISTS));
+  if(UNDO_STACK.length > 100) UNDO_STACK.shift();
+  REDO_STACK = [];
+  renderAll();
+}
+function doUndo(){
+  if(!UNDO_STACK.length) return;
+  REDO_STACK.push(cloneLists(LISTS));
+  LISTS = UNDO_STACK.pop();
+  if(LISTS.length && LISTS.indexOf(getActiveList())===-1){
+    ACTIVE_KEY = LISTS[0].key;
+  }
+  if(!LISTS.length) ACTIVE_KEY = null;
+  renderAll();
+}
+function doRedo(){
+  if(!REDO_STACK.length) return;
+  UNDO_STACK.push(cloneLists(LISTS));
+  LISTS = REDO_STACK.pop();
+  if(LISTS.length && LISTS.indexOf(getActiveList())===-1){
+    ACTIVE_KEY = LISTS[0].key;
+  }
+  if(!LISTS.length) ACTIVE_KEY = null;
+  renderAll();
+}
+function getActiveList(){
+  for(var i=0;i<LISTS.length;i++){ if(LISTS[i].key === ACTIVE_KEY) return LISTS[i]; }
+  return null;
+}
+
+/* ================= RENDER ================= */
+function renderAll(){
+  renderToolbar();
+  renderListTabs();
+  renderListPanel();
+}
+function renderToolbar(){
+  var unsaved = hasUnsavedChanges();
+  document.getElementById("unsavedChip").classList.toggle("show", unsaved);
+  document.getElementById("saveBtn").disabled = !unsaved;
+  document.getElementById("undoBtn").disabled = UNDO_STACK.length === 0;
+  document.getElementById("redoBtn").disabled = REDO_STACK.length === 0;
+  document.getElementById("listCountChip").textContent = LISTS.length + (LISTS.length===1 ? " list" : " lists");
+}
+function listDisplayName(list){
+  var lang = document.documentElement.getAttribute("data-ui-lang") || "en";
+  return lang === "ur" ? (list.nameUr || list.nameEn) : (list.nameEn || list.nameUr);
+}
+function renderListTabs(){
+  var wrap = document.getElementById("listTabs");
+  wrap.innerHTML = "";
+  LISTS.forEach(function(list){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tab-btn" + (list.key === ACTIVE_KEY ? " active" : "");
+    btn.textContent = listDisplayName(list);
+    btn.addEventListener("click", function(){
+      ACTIVE_KEY = list.key;
+      cancelRename();
+      renderListTabs();
+      renderListPanel();
+    });
+    wrap.appendChild(btn);
+  });
+  document.getElementById("addListBtn").style.display = IS_ADMIN ? "block" : "none";
+  document.getElementById("noListsState").style.display = LISTS.length === 0 ? "block" : "none";
+}
+var RENAME_OPEN = false;
+function cancelRename(){ RENAME_OPEN = false; }
+function renderListPanel(){
+  var list = getActiveList();
+  var panel = document.getElementById("listPanel");
+  if(!list){
+    panel.style.display = "none";
+    return;
+  }
+  panel.style.display = "block";
+  document.getElementById("listTitleDisplay").textContent = listDisplayName(list) + " (" + list.nameEn + " / " + list.nameUr + ")";
+  document.getElementById("renameToggleBtn").style.display = IS_ADMIN ? "inline-block" : "none";
+  document.getElementById("deleteListBtn").style.display = IS_ADMIN ? "inline-block" : "none";
+  document.getElementById("addValueAdminRow").style.display = IS_ADMIN ? "flex" : "none";
+
+  var renameRow = document.getElementById("renameRow");
+  if(RENAME_OPEN){
+    renameRow.style.display = "flex";
+    document.getElementById("renameNameEn").value = list.nameEn || "";
+    document.getElementById("renameNameUr").value = list.nameUr || "";
+  } else {
+    renameRow.style.display = "none";
+  }
+
+  var body = document.getElementById("valuesBody");
+  body.innerHTML = "";
+  var values = list.values || [];
+  document.getElementById("emptyValuesState").style.display = values.length === 0 ? "block" : "none";
+  values.forEach(function(val, idx){
+    var tr = document.createElement("tr");
+    tr.setAttribute("data-idx", String(idx));
+
+    var tdVal = document.createElement("td");
+    tdVal.textContent = val;
+    tr.appendChild(tdVal);
+
+    var tdActions = document.createElement("td");
+    tdActions.className = "actions-cell";
+    if(IS_ADMIN){
+      var editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn ghost small";
+      editBtn.style.marginRight = "6px";
+      editBtn.textContent = t("btn_editValue");
+      editBtn.addEventListener("click", function(){ startEditValue(idx); });
+      tdActions.appendChild(editBtn);
+
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn danger small";
+      delBtn.textContent = t("btn_deleteValue");
+      delBtn.addEventListener("click", function(){ confirmDeleteValue(idx); });
+      tdActions.appendChild(delBtn);
+    }
+    tr.appendChild(tdActions);
+    body.appendChild(tr);
+  });
+}
+function startEditValue(idx){
+  var list = getActiveList();
+  if(!list) return;
+  var body = document.getElementById("valuesBody");
+  var tr = body.querySelector('tr[data-idx="'+idx+'"]');
+  if(!tr) return;
+  var tdVal = tr.children[0];
+  var tdActions = tr.children[1];
+  var currentVal = list.values[idx];
+  tdVal.innerHTML = "";
+  var input = document.createElement("input");
+  input.type = "text";
+  input.className = "value-edit-input";
+  input.value = currentVal;
+  tdVal.appendChild(input);
+  input.focus();
+  input.select();
+
+  tdActions.innerHTML = "";
+  var saveBtn = document.createElement("button");
+  saveBtn.type = "button";
+  saveBtn.className = "btn small";
+  saveBtn.style.marginRight = "6px";
+  saveBtn.textContent = t("btn_saveValue");
+  saveBtn.addEventListener("click", function(){
+    var newVal = input.value.trim();
+    if(newVal && newVal !== currentVal){
+      pushUndo();
+      var liveList = getActiveList();
+      liveList.values[idx] = newVal;
+      renderAll();
+    } else {
+      renderListPanel();
+    }
+  });
+  var cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "btn ghost small";
+  cancelBtn.textContent = t("btn_cancel");
+  cancelBtn.addEventListener("click", function(){ renderListPanel(); });
+  tdActions.appendChild(saveBtn);
+  tdActions.appendChild(cancelBtn);
+  input.addEventListener("keydown", function(ev){
+    if(ev.key === "Enter") saveBtn.click();
+    else if(ev.key === "Escape") cancelBtn.click();
+  });
+}
+
+/* ================= CUSTOM CONFIRM MODAL ================= */
+function showConfirm(titleKey, textKey, onConfirm){
+  var modal = document.getElementById("confirmModal");
+  document.getElementById("confirmTitle").textContent = t(titleKey);
+  document.getElementById("confirmText").textContent = t(textKey);
+  modal.classList.add("show");
+  var okBtn = document.getElementById("confirmOkBtn");
+  var cancelBtn = document.getElementById("confirmCancelBtn");
+  function cleanup(){
+    modal.classList.remove("show");
+    okBtn.removeEventListener("click", onOk);
+    cancelBtn.removeEventListener("click", onCancel);
+  }
+  function onOk(){ cleanup(); onConfirm(); }
+  function onCancel(){ cleanup(); }
+  okBtn.addEventListener("click", onOk);
+  cancelBtn.addEventListener("click", onCancel);
+}
+function confirmDeleteValue(idx){
+  showConfirm("confirm_deleteValue_title", "confirm_deleteValue_text", function(){
+    pushUndo();
+    var list = getActiveList();
+    list.values.splice(idx, 1);
+    renderAll();
+  });
+}
+function confirmDeleteList(){
+  showConfirm("confirm_deleteList_title", "confirm_deleteList_text", function(){
+    pushUndo();
+    var idx = LISTS.findIndex(function(l){ return l.key === ACTIVE_KEY; });
+    if(idx !== -1) LISTS.splice(idx, 1);
+    ACTIVE_KEY = LISTS.length ? LISTS[0].key : null;
+    cancelRename();
+    renderAll();
+  });
+}
+
+/* ================= ACTIONS ================= */
+document.getElementById("addValueBtn").addEventListener("click", function(){
+  var input = document.getElementById("addValueInput");
+  var val = input.value.trim();
+  if(!val) return;
+  var list = getActiveList();
+  if(!list) return;
+  pushUndo();
+  list.values.push(val);
+  input.value = "";
+  renderAll();
+});
+document.getElementById("addValueInput").addEventListener("keydown", function(ev){
+  if(ev.key === "Enter") document.getElementById("addValueBtn").click();
+});
+
+document.getElementById("renameToggleBtn").addEventListener("click", function(){
+  RENAME_OPEN = !RENAME_OPEN;
+  renderListPanel();
+});
+document.getElementById("renameCancelBtn").addEventListener("click", function(){
+  RENAME_OPEN = false;
+  renderListPanel();
+});
+document.getElementById("renameSaveBtn").addEventListener("click", function(){
+  var nameEn = document.getElementById("renameNameEn").value.trim();
+  var nameUr = document.getElementById("renameNameUr").value.trim();
+  if(!nameEn || !nameUr){ toast(t("err_nameRequired")); return; }
+  var list = getActiveList();
+  if(!list) return;
+  if(list.nameEn === nameEn && list.nameUr === nameUr){ RENAME_OPEN = false; renderListPanel(); return; }
+  pushUndo();
+  list.nameEn = nameEn;
+  list.nameUr = nameUr;
+  RENAME_OPEN = false;
+  renderAll();
+});
+
+document.getElementById("deleteListBtn").addEventListener("click", confirmDeleteList);
+
+document.getElementById("addListBtn").addEventListener("click", function(){
+  document.getElementById("addListNameEn").value = "";
+  document.getElementById("addListNameUr").value = "";
+  document.getElementById("addListError").textContent = "";
+  document.getElementById("addListModal").classList.add("show");
+  document.getElementById("addListNameEn").focus();
+});
+document.getElementById("addListCancelBtn").addEventListener("click", function(){
+  document.getElementById("addListModal").classList.remove("show");
+});
+document.getElementById("addListConfirmBtn").addEventListener("click", function(){
+  var nameEn = document.getElementById("addListNameEn").value.trim();
+  var nameUr = document.getElementById("addListNameUr").value.trim();
+  var errEl = document.getElementById("addListError");
+  if(!nameEn || !nameUr){ errEl.textContent = t("err_nameRequired"); return; }
+  var existingKeys = LISTS.map(function(l){ return l.key; });
+  var key = uniqueKey(slugify(nameEn), existingKeys);
+  pushUndo();
+  LISTS.push({ key: key, nameEn: nameEn, nameUr: nameUr, values: [] });
+  ACTIVE_KEY = key;
+  cancelRename();
+  document.getElementById("addListModal").classList.remove("show");
+  renderAll();
+});
+
+document.getElementById("undoBtn").addEventListener("click", doUndo);
+document.getElementById("redoBtn").addEventListener("click", doRedo);
+
+document.getElementById("saveBtn").addEventListener("click", function(){
+  var btn = this;
+  if(btn.disabled) return;
+  btn.disabled = true;
+  var payload = {
+    lists: LISTS,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedBy: (CURRENT_USER && CURRENT_USER.email) || ""
+  };
+  db.collection("appData_sharedDropdowns").doc("shared").set(payload).then(function(){
+    SAVED_LISTS_JSON = JSON.stringify(LISTS);
+    UNDO_STACK = [];
+    REDO_STACK = [];
+    toast(t("saved_ok"));
+    renderAll();
+    btn.disabled = false;
+  }).catch(function(err){
+    toast("Save failed: " + err.message);
+    btn.disabled = false;
+  });
+});
+
+window.addEventListener("beforeunload", function(ev){
+  if(hasUnsavedChanges()){
+    ev.preventDefault();
+    ev.returnValue = "";
+    return "";
+  }
+});
+
+/* ================= AUTH ================= */
+document.getElementById("loginBtn").addEventListener("click", function(){
+  var btn = document.getElementById("loginBtn");
+  if(btn.disabled) return;
+  var email = document.getElementById("login_username").value.trim();
+  var pw = document.getElementById("login_password").value;
+  var err = document.getElementById("loginError");
+  err.textContent = "";
+  btn.disabled = true; btn.textContent = t("auth_signingIn");
+  auth.signInWithEmailAndPassword(email, pw).catch(function(fbErr){
+    err.textContent = "Incorrect email or password.";
+    btn.disabled = false; btn.textContent = t("auth_signin");
+  });
+});
+document.getElementById("login_password").addEventListener("keydown", function(ev){
+  if(ev.key === "Enter") document.getElementById("loginBtn").click();
+});
+document.getElementById("forgotPasswordLink").addEventListener("click", function(e){
+  e.preventDefault();
+  var email = document.getElementById("login_username").value.trim();
+  var errEl = document.getElementById("loginError");
+  if(!email){ errEl.style.color = "#b00020"; errEl.textContent = "Please enter your email address above first, then click 'Forgot password?' again."; return; }
+  auth.sendPasswordResetEmail(email).then(function(){
+    errEl.style.color = "#1a7a1a";
+    errEl.textContent = "A password reset link has been sent to " + email + ". Please check your inbox (and spam folder).";
+  }).catch(function(err){
+    errEl.style.color = "#b00020";
+    errEl.textContent = err.message;
+  });
+});
+function doSignOut(){
+  if(hasUnsavedChanges()){
+    toast(t("unsaved_leave_warning"));
+    return;
+  }
+  auth.signOut();
+}
+document.getElementById("signOutBtn").addEventListener("click", doSignOut);
+document.getElementById("noAccessSignOutBtn").addEventListener("click", function(){ auth.signOut(); });
+
+function showScreen(which){
+  document.getElementById("authLoginScreen").style.display = which === "login" ? "flex" : "none";
+  document.getElementById("noAccessScreen").style.display = which === "noaccess" ? "flex" : "none";
+  document.getElementById("appMain").style.display = which === "app" ? "block" : "none";
+}
+
+function loadSharedDropdowns(){
+  var ref = db.collection("appData_sharedDropdowns").doc("shared");
+  ref.get().then(function(snap){
+    if(snap.exists){
+      var data = snap.data() || {};
+      LISTS = Array.isArray(data.lists) ? data.lists : [];
+    } else {
+      /* Seed exactly one starter list on first load; never overwrite existing data. */
+      LISTS = [cloneLists([SEED_BENCH])[0]];
+      ref.set({
+        lists: LISTS,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: (CURRENT_USER && CURRENT_USER.email) || ""
+      }).catch(function(err){ toast("Could not save seed data: " + err.message); });
+    }
+    SAVED_LISTS_JSON = JSON.stringify(LISTS);
+    UNDO_STACK = [];
+    REDO_STACK = [];
+    ACTIVE_KEY = LISTS.length ? LISTS[0].key : null;
+    renderAll();
+  }).catch(function(err){
+    toast("Could not load shared dropdown data: " + err.message);
+  });
+}
+
+auth.onAuthStateChanged(function(user){
+  if(user){
+    CURRENT_USER = user;
+    db.collection("users").doc(user.uid).get().then(function(snap){
+      var d = snap.exists ? snap.data() : {};
+      CURRENT_ROLE = d.role || null;
+      IS_ADMIN = (CURRENT_ROLE === "admin" || CURRENT_ROLE === "super_admin");
+      if(!IS_ADMIN){
+        /* Non-admins never load or render the shared dropdown data at all from this UI. */
+        showScreen("noaccess");
+        return;
+      }
+      document.getElementById("whoAmI").textContent = user.email || "";
+      document.getElementById("roleChip").textContent = CURRENT_ROLE;
+      showScreen("app");
+      loadSharedDropdowns();
+    }).catch(function(err){
+      toast("Could not read account role: " + err.message);
+      showScreen("noaccess");
+    });
+  } else {
+    CURRENT_USER = null;
+    CURRENT_ROLE = null;
+    IS_ADMIN = false;
+    LISTS = [];
+    SAVED_LISTS_JSON = "[]";
+    ACTIVE_KEY = null;
+    UNDO_STACK = [];
+    REDO_STACK = [];
+    document.getElementById("loginError").textContent = "";
+    document.getElementById("loginBtn").disabled = false;
+    document.getElementById("loginBtn").textContent = t("auth_signin");
+    showScreen("login");
+  }
+});
+</script>
+</body>
+</html>

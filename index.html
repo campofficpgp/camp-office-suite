@@ -149,6 +149,19 @@ html,body{overflow-x:hidden;}
   body.lang-ur .theme-menu{ right:auto; left:0; }
   .theme-swatch{ width:38px; height:38px; border-radius:8px; border:2px solid transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; }
   .theme-swatch.active{ border-color:var(--navy); }
+  .notif-picker{ position:relative; }
+  .notif-menu{ position:absolute; top:calc(100% + 8px); right:0; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 20px rgba(0,0,0,0.14); width:320px; max-height:380px; overflow:hidden; display:flex; flex-direction:column; z-index:60; }
+  body.lang-ur .notif-menu{ right:auto; left:0; }
+  .notif-menu-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); flex:none; }
+  .notif-menu-head b{ font-size:13px; }
+  .notif-menu-head .btn-link{ background:none; border:none; color:var(--navy); font-size:11.5px; cursor:pointer; padding:0; font-weight:600; }
+  .notif-list{ overflow-y:auto; max-height:320px; }
+  .notif-item{ padding:10px 12px; border-bottom:1px solid var(--border); font-size:12.5px; line-height:1.5; }
+  .notif-item:last-child{ border-bottom:none; }
+  .notif-item .ni-title{ font-weight:700; display:block; margin-bottom:2px; }
+  .notif-item .ni-sub{ color:var(--muted); font-size:11.5px; }
+  .notif-item .ni-sub a{ color:var(--navy); text-decoration:none; font-weight:600; }
+  .notif-empty{ padding:26px 12px; text-align:center; color:var(--muted); font-size:12.5px; }
   .user-chip{ display:flex; align-items:center; gap:8px; padding:4px 6px 4px 4px; border:1px solid var(--border); border-radius:20px; }
   .user-chip .avatar{ width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:none; }
   .user-chip .who{ display:flex; flex-direction:column; line-height:1.15; }
@@ -365,7 +378,16 @@ html,body{overflow-x:hidden;}
         </div>
         <div class="topbar-right">
           <div class="tb-date" id="tbDate"></div>
-          <button class="icon-btn" id="notifBtn" title="Notifications">🔔<span class="dot hidden" id="notifDot"></span></button>
+          <div class="notif-picker">
+            <button class="icon-btn" id="notifBtn" title="Notifications">🔔<span class="dot hidden" id="notifDot"></span></button>
+            <div class="notif-menu hidden" id="notifMenu">
+              <div class="notif-menu-head">
+                <b data-i18n="notifTitle">Notifications</b>
+                <button type="button" class="btn-link" id="notifMarkReadBtn" data-i18n="notifMarkRead">Mark all read</button>
+              </div>
+              <div class="notif-list" id="notifList"></div>
+            </div>
+          </div>
           <div class="theme-picker">
             <button class="icon-btn" id="themeBtn2" title="Theme">🎨</button>
             <div class="theme-menu hidden" id="themeMenu2"></div>
@@ -526,7 +548,8 @@ var I18N = {
     noResults:"No matches found.",
     caseTag:"CASE", noticeTag:"NOTICE",
     noUpcoming:"No upcoming hearings found.",
-    noRecent:"No cases recorded yet."
+    noRecent:"No cases recorded yet.",
+    notifTitle:"Notifications", notifMarkRead:"Mark all read"
   },
   ur: {
     brandTitle:"کیمپ آفس ڈیجیٹل پورٹل",
@@ -556,7 +579,8 @@ var I18N = {
     noResults:"کوئی نتیجہ نہیں ملا۔",
     caseTag:"کیس", noticeTag:"نوٹس",
     noUpcoming:"کوئی آئندہ سماعت موجود نہیں۔",
-    noRecent:"ابھی تک کوئی کیس درج نہیں ہوا۔"
+    noRecent:"ابھی تک کوئی کیس درج نہیں ہوا۔",
+    notifTitle:"اطلاعات", notifMarkRead:"سب پڑھ لیا"
   }
 };
 var ROLE_LABELS = {
@@ -716,6 +740,7 @@ document.getElementById("su_submit").addEventListener("click", function(){
 /* ---------- Auth state / role gating ---------- */
 var CURRENT_DOC = null;
 var CURRENT_UID = null;
+var NOTIF_POLL_TIMER = null;
 
 /* ===== Super Admin Email OTP Gate =====
    Extra check specifically for the super_admin role: after the normal
@@ -892,6 +917,9 @@ function loadUserProfileAndRoute(user){
         document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
         if(isAdminUp){ renderAdminPanel(); }
         loadDashboardData();
+        loadNotifications();
+        if(NOTIF_POLL_TIMER) clearInterval(NOTIF_POLL_TIMER);
+        NOTIF_POLL_TIMER = setInterval(loadNotifications, 120000);
         startClock();
       });
     }
@@ -911,6 +939,7 @@ auth.onAuthStateChanged(function(user){
   if(!user){
     spinClearVerified(CURRENT_UID);
     CURRENT_DOC = null; CURRENT_UID = null;
+    if(NOTIF_POLL_TIMER){ clearInterval(NOTIF_POLL_TIMER); NOTIF_POLL_TIMER = null; }
     document.getElementById("authLoadErrorCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
     showOnly("authScreen");
@@ -1059,12 +1088,145 @@ document.getElementById("themeBtn2").addEventListener("click", function(e){
 document.addEventListener("click", function(){
   document.getElementById("themeMenu2").classList.add("hidden");
   document.getElementById("searchResults").classList.add("hidden");
+  var nm0 = document.getElementById("notifMenu");
+  if(nm0) nm0.classList.add("hidden");
 });
 
-/* Notifications placeholder (no backend feed defined yet) */
+/* ---------- Notifications: pending account requests + new records across systems ----------
+   No system is modified to produce this — it reads each system's existing shared Firestore
+   document (and the gallery's photo collection) and compares current record counts against
+   the counts last seen on THIS browser (stored in localStorage, per signed-in user). A rising
+   count is shown as "N new entries" with a link to that system. Pending account-approval
+   requests are read from the existing users/{uid} docs (approvalStatus=="pending") and are
+   only fetched for Admin/Super Admin, matching the Firestore rule that already restricts
+   listing the users collection to admins. */
+var NOTIF_SYSTEMS = [
+  { key:"bill", labelEn:"Bill Register", labelUr:"بل رجسٹر", doc:function(){ return db.collection("appData_bill").doc("shared"); }, fields:["bills","cash","stock","employees","leaveRegister","attendance","holidays"], link:"../bill-register-system/" },
+  { key:"caseNotice", labelEn:"Case Notice", labelUr:"کیس نوٹس", doc:function(){ return db.collection("appData_case").doc("shared"); }, fields:["cases"], link:"../case-notice-system/" },
+  { key:"recordSection", labelEn:"Record Section", labelUr:"ریکارڈ سیکشن", doc:function(){ return db.collection("appData_recordsection").doc("shared"); }, fields:["records","fileMovements","customRecords","judges","benchEntries","dutyRoster","letters"], link:"../record-section-system/" },
+  { key:"dcms", labelEn:"Daily Case Management", labelUr:"ڈیلی کیس مینجمنٹ", doc:function(){ return db.collection("appData_dcms").doc("shared"); }, fields:["cases","hearings","results","employees","dakIn","dakOut","tokens"], link:"../daily-case-management-system/" }
+];
+var LATEST_TOTALS = {};
+var LATEST_NOTIF_DATA = { pendingUsers: [], systemDeltas: [] };
+function notifSeenKey(){ return "notifSeenCounts_" + (CURRENT_UID || "anon"); }
+function loadSeenCounts(){
+  try{ return JSON.parse(localStorage.getItem(notifSeenKey())) || {}; }catch(e){ return {}; }
+}
+function saveSeenCounts(obj){
+  try{ localStorage.setItem(notifSeenKey(), JSON.stringify(obj)); }catch(e){}
+}
+function sumFields(data, fields){
+  var total = 0;
+  fields.forEach(function(f){ if(Array.isArray(data[f])) total += data[f].length; });
+  return total;
+}
+function loadNotifications(){
+  var seen = loadSeenCounts();
+  var firstRun = (Object.keys(seen).length === 0);
+  var totals = {};
+  var systemDeltas = [];
+  var tasks = [];
+
+  NOTIF_SYSTEMS.forEach(function(sys){
+    tasks.push(sys.doc().get().then(function(snap){
+      var data = snap.exists ? snap.data() : {};
+      var total = sumFields(data, sys.fields);
+      totals[sys.key] = total;
+      var prev = (seen[sys.key] !== undefined) ? seen[sys.key] : total;
+      if(total > prev){
+        systemDeltas.push({ labelEn: sys.labelEn, labelUr: sys.labelUr, delta: total - prev, link: sys.link });
+      }
+    }).catch(function(){ /* ignore read errors — treat as no change */ }));
+  });
+  tasks.push(db.collection("gallery_photos").get().then(function(qs){
+    var total = qs.size;
+    totals.gallery = total;
+    var prev = (seen.gallery !== undefined) ? seen.gallery : total;
+    if(total > prev){
+      systemDeltas.push({ labelEn:"Photo Gallery", labelUr:"فوٹو گیلری", delta: total - prev, link:"../camp-office-gallery/" });
+    }
+  }).catch(function(){}));
+
+  var isAdminUp = CURRENT_DOC && (CURRENT_DOC.roleV2 === "admin" || CURRENT_DOC.roleV2 === "super_admin");
+  var pendingUsersPromise = isAdminUp
+    ? db.collection("users").where("approvalStatus","==","pending").get().then(function(qs){
+        var arr = [];
+        qs.forEach(function(d){ arr.push(Object.assign({uid:d.id}, d.data())); });
+        return arr;
+      }).catch(function(){ return []; })
+    : Promise.resolve([]);
+
+  Promise.all(tasks).then(function(){
+    LATEST_TOTALS = totals;
+    if(firstRun){
+      saveSeenCounts(totals);
+      LATEST_NOTIF_DATA.systemDeltas = [];
+    } else {
+      LATEST_NOTIF_DATA.systemDeltas = systemDeltas;
+    }
+    return pendingUsersPromise;
+  }).then(function(pu){
+    LATEST_NOTIF_DATA.pendingUsers = pu || [];
+    renderNotifDot();
+    if(!document.getElementById("notifMenu").classList.contains("hidden")) renderNotifPanel();
+  });
+}
+function markSystemNotifsRead(){
+  saveSeenCounts(LATEST_TOTALS);
+  LATEST_NOTIF_DATA.systemDeltas = [];
+  renderNotifDot();
+  renderNotifPanel();
+}
+function renderNotifDot(){
+  var has = (LATEST_NOTIF_DATA.pendingUsers.length > 0) || (LATEST_NOTIF_DATA.systemDeltas.length > 0);
+  document.getElementById("notifDot").classList.toggle("hidden", !has);
+}
+function renderNotifPanel(){
+  var isUr = currentLang === "ur";
+  var list = document.getElementById("notifList");
+  var html = "";
+  LATEST_NOTIF_DATA.pendingUsers.forEach(function(u){
+    html += "<div class='notif-item'>"+
+      "<span class='ni-title'>"+(isUr? "نیا اکاؤنٹ درخواست — " : "New account request — ")+u.email+"</span>"+
+      "<span class='ni-sub'>"+(isUr? "منظوری کے لیے زیرِ التوا — " : "Awaiting approval — ")+
+      "<a href='#' data-open-admin='1'>"+(isUr? "یوزرز اینڈ ایکسیس کھولیں" : "Open Users &amp; Access")+"</a></span>"+
+      "</div>";
+  });
+  LATEST_NOTIF_DATA.systemDeltas.forEach(function(d){
+    var label = isUr ? d.labelUr : d.labelEn;
+    var countTxt = isUr ? (d.delta + " نئے اندراجات") : (d.delta + " new entr" + (d.delta===1? "y":"ies"));
+    html += "<div class='notif-item'>"+
+      "<span class='ni-title'>"+label+" — "+countTxt+"</span>"+
+      "<span class='ni-sub'><a href='"+d.link+"' target='_blank' rel='noopener'>"+(isUr? "دیکھیں" : "View")+"</a></span>"+
+      "</div>";
+  });
+  if(!html){
+    html = "<div class='notif-empty'>"+(isUr? "کوئی نئی اطلاع موجود نہیں۔" : "No new notifications.")+"</div>";
+  }
+  list.innerHTML = html;
+  list.querySelectorAll("[data-open-admin]").forEach(function(a){
+    a.addEventListener("click", function(e){
+      e.preventDefault();
+      document.getElementById("notifMenu").classList.add("hidden");
+      var panel = document.getElementById("adminPanel");
+      panel.classList.remove("hidden");
+      renderAdminPanel();
+      panel.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+  });
+}
 document.getElementById("notifBtn").addEventListener("click", function(e){
   e.stopPropagation();
-  alert(currentLang==="ur" ? "فی الحال کوئی نئی اطلاع موجود نہیں۔" : "No new notifications right now.");
+  document.getElementById("themeMenu2").classList.add("hidden");
+  var menu = document.getElementById("notifMenu");
+  var willOpen = menu.classList.contains("hidden");
+  menu.classList.toggle("hidden");
+  if(willOpen) renderNotifPanel();
+});
+document.getElementById("notifMenu").addEventListener("click", function(e){ e.stopPropagation(); });
+document.getElementById("notifMarkReadBtn").addEventListener("click", function(e){
+  e.stopPropagation();
+  markSystemNotifsRead();
 });
 
 /* Clock / date line */

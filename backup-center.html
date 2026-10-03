@@ -439,10 +439,24 @@ function renderLastBackupLine(){
    transient, per-user, real-time data with no lasting value to back up
    or restore, and restoring another user's presence doc would always
    be blocked by Firestore Rules (a user may only write their own). */
-var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages"];
+/* 3 Oct 2026: expanded to cover every real collection/shared-doc actually
+   written by the live systems (confirmed by grepping every repo, not just
+   this one folder) — previously this list missed Daily Cases, Case
+   Notices, Employee Directory, lookup lists, Contact Us, Help articles,
+   Advertisements, the Record Section, the Weekly Court Roster, the
+   Announcement banner, and the About page content, so "Download Full
+   Backup Now" was silently NOT backing up most of the office's real data. */
+var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages",
+  "cases","monthlyReports","caseNotices","employees","lookupLists",
+  "contacts","helpArticles","advertisements"];
 var KNOWN_SHARED_DOCS = [
   {collection:"appData_bill", doc:"shared", label:"bill_register"},
-  {collection:"appData_dcms", doc:"shared", label:"daily_case_management"}
+  {collection:"appData_dcms", doc:"shared", label:"daily_case_management"},
+  {collection:"appData_recordsection", doc:"shared", label:"record_section"},
+  {collection:"appData_weeklyroster", doc:"shared", label:"weekly_court_roster"},
+  {collection:"appData_case", doc:"shared", label:"legacy_case_notice_system"},
+  {collection:"appData_announcement", doc:"current", label:"announcement_banner"},
+  {collection:"siteContent", doc:"about", label:"about_page_content"}
 ];
 
 /* Reads every known collection/doc, downloads one JSON file, and logs the

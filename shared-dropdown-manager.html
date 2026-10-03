@@ -315,6 +315,28 @@ function uniqueKey(baseKey, existingKeys){
   return key;
 }
 
+/* ================= STATE =================
+   Moved to run BEFORE the i18n block below: applyUILang()/initUILang() calls
+   renderListTabs()/renderListPanel() immediately (as soon as the page loads,
+   even before sign-in), and those read LISTS -- so LISTS (and friends) must
+   already exist by then, or renderListTabs() throws "Cannot read properties
+   of undefined (reading 'forEach')" and the whole page is left blank with
+   nothing ever rendered, not even the login screen. */
+var CURRENT_USER = null;
+var CURRENT_ROLE = null;
+var IS_ADMIN = false;
+var LISTS = [];              /* current in-memory lists array */
+var SAVED_LISTS_JSON = "[]"; /* last-saved snapshot, to know if there are unsaved changes */
+var ACTIVE_KEY = null;       /* currently selected list key */
+var UNDO_STACK = [];
+var REDO_STACK = [];
+var SEED_BENCH = {
+  key: "bench",
+  nameEn: "Bench",
+  nameUr: "بینچ",
+  values: ["Bench - I", "Bench - II", "Bench - III", "Bench - IV", "Bench - V", "Bench - VI", "Bench - VII"]
+};
+
 /* ---------------- i18n ---------------- */
 var UI_LANG_STORAGE_KEY = "shareddropdowns_ui_lang";
 var I18N_UI = {
@@ -413,22 +435,6 @@ document.getElementById("uiLangSelect").addEventListener("change", function(){ a
   try{ saved = localStorage.getItem(UI_LANG_STORAGE_KEY) || "en"; }catch(e){}
   applyUILang(saved);
 })();
-
-/* ================= STATE ================= */
-var CURRENT_USER = null;
-var CURRENT_ROLE = null;
-var IS_ADMIN = false;
-var LISTS = [];              /* current in-memory lists array */
-var SAVED_LISTS_JSON = "[]"; /* last-saved snapshot, to know if there are unsaved changes */
-var ACTIVE_KEY = null;       /* currently selected list key */
-var UNDO_STACK = [];
-var REDO_STACK = [];
-var SEED_BENCH = {
-  key: "bench",
-  nameEn: "Bench",
-  nameUr: "بینچ",
-  values: ["Bench - I", "Bench - II", "Bench - III", "Bench - IV", "Bench - V", "Bench - VI", "Bench - VII"]
-};
 
 function cloneLists(lists){ return JSON.parse(JSON.stringify(lists)); }
 function hasUnsavedChanges(){ return JSON.stringify(LISTS) !== SAVED_LISTS_JSON; }
@@ -817,10 +823,21 @@ auth.onAuthStateChanged(function(user){
     CURRENT_USER = user;
     db.collection("users").doc(user.uid).get().then(function(snap){
       var d = snap.exists ? snap.data() : {};
-      CURRENT_ROLE = d.role || null;
-      IS_ADMIN = (CURRENT_ROLE === "admin" || CURRENT_ROLE === "super_admin");
+      /* (3 Oct 2026 fix) This used to read the OLD "role" field, which this
+         project's Firestore Rules no longer use at all -- the live rules file
+         reads only "roleV2". Worse, the actual security rule guarding writes
+         to appData_sharedDropdowns is isSuperAdmin() specifically (not the
+         wider isAdmin()), so a plain "admin" account would have been shown
+         the edit buttons by this page and then hit a silent permission-denied
+         error from Firestore the moment they pressed Save. Now this checks
+         roleV2 === "super_admin" plus the same approvalStatus/isActive
+         conditions the rules require (isApprovedActive()), so only accounts
+         that can actually save are shown the editor. */
+      CURRENT_ROLE = d.roleV2 || null;
+      var isApprovedActive = (d.approvalStatus === "approved") && (d.isActive !== false);
+      IS_ADMIN = (CURRENT_ROLE === "super_admin") && isApprovedActive;
       if(!IS_ADMIN){
-        /* Non-admins never load or render the shared dropdown data at all from this UI. */
+        /* Non-super-admins never load or render the shared dropdown data at all from this UI. */
         showScreen("noaccess");
         return;
       }

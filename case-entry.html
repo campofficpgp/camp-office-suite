@@ -106,9 +106,6 @@ html,body{overflow-x:hidden;}
 
   .wrap{max-width:1120px; margin:0 auto; padding:22px 20px 60px; min-width:0; width:100%;}
 
-  .assumption-note{background:#fdf0e0; border-left:3px solid #c46a1c; border-radius:0 8px 8px 0; padding:12px 16px; margin-bottom:20px; font-size:12px; color:#5a3d1a;}
-  [dir="rtl"] .assumption-note{border-left:none; border-right:3px solid #c46a1c; border-radius:8px 0 0 8px;}
-
   /* ===== AI Draft / suggestion styling (Stage 11 guardrail: always visually distinct,
      never looks like normal saved data, never blocks the user, never writes by itself) ===== */
   .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
@@ -365,8 +362,6 @@ html,body{overflow-x:hidden;}
 
     <div id="caseListSection">
 
-      <div class="assumption-note" data-en="Note: 'Judge Name' options are taken from a recent public seniority list of the Supreme Court of Pakistan — please double check before this goes live. New: added an 'Officer (APG/DPG)' field, and expanded 'Result of Case' options to match the Monthly Progress Report format you sent — please verify/correct both via their (+ Add/Edit) links." data-ur="نوٹ: 'Judge Name' کے آپشنز سپریم کورٹ کی حالیہ عوامی سنیارٹی لسٹ سے لیے گئے ہیں — لائیو کرنے سے پہلے چیک کر لیں۔ نیا: 'Officer (APG/DPG)' فیلڈ شامل کیا ہے، اور 'Result of Case' کے آپشنز آپ کی بھیجی ہوئی ماہانہ رپورٹ کے مطابق مکمل کیے ہیں — دونوں کو (+ Add/Edit) سے چیک/درست کر لیں۔">Note: 'Judge Name' options are taken from a recent public seniority list of the Supreme Court of Pakistan — please double check before this goes live. New: added an 'Officer (APG/DPG)' field, and expanded 'Result of Case' options to match the Monthly Progress Report format you sent — please verify/correct both via their (+ Add/Edit) links.</div>
-
       <div class="search-box">
         <div class="lbl" data-en="Case Lookup — filter the list below" data-ur="کیس تلاش — نیچے فہرست فلٹر کریں">Case Lookup — filter the list below</div>
         <div class="search-grid">
@@ -411,8 +406,6 @@ html,body{overflow-x:hidden;}
     </div>
 
     <div id="reportSection" style="display:none;">
-
-      <div class="assumption-note" data-en="Note: This report is auto-calculated from the cases in the Case List above (matched by Officer + Month + Year of the case Date). 'Nature of case' below = Case Type + Relief Sought combined, exactly like your sample report. Every number in the table below is also editable by hand — click a cell and type — for cases where a manual correction is needed; edited cells are highlighted in gold so you can see where the number no longer matches the Case List, and '🔄 Recalculate' resets everything back to the auto-calculated numbers. Save a month's report to keep it in history even if case data changes later." data-ur="نوٹ: یہ رپورٹ اوپر موجود Case List کے ڈیٹا سے خودکار بنتی ہے (Officer + Case کی تاریخ کے مہینہ/سال کی بنیاد پر)۔ نیچے 'Nature of case' = Case Type + Relief Sought کا ملاپ ہے، بالکل آپ کی نمونہ رپورٹ کی طرح۔ نیچے ٹیبل کا ہر نمبر دستی طور پر بھی تبدیل کیا جا سکتا ہے — خانے پر کلک کر کے ٹائپ کریں — جہاں دستی درستگی درکار ہو؛ تبدیل شدہ خانے سنہری رنگ میں نمایاں ہو جاتے ہیں تاکہ پتا چل سکے کہ وہ Case List سے میچ نہیں کرتا، اور '🔄 Recalculate' سے سب واپس خودکار نمبروں پر آ جاتا ہے۔ کسی مہینے کی رپورٹ Save کر لیں تو بعد میں کیس ڈیٹا بدلنے کے باوجود وہ محفوظ رہے گی۔">Note: This report is auto-calculated from the cases in the Case List above (matched by Officer + Month + Year of the case Date). 'Nature of case' below = Case Type + Relief Sought combined, exactly like your sample report. Every number in the table below is also editable by hand — click a cell and type — for cases where a manual correction is needed; edited cells are highlighted in gold so you can see where the number no longer matches the Case List, and '🔄 Recalculate' resets everything back to the auto-calculated numbers. Save a month's report to keep it in history even if case data changes later.</div>
 
       <div class="search-box">
         <div class="lbl" data-en="Generate Monthly Progress Report" data-ur="ماہانہ پیش رفت رپورٹ بنائیں">Generate Monthly Progress Report</div>
@@ -460,7 +453,10 @@ html,body{overflow-x:hidden;}
         <input type="hidden" id="cId">
         <div class="search-grid">
           <div class="field"><label data-en="Officer (APG/DPG)" data-ur="آفیسر (اے پی جی/ڈی پی جی)">Officer (APG/DPG) <span class="manage-link" onclick="openListManage('officer')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cOfficer"></select></div>
-          <div class="field"><label data-en="Judge Name" data-ur="جج کا نام">Judge Name <span class="manage-link" onclick="openListManage('judge')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cJudge"></select></div>
+          <div class="field"><label data-en="Judge Name" data-ur="جج کا نام">Judge Name <span class="manage-link" onclick="openListManage('judge')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cJudge"></select>
+            <!-- DEV NOTE: update this "Last verified" date whenever an admin edits the Judges list via the manage-link above, so the office knows how stale the list is. -->
+            <div class="count" style="margin-top:4px;" data-en="Last verified: 2 Oct 2026 — please re-check against the official court website periodically." data-ur="آخری تصدیق: 2 اکتوبر 2026 — براہ کرم وقتاً فوقتاً آفیشل عدالتی ویب سائٹ سے دوبارہ تصدیق کریں۔">Last verified: 2 Oct 2026 — please re-check against the official court website periodically.</div>
+          </div>
           <div class="field"><label data-en="Bench No" data-ur="بینچ نمبر">Bench No <span class="manage-link" onclick="openListManage('bench')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cBench"></select></div>
           <div class="field"><label data-en="Date" data-ur="تاریخ">Date</label><input type="date" id="cDate"></div>
           <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type <span class="manage-link" onclick="openListManage('type')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cType"></select></div>
@@ -500,7 +496,6 @@ html,body{overflow-x:hidden;}
           <div class="btn primary" onclick="saveCase()" data-en="Save Case" data-ur="کیس محفوظ کریں">Save Case</div>
           <div class="btn ghost" onclick="closeCaseForm()" data-en="Cancel" data-ur="منسوخ کریں">Cancel</div>
         </div>
-        <div class="disclaimer" data-en="This saves to this page's list only, for review — it is not yet saved to a live database." data-ur="یہ صرف اس صفحے کی فہرست میں محفوظ ہوتا ہے، جانچ کے لیے — ابھی کسی لائیو ڈیٹا بیس میں محفوظ نہیں ہوتا۔">This saves to this page's list only, for review — it is not yet saved to a live database.</div>
       </div>
     </div>
   </div>

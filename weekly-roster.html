@@ -384,7 +384,7 @@ html,body{overflow-x:hidden;}
     <div class="search-box">
       <div class="lbl" data-en="Select Week" data-ur="ہفتہ منتخب کریں">Select Week</div>
       <div class="search-grid">
-        <div class="field"><label data-en="Week Starting (Monday)" data-ur="ہفتہ شروع (پیر)">Week Starting (Monday)</label><input type="date" id="weekStart" value="2026-09-07"></div>
+        <div class="field"><label data-en="Week Starting (Monday)" data-ur="ہفتہ شروع (پیر)">Week Starting (Monday)</label><input type="date" id="weekStart"></div>
         <div class="field" style="display:flex; align-items:flex-end;"><div class="btn primary" onclick="buildWeek()" data-en="Build This Week's Grid" data-ur="اس ہفتے کا گرڈ بنائیں">Build This Week's Grid</div></div>
         <div class="field" style="display:flex; align-items:flex-end;"><div class="btn ghost" onclick="openSavedRosters()" data-en="📁 Saved Rosters" data-ur="📁 محفوظ شدہ روسٹرز">📁 Saved Rosters</div></div>
       </div>
@@ -1452,6 +1452,26 @@ html,body{overflow-x:hidden;}
     renderPageHeading();
     renderThemePicker();
     if(currentRoster) renderAll(currentRoster);
+  }
+
+  // Default "Week Starting (Monday)" to the most recent Monday on/before the real
+  // current date, computed fresh on every page load (never a hardcoded date, which
+  // would go stale). Only applied when the field has no value yet, so this never
+  // overrides a date the user already picked, or one set by the open-saved-roster
+  // flow (viewSavedRoster), which runs later via its own user-triggered event and
+  // sets the field itself.
+  function mostRecentMondayISO(){
+    var d = new Date();
+    var dayOfWeek = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    var daysSinceMonday = (dayOfWeek + 6) % 7; // 0 when today itself is Monday
+    d.setDate(d.getDate() - daysSinceMonday);
+    var y = d.getFullYear();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+  if(!document.getElementById('weekStart').value){
+    document.getElementById('weekStart').value = mostRecentMondayISO();
   }
 
   document.getElementById('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;

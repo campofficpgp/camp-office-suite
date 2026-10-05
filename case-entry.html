@@ -308,6 +308,16 @@ html,body{overflow-x:hidden;}
   }
 
 </style>
+<script>
+/* Embedded mode: when this page is opened inside another system (e.g. the Cases tab of
+   Daily Case Management as ?embed=1) hide the portal sidebar, top bar and footer so only
+   the entry form and the case list show. Normal opening is completely unchanged. */
+try{ if(/[?&]embed=1(&|$)/.test(location.search)) document.documentElement.classList.add('embedded'); }catch(e){}
+</script>
+<style>
+html.embedded .sidebar, html.embedded .sidebar-backdrop, html.embedded .topbar, html.embedded .app-footer{ display:none !important; }
+html.embedded .app-shell{ min-height:0; }
+</style>
 </head>
 <body>
 

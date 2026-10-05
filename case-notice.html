@@ -274,6 +274,7 @@ html,body{overflow-x:hidden;}
       </div>
       <nav class="sidebar-nav">
         <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <a class="nav-item" href="lookup.html" target="_top"><span class="ico">🔎</span><span class="label">Lookup</span></a>
         <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem active" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/daily-case-management-system/" target="_blank"><span class="ico">🗃️</span><span>Daily Case Mgmt</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
         <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
         <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
@@ -308,8 +309,8 @@ html,body{overflow-x:hidden;}
 <div class="wrap">
 
     <div class="search-box">
-      <div class="lbl" data-en="Notice Lookup — filter the list below" data-ur="نوٹس تلاش — نیچے فہرست فلٹر کریں">Notice Lookup — filter the list below</div>
-      <div class="search-grid">
+      <div class="lbl"><a href="lookup.html" target="_top" style="color:inherit;text-decoration:underline;" data-en="🔎 Search &amp; filter has moved to Lookup" data-ur="🔎 سرچ اور فلٹر اب Lookup میں ہے">🔎 Search &amp; filter has moved to Lookup</a></div>
+      <div class="search-grid" style="display:none;">
         <div class="field"><label data-en="By Case No" data-ur="کیس نمبر سے">By Case No</label><select id="byCaseNo"></select></div>
         <div class="field"><label data-en="By District" data-ur="ضلع سے">By District</label><select id="byDistrict"></select></div>
         <div class="field"><label data-en="By Police Station" data-ur="تھانہ سے">By Police Station</label><select id="byStation"></select></div>

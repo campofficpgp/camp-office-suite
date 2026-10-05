@@ -111,6 +111,10 @@ html,body{overflow-x:hidden;}
   .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
   [dir="rtl"] .ai-box{border-left:1px solid #c9b3ea; border-right:4px solid #7b3fd4; border-radius:8px 0 0 8px;}
   .ai-box.show{display:block;}
+  .relist-note{background:#eaf4ec; border:1px solid #9cc8a6; border-left:4px solid #2e7d4f; border-radius:0 8px 8px 0; padding:9px 14px; font-size:12.5px; color:#1f4a31;}
+  .relist-note.clash{background:#fdf0e6; border-color:#e3b58a; border-left-color:#c46a1c; color:#6b3a10;}
+  [dir="rtl"] .relist-note{border-left:1px solid #9cc8a6; border-right:4px solid #2e7d4f; border-radius:8px 0 0 8px;}
+  [dir="rtl"] .relist-note.clash{border-left-color:#e3b58a; border-right-color:#c46a1c;}
   .ai-box .ai-tag{display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:11px; color:#7b3fd4; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px;}
   .ai-box .ai-hint{font-size:11px; color:#6b5c8a; margin-top:6px; font-style:italic;}
   .ai-box ul{margin:4px 0 0; padding-left:18px;}
@@ -392,6 +396,7 @@ html,body{overflow-x:hidden;}
               <th data-en="Officer" data-ur="آفیسر">Officer</th>
               <th data-en="Judge Name" data-ur="جج کا نام">Judge Name</th>
               <th data-en="Bench No" data-ur="بینچ نمبر">Bench No</th>
+              <th data-en="Cause List Sr. No" data-ur="کاز لسٹ سیریل">Cause List Sr. No</th>
               <th data-en="Date" data-ur="تاریخ">Date</th>
               <th data-en="Nature of Case" data-ur="کیس کی نوعیت">Nature of Case</th>
               <th data-en="Result of Case" data-ur="کیس کا نتیجہ">Result of Case</th>
@@ -458,10 +463,12 @@ html,body{overflow-x:hidden;}
             <div class="count" style="margin-top:4px;" data-en="Last verified: 2 Oct 2026 — please re-check against the official court website periodically." data-ur="آخری تصدیق: 2 اکتوبر 2026 — براہ کرم وقتاً فوقتاً آفیشل عدالتی ویب سائٹ سے دوبارہ تصدیق کریں۔">Last verified: 2 Oct 2026 — please re-check against the official court website periodically.</div>
           </div>
           <div class="field"><label data-en="Bench No" data-ur="بینچ نمبر">Bench No <span class="manage-link" onclick="openListManage('bench')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cBench"></select></div>
+          <div class="field"><label data-en="Cause List Serial No" data-ur="کاز لسٹ سیریل نمبر">Cause List Serial No</label><input type="text" id="cSerial" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="e.g. 7"></div>
           <div class="field"><label data-en="Date" data-ur="تاریخ">Date</label><input type="date" id="cDate"></div>
           <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type <span class="manage-link" onclick="openListManage('type')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cType"></select></div>
-          <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="number" id="cCaseNo" placeholder="e.g. 142"></div>
+          <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="text" id="cCaseNo" autocomplete="off" maxlength="14" placeholder="e.g. 142 or 12345-L"></div>
           <div class="field"><label data-en="Year" data-ur="سال">Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cYear"></select></div>
+          <div class="field" style="grid-column:1 / -1; display:none;" id="relistNoteField"><div class="relist-note" id="relistNote"></div></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Title of Case" data-ur="کیس کا عنوان">Title of Case</label><input type="text" id="cTitle" placeholder="e.g. Muhammad Ali"></div>
           <div class="field" style="grid-column:1 / -1;">
             <label data-en="Versus" data-ur="بمقابلہ">Versus</label><input type="text" id="cVersus" placeholder="e.g. The State">
@@ -820,6 +827,7 @@ html,body{overflow-x:hidden;}
         '<td class="wrap-cell">'+E(c.officer || '—')+'</td>' +
         '<td class="wrap-cell">'+E(c.judge)+'</td>' +
         '<td>'+E(c.bench)+'</td>' +
+        '<td>'+E(c.serial || '—')+'</td>' +
         '<td>'+E(c.date || '—')+'</td>' +
         '<td>'+E(c.nature)+'</td>' +
         '<td><span class="result-pill '+resultClass(c.result)+'">'+E(c.result)+'</span></td>' +
@@ -864,6 +872,41 @@ html,body{overflow-x:hidden;}
     bb.forEach(function(g){ if(counts[g] > 0){ matches++; counts[g]--; } });
     return (2*matches) / (ba.length + bb.length);
   }
+
+  /* ---- Same case listed again (adjourned / fixed for another date) ---- */
+  function normCaseNo(v){ return String(v == null ? '' : v).replace(/\s+/g,'').toUpperCase(); }
+  function findSameCase(type, caseNo, year, excludeId){
+    var n = normCaseNo(caseNo);
+    if(!n) return [];
+    return CASES.filter(function(x){
+      return x.id !== excludeId && String(x.type) === String(type) &&
+             normCaseNo(x.caseNo) === n && String(x.year) === String(year);
+    });
+  }
+  function updateRelistNote(){
+    var box = document.getElementById('relistNote');
+    var holder = document.getElementById('relistNoteField');
+    if(!box || !holder) return;
+    var idVal = document.getElementById('cId').value;
+    var same = findSameCase(document.getElementById('cType').value, document.getElementById('cCaseNo').value,
+                            document.getElementById('cYear').value, idVal);
+    if(!same.length){ holder.style.display = 'none'; box.innerHTML = ''; return; }
+    var dates = same.map(function(x){ return x.date || '—'; }).sort().join(', ');
+    var thisDate = document.getElementById('cDate').value;
+    var clash = same.some(function(x){ return String(x.date || '') === String(thisDate || ''); });
+    box.className = 'relist-note' + (clash ? ' clash' : '');
+    box.innerHTML = clash
+      ? (isUrdu ? '⚠️ یہ کیس اسی تاریخ کے لیے پہلے سے درج ہے۔ ملتوی ہو کر دوبارہ لگا ہو تو تاریخ بدل دیں۔'
+                : '⚠️ This case is already entered for this date. If it was adjourned and listed again, change the Date.')
+      : (isUrdu ? 'ℹ️ یہ کیس پہلے ان تاریخوں پر درج ہے: ' + escapeAttr(dates) + '۔ اسے نئی پیشی کے طور پر محفوظ کیا جائے گا۔'
+                : 'ℹ️ This case was already entered on: ' + escapeAttr(dates) + '. It will be saved as a new hearing (relisted / adjourned).');
+    holder.style.display = '';
+  }
+  ['cType','cCaseNo','cYear','cDate'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', updateRelistNote);
+    el.addEventListener('change', updateRelistNote);
+  });
 
   var DUP_CONFIRMED = false; // set true only when the user explicitly clicks "Save Anyway"
   function findSimilarCases(title, versus, excludeId){
@@ -982,7 +1025,7 @@ html,body{overflow-x:hidden;}
   function openAddForm(){
     document.getElementById('cId').value = '';
     document.getElementById('formTitle').textContent = isUrdu ? 'نیا کیس شامل کریں' : 'Add New Case';
-    ['cCaseNo','cTitle','cVersus','cDate','cRemarks'].forEach(function(id){
+    ['cCaseNo','cSerial','cTitle','cVersus','cDate','cRemarks'].forEach(function(id){
       document.getElementById(id).value = '';
     });
     document.getElementById('cOfficer').selectedIndex = 0;
@@ -998,6 +1041,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('keyPointsBox').classList.remove('show');
     document.getElementById('aiSummaryBox').classList.remove('show');
     document.getElementById('aiSummaryContent').innerHTML = '';
+    updateRelistNote();
     document.getElementById('caseForm').classList.add('open');
   }
 
@@ -1009,6 +1053,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('cOfficer').value = c.officer || '';
     document.getElementById('cJudge').value = c.judge;
     document.getElementById('cBench').value = c.bench;
+    document.getElementById('cSerial').value = c.serial || '';
     document.getElementById('cDate').value = c.date;
     document.getElementById('cType').value = c.type;
     document.getElementById('cCaseNo').value = c.caseNo;
@@ -1024,6 +1069,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('aiSummaryBox').classList.remove('show');
     document.getElementById('aiSummaryContent').innerHTML = '';
     renderKeyPoints();
+    updateRelistNote();
     document.getElementById('caseForm').classList.add('open');
   }
 
@@ -1033,11 +1079,20 @@ html,body{overflow-x:hidden;}
 
   function saveCase(){
     var idVal = document.getElementById('cId').value;
-    var caseNo = document.getElementById('cCaseNo').value.trim();
+    var caseNo = normCaseNo(document.getElementById('cCaseNo').value);
     var title = document.getElementById('cTitle').value.trim();
     var year = document.getElementById('cYear').value;
     if(!caseNo || !title){
       alert(isUrdu ? 'کیس نمبر اور عنوان ضروری ہیں' : 'Case No and Title are required');
+      return;
+    }
+    /* Case No is a number, optionally followed by a short letter suffix such as "-L"
+       (e.g. 142 or 12345-L). A record saved earlier in some other shape can still be
+       edited as long as its Case No itself is left unchanged. */
+    var oldRec = idVal ? CASES.find(function(x){ return x.id === idVal; }) : null;
+    var caseNoUnchanged = oldRec && normCaseNo(oldRec.caseNo) === caseNo;
+    if(!caseNoUnchanged && !/^\d{1,8}(-[A-Z]{1,2})?$/.test(caseNo)){
+      alert(isUrdu ? 'کیس نمبر ایسا ہونا چاہیے: 142 یا 12345-L' : 'Case No should look like 142 or 12345-L');
       return;
     }
 
@@ -1045,6 +1100,7 @@ html,body{overflow-x:hidden;}
       officer: document.getElementById('cOfficer').value,
       judge: document.getElementById('cJudge').value,
       bench: document.getElementById('cBench').value,
+      serial: document.getElementById('cSerial').value.trim(),
       date: document.getElementById('cDate').value,
       type: document.getElementById('cType').value,
       caseNo: caseNo,
@@ -1058,12 +1114,17 @@ html,body{overflow-x:hidden;}
     };
 
     if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit cases'); return; }
-    var dup = CASES.some(function(x){ return String(x.caseNo) === caseNo && String(x.year) === String(year) && x.id !== idVal; });
-    if(dup){
-      alert(isUrdu ? 'یہ کیس نمبر اس سال میں پہلے سے موجود ہے' : 'This Case No already exists for that year');
+    /* The same case may legitimately be listed again (e.g. adjourned and fixed for next week),
+       so only an entry for the SAME case on the SAME date is blocked as a repeat. */
+    var sameCases = findSameCase(data.type, caseNo, year, idVal);
+    var sameDay = sameCases.filter(function(x){ return String(x.date || '') === String(data.date || ''); });
+    if(sameDay.length){
+      alert(isUrdu
+        ? 'یہ کیس اسی تاریخ (' + (data.date || '—') + ') کے لیے پہلے سے درج ہے۔ اگر کیس ملتوی ہو کر دوبارہ لگا ہے تو تاریخ بدل کر محفوظ کریں۔'
+        : 'This case is already entered for this date (' + (data.date || '—') + '). If it was adjourned and listed again, change the Date and save.');
       return;
     }
-    if(!DUP_CONFIRMED){
+    if(!DUP_CONFIRMED && !sameCases.length){
       var similar = findSimilarCases(title, data.versus, idVal);
       if(similar.length){
         showDupWarning(similar);

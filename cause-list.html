@@ -1081,18 +1081,27 @@ function undo(){ if(!HIST.length) return; FUT.push(snap()); setSnap(HIST.pop());
 function redo(){ if(!FUT.length) return; HIST.push(snap()); setSnap(FUT.pop()); changed(true); }
 var _dt = null;
 function writeDraft(){
-  try{ if(ST.rows.length) localStorage.setItem('clDraft_v1', JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, at:new Date().toISOString(), rid:RID})); }catch(e){}
+  try{ if(ST.rows.length) localStorage.setItem('clDraft_v1', JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, view:{day:VIEW.day, bench:VIEW.bench}, at:new Date().toISOString(), rid:RID})); }catch(e){ if(!window._dwarn){ window._dwarn = 1; showAct(bi('براؤزر میں مسودہ محفوظ نہیں ہو سکا — صفحہ ریفریش کیا تو PDF دوبارہ ڈالنی پڑے گی۔', 'Could not keep the draft in this browser — after a refresh you will need to upload the PDF again.'), 'err'); } }
 }
 function saveDraft(){ clearTimeout(_dt); _dt = setTimeout(writeDraft, 400); }
 window.addEventListener('pagehide', writeDraft);
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') writeDraft(); });
 function checkDraft(){
-  try{ var d = JSON.parse(localStorage.getItem('clDraft_v1') || 'null'); if(d && d.rows && d.rows.length && !ST.rows.length) $('draftBanner').style.display = ''; }catch(e){}
+  /* a refresh / coming back from another page brings the work back by itself */
+  try{
+    var d = JSON.parse(localStorage.getItem('clDraft_v1') || 'null');
+    if(d && d.rows && d.rows.length && !ST.rows.length){
+      restoreDraft(true);
+      var nm = d.fileName ? '<bdi dir="ltr">' + esc(d.fileName) + '</bdi>' : '';
+      showRead(bi('پچھلا کام خود بخود واپس آ گیا ' + (nm ? '(' + nm + ')' : '') + ' — PDF دوبارہ ڈالنے کی ضرورت نہیں۔ نئی فہرست کے لیے «New PDF» دبائیں۔', 'Your previous work was restored automatically — no need to upload the PDF again. Press “New PDF” for a new list.'), 'good');
+    }
+  }catch(e){}
 }
-function restoreDraft(){
+function restoreDraft(auto){
   try{
     var d = JSON.parse(localStorage.getItem('clDraft_v1'));
     ST.meta = d.meta; ST.rows = d.rows; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || ''; RID = Math.max(RID, d.rid || 0);
+    if(d.view){ VIEW.day = d.view.day || ''; VIEW.bench = d.view.bench || ''; }
     HIST = []; FUT = []; $('draftBanner').style.display = 'none'; changed(true);
   }catch(e){ showAct(bi('مسودہ بحال نہیں ہو سکا', 'Could not restore the draft'), 'err'); }
 }

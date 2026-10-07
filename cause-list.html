@@ -427,6 +427,14 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 .cl-day .cl-offsel select, .cl-bench .cl-offsel select{ font-size:13px; padding:6px 8px; font-weight:600; }
 @media(max-width:700px){ .cl-nav{ position:static; } }
 
+.cl-hist{ margin-top:6px; padding:6px 8px; border:1px dashed var(--border); border-radius:8px; background:rgba(0,0,0,.03); font-size:12px; line-height:1.9; }
+.cl-hist .hi{ display:inline-block; margin:1px 3px 1px 0; padding:1px 9px; border-radius:12px; border:1px solid var(--border); background:var(--card); }
+.cl-hist .hi.same{ border-color:#2e7d4f; background:#e8f5ec; color:#1b5e3a; }
+.cl-hist .hi.after{ border-color:#d33; background:#fde9e9; color:#8c1d18; }
+.cl-hist .hw{ margin-top:3px; padding:3px 8px; border-radius:6px; }
+.cl-hist .hw.r{ background:#fde9e9; color:#8c1d18; border:1px solid #e0a1a1; }
+.cl-hist .hw.y{ background:#fff7d6; color:#5c4500; border:1px solid #d9a400; }
+
 </style>
 </head><body>
 
@@ -1035,6 +1043,35 @@ function rowStatus(r){
 }
 function emptyRes(v){ return !v || v === '—'; }
 
+/* every earlier record of the same case (type+no+year), compared with this cause-list date */
+function histInfo(r){
+  var same = sameCaseRecs(r).slice().sort(function(a,b){ return String(a.date||'') < String(b.date||'') ? -1 : 1; });
+  if(!same.length) return null;
+  var o = {items:[], after:[], mism:[], pend:[]};
+  same.forEach(function(x){
+    var d = String(x.date || ''), pos = !d ? 'before' : d === r.iso ? 'same' : d < r.iso ? 'before' : 'after';
+    var res = emptyRes(x.result) ? '' : x.result;
+    o.items.push({pos:pos, date:d, res:res, off:x.officer ? shortOff(x.officer) : ''});
+    if(pos === 'after') o.after.push(d);
+    else if(pos === 'same' && res && r.result && res !== r.result) o.mism.push({date:d, res:res});
+    else if(pos === 'before' && !res) o.pend.push(d);
+  });
+  return o;
+}
+function dl(a){ return a.map(function(d){ return '<bdi dir="ltr">' + esc(dmyFromIso(d)) + '</bdi>'; }).join('، '); }
+function histHtml(r){
+  var o = histInfo(r); if(!o) return '';
+  var POS = {before:'پہلے', same:'اسی دن', after:'بعد میں'};
+  var h = '<div class="cl-hist no-print"><b><bdi dir="rtl">ڈیٹا بیس میں پرانا ریکارڈ</bdi>:</b> ';
+  o.items.forEach(function(it){
+    h += '<span class="hi ' + it.pos + '"><bdi dir="rtl">' + POS[it.pos] + '</bdi> · <bdi dir="ltr">' + esc(dmyFromIso(it.date) || '—') + '</bdi> · ' + (it.res ? esc(it.res) : '<i><bdi dir="rtl">نتیجہ خالی</bdi></i>') + (it.off ? ' · <bdi dir="ltr">' + esc(it.off) + '</bdi>' : '') + '</span> ';
+  });
+  if(o.after.length) h += '<div class="hw r"><bdi dir="rtl">⚠ اس لسٹ کی تاریخ سے بعد کی تاریخ بھی درج ہے (' + dl(o.after) + ') — ہو سکتا ہے کیس کو نئی تاریخ مل چکی ہو، دیکھ لیں۔</bdi></div>';
+  if(o.mism.length) h += '<div class="hw y"><bdi dir="rtl">⚠ اسی تاریخ پر ڈیٹا بیس میں نتیجہ «' + esc(o.mism[0].res) + '» ہے، یہاں «' + esc(r.result) + '» چنا ہے۔</bdi></div>';
+  if(o.pend.length) h += '<div class="hw y"><bdi dir="rtl">⚠ پچھلی تاریخ (' + dl(o.pend) + ') پر نتیجہ خالی ہے۔</bdi></div>';
+  return h + '</div>';
+}
+
 /* ---------- undo / redo / draft ---------- */
 function snap(){ return JSON.stringify({rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench}); }
 function setSnap(s){ var o = JSON.parse(s); ST.rows = o.rows; ST.offDay = o.offDay || {}; ST.offBench = o.offBench || {}; }
@@ -1085,10 +1122,9 @@ function rowHtml(r, first){
       if(r.force) h += '<button class="cl-flag r done" data-act="force">✓ Force entry (دوبارہ درج ہو گا)</button> ';
       else if(emptyRes(st.ex.result) && r.result) h += '<span class="cl-flag b">پہلے سے موجود — نتیجہ اپڈیٹ ہو گا</span> ';
       else h += '<span class="cl-flag g">✓ پہلے سے درج</span> <button class="cl-flag r" data-act="force">Force entry / زبردستی شامل</button> ';
-    } else if(st.others.length){
-      h += '<span class="cl-flag b" title="adjourned / relisted">پہلے درج: ' + esc(st.others.join(', ')) + '</span> ';
     }
     h += '</div>';
+    h += histHtml(r);
   }
   h += '</td>';
   h += '<td>' + esc(typeName(r.type) || r.type) + (r.natText ? '<span class="cl-sub">' + esc(r.natText) + '</span>' : '') + '</td>';
@@ -1135,7 +1171,7 @@ function render(){
   $('printTitle').innerHTML = '<h1>' + esc(pt) + ' — Punjab Prosecution Cases</h1><div>' + esc(rng) + ' &nbsp;|&nbsp; Punjab cases: ' + mineN + ' &nbsp;|&nbsp; Printed: ' + esc(dmyFromIso(new Date().toISOString().slice(0,10))) + '</div>';
 }
 function computeCounts(){
-  var c = {found:0, sel:0, exists:0, unc:0, nores:0, save:0, upd:0};
+  var c = {found:0, sel:0, exists:0, unc:0, nores:0, save:0, upd:0, hist:0};
   ST.rows.forEach(function(r){
     if(!r.mine) return;
     c.found++;
@@ -1146,6 +1182,7 @@ function computeCounts(){
     else c.save++;
     if(r.unc.length && !r.confirmed) c.unc++;
     if(!r.result) c.nores++;
+    var hi = histInfo(r); if(hi && (hi.after.length || hi.mism.length)) c.hist++;
   });
   return c;
 }
@@ -1157,6 +1194,7 @@ function stats(){
   if(c.exists) h += '<span class="cl-chip">' + bi('پہلے سے موجود', 'Already saved') + ': <b>' + c.exists + '</b></span>';
   if(c.upd) h += '<span class="cl-chip">' + bi('نتیجہ اپڈیٹ ہو گا', 'Result updates') + ': <b>' + c.upd + '</b></span>';
   if(c.unc) h += '<span class="cl-chip warn">' + bi('تصدیق باقی', 'To confirm') + ': <b>' + c.unc + '</b></span>';
+  if(c.hist) h += '<span class="cl-chip warn">' + bi('پرانا ریکارڈ دیکھیں', 'Check earlier record') + ': <b>' + c.hist + '</b></span>';
   if(c.nores) h += '<span class="cl-chip bad">' + bi('نتیجہ باقی', 'No result yet') + ': <b>' + c.nores + '</b></span>';
   $('stats').innerHTML = h;
 }
@@ -1376,6 +1414,7 @@ function startSave(){
   if(c.upd) h += bi2('<b>' + c.upd + '</b> موجود کیسوں میں نتیجہ بھرا جائے گا۔', '<b>' + c.upd + '</b> existing cases will get a result.');
   if(c.exists - c.upd > 0) h += bi2((c.exists - c.upd) + ' پہلے سے درج ہیں، چھوڑ دیے جائیں گے۔', (c.exists - c.upd) + ' already saved — skipped.');
   if(c.nores) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + c.nores + '</b> کا نتیجہ ابھی منتخب نہیں — خالی محفوظ ہوں گے؛ بعد میں یہیں نتیجہ بھر کر دوبارہ Save کر سکتے ہیں۔', '<b>' + c.nores + '</b> have no result yet — they will be saved blank; fill them later here and press Save again.') + '</div>';
+  if(c.hist) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.hist + '</b> کیسوں میں پرانے ریکارڈ کی تاریخ/نتیجہ مختلف ہے (بعد کی تاریخ یا مختلف نتیجہ) — محفوظ کرنے سے پہلے دیکھ لیں۔', '<b>' + c.hist + '</b> cases have a later date or a different result already saved — please review before saving.') + '</div>';
   if(c.unc) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.unc + '</b> کیس «تصدیق کریں» والے ابھی دیکھے نہیں گئے۔', '<b>' + c.unc + '</b> uncertain rows are not confirmed yet.') + '</div>';
   if(CTX.canLists && (newTypes.length || newJudges.length)){
     h += '<label style="display:block;margin-top:10px"><input type="checkbox" id="addListsChk" checked> ' + bi('فہرست میں نئی اقسام/جج شامل کریں', 'Add to the shared lists') + ': <bdi dir="ltr">' + esc(newTypes.concat(newJudges).join(', ')) + '</bdi></label>';

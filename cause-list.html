@@ -984,6 +984,7 @@ function visibleDays(){
   });
   return out;
 }
+function inView(r){ return (!VIEW.day || r.iso === VIEW.day) && (!VIEW.bench || r.bench === VIEW.bench); }
 function viewLabel(){
   return (VIEW.day ? dayName(VIEW.day) + ' ' + dmyFromIso(VIEW.day) : 'All days') + ' · ' + (VIEW.bench ? 'Bench ' + VIEW.bench : 'All benches');
 }
@@ -1175,6 +1176,7 @@ function computeCounts(){
   ST.rows.forEach(function(r){
     if(!r.mine) return;
     c.found++;
+    if(!inView(r)) return;
     if(!r.include) return;
     c.sel++;
     var st = rowStatus(r);
@@ -1189,6 +1191,7 @@ function computeCounts(){
 function stats(){
   var c = computeCounts(), h = '';
   h += '<span class="cl-chip">' + bi('PDF میں پنجاب', 'Punjab found') + ': <b>' + c.found + '</b></span>';
+  if(VIEW.day || VIEW.bench) h += '<span class="cl-chip warn">' + bi('صرف یہ دکھ رہے کیس محفوظ ہوں گے', 'Only the cases shown will be saved') + ': <bdi dir="ltr"><b>' + esc(viewLabel()) + '</b></bdi></span>';
   h += '<span class="cl-chip">' + bi('منتخب', 'Selected') + ': <b>' + c.sel + '</b></span>';
   h += '<span class="cl-chip ok">' + bi('نئے محفوظ ہوں گے', 'To save') + ': <b>' + c.save + '</b></span>';
   if(c.exists) h += '<span class="cl-chip">' + bi('پہلے سے موجود', 'Already saved') + ': <b>' + c.exists + '</b></span>';
@@ -1404,13 +1407,14 @@ function startSave(){
   if(!c.save && !c.upd){ showAct(bi('محفوظ کرنے کے لیے کوئی نیا کیس نہیں۔', 'Nothing new to save.'), ''); return; }
   var newTypes = [], newJudges = [];
   ST.rows.forEach(function(r){
-    if(!r.mine || !r.include) return;
+    if(!r.mine || !r.include || !inView(r)) return;
     var st = rowStatus(r); if(st.ex && !r.force) return;
     if(r.type && !typeKnown(r.type) && newTypes.indexOf(r.type) < 0) newTypes.push(r.type);
     var j = r.judges && r.judges[0] ? mapJudge(r.judges[0]) : '';
     if(j && !judgeKnown(j) && newJudges.indexOf(j) < 0) newJudges.push(j);
   });
-  var h = bi2('<b>' + c.save + '</b> نئے کیس محفوظ ہوں گے۔', '<b>' + c.save + '</b> new cases will be saved.');
+  var h = '<div style="margin-bottom:6px;padding:6px 10px;border-radius:8px;background:#eef4fa;border:1px solid #c5d6e6">' + bi('محفوظ ہونے والا حصہ', 'Part being saved') + ': <bdi dir="ltr"><b>' + esc(viewLabel()) + '</b></bdi>' + ((VIEW.day || VIEW.bench) ? '<br><span class="cl-sub">' + bi('باقی دن/بنچ محفوظ نہیں ہوں گے', 'other days/benches are NOT saved') + '</span>' : '') + '</div>';
+  h += bi2('<b>' + c.save + '</b> نئے کیس محفوظ ہوں گے۔', '<b>' + c.save + '</b> new cases will be saved.');
   if(c.upd) h += bi2('<b>' + c.upd + '</b> موجود کیسوں میں نتیجہ بھرا جائے گا۔', '<b>' + c.upd + '</b> existing cases will get a result.');
   if(c.exists - c.upd > 0) h += bi2((c.exists - c.upd) + ' پہلے سے درج ہیں، چھوڑ دیے جائیں گے۔', (c.exists - c.upd) + ' already saved — skipped.');
   if(c.nores) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + c.nores + '</b> کا نتیجہ ابھی منتخب نہیں — خالی محفوظ ہوں گے؛ بعد میں یہیں نتیجہ بھر کر دوبارہ Save کر سکتے ہیں۔', '<b>' + c.nores + '</b> have no result yet — they will be saved blank; fill them later here and press Save again.') + '</div>';
@@ -1427,7 +1431,7 @@ async function doSave(newTypes, newJudges){
   var addLists = CTX.canLists && $('addListsChk') && $('addListsChk').checked;
   var create = [], update = [];
   ST.rows.forEach(function(r){
-    if(!r.mine || !r.include) return;
+    if(!r.mine || !r.include || !inView(r)) return;
     var st = rowStatus(r);
     if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
     else create.push(r);

@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cause List Import — Camp Office PG Punjab</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#2A5A84; --navy2:#3d6f9c; --navy3:#1B3F63;
+    --gold:#B8860B; --gold-light:#d4a839; --gold-deep:#8a660a;
+    --bg:#F6F5F1; --card:#ffffff; --border:#E1DDD3; --text:#28394A; --muted:#647581;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+    --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar), same softened
+     navy/green/teal/ocean/sepia/contrast/night set used across the whole project (Dashboard /
+     Weekly Court Roster / Daily Case Entry / Case Notice). Navy is the default set in :root
+     above; the rest override the same tokens so every existing rule that already reads
+     var(--navy)/var(--gold)/etc. re-colors and re-shapes itself. */
+  body[data-theme="green"]{ /* Green */
+    --navy:#1a6b45; --navy2:#2f8a5c; --navy3:#12492f;
+    --gold:#C9A227; --gold-light:#ddbb52; --gold-deep:#9c7d1e;
+    --bg:#F6F8F6; --card:#ffffff; --border:#DEE6E0; --text:#233229; --muted:#5E6F64;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+    --sidebar-bg:#12492f; --sidebar-bg2:#1a6b45; --sidebar-text:#e8f2ec; --sidebar-muted:#a6c2b2;
+  }
+  body[data-theme="teal"]{ /* Teal */
+    --navy:#128f89; --navy2:#26a89f; --navy3:#0c655f;
+    --gold:#96762a; --gold-light:#b8934a; --gold-deep:#6f5720;
+    --bg:#F4F9F8; --card:#ffffff; --border:#DCEBE9; --text:#22302F; --muted:#5C7071;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:110deg;
+    --sidebar-bg:#0c655f; --sidebar-bg2:#128f89; --sidebar-text:#e6f4f2; --sidebar-muted:#a5cac6;
+  }
+  body[data-theme="ocean"]{ /* Ocean */
+    --navy:#1670a0; --navy2:#2a8cc4; --navy3:#0f4a6e;
+    --gold:#c9852a; --gold-light:#dba24f; --gold-deep:#9c6620;
+    --bg:#F2F8FB; --card:#ffffff; --border:#D8E9F0; --text:#1A3444; --muted:#5A7E8F;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:130deg;
+    --sidebar-bg:#0f4a6e; --sidebar-bg2:#1670a0; --sidebar-text:#e8f4fa; --sidebar-muted:#a8cfe0;
+  }
+  body[data-theme="sepia"]{ /* Sepia */
+    --navy:#6d5330; --navy2:#8a6c40; --navy3:#4a381f;
+    --gold:#a3742a; --gold-light:#c2924a; --gold-deep:#7d591f;
+    --bg:#f6efe0; --card:#fcf7ee; --border:#e5d9bd; --text:#42341f; --muted:#83725a;
+    --radius-lg:8px; --radius-sm:6px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:140deg;
+    --sidebar-bg:#4a381f; --sidebar-bg2:#6d5330; --sidebar-text:#f3e9d8; --sidebar-muted:#d0bd97;
+  }
+  body[data-theme="contrast"]{ /* High Contrast */
+    --navy:#111111; --navy2:#2a2a2a; --navy3:#000000;
+    --gold:#8a4b00; --gold-light:#b3661a; --gold-deep:#663700;
+    --bg:#fafafa; --card:#ffffff; --border:#1a1a1a; --text:#0a0a0a; --muted:#2e2e2e;
+    --radius-lg:6px; --radius-sm:4px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:180deg;
+    --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0;
+  }
+  body[data-theme="night"]{ /* Night */
+    --navy:#5b7bb0; --navy2:#7292c4; --navy3:#3f5580;
+    --gold:#d4a13d; --gold-light:#e0b968; --gold-deep:#a87f2c;
+    --bg:#181c26; --card:#232838; --border:#333a4e; --text:#dcdfe8; --muted:#96a0b8;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#12151f; --sidebar-bg2:#1e2436; --sidebar-text:#dcdfe8; --sidebar-muted:#96a0b8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:30px; height:30px; flex-shrink:0; display:inline-flex;}
+  .brand-logo svg{width:100%; height:100%; display:block;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:22px 20px 60px; min-width:0; width:100%;}
+
+  /* ===== AI Draft / suggestion styling (Stage 11 guardrail: always visually distinct,
+     never looks like normal saved data, never blocks the user, never writes by itself) ===== */
+  .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
+  [dir="rtl"] .ai-box{border-left:1px solid #c9b3ea; border-right:4px solid #7b3fd4; border-radius:8px 0 0 8px;}
+  .ai-box.show{display:block;}
+  .relist-note{background:#eaf4ec; border:1px solid #9cc8a6; border-left:4px solid #2e7d4f; border-radius:0 8px 8px 0; padding:9px 14px; font-size:12.5px; color:#1f4a31;}
+  .relist-note.clash{background:#fdf0e6; border-color:#e3b58a; border-left-color:#c46a1c; color:#6b3a10;}
+  [dir="rtl"] .relist-note{border-left:1px solid #9cc8a6; border-right:4px solid #2e7d4f; border-radius:8px 0 0 8px;}
+  [dir="rtl"] .relist-note.clash{border-left-color:#e3b58a; border-right-color:#c46a1c;}
+  .ai-box .ai-tag{display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:11px; color:#7b3fd4; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px;}
+  .ai-box .ai-hint{font-size:11px; color:#6b5c8a; margin-top:6px; font-style:italic;}
+  .ai-box ul{margin:4px 0 0; padding-left:18px;}
+  [dir="rtl"] .ai-box ul{padding-left:0; padding-right:18px;}
+  .ai-box li{margin-bottom:3px;}
+  .ai-box mark{background:#e6d9fa; color:#3d2a5c; padding:0 2px; border-radius:3px; font-weight:600;}
+  .ai-box .ai-dup-actions{margin-top:8px; display:flex; gap:8px;}
+  .ai-box .ai-dup-actions .btn{padding:5px 12px; font-size:11.5px;}
+
+  .tab-switch{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab-switch .btn{padding:10px 20px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+  .field textarea{resize:vertical; min-height:56px;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.gold{background:var(--gold); color:var(--navy3); border-color:var(--gold-deep);}
+  .btn.gold:hover{background:var(--gold-light);}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.case-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:1140px;}
+  table.case-table th{background:var(--navy); color:#fff; text-align:left; padding:10px 10px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.case-table td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; white-space:nowrap;}
+  table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
+  table.case-table tr:last-child td{border-bottom:none;}
+  table.case-table tr:hover td{background:#faf8f2;}
+  .result-pill{display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; white-space:nowrap;}
+  .result-pending{background:#fdf0e0; color:#9c5b0e;}
+  .result-allowed{background:#e6f6ea; color:#2c7a3d;}
+  .result-dismissed{background:#fdecec; color:#a33a3a;}
+  .result-leave{background:#e3ecfb; color:#1c4faa;}
+  .result-compromise{background:#f3e6fa; color:#7a2ea3;}
+  .result-other{background:#f0efe8; color:var(--muted);}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:720px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  /* Monthly Progress Report */
+  table.report-table{width:100%; border-collapse:collapse; background:var(--card); font-size:11.5px; min-width:900px;}
+  table.report-table th{background:var(--navy); color:#fff; text-align:center; padding:8px 8px; font-weight:600; font-size:10.5px;}
+  table.report-table td{padding:7px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:center; white-space:nowrap;}
+  table.report-table td.nature-cell{text-align:left; white-space:normal; min-width:190px; max-width:220px; font-weight:600;}
+  [dir="rtl"] table.report-table td.nature-cell{text-align:right;}
+  table.report-table tr.grand-total-row td{background:#efe9d8; font-weight:700;}
+  table.report-table tr:hover td{background:#faf8f2;}
+  table.report-table td.edited-cell{background:#fdf0d0;}
+  .cell-input{width:42px; text-align:center; border:1px solid var(--border); border-radius:4px; padding:3px 2px; font-size:11.5px; background:#fff;}
+  .cell-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .nature-input{width:150px; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:11.5px; font-weight:600; background:#fff;}
+  .nature-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .row-del{cursor:pointer; color:#a33a3a; font-weight:700; margin-left:6px; font-size:12px;}
+  [dir="rtl"] .row-del{margin-left:0; margin-right:6px;}
+  .report-legend{font-size:11px; color:var(--muted); margin-top:10px; display:flex; align-items:center; gap:6px;}
+  .report-legend .swatch{display:inline-block; width:12px; height:12px; background:#fdf0d0; border:1px solid var(--border); border-radius:3px;}
+  .report-meta{display:flex; flex-wrap:wrap; gap:18px; margin-bottom:14px; font-size:12.5px;}
+  .report-meta b{color:var(--navy);}
+  .saved-report-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:8px; font-size:12.5px; flex-wrap:wrap;}
+
+  .print-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:30px 34px; font-size:13px;}
+  .print-sheet .p-head{font-weight:700; font-size:15px; white-space:pre-line; line-height:1.4;}
+  .print-sheet .p-sub{font-size:12px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* Print letterhead (p-head/p-sub) is editable in place — same ✎ edit / ↺ reset pattern used in
+     the Weekly Court Roster and Case Notice tools, so it always shows the same office address. */
+  .print-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .print-sheet .p-head-row{margin-bottom:16px;}
+  .print-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .print-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .print-sheet .p-sub-row{margin-bottom:16px;}
+  .print-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .print-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .print-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:260px; font-family:inherit; text-align:center;}
+  .print-sheet .p-officer{display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; font-weight:600;}
+  .print-sheet .p-sign{display:flex; justify-content:space-between; align-items:flex-start; margin-top:24px; font-size:12.5px; gap:16px;}
+  /* Sign-off stamps: left = prepared by, right = approved by. Each is a small editable
+     Name/Designation/Office-Address block (✎ edit, ✕ clear). */
+  .print-sheet .p-stamp-block{flex:1; min-width:0;}
+  .print-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  [dir="rtl"] .print-sheet .p-stamp-block[data-side="right"]{text-align:left;}
+  .print-sheet .p-stamp-line{font-size:11.5px; color:var(--navy); line-height:1.5; white-space:pre-line;}
+  .print-sheet .p-stamp-line:first-child{font-weight:700;}
+  .print-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .print-sheet .p-stamp-icons{margin-top:4px;}
+  .print-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
+  .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+
+  [dir="rtl"] table.case-table th, [dir="rtl"] table.case-table td{text-align:right;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #reportPrintArea, #reportPrintArea *{visibility:visible;}
+    #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
+       to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
+       clips a wide report table. Let the body grow to the full width for the capture. */
+    html,body{overflow-x:visible !important;}
+    #reportPrintArea .heading-icon{display:none;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
+       own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
+       otherwise print completely blank with no explanation. Show a plain message instead. */
+    #reportPrintArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please use this page's own \"Print / Preview\" button first, then press Print inside that preview.\A براہ کرم پہلے اس صفحے کا اپنا \"Print / Preview\" بٹن کھولیں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+  #authGate, .userbar-ce{ display:none !important; }
+}
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
+.no-ai .needs-ai{ display:none !important; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+</style>
+<style>
+
+.wrap{max-width:1500px;}
+.cl-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
+.cl-head p{ margin:0; color:var(--muted); font-size:13px; }
+.cl-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; margin-bottom:14px; }
+.cl-drop{ border:2px dashed var(--navy2); border-radius:10px; padding:22px 14px; text-align:center; color:var(--muted); background:rgba(0,0,0,.02); cursor:pointer; }
+.cl-drop.over{ background:rgba(42,90,132,.10); }
+.cl-drop b{ color:var(--navy); font-size:15px; display:block; margin-bottom:4px; }
+.cl-btn{ padding:8px 14px; border-radius:6px; border:1px solid var(--navy); background:var(--navy); color:#fff; cursor:pointer; font-size:13px; font-family:inherit; line-height:1.3; }
+.cl-btn:hover{ filter:brightness(1.08); }
+.cl-btn.ghost{ background:transparent; color:var(--navy); }
+.cl-btn.gold{ background:var(--gold); border-color:var(--gold-deep); color:#fff; }
+.cl-btn.red{ background:#b3261e; border-color:#8c1d18; }
+.cl-btn.sm{ padding:4px 9px; font-size:12px; }
+.cl-btn[disabled]{ opacity:.45; cursor:not-allowed; filter:none; }
+.cl-bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.cl-bar + .cl-bar{ margin-top:10px; }
+.cl-sep{ width:1px; align-self:stretch; background:var(--border); margin:0 4px; }
+.cl-stats{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.cl-chip{ border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12.5px; background:var(--card); color:var(--text); }
+.cl-chip b{ color:var(--navy); }
+.cl-chip.warn{ border-color:#d9a400; background:#fff7d6; color:#5c4500; }
+.cl-chip.bad{ border-color:#d33; background:#fde9e9; color:#8c1d18; }
+.cl-chip.ok{ border-color:#2e7d4f; background:#e8f5ec; color:#1b5e3a; }
+.cl-msg{ margin-top:10px; font-size:13px; padding:9px 12px; border-radius:8px; background:#eef4fa; border:1px solid #c5d6e6; color:#1d3a57; }
+.cl-msg.err{ background:#fde9e9; border-color:#e0a1a1; color:#7a1a16; }
+.cl-msg.good{ background:#e8f5ec; border-color:#9cc8a6; color:#1b5e3a; }
+.cl-field label{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px; }
+.cl-field input, .cl-field select, .cl-field textarea{ width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; }
+.cl-sheet{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:16px; }
+.cl-day{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--navy3); color:#fff; padding:9px 14px; font-weight:700; font-size:15px; letter-spacing:.2px; }
+.cl-bench{ background:rgba(184,134,11,.14); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px 14px; font-size:13px; color:var(--text); }
+.cl-bench b{ color:var(--navy3); font-size:14px; }
+.cl-bench .jd{ color:var(--muted); }
+.cl-bench .sit{ display:inline-block; margin-inline-start:8px; padding:1px 9px; border-radius:12px; background:var(--navy); color:#fff; font-size:11.5px; }
+.cl-tw{ overflow-x:auto; }
+table.cl-t{ width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; min-width:1100px; }
+table.cl-t td{ overflow-wrap:break-word; }
+select.cl-res{ width:100%; min-width:0; }
+table.cl-t th{ background:var(--navy); color:#fff; padding:7px 8px; text-align:start; white-space:nowrap; font-size:12px; }
+table.cl-t td{ padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+table.cl-t tr.mine td{ background:rgba(255,236,150,.38); }
+table.cl-t tr.other td{ color:var(--muted); }
+table.cl-t tr.off td{ opacity:.45; }
+table.cl-t tr.block-start td{ border-top:2px solid var(--border); }
+.cl-sub{ display:block; color:var(--muted); font-size:11.5px; margin-top:2px; }
+.cl-c{ white-space:nowrap; font-weight:600; }
+.cl-flag{ display:inline-block; margin-top:4px; padding:2px 8px; border-radius:12px; font-size:11.5px; cursor:pointer; border:1px solid; font-family:inherit; }
+.cl-flag.y{ background:#fff3b0; border-color:#d9a400; color:#5c4500; }
+.cl-flag.y.done{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; }
+.cl-flag.r{ background:#fde9e9; border-color:#d33; color:#8c1d18; }
+.cl-flag.r.done{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; }
+.cl-flag.g{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; cursor:default; }
+.cl-flag.b{ background:#e7f0fb; border-color:#5b8fd0; color:#1d4a85; cursor:default; }
+select.cl-res{ padding:5px 6px; border:1.5px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12.5px; font-family:inherit; }
+select.cl-res.empty{ border-color:#d33; background:#fdecec; }
+.res-print{ display:none; }
+.cl-act{ white-space:nowrap; }
+.cl-act button{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:6px; cursor:pointer; padding:3px 7px; font-size:12px; }
+.cl-act button:hover{ background:rgba(0,0,0,.05); }
+.cl-empty{ padding:30px; text-align:center; color:var(--muted); }
+.cl-modal-bg{ position:fixed; inset:0; background:rgba(10,14,26,.55); z-index:9000; display:none; align-items:flex-start; justify-content:center; padding:20px 12px; overflow-y:auto; }
+.cl-modal-bg.show{ display:flex; }
+.cl-modal{ background:var(--card); color:var(--text); border-radius:12px; width:100%; max-width:640px; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+.cl-modal h3{ margin:0 0 12px; color:var(--navy); font-size:17px; }
+.cl-modal .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+.cl-modal .full{ grid-column:1/-1; }
+.cl-modal .foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
+.cl-print-title{ display:none; }
+.cl-note{ font-size:12px; color:var(--muted); margin:8px 2px; line-height:1.7; }
+
+@media print{
+  @page{ size:A4 landscape; margin:8mm; }
+  body *{ visibility:visible !important; }
+  html,body{ overflow:visible !important; background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .sidebar, .sidebar-backdrop, .topbar, .userbar-ce, .app-footer, .no-print, .cl-act, .cl-col-act, .cl-col-inc, .cl-flag-btns, #authGate, .cl-modal-bg{ display:none !important; }
+  .app-shell{ display:block; }
+  .main-col{ display:block; }
+  .wrap{ max-width:none !important; padding:0 !important; }
+  .cl-head, .cl-note{ display:none !important; }
+  table.cl-t tr.off{ display:none !important; }
+  select.cl-res{ min-width:0; }
+  .cl-print-title{ display:block; text-align:center; margin:0 0 6px; }
+  .cl-print-title h1{ margin:0; font-size:17px; color:#1B3F63; }
+  .cl-print-title div{ font-size:11px; color:#444; }
+  .cl-sheet{ border:none; border-radius:0; margin:0 0 6px; overflow:visible; }
+  .cl-day{ font-size:13px; padding:5px 8px; break-after:avoid; }
+  .cl-bench{ font-size:11px; padding:4px 8px; break-after:avoid; }
+  table.cl-t{ font-size:10.5px; min-width:0; }
+  table.cl-t thead{ display:table-header-group; }
+  table.cl-t tr{ break-inside:avoid; page-break-inside:avoid; }
+  table.cl-t th{ padding:4px 5px; font-size:10px; }
+  table.cl-t td{ padding:4px 5px; border-bottom:1px solid #bbb; }
+  .cl-tw{ overflow:visible; }
+  select.cl-res{ display:none !important; }
+  .res-print{ display:block; min-height:14px; }
+  .cl-flag{ display:none !important; }
+  .cl-day{ page-break-before:auto; }
+}
+@media(max-width:700px){
+  .cl-modal .grid{ grid-template-columns:1fr; }
+}
+
+.cl-offsel{ font-size:12px; font-weight:400; display:inline-flex; align-items:center; gap:6px; }
+.cl-offsel select{ padding:4px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12px; font-family:inherit; max-width:230px; }
+.cl-day .cl-offsel{ color:#fff; }
+select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12px; font-family:inherit; }
+.cl-offprint{ display:none; }
+@media print{ .cl-offprint{ display:inline; font-weight:600; } select.cl-off{ display:none !important; } }
+
+.cl-nav{ position:sticky; top:0; z-index:30; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:8px 12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.cl-nav:empty{ display:none; }
+.cl-navrow{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:3px 0; }
+.cl-navlab{ min-width:92px; font-size:12px; font-weight:700; color:var(--navy); }
+.cl-pill{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:20px; padding:5px 13px; font-size:13px; cursor:pointer; font-family:inherit; }
+.cl-pill i{ font-style:normal; font-size:11px; background:rgba(0,0,0,.08); border-radius:10px; padding:0 6px; margin-inline-start:3px; }
+.cl-pill:hover{ border-color:var(--navy); }
+.cl-pill.on{ background:var(--navy); color:#fff; border-color:var(--navy); font-weight:700; }
+.cl-pill.on i{ background:rgba(255,255,255,.25); }
+.cl-navrow select{ padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; min-width:210px; }
+.cl-navnote{ font-size:12px; color:var(--muted); margin-inline-start:auto; }
+.cl-day .cl-offsel select, .cl-bench .cl-offsel select{ font-size:13px; padding:6px 8px; font-weight:600; }
+@media(max-width:700px){ .cl-nav{ position:static; } }
+
+</style>
+</head><body>
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
+    <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label">Lookup</span></a>
+        <a class="nav-item active" href="cause-list.html"><span class="ico">📥</span><span class="label">Cause List Import</span></a>
+        <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html" target="_blank"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label" data-en="Portal" data-ur="پورٹل">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+      <div class="topbar">
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span>Cause List Import</span></div>
+    <div class="right-controls">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+    </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div class="user-chip-sm"><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
+  </div>
+<div class="wrap">
+
+  <div class="cl-head no-print">
+    <h2>Cause List Import — کاز لسٹ امپورٹ</h2>
+    <p>Final Cause List (current week): upload the PDF, keep only Punjab cases, choose results, then save to Daily Case Entry. &nbsp;|&nbsp; فائنل کاز لسٹ کی PDF اپ لوڈ کریں، صرف پنجاب کے کیس رکھیں، نتیجہ منتخب کریں، پھر یومیہ کیس انٹری میں محفوظ کریں۔</p>
+  </div>
+
+  <div id="draftBanner" class="cl-msg no-print" style="display:none; margin-bottom:12px;">
+    <span>پچھلا نامکمل کام ملا (محفوظ مسودہ) / An unfinished draft was found. </span>
+    <button class="cl-btn sm" onclick="restoreDraft()">بحال کریں / Restore</button>
+    <button class="cl-btn sm ghost" onclick="dropDraft()">حذف کریں / Discard</button>
+  </div>
+
+  <div class="cl-card no-print" id="uploadCard">
+    <div class="cl-drop" id="dropZone" onclick="document.getElementById('pdfFile').click()">
+      <b>① Final Cause List کی PDF یہاں ڈالیں یا کلک کر کے منتخب کریں</b>
+      Drop the Final Cause List PDF here, or click to choose &nbsp;·&nbsp; (PDF only)
+    </div>
+    <input type="file" id="pdfFile" accept="application/pdf,.pdf" style="display:none">
+    <div id="readMsg" class="cl-msg" style="display:none"></div>
+  </div>
+
+  <div class="cl-card no-print" id="toolCard" style="display:none">
+    <div class="cl-bar">
+      <button class="cl-btn" onclick="openAdd()">＋ Add / شامل</button>
+      <button class="cl-btn ghost" id="btnUndo" onclick="undo()">↶ Undo</button>
+      <button class="cl-btn ghost" id="btnRedo" onclick="redo()">↷ Redo</button>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost" onclick="selAll(true)">Select all / سب منتخب</button>
+      <button class="cl-btn ghost" onclick="selAll(false)">Clear / سب ہٹائیں</button>
+      <span class="cl-sep"></span>
+      <div class="cl-field" style="min-width:230px"><label for="officerSel">Officer for everything (optional) / سب کے لیے آفیسر</label>
+        <select id="officerSel"></select></div>
+    </div>
+    <div class="cl-stats" id="stats"></div>
+    <div class="cl-bar" style="margin-top:12px">
+      <button class="cl-btn gold" id="btnSave" onclick="startSave()">💾 Save to Daily Case Entry / محفوظ کریں</button>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost" onclick="doPrint()">🖨 Print / پرنٹ</button>
+      <button class="cl-btn ghost" onclick="exportFile('pdf')">⬇ PDF</button>
+      <button class="cl-btn ghost" onclick="exportFile('xlsx')">⬇ Excel</button>
+      <button class="cl-btn ghost" onclick="exportFile('docx')">⬇ Word</button>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost" onclick="newUpload()">New PDF / نئی PDF</button>
+    </div>
+    <div id="actMsg" class="cl-msg" style="display:none"></div>
+  </div>
+
+  <div class="cl-nav no-print" id="viewBar"></div>
+  <div class="cl-print-title" id="printTitle"></div>
+  <div id="sheets"></div>
+
+  <div class="cl-note no-print" id="helpNote">
+    <b>رنگوں کی وضاحت / Colours:</b> پیلی لائن = پنجاب کا کیس (یہی محفوظ ہو گا)؛ سرمئی لائن = اسی بلاک کے دوسرے جُڑے ہوئے کیس (محفوظ نہیں ہوں گے)؛
+    سرخ نتیجہ خانہ = ابھی نتیجہ منتخب نہیں ہوا؛ پیلا «تصدیق کریں» = پڑھائی میں شک ہے، دیکھ کر کلک کریں؛ سرخ «پہلے سے موجود» = اسی تاریخ کا یہی کیس پہلے درج ہے، ضرورت ہو تو Force entry دبائیں۔<br>
+    Nothing is saved until you press Save. &nbsp;|&nbsp; Save دبانے سے پہلے کچھ بھی ڈیٹا بیس میں نہیں جاتا۔
+  </div>
+
+  <!-- Edit / Add dialog -->
+  <div class="cl-modal-bg" id="editBg">
+    <div class="cl-modal">
+      <h3 id="editTitle">Edit / ترمیم</h3>
+      <div class="grid">
+        <div class="cl-field" id="fDateBox"><label>Date / تاریخ</label><input type="date" id="fDate"></div>
+        <div class="cl-field"><label>Bench / بنچ</label><select id="fBench"></select></div>
+        <div class="cl-field"><label>Serial No / سیریل</label><input id="fSr" placeholder="e.g. 15"></div>
+        <div class="cl-field"><label>Connected? / جُڑا ہوا نمبر</label><input id="fSub" placeholder="blank, or 2, 3 …"></div>
+        <div class="cl-field"><label>Case Type / کیس کی قسم</label><select id="fType"></select></div>
+        <div class="cl-field"><label>Case No / کیس نمبر</label><input id="fNo" placeholder="142 or 950-L"></div>
+        <div class="cl-field"><label>Year / سال</label><input id="fYear" maxlength="4" placeholder="2026"></div>
+        <div class="cl-field"><label>Bench type / بنچ کی قسم</label><select id="fBt"><option value=""></option><option>S.J.</option><option>D.B.</option><option>L.B.</option></select></div>
+        <div class="cl-field full"><label>Title / عنوان</label><input id="fTitle"></div>
+        <div class="cl-field full"><label>Versus / بنام</label><input id="fVersus"></div>
+        <div class="cl-field"><label>Nature text (from list) / نوعیت</label><input id="fNat"></div>
+        <div class="cl-field"><label>Section / دفعہ</label><input id="fSec"></div>
+        <div class="cl-field"><label>Result / نتیجہ</label><select id="fResult"></select></div>
+        <div class="cl-field"><label>Relief Sought / ریلیف</label><select id="fRelief"></select></div>
+        <div class="cl-field full"><label>Officer for this case / اس کیس کا آفیسر</label><select id="fOff"></select></div>
+        <div class="cl-field full"><label>Remarks / ریمارکس</label><input id="fRem"></div>
+        <div class="cl-field full" id="fSitBox"><label>Sitting / نشست (optional, e.g. After Noon Bench at 1:00 p.m.)</label><input id="fSit"></div>
+      </div>
+      <div class="foot">
+        <button class="cl-btn ghost" onclick="closeEdit()">Cancel / منسوخ</button>
+        <button class="cl-btn" onclick="applyEdit()">OK / ٹھیک ہے</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="cl-modal-bg" id="confBg">
+    <div class="cl-modal">
+      <h3 id="confTitle"></h3>
+      <div id="confBody" style="font-size:13.5px; line-height:1.9"></div>
+      <div class="foot">
+        <button class="cl-btn ghost" id="confNo">Back / واپس</button>
+        <button class="cl-btn gold" id="confYes">Confirm / تصدیق</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var isUrdu = false;
+  /* ================= Shared sidebar / mobile-drawer interactivity ================= */
+  (function(){
+    var sidebarEl = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    var mobileBtn = document.getElementById('mobileMenuBtn');
+    if(mobileBtn) mobileBtn.addEventListener('click', function(){
+      sidebarEl.classList.add('mobile-open'); backdrop.classList.add('show');
+    });
+    if(backdrop) backdrop.addEventListener('click', function(){
+      sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show');
+    });
+    document.querySelectorAll('.nav-group-head').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById(btn.dataset.group).classList.toggle('open');
+      });
+    });
+    document.querySelectorAll('.sidebar .nav-item:not(.disabled), .sidebar .nav-subitem').forEach(function(el){
+      el.addEventListener('click', function(){
+        if(window.innerWidth <= 960){ sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show'); }
+      });
+    });
+  })();
+
+  var PUNJAB_EMBLEM_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="var(--navy)" stroke="var(--gold)" stroke-width="2.2"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="0.6" opacity="0.55"/><circle cx="43" cy="27" r="8.5" fill="var(--gold-light)"/><circle cx="46.3" cy="24.3" r="7" fill="var(--navy)"/><g transform="translate(58,22) scale(0.62)"><path d="M0,-8 L2.3,-2.6 L8,-2.5 L3.4,1.2 L5,7 L0,3.6 L-5,7 L-3.4,1.2 L-8,-2.5 L-2.3,-2.6 Z" fill="var(--gold-light)"/></g><path d="M27,42 Q32.5,37.5 38,42 T49,42 T60,42 T71,42 T73,42" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,47 Q32.5,42.5 38,47 T49,47 T60,47 T71,47 T73,47" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,52 Q32.5,47.5 38,52 T49,52 T60,52 T71,52 T73,52" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,57 Q32.5,52.5 38,57 T49,57 T60,57 T71,57 T73,57" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="1"/><path d="M27,62 Q32.5,57.5 38,62 T49,62 T60,62 T71,62 T73,62" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/><path d="M63.16,93.03 Q67.40,84.90 59.23,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M63.98,91.14 Q64.62,90.98 65.43,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.98,91.14 Q63.54,90.64 63.27,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q65.15,88.60 65.85,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q63.94,88.47 63.44,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q65.20,86.15 65.75,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q63.91,86.27 63.17,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q64.78,83.65 65.13,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q63.46,84.02 62.48,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q63.89,81.10 64.03,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q62.56,81.71 61.39,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q62.53,78.52 62.48,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q61.23,79.34 59.87,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q75.07,79.88 69.75,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M65.86,89.79 Q66.52,89.85 67.52,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M65.86,89.79 Q65.61,89.17 65.70,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q68.86,86.35 69.89,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q67.81,85.74 67.78,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q70.58,82.88 71.58,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q69.38,82.41 69.18,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q71.67,79.45 72.58,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q70.33,79.16 69.90,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q72.11,76.04 72.87,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q70.66,76.01 69.96,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q71.90,72.68 72.43,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q70.39,72.94 69.40,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q80.94,73.74 75.68,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M67.33,88.16 Q67.99,88.24 69.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M67.33,88.16 Q67.10,87.54 67.22,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q71.60,83.21 72.65,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q70.57,82.57 70.60,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q74.37,78.31 75.42,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q73.20,77.75 73.09,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q76.31,73.52 77.31,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q74.99,73.11 74.68,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q77.39,68.84 78.27,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q75.95,68.65 75.39,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q77.61,64.27 78.30,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q76.08,64.35 75.24,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q32.60,84.90 40.77,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M36.02,91.14 Q36.46,90.64 36.73,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.02,91.14 Q35.38,90.98 34.57,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q36.06,88.47 36.56,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q34.85,88.60 34.15,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q36.09,86.27 36.83,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q34.80,86.15 34.25,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q36.54,84.02 37.52,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q35.22,83.65 34.87,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q37.44,81.71 38.61,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q36.11,81.10 35.97,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q38.77,79.34 40.13,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q37.47,78.52 37.52,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q24.93,79.88 30.25,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M34.14,89.79 Q34.39,89.17 34.30,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M34.14,89.79 Q33.48,89.85 32.48,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q32.19,85.74 32.22,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q31.14,86.35 30.11,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q30.62,82.41 30.82,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q29.42,82.88 28.42,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q29.67,79.16 30.10,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q28.33,79.45 27.42,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q29.34,76.01 30.04,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q27.89,76.04 27.13,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q29.61,72.94 30.60,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q28.10,72.68 27.57,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q19.06,73.74 24.32,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M32.67,88.16 Q32.90,87.54 32.78,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M32.67,88.16 Q32.01,88.24 31.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q29.43,82.57 29.40,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q28.40,83.21 27.35,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q26.80,77.75 26.91,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q25.63,78.31 24.58,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q25.01,73.11 25.32,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q23.69,73.52 22.69,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q24.05,68.65 24.61,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q22.61,68.84 21.73,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q23.92,64.35 24.76,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q22.39,64.27 21.70,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M45,84 Q50,80.5 55,84 Q52,87 50,90.5 Q48,87 45,84 Z" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="0.5"/><text x="50" y="73" font-size="8.5" fill="var(--gold-light)" text-anchor="middle">حکومتِ پنجاب</text></svg>';
+  var THEMES = [
+    { id:'navy', nameEn:'Navy', nameUr:'نیلا', navy:'#2A5A84', gold:'#B8860B' },
+    { id:'green', nameEn:'Green', nameUr:'سبز', navy:'#1a6b45', gold:'#C9A227' },
+    { id:'teal', nameEn:'Teal', nameUr:'ٹیل', navy:'#128f89', gold:'#96762a' },
+    { id:'ocean', nameEn:'Ocean', nameUr:'سمندری', navy:'#1670a0', gold:'#c9852a' },
+    { id:'sepia', nameEn:'Sepia', nameUr:'بھورا', navy:'#6d5330', gold:'#a3742a' },
+    { id:'contrast', nameEn:'Contrast', nameUr:'کنٹراسٹ', navy:'#111111', gold:'#8a4b00' },
+    { id:'night', nameEn:'Night', nameUr:'تاریک', navy:'#5b7bb0', gold:'#d4a13d' }
+  ];
+  var currentTheme = (function(){ try{ return localStorage.getItem('cmpTheme') || 'navy'; }catch(e){ return 'navy'; } })();
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){
+    document.getElementById('themePicker').classList.toggle('open');
+  }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    try{ localStorage.setItem('cmpTheme', id); }catch(e){}
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+/* ===== Cause List parser (reads text positions from pdf.js, no OCR) ===== */
+var CLParser = (function(){
+  var PGRE = /(Prosecutor General,?[^,;]*Punjab|P\.?\s?G\.?\s+Punjab|Addl\.?\s?P\.?\s?G\.?,?\s+Punjab|Additional Prosecutor General,? Punjab|PG Punjab|P G Punjab|Prosecutor General,?\s+Punjab)/i;
+  var CASERE = /^[A-Za-z][A-Za-z\.]*\.?\d+(?:-[A-Z])?\/\d{0,4}/;
+
+  /* items: [{s:'text', x:number, y:number(top from page top), h:fontSize}] for one page */
+  function pageRows(items){
+    var ws = items.filter(function(i){ return i.t.trim() !== '' && i.top > 38; });
+    ws.sort(function(a,b){ return (Math.round(a.top) - Math.round(b.top)) || (a.x - b.x); });
+    var rows = [];
+    ws.forEach(function(w){
+      var last = rows[rows.length-1];
+      if(last && Math.abs(last.top - w.top) < 3) last.w.push(w); else rows.push({top:w.top, w:[w]});
+    });
+    return rows;
+  }
+  /* pdf.js sometimes glues the title and the first lawyer line into one text piece; split it
+     at the point that lands on the lawyers column (estimated from the average character width). */
+  var AVGW = 0;
+  function calcAvg(pages){
+    var r = [];
+    pages.forEach(function(items){ items.forEach(function(i){ var t = i.t.trim(); if(t.length > 14 && i.w > 0) r.push(i.w / i.t.length); }); });
+    r.sort(function(a,b){ return a-b; });
+    AVGW = r.length ? r[Math.floor(r.length/2)] : 4.4;
+  }
+  function splitGlued(w, lawX){
+    var t = w.t;
+    if(!(w.w > 0) || w.x >= lawX - 6 || w.x + w.w < lawX + 30) return [w];
+    var parts = t.split(' '), best = null, pos = 0;
+    for(var k = 1; k < parts.length; k++){
+      pos += parts[k-1].length + 1;
+      var rightLen = t.length - pos;
+      var rx = w.x + w.w - rightLen * AVGW;
+      var d = Math.abs(rx - lawX);
+      if(best === null || d < best.d) best = {d:d, pos:pos, rx:rx};
+    }
+    if(!best || best.d > 28) return [w];
+    return [{t:t.slice(0, best.pos).trim(), x:w.x, top:w.top, w:w.w}, {t:t.slice(best.pos).trim(), x:lawX, top:w.top, w:0}];
+  }
+
+  /* Each entry's own first row tells where its columns start (they vary a little from entry to entry):
+     [serial] [case no ...] [parties/title ...] [lawyers ...] */
+  function toLines(pages){
+    var lines = [], cols = {c0:70, p:230, l:395};
+    calcAvg(pages);
+    pages.forEach(function(items, pi){
+      var rows = pageRows(items);
+      rows.forEach(function(r){
+        var ws = r.w.slice().sort(function(a,b){ return a.x - b.x; });
+        var first = ws[0], second = ws[1];
+        if(first && second && first.x < 50 && /^(?:\d+|and \(\d+\))$/.test(first.t.trim()) &&
+           second.x > 50 && second.x < 100 && CASERE.test(second.t.trim())){
+          var rest = ws.slice(2);
+          cols = {c0: second.x, p: cols.p, l: cols.l};
+          if(rest.length >= 2){ cols.p = rest[0].x; cols.l = rest[rest.length-1].x; }
+          else if(rest.length === 1){ if(rest[0].x < 330) cols.p = rest[0].x; else cols.l = rest[0].x; }
+        }
+        var c = ['','','',''];
+        var ws2 = []; ws.forEach(function(w){ splitGlued(w, cols.l).forEach(function(z){ ws2.push(z); }); });
+        ws2.forEach(function(w){
+          var x = w.x, k = x < cols.c0 - 6 ? 0 : x < cols.p - 6 ? 1 : x < cols.l - 6 ? 2 : 3;
+          c[k] += (c[k] ? ' ' : '') + w.t.trim();
+        });
+        lines.push([pi+1, c]);
+      });
+    });
+    return lines;
+  }
+  function joinc(c){ return c.filter(function(x){ return x; }).join(' '); }
+  function build(lines){
+    var out = [], cur = null, date = null, head = null, i = 0, n = lines.length, hidc = 0;
+    while(i < n){
+      var pn = lines[i][0], c = lines[i][1], full = joinc(c);
+      var m = full.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d\d-\w{3}-\d{4})/);
+      if(m){ date = m[2]; cur = null; i++; continue; }
+      var mb = full.match(/^BENCH - ([IVX]+)\b\s*(.*)$/);
+      if(mb && c[0].indexOf('BENCH') === 0){
+        var sitting = '', judges = [];
+        var take = function(s){ s = s.trim(); if(s.indexOf('JUSTICE') === 0) judges.push(s); else if(s.charAt(0) === '(') sitting = (sitting + ' ' + s).trim(); };
+        if(mb[2]) take(mb[2]);
+        var j = i + 1;
+        while(j < n){
+          var f = joinc(lines[j][1]);
+          if(/^(JUSTICE .*|\(.*\))$/.test(f)){ take(f); j++; } else break;
+        }
+        head = {bench: mb[1], sitting: sitting, judges: judges, hid: ++hidc}; cur = null; i = j; continue;
+      }
+      if(/^(FINAL|PROPOSED) CAUSE LIST|^Page \d+ of/.test(full) || /^BENCH - [IVX]+$/.test(full) || /^\d\d-\w{3}-\d{4}$/.test(full)){ i++; continue; }
+      var m0 = c[0].trim().match(/^(?:and \((\d+)\)|(\d+))$/);
+      if(m0 && /\d+(?:-[A-Z])?\/\d/.test(c[1])){
+        cur = {sr: m0[2] || null, sub: m0[1] || null, date: date, head: head || {bench:'',sitting:'',judges:[],hid:0}, page: pn, c1:[c[1]], c2:[c[2]], c3:[c[3]]};
+        out.push(cur);
+      } else if(cur){ cur.c1.push(c[1]); cur.c2.push(c[2]); cur.c3.push(c[3]); }
+      i++;
+    }
+    var res = [], msr = null;
+    out.forEach(function(e){
+      if(e.sr) msr = e.sr;
+      var c1 = e.c1.filter(function(x){ return x; });
+      var tok = c1.length ? c1[0].trim().split(/\s+/) : [''];
+      var caseno = tok[0];
+      var inWord = tok.slice(1).join(' ');
+      var mainCase = '', skip = 1;
+      if(inWord && /^in$/i.test(inWord) && c1[1] && CASERE.test(c1[1].trim())){ mainCase = c1[1].trim().split(/\s+/)[0]; skip = 2; }
+      var rest = c1.slice(skip).join(' ');
+      var mnat = rest.match(/\(([^()]*?\s\/\s[^()]*?)\)/);
+      var natText = mnat ? mnat[1].trim() : '';
+      if(!natText){
+        var m1 = rest.match(/^\s*\(([^()]*)\)/);
+        if(m1 && !/^(S\.J\.|D\.B\.|L\.B\.|[A-Z]\.B\.|C\.O\.|Ch\.O\.)$/.test(m1[1].trim())) natText = m1[1].trim();
+      }
+      natText = natText.replace(/Con- ?trol/g,'Control').replace(/- +/g,'-').replace(/\s*\/\s*/g,' / ').replace(/\s+/g,' ').trim();
+      var msec = rest.match(/\[([^\]]+)\]/);
+      var mbt = rest.match(/\((S\.J\.|D\.B\.|L\.B\.|[A-Z]\.B\.)\)/);
+      var title = e.c2.filter(function(x){ return x; }).join(' ');
+      var lawyers = e.c3.filter(function(x){ return x; }).join(' ');
+      res.push({idx:res.length, hid:e.head.hid, date:e.date, bench:e.head.bench, sitting:e.head.sitting, judges:e.head.judges, sr:msr, sub:e.sub, caseno:caseno, main:mainCase,
+        nature: natText, section: msec ? msec[1].trim() : '', bt: mbt ? mbt[1] : '',
+        title:title, lawyers:lawyers, pg: PGRE.test(lawyers), page:e.page});
+    });
+    return res;
+  }
+  function parseCaseNo(s){
+    var m = String(s||'').match(/^([A-Za-z][A-Za-z\.]*?)\.?(\d+(?:-[A-Z]{1,2})?)\/(\d{0,4})$/);
+    if(!m) return {type:'', no:'', year:''};
+    return {type:m[1].replace(/\.?$/,'.'), no:m[2], year:m[3]};
+  }
+  function meta(firstPageItems){
+    var txt = firstPageItems.map(function(i){ return i.t; }).join(' ');
+    var m = txt.match(/(FINAL|PROPOSED|SUPPLEMENTARY)\s+CAUSE\s+LIST\s+(\d+)\s+of\s+(\d{4})/i);
+    return m ? {kind:m[1].toUpperCase(), no:m[2], year:m[3]} : null;
+  }
+  return {meta:meta, toLines:toLines, build:build, parseCaseNo:parseCaseNo, PGRE:PGRE};
+})();
+if(typeof module !== 'undefined') module.exports = CLParser;
+
+
+/* =====================  CAUSE LIST IMPORT (Final list)  ===================== */
+var CASES = [];                     // live copy of the shared Daily Case Entry records
+var LISTS = {                       // same defaults as Daily Case Entry; replaced by the live lists when they load
+  judges: ['Justice Yahya Afridi (Chief Justice)','Justice Mansoor Ali Shah','Justice Muneeb Akhtar','Justice Ameenuddin Khan','Justice Jamal Khan Mandokhel','Justice Muhammad Ali Mazhar','Justice Ayesha A. Malik','Justice Athar Minallah','Justice Hasan Azhar Rizvi','Justice Shahid Waheed','Justice Musarrat Hilali','Justice Irfan Saadat Khan','Justice Naeem Akhtar Afghan','Justice Shehzad Malik','Justice Aqeel Ahmed Abbasi','Justice Shahid Bilal Hassan','Justice Muhammad Hashim Kakar','Justice Shafi Siddiqui'],
+  benches: ['I','II','III','IV','V','VI','VII','VIII','IX','X'],
+  types: ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','Other'],
+  natures: ['Criminal','Civil','Constitutional','Service','Tax','Property','Family','Banking','Other'],
+  results: ['Dismissed','Dismissed as W/D','Dismissed Infructuous','Dismissed DNP','Dismissed Abated','Allowed','Partly Allowed','Allowed though Compromise','Converted into Lessor Sentence','Leave Granted','Pending','Other'],
+  reliefs: ['Bail Before Arrest','Bail After Arrest','Interim Bail','Bail on Medical Grounds','Cancellation of Bail','Grant of Bail','Suspension of Sentence','Extension of Bail','Death Sentence','Life Imprisonment','Enhancement of Sentence','Acquittal','Setting Aside of Acquittal','Leave to Appeal','Revision Petition','Quashment of FIR/Proceedings','Other Sentence','Not Applicable','Other'],
+  officers: ['Tariq Siddique — APG','Ahmad Raza Gilani — APG','Rai Akhtar Hussain — APG','M. Irfan Zia — DPG','Ms. Memoona Ehsan Ul Haq — DPG','Sajjad Hussain — DPG','Mirza Abid Majeed — DPG']
+};
+var TYPE_NAMES = {
+  'J.P.':'Jail Petition', 'Crl.P.L.A.':'Criminal Petition for Leave to Appeal', 'Crl.A.':'Criminal Appeal',
+  'Crl.R.P.':'Criminal Review Petition', 'Crl.S.M.R.P.':'Criminal Suo Motu Review Petition', 'Crl.M.A.':'Criminal Misc. Application',
+  'Crl.O.P.':'Criminal Original Petition', 'C.A.':'Civil Appeal', 'C.P.L.A.':'Civil Petition for Leave to Appeal',
+  'C.M.A.':'Civil Misc. Application', 'C.R.P.':'Civil Review Petition', 'Const.P.':'Constitution Petition', 'C.P.':'Civil Petition'
+};
+var ROMAN = {I:1,II:2,III:3,IV:4,V:5,VI:6,VII:7,VIII:8,IX:9,X:10,XI:11,XII:12};
+var MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+var MONN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DAYN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+var ST = { meta:null, rows:[], fileName:'', offDay:{}, offBench:{} };
+var HIST = [], FUT = [];
+var VIEW = {day:'', bench:''};
+var RID = 0, EDIT_ID = null, ADD_MODE = false;
+var CTX = { user:null, canWrite:false, canLists:false };
+
+function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function $(id){ return document.getElementById(id); }
+function bi(ur, en){ return '<bdi dir="rtl">' + ur + '</bdi> <span style="opacity:.5">/</span> <bdi dir="ltr">' + en + '</bdi>'; }
+function bi2(ur, en){ return '<div dir="rtl" style="text-align:right">' + ur + '</div><div dir="ltr" style="text-align:left">' + en + '</div>'; }
+function normNo(v){ return String(v==null ? '' : v).replace(/\s+/g,'').toUpperCase(); }
+function normType(v){ return String(v||'').replace(/\./g,'').replace(/\s+/g,'').toLowerCase(); }
+function isoFromDmy(s){ var m = String(s||'').match(/^(\d\d)-(\w{3})-(\d{4})$/); return m && MON[m[2]] ? m[3] + '-' + ('0'+MON[m[2]]).slice(-2) + '-' + m[1] : ''; }
+function dmyFromIso(s){ var m = String(s||'').match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? m[3] + '-' + MONN[+m[2]-1] + '-' + m[1] : s; }
+function dayName(iso){ var m = String(iso).match(/^(\d{4})-(\d\d)-(\d\d)$/); return m ? DAYN[new Date(Date.UTC(+m[1], +m[2]-1, +m[3])).getUTCDay()] : ''; }
+function benchNum(b){ return ROMAN[b] || 99; }
+
+/* ---------- small helpers: text clean-up and mapping to Daily Case Entry fields ---------- */
+function titleCase(s){
+  return String(s||'').toLowerCase().replace(/(^|[\s\.\-\(])([a-z])/g, function(m, a, b){ return a + b.toUpperCase(); })
+    .replace(/\bHcj\b/g,'HCJ').replace(/\bJj\b/g,'JJ').replace(/\bIi\b/g,'II');
+}
+function judgeNice(raw){ return titleCase(String(raw||'').replace(/^\s*(MR\.?\s+)?JUSTICE\s+/i,'Justice ').replace(/\s+/g,' ').trim()); }
+function judgeTokens(s){
+  return String(s||'').toLowerCase().replace(/[^a-z\s]/g,' ').split(/\s+/).filter(function(w){ return w && ['justice','mr','mrs','ms','chief','hcj','cj','j','dr'].indexOf(w) < 0; });
+}
+function mapJudge(raw){
+  var t = judgeTokens(raw); if(!t.length) return judgeNice(raw);
+  var best = null, bs = 0;
+  LISTS.judges.forEach(function(j){
+    var jt = judgeTokens(j), common = t.filter(function(w){ return jt.indexOf(w) >= 0; }).length;
+    var score = common / Math.max(t.length, jt.length);
+    if(common >= 2 && score > bs){ bs = score; best = j; }
+  });
+  return best || judgeNice(raw);
+}
+function splitTitle(t){
+  var m = String(t||'').match(/^(.*?)\s+(?:v\.|vs\.?|v\/s)\s+(.*)$/i);
+  return m ? {title:m[1].trim(), versus:m[2].trim()} : {title:String(t||'').trim(), versus:''};
+}
+function joinTitle(title, versus){ return String(title||'').trim() + (versus && versus !== '—' ? ' v. ' + String(versus).trim() : ''); }
+function mapRelief(nt){
+  var a = String(nt||'').split('/')[0].trim().toLowerCase(), v = 'Other';
+  if(/^bail before arrest/.test(a)) v = 'Bail Before Arrest';
+  else if(/^bail after arrest/.test(a)) v = 'Bail After Arrest';
+  else if(/^against suspension/.test(a)) v = 'Other';
+  else if(/^life/.test(a)) v = 'Life Imprisonment';
+  else if(/^death/.test(a)) v = 'Death Sentence';
+  else if(/enhancement/.test(a)) v = 'Enhancement of Sentence';
+  else if(/against acquittal/.test(a)) v = 'Setting Aside of Acquittal';
+  else if(/^suspension of sentence/.test(a)) v = 'Suspension of Sentence';
+  else if(/^conviction/.test(a)) v = 'Other Sentence';
+  else if(/land acquisition/.test(a)) v = 'Not Applicable';
+  return LISTS.reliefs.indexOf(v) >= 0 ? v : (LISTS.reliefs.indexOf('Other') >= 0 ? 'Other' : '');
+}
+function mapNature(type){
+  var v = /^(Crl|J\.P)/i.test(type) ? 'Criminal' : 'Civil';
+  return LISTS.natures.indexOf(v) >= 0 ? v : '';
+}
+function typeName(t){ return TYPE_NAMES[t] || ''; }
+function caseText(r){ return (r.type || '') + (r.no || '') + (r.year ? '/' + r.year : ''); }
+function srText(r){ return r.sub ? 'and (' + r.sub + ')' : String(r.sr || ''); }
+function typeKnown(t){ return LISTS.types.some(function(x){ return normType(x) === normType(t); }); }
+function judgeKnown(j){ return LISTS.judges.indexOf(j) >= 0; }
+function validNo(n){ return /^\d{1,8}(-[A-Z]{1,2})?$/.test(normNo(n)); }
+
+/* ---------- build the working rows from the parsed PDF ---------- */
+function newRow(o){
+  var r = {
+    id:'r' + (++RID), iso:'', bench:'', sitting:'', judges:[], hid:0, sr:'', sub:'', type:'', no:'', year:'', main:'',
+    officer:'', title:'', versus:'', natText:'', section:'', bt:'', mine:true, include:true, result:'', relief:'', remarks:'', lawyers:'',
+    unc:[], confirmed:false, force:false, manual:false, idx:0
+  };
+  for(var k in o) r[k] = o[k];
+  return r;
+}
+function uncertainReasons(r){
+  var u = [];
+  if(!r.type || !r.no || !r.year || !validNo(r.no)) u.push('کیس نمبر واضح نہیں / Case number unclear');
+  if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title)) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
+  if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
+  if(!r.natText && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
+  return u;
+}
+function rowsFromParsed(list){
+  var blocks = {}, order = [];
+  list.forEach(function(e){
+    var key = [e.date, e.bench, e.hid, e.sr].join('|');
+    if(!blocks[key]){ blocks[key] = []; order.push(key); }
+    blocks[key].push(e);
+  });
+  var rows = [];
+  order.forEach(function(k){
+    var b = blocks[k];
+    if(!b.some(function(e){ return e.pg; })) return;
+    b.forEach(function(e){
+      var cn = CLParser.parseCaseNo(e.caseno), sp = splitTitle(e.title);
+      var r = newRow({
+        iso:isoFromDmy(e.date), bench:e.bench, sitting:e.sitting, judges:e.judges, hid:e.hid, sr:e.sr || '', sub:e.sub || '',
+        type:cn.type, no:cn.no, year:cn.year, main:e.main || '', title:sp.title, versus:sp.versus, natText:e.nature, section:e.section,
+        bt:e.bt, mine:!!e.pg, lawyers:e.lawyers, idx:e.idx
+      });
+      if(!cn.type && e.caseno){ r.type = e.caseno; }
+      r.relief = mapRelief(e.nature);
+      r.remarks = r.main ? 'IN ' + r.main : '';
+      if(r.mine) r.unc = uncertainReasons(r);
+      rows.push(r);
+    });
+  });
+  return rows;
+}
+
+/* ---------- officer: chosen per case, per bench, per day, or one for everything (most specific wins) ---------- */
+function benchKey(r){ return r.iso + '|' + r.bench + '|' + r.hid; }
+function inheritedOfficer(r){ return ST.offBench[benchKey(r)] || ST.offDay[r.iso] || ($('officerSel') ? $('officerSel').value : '') || ''; }
+function effOfficer(r){ return r.officer || inheritedOfficer(r); }
+function officerOptions(sel, blankLabel){
+  var list = LISTS.officers.slice(); if(sel && list.indexOf(sel) < 0) list.push(sel);
+  return '<option value="">' + esc(blankLabel) + '</option>' + list.map(function(o){ return '<option' + (o === sel ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
+}
+function shortOff(o){ return String(o || '').replace(/\s+—.*$/, ''); }
+
+/* ---------- grouping for display / export ---------- */
+function groupRows(){
+  var rows = ST.rows.slice().sort(function(a, b){
+    return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 :
+      (benchNum(a.bench) - benchNum(b.bench)) || (a.hid - b.hid) ||
+      ((parseInt(a.sr, 10) || 0) - (parseInt(b.sr, 10) || 0)) || ((parseInt(a.sub, 10) || 0) - (parseInt(b.sub, 10) || 0)) || (a.idx - b.idx);
+  });
+  var days = [], dayMap = {};
+  rows.forEach(function(r){
+    var d = dayMap[r.iso];
+    if(!d){ d = {iso:r.iso, benches:[]}; dayMap[r.iso] = d; days.push(d); }
+    var b = d.benches[d.benches.length - 1];
+    if(!b || b.bench !== r.bench || b.hid !== r.hid){
+      b = {bench:r.bench, hid:r.hid, sitting:r.sitting, judges:r.judges, rows:[]};
+      d.benches.push(b);
+    }
+    b.rows.push(r);
+  });
+  return days;
+}
+function effOfficerBench(b){ var r = b.rows[0]; return r ? (ST.offBench[benchKey(r)] || ST.offDay[r.iso] || '') : ''; }
+/* ---------- view filter: pick a day and/or a bench to see only that part (also used by print and downloads) ---------- */
+function visibleDays(){
+  var out = [];
+  groupRows().forEach(function(d){
+    if(VIEW.day && d.iso !== VIEW.day) return;
+    var bs = d.benches.filter(function(b){ return !VIEW.bench || b.bench === VIEW.bench; });
+    if(bs.length) out.push({iso:d.iso, benches:bs});
+  });
+  return out;
+}
+function viewLabel(){
+  return (VIEW.day ? dayName(VIEW.day) + ' ' + dmyFromIso(VIEW.day) : 'All days') + ' · ' + (VIEW.bench ? 'Bench ' + VIEW.bench : 'All benches');
+}
+function renderViewBar(){
+  if(!ST.rows.length){ $('viewBar').innerHTML = ''; return; }
+  var all = groupRows(), dayCnt = {}, benchCnt = {}, benchOrder = [];
+  all.forEach(function(d){
+    d.benches.forEach(function(b){
+      var n = b.rows.filter(function(r){ return r.mine; }).length;
+      dayCnt[d.iso] = (dayCnt[d.iso] || 0) + n;
+      if(!VIEW.day || VIEW.day === d.iso){ if(!(b.bench in benchCnt)){ benchCnt[b.bench] = 0; benchOrder.push(b.bench); } benchCnt[b.bench] += n; }
+    });
+  });
+  if(VIEW.day && !dayCnt[VIEW.day]) VIEW.day = '';
+  if(VIEW.bench && !(VIEW.bench in benchCnt)) VIEW.bench = '';
+  benchOrder.sort(function(x, y){ return benchNum(x) - benchNum(y); });
+  var total = 0; Object.keys(dayCnt).forEach(function(k){ total += dayCnt[k]; });
+  var h = '<div class="cl-navrow"><span class="cl-navlab">دن / Day</span><button class="cl-pill' + (!VIEW.day ? ' on' : '') + '" data-view="day" data-v="">All / سب <i>' + total + '</i></button>';
+  all.forEach(function(d){ h += '<button class="cl-pill' + (VIEW.day === d.iso ? ' on' : '') + '" data-view="day" data-v="' + esc(d.iso) + '">' + esc(dayName(d.iso).slice(0, 3)) + ' ' + esc(d.iso.slice(8, 10)) + ' <i>' + dayCnt[d.iso] + '</i></button>'; });
+  h += '</div><div class="cl-navrow"><span class="cl-navlab">بنچ / Bench</span><button class="cl-pill' + (!VIEW.bench ? ' on' : '') + '" data-view="bench" data-v="">All / سب</button>';
+  benchOrder.forEach(function(b){ h += '<button class="cl-pill' + (VIEW.bench === b ? ' on' : '') + '" data-view="bench" data-v="' + esc(b) + '">' + esc(b) + ' <i>' + benchCnt[b] + '</i></button>'; });
+  h += '</div><div class="cl-navrow"><span class="cl-navlab">آفیسر / Officer</span><select id="bulkOff">' + officerOptions('', '— choose officer —') + '</select>' +
+       '<button class="cl-btn sm gold" onclick="applyBulkOfficer()">دکھائے گئے سب پر لگائیں / Apply to all shown</button>' +
+       '<span class="cl-navnote">Showing / زیرِ نظر: <b>' + esc(viewLabel()) + '</b> — print &amp; downloads follow this view</span></div>';
+  $('viewBar').innerHTML = h;
+}
+function applyBulkOfficer(){
+  var o = $('bulkOff').value;
+  if(!o){ showAct(bi('پہلے اوپر سے آفیسر منتخب کریں۔', 'Choose an officer first.'), 'err'); return; }
+  pushHist();
+  var n = 0;
+  visibleDays().forEach(function(d){ d.benches.forEach(function(b){
+    ST.offBench[d.iso + '|' + b.bench + '|' + b.hid] = o;
+    b.rows.forEach(function(r){ if(r.mine){ r.officer = ''; n++; } });
+  }); });
+  showAct('✅ ' + bi(shortOff(o) + ' — ' + n + ' کیسوں پر لگ گیا (' + viewLabel() + ')', shortOff(o) + ' applied to ' + n + ' cases (' + viewLabel() + ')'), 'good');
+  changed();
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest('[data-view]'); if(!b) return;
+  if(b.dataset.view === 'day') VIEW.day = b.dataset.v; else VIEW.bench = b.dataset.v;
+  render();
+});
+function benchTitle(b){ return 'BENCH ' + b.bench; }
+function judgesText(b){ return (b.judges || []).map(judgeNice).join(' · '); }
+
+/* ---------- existing records (duplicates / relisted) ---------- */
+function sameCaseRecs(r){
+  var tn = normType(r.type), nn = normNo(r.no), y = String(r.year || '');
+  if(!nn) return [];
+  return CASES.filter(function(x){ return normType(x.type) === tn && normNo(x.caseNo) === nn && String(x.year) === y; });
+}
+function rowStatus(r){
+  var same = sameCaseRecs(r), ex = null, others = [];
+  same.forEach(function(x){ if(String(x.date||'') === r.iso) ex = ex || x; else others.push(x.date || '—'); });
+  return {ex:ex, others:others.sort()};
+}
+function emptyRes(v){ return !v || v === '—'; }
+
+/* ---------- undo / redo / draft ---------- */
+function snap(){ return JSON.stringify({rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench}); }
+function setSnap(s){ var o = JSON.parse(s); ST.rows = o.rows; ST.offDay = o.offDay || {}; ST.offBench = o.offBench || {}; }
+function pushHist(){ HIST.push(snap()); if(HIST.length > 200) HIST.shift(); FUT = []; }
+function undo(){ if(!HIST.length) return; FUT.push(snap()); setSnap(HIST.pop()); changed(true); }
+function redo(){ if(!FUT.length) return; HIST.push(snap()); setSnap(FUT.pop()); changed(true); }
+var _dt = null;
+function writeDraft(){
+  try{ if(ST.rows.length) localStorage.setItem('clDraft_v1', JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, at:new Date().toISOString(), rid:RID})); }catch(e){}
+}
+function saveDraft(){ clearTimeout(_dt); _dt = setTimeout(writeDraft, 400); }
+window.addEventListener('pagehide', writeDraft);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') writeDraft(); });
+function checkDraft(){
+  try{ var d = JSON.parse(localStorage.getItem('clDraft_v1') || 'null'); if(d && d.rows && d.rows.length && !ST.rows.length) $('draftBanner').style.display = ''; }catch(e){}
+}
+function restoreDraft(){
+  try{
+    var d = JSON.parse(localStorage.getItem('clDraft_v1'));
+    ST.meta = d.meta; ST.rows = d.rows; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || ''; RID = Math.max(RID, d.rid || 0);
+    HIST = []; FUT = []; $('draftBanner').style.display = 'none'; changed(true);
+  }catch(e){ showAct(bi('مسودہ بحال نہیں ہو سکا', 'Could not restore the draft'), 'err'); }
+}
+function dropDraft(){ try{ localStorage.removeItem('clDraft_v1'); }catch(e){} $('draftBanner').style.display = 'none'; }
+
+function showAct(msg, cls){ var b = $('actMsg'); b.className = 'cl-msg' + (cls ? ' ' + cls : ''); b.innerHTML = msg; b.style.display = msg ? '' : 'none'; }
+function showRead(msg, cls){ var b = $('readMsg'); b.className = 'cl-msg' + (cls ? ' ' + cls : ''); b.innerHTML = msg; b.style.display = msg ? '' : 'none'; }
+
+/* ---------- screen ---------- */
+function resultOptions(sel){
+  var h = '<option value="">— select —</option>';
+  var list = LISTS.results.slice(); if(sel && list.indexOf(sel) < 0) list.push(sel);
+  list.forEach(function(x){ h += '<option' + (x === sel ? ' selected' : '') + '>' + esc(x) + '</option>'; });
+  return h;
+}
+function rowHtml(r, first){
+  var st = rowStatus(r), cls = (r.mine ? 'mine' : 'other') + (r.mine && !r.include ? ' off' : '') + (first ? ' block-start' : '');
+  var h = '<tr class="' + cls + '" data-id="' + r.id + '">';
+  h += '<td class="cl-col-inc" style="width:30px">' + (r.mine ? '<input type="checkbox" data-act="inc" ' + (r.include ? 'checked' : '') + '>' : '') + '</td>';
+  h += '<td class="cl-c">' + esc(r.bench) + '</td>';
+  h += '<td class="cl-c">' + esc(srText(r)) + '</td>';
+  h += '<td class="cl-c">' + esc(caseText(r)) + (r.main ? '<span class="cl-sub">IN ' + esc(r.main) + '</span>' : '') + '</td>';
+  h += '<td>' + esc(joinTitle(r.title, r.versus));
+  if(r.mine){
+    h += '<div class="cl-flag-btns">';
+    if(r.unc.length) h += '<button class="cl-flag y' + (r.confirmed ? ' done' : '') + '" data-act="ok" title="' + esc(r.unc.join(' | ')) + '">' + (r.confirmed ? '✓ تصدیق ہو گئی' : '⚠ تصدیق کریں') + '</button> ';
+    if(st.ex){
+      if(r.force) h += '<button class="cl-flag r done" data-act="force">✓ Force entry (دوبارہ درج ہو گا)</button> ';
+      else if(emptyRes(st.ex.result) && r.result) h += '<span class="cl-flag b">پہلے سے موجود — نتیجہ اپڈیٹ ہو گا</span> ';
+      else h += '<span class="cl-flag g">✓ پہلے سے درج</span> <button class="cl-flag r" data-act="force">Force entry / زبردستی شامل</button> ';
+    } else if(st.others.length){
+      h += '<span class="cl-flag b" title="adjourned / relisted">پہلے درج: ' + esc(st.others.join(', ')) + '</span> ';
+    }
+    h += '</div>';
+  }
+  h += '</td>';
+  h += '<td>' + esc(typeName(r.type) || r.type) + (r.natText ? '<span class="cl-sub">' + esc(r.natText) + '</span>' : '') + '</td>';
+  h += '<td>' + esc(r.section) + '</td>';
+  h += '<td class="cl-c">' + esc(r.bt) + '</td>';
+  h += '<td>';
+  if(r.mine){
+    var inh = inheritedOfficer(r);
+    h += '<select class="cl-off" data-act="off">' + officerOptions(r.officer, inh ? '— ' + shortOff(inh) + ' —' : '— none —') + '</select><div class="res-print off-print">' + esc(shortOff(effOfficer(r))) + '</div>';
+  } else h += '<span class="cl-sub">—</span>';
+  h += '</td><td>';
+  if(r.mine){
+    h += '<select class="cl-res' + (!r.result ? ' empty' : '') + '" data-act="res">' + resultOptions(r.result) + '</select><div class="res-print">' + esc(r.result) + '</div>';
+  } else h += '<span class="cl-sub">—</span>';
+  h += '</td>';
+  h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit">✎</button> <button data-act="del" title="Remove from this import">🗑</button>' : '') + '</td>';
+  return h + '</tr>';
+}
+function render(){
+  var days = visibleDays(), h = '';
+  renderViewBar();
+  days.forEach(function(d){
+    h += '<div class="cl-sheet"><div class="cl-day"><span>' + esc(dayName(d.iso)) + ', ' + esc(dmyFromIso(d.iso)) + '</span>' +
+      '<span class="cl-offsel no-print"><bdi dir="rtl">اس دن کا آفیسر</bdi> / Officer for this day <select data-act="offday" data-iso="' + esc(d.iso) + '">' + officerOptions(ST.offDay[d.iso] || '', '— none —') + '</select></span></div>';
+    d.benches.forEach(function(b){
+      var bk = d.iso + '|' + b.bench + '|' + b.hid;
+      h += '<div class="cl-bench"><span class="cl-offsel no-print" style="float:right"><bdi dir="rtl">اس بنچ کا آفیسر</bdi> / Officer for this bench <select data-act="offbench" data-key="' + esc(bk) + '">' + officerOptions(ST.offBench[bk] || '', ST.offDay[d.iso] ? '— day: ' + shortOff(ST.offDay[d.iso]) + ' —' : '— none —') + '</select></span><b>' + esc(benchTitle(b)) + '</b>' + (b.sitting ? '<span class="sit">' + esc(b.sitting.replace(/^\(|\)$/g,'')) + '</span>' : '') +
+        (judgesText(b) ? '<br><span class="jd">' + esc(judgesText(b)) + '</span>' : '') + (effOfficerBench(b) ? '<span class="cl-offprint"> — Officer: ' + esc(effOfficerBench(b)) + '</span>' : '') + '</div>';
+      h += '<div class="cl-tw"><table class="cl-t"><colgroup><col class="cl-col-inc" style="width:32px"><col style="width:4%"><col style="width:5%"><col style="width:11%"><col style="width:19%"><col style="width:14%"><col style="width:9%"><col style="width:6.5%"><col style="width:13%"><col style="width:13%"><col class="cl-col-act" style="width:76px"></colgroup><thead><tr><th class="cl-col-inc"></th><th>Bench</th><th>Sr.</th><th>Case No</th><th>Title of Case</th><th>Nature</th><th>Section</th><th>B.Type</th><th>Officer</th><th>Result</th><th class="cl-col-act"></th></tr></thead><tbody>';
+      var prevSr = null;
+      b.rows.forEach(function(r){ h += rowHtml(r, prevSr !== null && prevSr !== r.sr); prevSr = r.sr; });
+      h += '</tbody></table></div>';
+    });
+    h += '</div>';
+  });
+  $('sheets').innerHTML = h || '<div class="cl-sheet"><div class="cl-empty">No rows. / کوئی کیس نہیں۔</div></div>';
+  stats();
+  $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length;
+  var mineN = 0; days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(r){ if(r.mine) mineN++; }); }); });
+  $('toolCard').style.display = ST.rows.length ? '' : 'none';
+  var pt = ST.meta ? (ST.meta.kind === 'FINAL' ? 'Final Cause List ' : ST.meta.kind + ' ') + ST.meta.no + ' of ' + ST.meta.year : 'Cause List';
+  var dts = days.map(function(d){ return d.iso; });
+  var rng = dts.length ? dmyFromIso(dts[0]) + (dts.length > 1 ? ' to ' + dmyFromIso(dts[dts.length-1]) : '') : '';
+  $('printTitle').innerHTML = '<h1>' + esc(pt) + ' — Punjab Prosecution Cases</h1><div>' + esc(rng) + ' &nbsp;|&nbsp; Punjab cases: ' + mineN + ' &nbsp;|&nbsp; Printed: ' + esc(dmyFromIso(new Date().toISOString().slice(0,10))) + '</div>';
+}
+function computeCounts(){
+  var c = {found:0, sel:0, exists:0, unc:0, nores:0, save:0, upd:0};
+  ST.rows.forEach(function(r){
+    if(!r.mine) return;
+    c.found++;
+    if(!r.include) return;
+    c.sel++;
+    var st = rowStatus(r);
+    if(st.ex && !r.force){ c.exists++; if(emptyRes(st.ex.result) && r.result) c.upd++; }
+    else c.save++;
+    if(r.unc.length && !r.confirmed) c.unc++;
+    if(!r.result) c.nores++;
+  });
+  return c;
+}
+function stats(){
+  var c = computeCounts(), h = '';
+  h += '<span class="cl-chip">' + bi('PDF میں پنجاب', 'Punjab found') + ': <b>' + c.found + '</b></span>';
+  h += '<span class="cl-chip">' + bi('منتخب', 'Selected') + ': <b>' + c.sel + '</b></span>';
+  h += '<span class="cl-chip ok">' + bi('نئے محفوظ ہوں گے', 'To save') + ': <b>' + c.save + '</b></span>';
+  if(c.exists) h += '<span class="cl-chip">' + bi('پہلے سے موجود', 'Already saved') + ': <b>' + c.exists + '</b></span>';
+  if(c.upd) h += '<span class="cl-chip">' + bi('نتیجہ اپڈیٹ ہو گا', 'Result updates') + ': <b>' + c.upd + '</b></span>';
+  if(c.unc) h += '<span class="cl-chip warn">' + bi('تصدیق باقی', 'To confirm') + ': <b>' + c.unc + '</b></span>';
+  if(c.nores) h += '<span class="cl-chip bad">' + bi('نتیجہ باقی', 'No result yet') + ': <b>' + c.nores + '</b></span>';
+  $('stats').innerHTML = h;
+}
+function changed(noHist){ render(); saveDraft(); }
+
+/* ---------- row actions ---------- */
+$('officerSel').addEventListener('change', function(){ changed(); });
+function rowById(id){ return ST.rows.filter(function(r){ return r.id === id; })[0]; }
+function selAll(v){ pushHist(); ST.rows.forEach(function(r){ if(r.mine) r.include = v; }); changed(); }
+document.addEventListener('click', function(e){
+  var el = e.target.closest('[data-act]'); if(!el || el.tagName === 'SELECT' || el.type === 'checkbox') return;
+  var tr = el.closest('tr'); if(!tr) return;
+  var r = rowById(tr.dataset.id); if(!r) return;
+  var a = el.dataset.act;
+  if(a === 'ok'){ pushHist(); r.confirmed = !r.confirmed; changed(); }
+  else if(a === 'force'){ pushHist(); r.force = !r.force; changed(); }
+  else if(a === 'del'){ pushHist(); ST.rows = ST.rows.filter(function(x){ return x.id !== r.id; }); changed(); }
+  else if(a === 'edit'){ openEdit(r.id); }
+});
+document.addEventListener('change', function(e){
+  var el = e.target.closest('[data-act]'); if(!el) return;
+  if(el.dataset.act === 'offday'){ pushHist(); if(el.value) ST.offDay[el.dataset.iso] = el.value; else delete ST.offDay[el.dataset.iso]; changed(); return; }
+  if(el.dataset.act === 'offbench'){ pushHist(); if(el.value) ST.offBench[el.dataset.key] = el.value; else delete ST.offBench[el.dataset.key]; changed(); return; }
+  var tr = el.closest('tr'); if(!tr) return;
+  var r = rowById(tr.dataset.id); if(!r) return;
+  if(el.dataset.act === 'off'){ pushHist(); r.officer = el.value; var pp = tr.querySelector('.off-print'); if(pp) pp.textContent = shortOff(effOfficer(r)); saveDraft(); $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length; return; }
+  if(el.dataset.act === 'inc'){ pushHist(); r.include = el.checked; changed(); }
+  else if(el.dataset.act === 'res'){
+    pushHist(); r.result = el.value;                       // light update: keeps the cursor where it is so results can be chosen quickly
+    el.classList.toggle('empty', !r.result);
+    var pr = tr.querySelector('.res-print:not(.off-print)'); if(pr) pr.textContent = r.result;
+    stats(); $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length; saveDraft();
+  }
+});
+
+/* ---------- edit / add dialog ---------- */
+function fillSelect(id, list, val, blank){
+  var l = list.slice(); if(val && l.indexOf(val) < 0) l.push(val);
+  $(id).innerHTML = (blank ? '<option value=""></option>' : '') + l.map(function(x){ return '<option' + (x === val ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+}
+function openDialog(r, add){
+  ADD_MODE = add; EDIT_ID = add ? null : r.id;
+  $('editTitle').textContent = add ? 'Add a case / نیا کیس شامل کریں' : 'Edit / ترمیم';
+  $('fDateBox').style.display = ''; $('fSitBox').style.display = add ? '' : 'none';
+  $('fDate').value = r.iso;
+  var bl = LISTS.benches.slice(); ['XI','XII'].forEach(function(x){ if(bl.indexOf(x) < 0 && r.bench === x) bl.push(x); });
+  fillSelect('fBench', bl, r.bench || 'I');
+  $('fSr').value = r.sr; $('fSub').value = r.sub;
+  fillSelect('fType', LISTS.types, r.type);
+  $('fNo').value = r.no; $('fYear').value = r.year; $('fBt').value = r.bt || '';
+  $('fTitle').value = r.title; $('fVersus').value = r.versus; $('fNat').value = r.natText; $('fSec').value = r.section;
+  $('fResult').innerHTML = resultOptions(r.result);
+  $('fRelief').innerHTML = '<option value=""></option>' + LISTS.reliefs.map(function(x){ return '<option' + (x === r.relief ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+  $('fOff').innerHTML = officerOptions(r.officer, '— same as bench/day —'); $('fRem').value = r.remarks; $('fSit').value = r.sitting ? r.sitting.replace(/^\(|\)$/g,'') : '';
+  $('editBg').classList.add('show');
+}
+function openEdit(id){ var r = rowById(id); if(r) openDialog(r, false); }
+function openAdd(){
+  var days = groupRows(), last = ST.rows.length ? ST.rows[ST.rows.length - 1] : null;
+  openDialog(newRow({iso:VIEW.day || (last ? last.iso : (days[0] ? days[0].iso : '')), bench:VIEW.bench || (last ? last.bench : 'I')}), true);
+}
+function closeEdit(){ $('editBg').classList.remove('show'); }
+function applyEdit(){
+  var no = normNo($('fNo').value), type = $('fType').value, year = $('fYear').value.trim(), title = $('fTitle').value.trim();
+  if(!no || !title){ alert('کیس نمبر اور عنوان ضروری ہیں / Case No and Title are required'); return; }
+  if(!validNo(no)){ alert('کیس نمبر ایسا ہونا چاہیے: 142 یا 12345-L / Case No should look like 142 or 12345-L'); return; }
+  if(!$('fDate').value){ alert('تاریخ ضروری ہے / Date is required'); return; }
+  pushHist();
+  var r;
+  if(ADD_MODE){
+    r = newRow({manual:true, mine:true, idx:100000 + (++RID)});
+    var iso = $('fDate').value, bench = $('fBench').value, sit = $('fSit').value.trim();
+    var sitText = sit ? '(' + sit + ')' : '';
+    var twin = ST.rows.filter(function(x){ return x.iso === iso && x.bench === bench && x.sitting === sitText; })[0] ||
+               ST.rows.filter(function(x){ return x.iso === iso && x.bench === bench; })[0];
+    r.iso = iso; r.bench = bench; r.sitting = twin ? twin.sitting : sitText; r.judges = twin ? twin.judges : []; r.hid = twin ? twin.hid : 9000 + benchNum(bench);
+    ST.rows.push(r);
+  } else r = rowById(EDIT_ID);
+  r.sr = $('fSr').value.trim(); r.sub = $('fSub').value.trim(); r.type = type; r.no = no; r.year = year;
+  r.bt = $('fBt').value; r.title = title; r.versus = $('fVersus').value.trim(); r.natText = $('fNat').value.trim(); r.section = $('fSec').value.trim();
+  r.result = $('fResult').value; r.relief = $('fRelief').value; r.remarks = $('fRem').value.trim(); r.officer = $('fOff').value;
+  if(!ADD_MODE){ r.bench = $('fBench').value; if($('fDate').value) r.iso = $('fDate').value; }
+  r.unc = uncertainReasons(r); r.confirmed = r.unc.length > 0; // the person has just looked at it
+  closeEdit(); changed();
+}
+
+/* ---------- loading libraries only when needed ---------- */
+var LIBS = {
+  pdflib:['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'],
+  jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'],
+  docx:['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js','https://unpkg.com/docx@9.7.1/dist/index.iife.js']
+};
+var LIBCHK = {pdflib:function(){ return window.PDFLib; }, jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; }};
+function addScript(src){ return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('load ' + src)); }; document.head.appendChild(s); }); }
+async function loadLib(name){
+  if(LIBCHK[name]()) return;
+  var err = null;
+  for(var i = 0; i < LIBS[name].length; i++){
+    try{ await addScript(LIBS[name][i]); if(LIBCHK[name]()) return; }catch(e){ err = e; }
+  }
+  throw err || new Error('library ' + name);
+}
+var PDFJS_BASES = ['https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/','https://unpkg.com/pdfjs-dist@6.2.108/build/'];
+async function loadPdfjs(){
+  if(window.__pdfjsMod) return window.__pdfjsMod;
+  var err = null;
+  for(var i = 0; i < PDFJS_BASES.length; i++){
+    try{
+      var mod = await import(PDFJS_BASES[i] + 'pdf.min.mjs');
+      var txt = await (await fetch(PDFJS_BASES[i] + 'pdf.worker.min.mjs')).text();
+      mod.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([txt], {type:'text/javascript'}));
+      window.__pdfjsMod = mod; return mod;
+    }catch(e){ err = e; }
+  }
+  throw err || new Error('pdf.js');
+}
+
+/* ---------- reading the PDF ---------- */
+async function readPdf(file){
+  if(!file) return;
+  showRead('⏳ ' + bi('PDF پڑھنے والا تیار ہو رہا ہے…', 'Preparing the reader…'));
+  try{
+    var pdfjs = await loadPdfjs();
+    var buf = await file.arrayBuffer();
+    var doc = await pdfjs.getDocument({data:new Uint8Array(buf)}).promise;
+    var pages = [];
+    for(var p = 1; p <= doc.numPages; p++){
+      var pg = await doc.getPage(p), H = pg.getViewport({scale:1}).height, tc = await pg.getTextContent();
+      pages.push(tc.items.filter(function(i){ return typeof i.str === 'string'; }).map(function(i){ return {t:i.str, x:i.transform[4], w:i.width, top:H - i.transform[5] - Math.abs(i.transform[3])}; }));
+      if(p % 4 === 0 || p === doc.numPages){ showRead('⏳ ' + bi('پڑھ رہا ہوں — صفحہ ' + p + ' از ' + doc.numPages, 'Reading page ' + p + ' of ' + doc.numPages + '…')); await new Promise(function(r){ setTimeout(r, 0); }); }
+    }
+    var meta = CLParser.meta(pages[0] || []);
+    if(!meta){ showRead('❌ ' + bi('یہ Cause List کی PDF نہیں لگتی۔', 'This does not look like a Cause List PDF.'), 'err'); return; }
+    if(meta.kind !== 'FINAL'){
+      showRead('ℹ️ ' + bi('یہ ' + esc(meta.kind) + ' CAUSE LIST ہے۔ ابھی صرف Final Cause List تیار ہے؛ باقی اگلے مرحلے میں آئیں گی۔', 'This is a ' + esc(meta.kind) + ' list. Only the Final Cause List is supported for now.'), 'err'); return;
+    }
+    var list = CLParser.build(CLParser.toLines(pages));
+    var punjab = list.filter(function(e){ return e.pg; }).length;
+    if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
+    ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = [];
+    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases'), 'good');
+    dropDraft(); changed();
+    window.scrollTo(0, 0);
+  }catch(err){
+    console.error(err);
+    showRead('❌ ' + bi('PDF نہیں پڑھی جا سکی۔ انٹرنیٹ چیک کریں اور دوبارہ کوشش کریں۔', 'Could not read the PDF. Check the internet and try again.') + '<br><small>' + esc(err && err.message ? err.message : err) + '</small>', 'err');
+  }
+}
+function newUpload(){
+  if(!ST.rows.length) return;
+  confirmBox('New PDF / نئی PDF', bi2('موجودہ فہرست اور یہاں منتخب کیے ہوئے نتیجے اسکرین سے ہٹ جائیں گے (جو محفوظ ہو چکے وہ ڈیٹا بیس میں رہیں گے)۔', 'The current list and any results chosen here will be cleared (anything already saved stays in the database).'), function(){
+    ST.rows = []; ST.meta = null; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; showRead(''); showAct(''); try{ localStorage.removeItem('clDraft_v1'); }catch(e){} changed(); $('pdfFile').value = '';
+  });
+}
+$('pdfFile').addEventListener('change', function(){ readPdf(this.files[0]); });
+(function(){
+  var z = $('dropZone');
+  ['dragenter','dragover'].forEach(function(n){ z.addEventListener(n, function(e){ e.preventDefault(); z.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(n){ z.addEventListener(n, function(e){ e.preventDefault(); z.classList.remove('over'); }); });
+  z.addEventListener('drop', function(e){ var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) readPdf(f); });
+})();
+
+/* ---------- confirm dialog ---------- */
+function confirmBox(title, html, yes, opt){
+  opt = opt || {};
+  $('confTitle').textContent = title; $('confBody').innerHTML = html;
+  $('confYes').style.display = opt.noYes ? 'none' : '';
+  $('confYes').textContent = opt.yesLabel || 'Confirm / تصدیق';
+  $('confNo').textContent = opt.noLabel || 'Back / واپس';
+  $('confBg').classList.add('show');
+  $('confNo').onclick = function(){ $('confBg').classList.remove('show'); };
+  $('confYes').onclick = function(){ $('confBg').classList.remove('show'); if(yes) yes(); };
+}
+
+/* ---------- saving to the shared Daily Case Entry records ---------- */
+function buildDoc(r, officer, withExtras){
+  var judgeRaw = (r.judges && r.judges[0]) || '';
+  var d = {
+    officer: officer || '',
+    judge: judgeRaw ? mapJudge(judgeRaw) : '',
+    bench: r.bench,
+    serial: r.sub ? (r.sr + ' (' + r.sub + ')').trim() : String(r.sr || ''),
+    date: r.iso,
+    type: r.type,
+    caseNo: normNo(r.no),
+    year: String(r.year || ''),
+    title: r.title,
+    versus: r.versus || '—',
+    nature: mapNature(r.type),
+    result: r.result || '',
+    relief: r.relief || '',
+    remarks: r.remarks || '—'
+  };
+  if(withExtras){
+    d.section = r.section || '';
+    d.benchType = r.bt || '';
+    d.natureText = r.natText || '';
+    d.benchJudges = (r.judges || []).map(judgeNice).join(' / ');
+    d.sitting = r.sitting ? r.sitting.replace(/^\(|\)$/g,'') : '';
+    d.source = 'cause-list-' + (ST.meta ? ST.meta.no + '-' + ST.meta.year : '');
+  }
+  return d;
+}
+function startSave(){
+  if(!CTX.canWrite){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
+  var c = computeCounts();
+  if(!c.save && !c.upd){ showAct(bi('محفوظ کرنے کے لیے کوئی نیا کیس نہیں۔', 'Nothing new to save.'), ''); return; }
+  var newTypes = [], newJudges = [];
+  ST.rows.forEach(function(r){
+    if(!r.mine || !r.include) return;
+    var st = rowStatus(r); if(st.ex && !r.force) return;
+    if(r.type && !typeKnown(r.type) && newTypes.indexOf(r.type) < 0) newTypes.push(r.type);
+    var j = r.judges && r.judges[0] ? mapJudge(r.judges[0]) : '';
+    if(j && !judgeKnown(j) && newJudges.indexOf(j) < 0) newJudges.push(j);
+  });
+  var h = bi2('<b>' + c.save + '</b> نئے کیس محفوظ ہوں گے۔', '<b>' + c.save + '</b> new cases will be saved.');
+  if(c.upd) h += bi2('<b>' + c.upd + '</b> موجود کیسوں میں نتیجہ بھرا جائے گا۔', '<b>' + c.upd + '</b> existing cases will get a result.');
+  if(c.exists - c.upd > 0) h += bi2((c.exists - c.upd) + ' پہلے سے درج ہیں، چھوڑ دیے جائیں گے۔', (c.exists - c.upd) + ' already saved — skipped.');
+  if(c.nores) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + c.nores + '</b> کا نتیجہ ابھی منتخب نہیں — خالی محفوظ ہوں گے؛ بعد میں یہیں نتیجہ بھر کر دوبارہ Save کر سکتے ہیں۔', '<b>' + c.nores + '</b> have no result yet — they will be saved blank; fill them later here and press Save again.') + '</div>';
+  if(c.unc) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.unc + '</b> کیس «تصدیق کریں» والے ابھی دیکھے نہیں گئے۔', '<b>' + c.unc + '</b> uncertain rows are not confirmed yet.') + '</div>';
+  if(CTX.canLists && (newTypes.length || newJudges.length)){
+    h += '<label style="display:block;margin-top:10px"><input type="checkbox" id="addListsChk" checked> ' + bi('فہرست میں نئی اقسام/جج شامل کریں', 'Add to the shared lists') + ': <bdi dir="ltr">' + esc(newTypes.concat(newJudges).join(', ')) + '</bdi></label>';
+  } else if(newTypes.length || newJudges.length){
+    h += '<span class="cl-sub">' + bi('فہرست میں نہیں ہیں؛ ایڈمن بعد میں شامل کر سکتا ہے', 'not in the lists yet; an admin can add them') + ': <bdi dir="ltr">' + esc(newTypes.concat(newJudges).join(', ')) + '</bdi></span>';
+  }
+  confirmBox('Save / محفوظ کریں', h, function(){ doSave(newTypes, newJudges); });
+}
+async function doSave(newTypes, newJudges){
+  var addLists = CTX.canLists && $('addListsChk') && $('addListsChk').checked;
+  var create = [], update = [];
+  ST.rows.forEach(function(r){
+    if(!r.mine || !r.include) return;
+    var st = rowStatus(r);
+    if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
+    else create.push(r);
+  });
+  showAct('⏳ ' + bi('محفوظ ہو رہا ہے…', 'Saving…'));
+  $('btnSave').disabled = true;
+  try{
+    var withExtras = true, stamp = firebase.firestore.FieldValue.serverTimestamp(), by = CTX.user.email;
+    async function commit(extras){
+      var all = create.map(function(r){ return {k:'c', r:r}; }).concat(update.map(function(u){ return {k:'u', u:u}; }));
+      for(var i = 0; i < all.length; i += 400){
+        var b = db.batch();
+        all.slice(i, i + 400).forEach(function(x){
+          if(x.k === 'c'){
+            var d = buildDoc(x.r, effOfficer(x.r), extras); d.createdBy = by; d.createdAt = stamp; d.updatedBy = by; d.updatedAt = stamp;
+            b.set(db.collection('cases').doc(), d);
+          } else {
+            var up = {result:x.u.result, updatedBy:by, updatedAt:stamp}; if(x.u.relief) up.relief = x.u.relief; if(x.u.officer) up.officer = x.u.officer;
+            b.update(db.collection('cases').doc(x.u.id), up);
+          }
+        });
+        await b.commit();
+      }
+    }
+    try{ await commit(true); }
+    catch(e){
+      if(e && e.code === 'permission-denied' && create.length){ withExtras = false; await commit(false); }
+      else throw e;
+    }
+    if(addLists && (newTypes.length || newJudges.length)){
+      try{
+        await db.collection('lookupLists').doc('caseEntry').set({
+          types: LISTS.types.concat(newTypes), judges: LISTS.judges.concat(newJudges), updatedBy: by, updatedAt: stamp
+        }, {merge:true});
+      }catch(e){ console.error('lists', e); }
+    }
+    showAct('✅ ' + bi(create.length + ' نئے کیس محفوظ ہو گئے' + (update.length ? '، ' + update.length + ' کے نتیجے اپڈیٹ ہوئے' : '') + '۔ یومیہ کیس انٹری میں دیکھ سکتے ہیں۔', create.length + ' cases saved' + (update.length ? ', ' + update.length + ' results updated' : '') + '. See them in Daily Case Entry.'), 'good');
+  }catch(err){
+    console.error(err);
+    showAct('❌ ' + bi('محفوظ نہیں ہو سکا', 'Could not save') + ': ' + esc(err && err.message ? err.message : err), 'err');
+  }
+  $('btnSave').disabled = false;
+}
+
+/* ---------- printing ---------- */
+function doPrint(){ window.print(); }
+
+
+/* =====================  DOWNLOADS: PDF / EXCEL / WORD  ===================== */
+function exportTitle(){
+  var pt = ST.meta ? (ST.meta.kind === 'FINAL' ? 'Final Cause List ' : ST.meta.kind + ' ') + ST.meta.no + ' of ' + ST.meta.year : 'Cause List';
+  return pt + ' — Punjab Prosecution Cases';
+}
+function exportFileBase(){
+  var suf = (VIEW.day ? '_' + VIEW.day : '') + (VIEW.bench ? '_Bench_' + VIEW.bench : '');
+  return 'Cause_List_' + (ST.meta ? ST.meta.no + '_of_' + ST.meta.year : 'Punjab') + '_Punjab_Cases' + suf;
+}
+/* what is printed/downloaded = what is on screen, minus rows that were un-ticked */
+function exportModel(){
+  var keep = {};
+  ST.rows.forEach(function(r){ if(r.mine && r.include) keep[[r.iso, r.bench, r.hid, r.sr].join('|')] = true; });
+  var days = [];
+  visibleDays().forEach(function(d){
+    var benches = [];
+    d.benches.forEach(function(b){
+      var rows = b.rows.filter(function(r){ return keep[[r.iso, r.bench, r.hid, r.sr].join('|')] && (!r.mine || r.include); });
+      if(rows.length) benches.push({bench:b.bench, sitting:(b.sitting || '').replace(/^\(|\)$/g,''), judges:judgesText(b), rows:rows.map(function(r){
+        return {bench:r.bench, sr:srText(r), caseNo:caseText(r), caseSub:r.main ? 'IN ' + r.main : '', title:joinTitle(r.title, r.versus),
+          nature:typeName(r.type) || r.type, natSub:r.natText, section:r.section, bt:r.bt, officer:r.mine ? effOfficer(r) : '', result:r.result, mine:r.mine, r:r};
+      })});
+    });
+    if(benches.length) days.push({label:dayName(d.iso) + ', ' + dmyFromIso(d.iso), iso:d.iso, benches:benches});
+  });
+  return days;
+}
+function modelCount(days){ var n = 0; days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(r){ if(r.mine) n++; }); }); }); return n; }
+function subLine(days){
+  var f = days.length ? days[0].iso : '', l = days.length ? days[days.length-1].iso : '';
+  return (f ? dmyFromIso(f) + (l !== f ? ' to ' + dmyFromIso(l) : '') : '') + '   |   Punjab cases: ' + modelCount(days) + '   |   Prepared: ' + dmyFromIso(new Date().toISOString().slice(0,10));
+}
+function downloadBlob(blob, name){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+async function exportFile(kind){
+  var days = exportModel();
+  if(!days.length){ showAct(bi('ڈاؤن لوڈ کے لیے کوئی کیس منتخب نہیں۔', 'No selected cases to download.'), 'err'); return; }
+  showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
+  try{
+    if(kind === 'pdf'){ await loadLib('pdflib'); downloadBlob(new Blob([await buildPdf(days)], {type:'application/pdf'}), exportFileBase() + '.pdf'); }
+    else if(kind === 'xlsx'){ await loadLib('jszip'); downloadBlob(await buildXlsx(days), exportFileBase() + '.xlsx'); }
+    else { await loadLib('docx'); downloadBlob(await buildDocx(days), exportFileBase() + '.docx'); }
+    showAct('✅ ' + bi('فائل تیار ہو گئی — ڈاؤن لوڈ فولڈر دیکھیں۔', 'File ready — check your Downloads folder.'), 'good');
+  }catch(err){
+    console.error(err);
+    showAct('❌ ' + bi('فائل نہیں بن سکی', 'Could not build the file') + ': ' + esc(err && err.message ? err.message : err), 'err');
+  }
+}
+
+/* ---------------- PDF (pdf-lib) ---------------- */
+function san(s){
+  return String(s == null ? '' : s).replace(/[‘’‛]/g,"'").replace(/[“”]/g,'"').replace(/[–—−]/g,'-')
+    .replace(/ /g,' ').replace(/[​-‏‪-‮]/g,'').replace(/[^\x20-\x7E¡-ÿ]/g,'?');
+}
+async function buildPdf(days){
+  var L = PDFLib, doc = await L.PDFDocument.create();
+  var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold);
+  var PW = 841.89, PH = 595.28, M = 24, FOOT = 20;
+  var cols = [{h:'Bench',w:34},{h:'Sr.',w:34},{h:'Case No',w:100},{h:'Title of Case',w:192},{h:'Nature',w:125},{h:'Section',w:84},{h:'B.Type',w:32},{h:'Officer',w:93},{h:'Result',w:100}];
+  var navy = L.rgb(.106,.247,.388), gold = L.rgb(.97,.92,.77), yel = L.rgb(1,.965,.8), grey = L.rgb(.45,.45,.45), line = L.rgb(.72,.72,.72), black = L.rgb(.1,.1,.1), white = L.rgb(1,1,1), red = L.rgb(.99,.9,.9);
+  var page = null, y = 0;
+  function wrap(text, font, size, width){
+    var out = [], paras = san(text).split('\n');
+    paras.forEach(function(p){
+      var words = p.split(/\s+/).filter(Boolean), cur = '';
+      if(!words.length){ out.push(''); return; }
+      words.forEach(function(w){
+        while(font.widthOfTextAtSize(w, size) > width){
+          var k = w.length; while(k > 1 && font.widthOfTextAtSize(w.slice(0, k), size) > width) k--;
+          if(cur){ out.push(cur); cur = ''; }
+          out.push(w.slice(0, k)); w = w.slice(k);
+        }
+        var t = cur ? cur + ' ' + w : w;
+        if(font.widthOfTextAtSize(t, size) <= width) cur = t; else { out.push(cur); cur = w; }
+      });
+      if(cur) out.push(cur);
+    });
+    return out;
+  }
+  function newPage(){ page = doc.addPage([PW, PH]); y = PH - M; }
+  function tableHeader(){
+    var h = 15, x = M;
+    page.drawRectangle({x:M, y:y - h, width:PW - 2*M, height:h, color:navy});
+    cols.forEach(function(c){ page.drawText(san(c.h), {x:x + 3, y:y - 10.5, size:8, font:FB, color:white}); x += c.w; });
+    y -= h;
+  }
+  function banner(text, sub, fill, fg, size, minAfter){
+    var lines = wrap(text, FB, size, PW - 2*M - 12), slines = sub ? wrap(sub, F, size - 2, PW - 2*M - 12) : [];
+    var h = lines.length * (size + 3) + slines.length * (size + 1) + 8;
+    if(y - h - (minAfter || 0) < M + FOOT){ newPage(); }
+    page.drawRectangle({x:M, y:y - h, width:PW - 2*M, height:h, color:fill});
+    var yy = y - 4 - size;
+    lines.forEach(function(l){ page.drawText(l, {x:M + 6, y:yy, size:size, font:FB, color:fg}); yy -= size + 3; });
+    slines.forEach(function(l){ page.drawText(l, {x:M + 6, y:yy + 1, size:size - 2, font:F, color:fg}); yy -= size + 1; });
+    y -= h;
+  }
+  function cellLines(row){
+    var fs = 8.5, sfs = 7.5;
+    function P(parts, w){ var out = []; parts.forEach(function(p){ wrap(p.t, p.b ? FB : F, p.s, w - 6).forEach(function(l){ out.push({t:l, f:p.b ? FB : F, s:p.s, c:p.c}); }); }); return out; }
+    var mine = row.mine, tc = mine ? black : grey;
+    return [
+      P([{t:row.bench, s:fs, b:true, c:tc}], cols[0].w),
+      P([{t:row.sr, s:fs, b:true, c:tc}], cols[1].w),
+      P([{t:row.caseNo, s:fs, b:true, c:tc}].concat(row.caseSub ? [{t:row.caseSub, s:sfs, c:grey}] : []), cols[2].w),
+      P([{t:row.title, s:fs, c:tc}], cols[3].w),
+      P([{t:row.nature, s:fs, c:tc}].concat(row.natSub ? [{t:row.natSub, s:sfs, c:grey}] : []), cols[4].w),
+      P([{t:row.section, s:sfs + .5, c:tc}], cols[5].w),
+      P([{t:row.bt, s:fs, b:true, c:tc}], cols[6].w),
+      P([{t:row.officer, s:sfs + .5, c:tc}], cols[7].w),
+      P([{t:mine ? row.result : '', s:fs, b:true, c:tc}], cols[8].w)
+    ];
+  }
+  function drawRow(row){
+    var cl = cellLines(row), nl = 0, hh = 0;
+    cl.forEach(function(c){ var h = c.reduce(function(a, l){ return a + l.s + 2.2; }, 0); if(h > hh) hh = h; });
+    var rh = Math.max(hh + 6, 20);
+    if(y - rh < M + FOOT){ newPage(); tableHeader(); }
+    if(row.mine) page.drawRectangle({x:M, y:y - rh, width:PW - 2*M, height:rh, color: row.result ? yel : yel});
+    if(row.mine && !row.result) page.drawRectangle({x:M + cols.slice(0,8).reduce(function(a, c){ return a + c.w; }, 0), y:y - rh, width:cols[8].w, height:rh, color:red});
+    var x = M;
+    cols.forEach(function(c, i){
+      var yy = y - 3;
+      cl[i].forEach(function(l){ yy -= l.s; page.drawText(l.t, {x:x + 3, y:yy + 1, size:l.s, font:l.f, color:l.c}); yy -= 2.2; });
+      page.drawLine({start:{x:x, y:y}, end:{x:x, y:y - rh}, thickness:.4, color:line}); x += c.w;
+    });
+    page.drawLine({start:{x:x, y:y}, end:{x:x, y:y - rh}, thickness:.4, color:line});
+    page.drawLine({start:{x:M, y:y - rh}, end:{x:x, y:y - rh}, thickness:.5, color:line});
+    y -= rh;
+  }
+  newPage();
+  var t = san(exportTitle());
+  page.drawText(t, {x:(PW - FB.widthOfTextAtSize(t, 15)) / 2, y:y - 15, size:15, font:FB, color:navy}); y -= 22;
+  var st = san(subLine(days));
+  page.drawText(st, {x:(PW - F.widthOfTextAtSize(st, 8.5)) / 2, y:y - 9, size:8.5, font:F, color:grey}); y -= 18;
+  days.forEach(function(d){
+    banner(d.label, '', navy, white, 12, 60);
+    d.benches.forEach(function(b){
+      var sub = b.judges + (b.sitting ? '   [' + b.sitting + ']' : '');
+      banner('BENCH ' + b.bench, sub, gold, black, 10, 15 + 26);
+      tableHeader();
+      b.rows.forEach(drawRow);
+      y -= 4;
+    });
+    y -= 6;
+  });
+  var pages = doc.getPages(), foot = 'Camp Office, Prosecutor General Punjab   -   ' + san(exportTitle());
+  pages.forEach(function(p, i){
+    var s = 'Page ' + (i + 1) + ' of ' + pages.length;
+    p.drawText(san(foot), {x:M, y:12, size:7, font:F, color:grey});
+    p.drawText(s, {x:PW - M - F.widthOfTextAtSize(s, 7.5), y:12, size:7.5, font:F, color:grey});
+  });
+  return await doc.save();
+}
+
+/* ---------------- Excel (.xlsx written directly with JSZip) ---------------- */
+function xe(s){ return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function colName(i){ return String.fromCharCode(65 + i); }
+async function buildXlsx(days){
+  var widths = [8, 8, 19, 44, 30, 22, 10, 22, 22];
+  var heads = ['Bench','Sr.','Case No','Title of Case','Nature','Section','Bench Type','Officer','Result'];
+  /* styles: index map used below */
+  var S = {def:0, title:1, sub:2, head:3, day:4, bench:5, mine:6, mineC:7, mineB:8, other:9, otherC:10, noRes:11, flatHead:12, flat:13};
+  var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<fonts count="8">' +
+    '<font><sz val="10"/><name val="Calibri"/></font>' +                                                           // 0 normal
+    '<font><b/><sz val="15"/><color rgb="FF1B3F63"/><name val="Calibri"/></font>' +                                // 1 title
+    '<font><sz val="10"/><color rgb="FF666666"/><name val="Calibri"/></font>' +                                    // 2 grey
+    '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +                                // 3 white bold
+    '<font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +                                // 4 day
+    '<font><b/><sz val="10.5"/><color rgb="FF1B3F63"/><name val="Calibri"/></font>' +                              // 5 bench
+    '<font><b/><sz val="10"/><name val="Calibri"/></font>' +                                                       // 6 bold
+    '<font><sz val="10"/><color rgb="FF777777"/><name val="Calibri"/></font>' +                                    // 7 other
+    '</fonts>' +
+    '<fills count="8"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1B3F63"/><bgColor indexed="64"/></patternFill></fill>' +      // 2 navy
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill>' +      // 3 header blue
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF8EBC4"/><bgColor indexed="64"/></patternFill></fill>' +      // 4 gold
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFFF6C9"/><bgColor indexed="64"/></patternFill></fill>' +      // 5 yellow
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFDE3E3"/><bgColor indexed="64"/></patternFill></fill>' +      // 6 red-ish
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F3"/><bgColor indexed="64"/></patternFill></fill>' +      // 7 light grey
+    '</fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+    '<border><left style="thin"><color rgb="FFBBBBBB"/></left><right style="thin"><color rgb="FFBBBBBB"/></right><top style="thin"><color rgb="FFBBBBBB"/></top><bottom style="thin"><color rgb="FFBBBBBB"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="14">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                                                                                                                               // 0
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                                           // 1 title
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                                           // 2 sub
+    '<xf numFmtId="0" fontId="3" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +                // 3 head
+    '<xf numFmtId="0" fontId="4" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>' +                              // 4 day
+    '<xf numFmtId="0" fontId="5" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +                // 5 bench
+    '<xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +                                                    // 6 mine
+    '<xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +                               // 7 mine centred
+    '<xf numFmtId="0" fontId="6" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +                                     // 8 mine bold
+    '<xf numFmtId="0" fontId="7" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +                                     // 9 other
+    '<xf numFmtId="0" fontId="7" fillId="7" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +                // 10 other centred
+    '<xf numFmtId="0" fontId="0" fillId="6" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +                                                    // 11 no result
+    '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +                // 12 flat head
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +                                                                  // 13 flat
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+  function lines(text, w){ var n = 0; String(text == null ? '' : text).split('\n').forEach(function(p){ n += Math.max(1, Math.ceil(p.length * 1.08 / Math.max(4, w - 1))); }); return n; }
+  function c(ref, text, s){ return '<c r="' + ref + '" s="' + s + '" t="inlineStr"><is><t xml:space="preserve">' + xe(text) + '</t></is></c>'; }
+
+  /* ---- sheet 1: grouped list ---- */
+  var rows = '', merges = [], r = 1, nCols = widths.length, last = colName(nCols - 1);
+  rows += '<row r="1" ht="26" customHeight="1">' + c('A1', exportTitle(), S.title) + '</row>'; merges.push('A1:' + last + '1');
+  rows += '<row r="2" ht="16" customHeight="1">' + c('A2', subLine(days), S.sub) + '</row>'; merges.push('A2:' + last + '2');
+  rows += '<row r="3" ht="22" customHeight="1">' + heads.map(function(h, i){ return c(colName(i) + '3', h, S.head); }).join('') + '</row>';
+  r = 3;
+  days.forEach(function(d){
+    r++; rows += '<row r="' + r + '" ht="21" customHeight="1">' + c('A' + r, d.label, S.day) + heads.slice(1).map(function(h, i){ return c(colName(i + 1) + r, '', S.day); }).join('') + '</row>'; merges.push('A' + r + ':' + last + r);
+    d.benches.forEach(function(b){
+      r++;
+      var bt = 'BENCH ' + b.bench + (b.sitting ? '   [' + b.sitting + ']' : '') + (b.judges ? '   —   ' + b.judges : '');
+      rows += '<row r="' + r + '" ht="' + (lines(bt, 170) > 1 ? 31 : 19) + '" customHeight="1">' + c('A' + r, bt, S.bench) + heads.slice(1).map(function(h, i){ return c(colName(i + 1) + r, '', S.bench); }).join('') + '</row>'; merges.push('A' + r + ':' + last + r);
+      b.rows.forEach(function(x){
+        r++;
+        var m = x.mine, cells = [
+          [x.bench, m ? S.mineC : S.otherC], [x.sr, m ? S.mineC : S.otherC],
+          [x.caseNo + (x.caseSub ? '\n' + x.caseSub : ''), m ? S.mineB : S.other],
+          [x.title, m ? S.mine : S.other],
+          [x.nature + (x.natSub ? '\n' + x.natSub : ''), m ? S.mine : S.other],
+          [x.section, m ? S.mine : S.other], [x.bt, m ? S.mineC : S.otherC], [x.officer, m ? S.mine : S.other],
+          [m ? x.result : '', m ? (x.result ? S.mineB : S.noRes) : S.other]
+        ];
+        var n = 1; cells.forEach(function(cc, i){ n = Math.max(n, lines(cc[0], widths[i])); });
+        rows += '<row r="' + r + '" ht="' + Math.max(18, n * 13 + 5) + '" customHeight="1">' + cells.map(function(cc, i){ return c(colName(i) + r, cc[0], cc[1]); }).join('') + '</row>';
+      });
+    });
+  });
+  var sheet1 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+    '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+    '<sheetData>' + rows + '</sheetData><mergeCells count="' + merges.length + '">' + merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' +
+    '<printOptions horizontalCentered="1"/><pageMargins left="0.35" right="0.35" top="0.45" bottom="0.55" header="0.25" footer="0.3"/>' +
+    '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
+    '<headerFooter><oddFooter>&amp;L&amp;8Camp Office, Prosecutor General Punjab&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter></worksheet>';
+
+  /* ---- sheet 2: flat table (sort / filter friendly) ---- */
+  var fh = ['Date','Day','Bench','Sitting','Judges','Sr.','Case Type','Case No','Year','Title','Versus','Nature','Nature (as in list)','Section','Bench Type','Punjab case','Officer','Result','Relief Sought','Remarks'];
+  var fw = [12, 11, 7, 22, 40, 7, 11, 10, 7, 38, 30, 30, 34, 24, 9, 9, 26, 22, 24, 24];
+  var fr = '<row r="1" ht="30" customHeight="1">' + fh.map(function(h, i){ return c(colName(i) + '1', h, S.flatHead); }).join('') + '</row>', n2 = 1;
+  days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(x){
+    n2++; var q = x.r;
+    var v = [dmyFromIso(q.iso), dayName(q.iso), q.bench, b.sitting, b.judges, srText(q), q.type, normNo(q.no), q.year, q.title, q.versus, x.nature, q.natText, q.section, q.bt, q.mine ? 'Yes' : 'No', x.officer, q.mine ? q.result : '', q.mine ? q.relief : '', q.remarks];
+    var mx = 1; v.forEach(function(t, i){ mx = Math.max(mx, lines(t, fw[i])); });
+    fr += '<row r="' + n2 + '" ht="' + Math.max(18, mx * 13 + 4) + '" customHeight="1">' + v.map(function(t, i){ return c(colName(i) + n2, t, S.flat); }).join('') + '</row>';
+  }); }); });
+  var sheet2 = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+    '<sheetFormatPr defaultRowHeight="15"/><cols>' + fw.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+    '<sheetData>' + fr + '</sheetData><autoFilter ref="A1:' + colName(fh.length - 1) + n2 + '"/>' +
+    '<pageMargins left="0.35" right="0.35" top="0.45" bottom="0.55" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+
+  var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+    '<sheets><sheet name="Cause List" sheetId="1" r:id="rId1"/><sheet name="All data (filter)" sheetId="2" r:id="rId2"/></sheets>' +
+    '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="1" hidden="1">\'All data (filter)\'!$A$1:$' + colName(fh.length - 1) + '$' + n2 + '</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">\'Cause List\'!$3:$3</definedName><definedName name="_xlnm.Print_Titles" localSheetId="1">\'All data (filter)\'!$1:$1</definedName></definedNames></workbook>';
+  var zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  zip.file('xl/workbook.xml', wb);
+  zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  zip.file('xl/styles.xml', styles);
+  zip.file('xl/worksheets/sheet1.xml', sheet1);
+  zip.file('xl/worksheets/sheet2.xml', sheet2);
+  return await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ---------------- Word (.docx via docx library) ---------------- */
+async function buildDocx(days){
+  var D = window.docx, FONT = 'Calibri';
+  var W = [650, 650, 1800, 3900, 2500, 1600, 650, 1800, 2150];                     // twips, total 15700 (A4 landscape, narrow margins)
+  var heads = ['Bench','Sr.','Case No','Title of Case','Nature','Section','B.Type','Officer','Result'];
+  function run(t, o){ o = o || {}; return new D.TextRun({text:String(t == null ? '' : t), font:FONT, size:o.size || 18, bold:!!o.bold, color:o.color}); }
+  function para(parts, o){ o = o || {}; return new D.Paragraph({children:parts, alignment:o.align, spacing:{before:o.before || 0, after:o.after || 0}, keepNext:!!o.keepNext}); }
+  function cell(paras, i, o){
+    o = o || {};
+    return new D.TableCell({children:paras, width:{size:W[i], type:D.WidthType.DXA}, verticalAlign:D.VerticalAlign.TOP,
+      shading:o.fill ? {type:D.ShadingType.CLEAR, color:'auto', fill:o.fill} : undefined,
+      margins:{top:50, bottom:50, left:70, right:70}});
+  }
+  var bd = {style:D.BorderStyle.SINGLE, size:4, color:'BBBBBB'};
+  var children = [];
+  children.push(new D.Paragraph({children:[run(exportTitle(), {size:32, bold:true, color:'1B3F63'})], alignment:D.AlignmentType.CENTER, spacing:{after:60}}));
+  children.push(new D.Paragraph({children:[run(subLine(days), {size:17, color:'666666'})], alignment:D.AlignmentType.CENTER, spacing:{after:160}}));
+  days.forEach(function(d, di){
+    children.push(new D.Paragraph({children:[run(d.label, {size:24, bold:true, color:'FFFFFF'})], shading:{type:D.ShadingType.CLEAR, color:'auto', fill:'1B3F63'}, spacing:{before:di ? 200 : 0, after:60}, keepNext:true,
+      border:{top:{style:D.BorderStyle.SINGLE, size:4, color:'1B3F63', space:3}, bottom:{style:D.BorderStyle.SINGLE, size:4, color:'1B3F63', space:3}}}));
+    d.benches.forEach(function(b){
+      var bp = [run('BENCH ' + b.bench, {size:20, bold:true, color:'1B3F63'})];
+      if(b.sitting) bp.push(run('   [' + b.sitting + ']', {size:18, bold:true, color:'8A660A'}));
+      if(b.judges) bp.push(run('   —   ' + b.judges, {size:17, color:'444444'}));
+      children.push(new D.Paragraph({children:bp, shading:{type:D.ShadingType.CLEAR, color:'auto', fill:'F8EBC4'}, spacing:{before:80, after:40}, keepNext:true}));
+      var trs = [new D.TableRow({tableHeader:true, cantSplit:true, children:heads.map(function(h, i){
+        return cell([para([run(h, {size:17, bold:true, color:'FFFFFF'})], {align:i < 2 || i === 6 ? D.AlignmentType.CENTER : undefined})], i, {fill:'2A5A84'});
+      })})];
+      b.rows.forEach(function(x){
+        var m = x.mine, col = m ? '111111' : '777777', fill = m ? 'FFF6C9' : 'F3F3F3';
+        function sub(t){ return t ? para([run(t, {size:15, color:'666666'})]) : null; }
+        var cc = [
+          [para([run(x.bench, {size:18, bold:true, color:col})], {align:D.AlignmentType.CENTER})],
+          [para([run(x.sr, {size:18, bold:true, color:col})], {align:D.AlignmentType.CENTER})],
+          [para([run(x.caseNo, {size:18, bold:true, color:col})]), sub(x.caseSub)],
+          [para([run(x.title, {size:18, color:col})])],
+          [para([run(x.nature, {size:18, color:col})]), sub(x.natSub)],
+          [para([run(x.section, {size:16, color:col})])],
+          [para([run(x.bt, {size:18, bold:true, color:col})], {align:D.AlignmentType.CENTER})],
+          [para([run(x.officer, {size:16, color:col})])],
+          [para([run(m ? x.result : '', {size:18, bold:true, color:col})])]
+        ].map(function(a){ return a.filter(Boolean); });
+        trs.push(new D.TableRow({cantSplit:true, children:cc.map(function(a, i){ return cell(a, i, {fill: (i === 8 && m && !x.result) ? 'FDE3E3' : fill}); })}));
+      });
+      children.push(new D.Table({rows:trs, width:{size:15700, type:D.WidthType.DXA}, columnWidths:W, layout:D.TableLayoutType.FIXED,
+        borders:{top:bd, bottom:bd, left:bd, right:bd, insideHorizontal:bd, insideVertical:bd}}));
+    });
+  });
+  var doc = new D.Document({
+    creator:'Camp Office, Prosecutor General Punjab', title:exportTitle(),
+    sections:[{
+      properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:680, left:567, right:567, footer:300}}},
+      footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.CENTER, children:[
+        new D.TextRun({children:['Camp Office, Prosecutor General Punjab   |   Page ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:15, color:'777777'})
+      ]})]})},
+      children:children
+    }]
+  });
+  return await D.Packer.toBlob(doc);
+}
+
+
+/* ---------- sign-in, roles and live data (same pattern as the other Camp Office pages) ---------- */
+function applyLists(d){
+  [['judges','judges'],['benches','benches'],['types','types'],['natures','natures'],['results','results'],['reliefs','reliefs'],['officers','officers']].forEach(function(p){
+    if(Array.isArray(d[p[0]]) && d[p[0]].length) LISTS[p[1]] = d[p[0]];
+  });
+  fillOfficers(); render();
+}
+function fillOfficers(){
+  var cur = $('officerSel').value;
+  $('officerSel').innerHTML = '<option value="">— none / کوئی نہیں —</option>' + LISTS.officers.map(function(o){ return '<option' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
+}
+function startLiveData(){
+  db.collection('lookupLists').doc('caseEntry').onSnapshot(function(doc){ if(doc.exists) applyLists(doc.data()); }, function(err){ console.error('lists', err); });
+  db.collection('cases').onSnapshot(function(qs){
+    var arr = []; qs.forEach(function(d){ var c = d.data(); c.id = d.id; arr.push(c); });
+    CASES = arr; render();
+    $('authGate').style.display = 'none';
+  }, function(err){ gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true); });
+}
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+    return;
+  }
+  db.collection('users').doc(user.uid).get().then(function(doc){
+    var u = doc.exists ? doc.data() : {};
+    var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+    var legacyAdmin = u.role === 'admin';
+    if(!approved && !legacyAdmin){
+      gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+      return;
+    }
+    var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+    var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+    CTX.user = {uid:user.uid, email:user.email, role:r2};
+    CTX.canWrite = isAdm || r2 === 'data_entry';
+    CTX.canLists = isAdm;
+    $('ceUserEmail').textContent = user.email;
+    var rn = ROLE_NAMES[r2] || [r2, r2];
+    $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+    if(!CTX.canWrite) $('btnSave').title = 'Viewer: save is not allowed';
+    startLiveData();
+  }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+});
+$('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
+document.body.setAttribute('data-theme', currentTheme);
+renderThemePicker();
+fillOfficers(); render(); checkDraft();
+
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+</body>
+</html>
+

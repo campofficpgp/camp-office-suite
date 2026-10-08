@@ -440,6 +440,9 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 
 .cl-incl{white-space:nowrap;font-size:11px !important;padding:3px 6px !important;border:1px solid #c5d6e6 !important;background:#eef4fa !important;border-radius:6px;cursor:pointer;width:auto !important}
 
+.cl-act button.cl-save1{ border-color:#2e7d32; color:#2e7d32; font-weight:700; }
+.cl-act button.cl-save1:hover{ background:#e6f3e7; }
+
 </style>
 </head><body>
 
@@ -1216,7 +1219,7 @@ function rowHtml(r, first){
     h += '<select class="cl-res' + (!r.result ? ' empty' : '') + '" data-act="res">' + resultOptions(r.result) + '</select><div class="res-print">' + esc(r.result) + '</div>';
   } else h += '<span class="cl-sub">—</span>';
   h += '</td>';
-  h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit">✎</button> <button data-act="del" title="Remove from this import">🗑</button>' + (r.fromOther ? ' <button data-act="unmine" title="Back to white (not ours) / واپس سفید">↩</button>' : '') : '<button data-act="mkmine" class="cl-incl" title="Include this case as ours (officer, result, save) / اس کیس کو اپنے کیسوں میں شامل کریں">➕ شامل</button>') + '</td>';
+  h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit / ترمیم">✎</button> <button data-act="del" title="Remove from this import / اس لسٹ سے ہٹائیں">🗑</button> ' + (CTX.canWrite ? '<button data-act="savone" class="cl-save1" title="Save only this case / صرف یہی کیس محفوظ کریں">💾</button>' : '') + (r.fromOther ? ' <button data-act="unmine" title="Back to white (not ours) / واپس سفید">↩</button>' : '') : '<button data-act="mkmine" class="cl-incl" title="Include this case as ours (officer, result, save) / اس کیس کو اپنے کیسوں میں شامل کریں">➕ شامل</button>') + '</td>';
   return h + '</tr>';
 }
 function listTitle(){
@@ -1233,7 +1236,7 @@ function render(){
       var bk = d.iso + '|' + b.bench + '|' + b.hid;
       h += '<div class="cl-bench"><span class="cl-offsel no-print" style="float:right"><bdi dir="rtl">اس بنچ کا آفیسر</bdi> / Officer for this bench <select data-act="offbench" data-key="' + esc(bk) + '">' + officerOptions(ST.offBench[bk] || '', ST.offDay[d.iso] ? '— day: ' + shortOff(ST.offDay[d.iso]) + ' —' : '— none —') + '</select></span><b>' + esc(benchTitle(b)) + '</b>' + (b.sitting ? '<span class="sit">' + esc(b.sitting.replace(/^\(|\)$/g,'')) + '</span>' : '') +
         (judgesText(b) ? '<br><span class="jd">' + esc(judgesText(b)) + '</span>' : '') + (effOfficerBench(b) ? '<span class="cl-offprint"> — Officer: ' + esc(effOfficerBench(b)) + '</span>' : '') + '</div>';
-      h += '<div class="cl-tw"><table class="cl-t"><colgroup><col class="cl-col-inc" style="width:32px"><col style="width:4%"><col style="width:5%"><col style="width:11%"><col style="width:19%"><col style="width:14%"><col style="width:9%"><col style="width:6.5%"><col style="width:13%"><col style="width:13%"><col class="cl-col-act" style="width:104px"></colgroup><thead><tr><th class="cl-col-inc"></th><th>Bench</th><th>Sr.</th><th>Case No</th><th>Title of Case</th><th>Nature</th><th>Section</th><th>B.Type</th><th>Officer</th><th>Result</th><th class="cl-col-act"></th></tr></thead><tbody>';
+      h += '<div class="cl-tw"><table class="cl-t"><colgroup><col class="cl-col-inc" style="width:32px"><col style="width:4%"><col style="width:5%"><col style="width:11%"><col style="width:19%"><col style="width:14%"><col style="width:9%"><col style="width:6.5%"><col style="width:13%"><col style="width:13%"><col class="cl-col-act" style="width:132px"></colgroup><thead><tr><th class="cl-col-inc"></th><th>Bench</th><th>Sr.</th><th>Case No</th><th>Title of Case</th><th>Nature</th><th>Section</th><th>B.Type</th><th>Officer</th><th>Result</th><th class="cl-col-act"></th></tr></thead><tbody>';
       var prevSr = null;
       b.rows.forEach(function(r){ h += rowHtml(r, prevSr !== null && prevSr !== r.sr); prevSr = r.sr; });
       h += '</tbody></table></div>';
@@ -1295,6 +1298,7 @@ document.addEventListener('click', function(e){
   else if(a === 'force'){ pushHist(); r.force = !r.force; changed(); }
   else if(a === 'del'){ pushHist(); ST.rows = ST.rows.filter(function(x){ return x.id !== r.id; }); changed(); }
   else if(a === 'edit'){ openEdit(r.id); }
+  else if(a === 'savone'){ saveOne(r); }
   else if(a === 'mkmine'){ pushHist(); r.mine = true; r.include = true; r.fromOther = true; r.unc = uncertainReasons(r); changed(); }
   else if(a === 'unmine'){ pushHist(); r.mine = false; r.include = true; r.fromOther = false; r.result = ''; r.officer = ''; r.unc = []; r.confirmed = false; r.force = false; changed(); }
 });
@@ -1545,6 +1549,29 @@ function buildDoc(r, officer, withExtras){
   }
   return d;
 }
+var SAVING = false;
+function saveOne(r){
+  if(!CTX.canWrite){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
+  if(SAVING) return;
+  var st = rowStatus(r), isUpd = false;
+  if(st.ex && !r.force){
+    if(emptyRes(st.ex.result) && r.result) isUpd = true;
+    else { showAct('ℹ️ ' + bi('یہ کیس اس تاریخ کے لیے پہلے سے درج ہے (' + caseText(r) + ')۔ دوبارہ درج کرنا ہو تو «Force entry» دبائیں۔', 'This case is already saved for this date (' + caseText(r) + '). Press “Force entry” to enter it again.'), ''); return; }
+  }
+  var off = effOfficer(r), newTypes = [], newJudges = [];
+  if(r.type && !typeKnown(r.type)) newTypes.push(r.type);
+  var j = r.judges && r.judges[0] ? mapJudge(r.judges[0]) : '';
+  if(j && !judgeKnown(j)) newJudges.push(j);
+  var h = '<div style="margin-bottom:6px;padding:6px 10px;border-radius:8px;background:#eef4fa;border:1px solid #c5d6e6"><bdi dir="ltr"><b>' + esc(caseText(r)) + '</b> — ' + esc(dayName(r.iso).slice(0, 3) + ' ' + dmyFromIso(r.iso)) + ' · Bench ' + esc(r.bench) + '</bdi><br><span class="cl-sub">' + esc(joinTitle(r.title, r.versus)) + '</span></div>';
+  h += bi2(isUpd ? 'یہ کیس پہلے سے درج ہے؛ صرف نتیجہ بھرا جائے گا۔' : '<b>صرف یہی ایک کیس</b> محفوظ ہو گا۔', isUpd ? 'This case already exists; only its result will be filled in.' : '<b>Only this one case</b> will be saved.');
+  h += bi2('آفیسر: <b>' + esc(off ? shortOff(off) : '—') + '</b> · نتیجہ: <b>' + esc(r.result || '—') + '</b>', 'Officer: <b>' + esc(off ? shortOff(off) : '—') + '</b> · Result: <b>' + esc(r.result || '—') + '</b>');
+  if(!off) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('آفیسر منتخب نہیں — خالی محفوظ ہو گا۔', 'No officer chosen — it will be saved without an officer.') + '</div>';
+  if(!r.result) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('نتیجہ منتخب نہیں — خالی محفوظ ہو گا۔', 'No result chosen — it will be saved blank.') + '</div>';
+  var hi = histInfo(r); if(hi && (hi.after.length || hi.mism.length)) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('پرانے ریکارڈ میں بعد کی تاریخ یا مختلف نتیجہ موجود ہے — دیکھ لیں۔', 'A later date or a different result is already saved — please check.') + '</div>';
+  if(r.unc.length && !r.confirmed) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('یہ کیس «تصدیق کریں» والا ہے، ابھی تصدیق نہیں ہوئی۔', 'This is an uncertain row and is not confirmed yet.') + '</div>';
+  if(CTX.canLists && (newTypes.length || newJudges.length)) h += '<label style="display:block;margin-top:10px"><input type="checkbox" id="addListsChk" checked> ' + bi('فہرست میں نئی اقسام/جج شامل کریں', 'Add to the shared lists') + ': <bdi dir="ltr">' + esc(newTypes.concat(newJudges).join(', ')) + '</bdi></label>';
+  confirmBox('Save this case / یہ کیس محفوظ کریں', h, function(){ doSave(newTypes, newJudges, r); });
+}
 function startSave(){
   if(!CTX.canWrite){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
   var c = computeCounts();
@@ -1561,6 +1588,8 @@ function startSave(){
   h += bi2('<b>' + c.save + '</b> نئے کیس محفوظ ہوں گے۔', '<b>' + c.save + '</b> new cases will be saved.');
   if(c.upd) h += bi2('<b>' + c.upd + '</b> موجود کیسوں میں نتیجہ بھرا جائے گا۔', '<b>' + c.upd + '</b> existing cases will get a result.');
   if(c.exists - c.upd > 0) h += bi2((c.exists - c.upd) + ' پہلے سے درج ہیں، چھوڑ دیے جائیں گے۔', (c.exists - c.upd) + ' already saved — skipped.');
+  var noOff = ST.rows.filter(function(r){ return r.mine && r.include && inView(r) && !(rowStatus(r).ex && !r.force) && !effOfficer(r); }).length;
+  if(noOff) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + noOff + '</b> کیسوں کا آفیسر منتخب نہیں — بغیر آفیسر محفوظ ہوں گے۔', '<b>' + noOff + '</b> cases have no officer — they will be saved without an officer.') + '</div>';
   if(c.nores) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + c.nores + '</b> کا نتیجہ ابھی منتخب نہیں — خالی محفوظ ہوں گے؛ بعد میں یہیں نتیجہ بھر کر دوبارہ Save کر سکتے ہیں۔', '<b>' + c.nores + '</b> have no result yet — they will be saved blank; fill them later here and press Save again.') + '</div>';
   if(c.hist) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.hist + '</b> کیسوں میں پرانے ریکارڈ کی تاریخ/نتیجہ مختلف ہے (بعد کی تاریخ یا مختلف نتیجہ) — محفوظ کرنے سے پہلے دیکھ لیں۔', '<b>' + c.hist + '</b> cases have a later date or a different result already saved — please review before saving.') + '</div>';
   if(c.unc) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.unc + '</b> کیس «تصدیق کریں» والے ابھی دیکھے نہیں گئے۔', '<b>' + c.unc + '</b> uncertain rows are not confirmed yet.') + '</div>';
@@ -1571,15 +1600,16 @@ function startSave(){
   }
   confirmBox('Save / محفوظ کریں', h, function(){ doSave(newTypes, newJudges); });
 }
-async function doSave(newTypes, newJudges){
+async function doSave(newTypes, newJudges, only){
   var addLists = CTX.canLists && $('addListsChk') && $('addListsChk').checked;
   var create = [], update = [];
-  ST.rows.forEach(function(r){
-    if(!r.mine || !r.include || !inView(r)) return;
+  (only ? [only] : ST.rows).forEach(function(r){
+    if(!only && (!r.mine || !r.include || !inView(r))) return;
     var st = rowStatus(r);
     if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
     else create.push(r);
   });
+  if(SAVING) return; SAVING = true;
   showAct('⏳ ' + bi('محفوظ ہو رہا ہے…', 'Saving…'));
   $('btnSave').disabled = true;
   try{
@@ -1612,12 +1642,13 @@ async function doSave(newTypes, newJudges){
         }, {merge:true});
       }catch(e){ console.error('lists', e); }
     }
-    showAct('✅ ' + bi(create.length + ' نئے کیس محفوظ ہو گئے' + (update.length ? '، ' + update.length + ' کے نتیجے اپڈیٹ ہوئے' : '') + '۔ یومیہ کیس انٹری میں دیکھ سکتے ہیں۔', create.length + ' cases saved' + (update.length ? ', ' + update.length + ' results updated' : '') + '. See them in Daily Case Entry.'), 'good');
+    if(only) showAct('✅ ' + bi('یہ کیس محفوظ ہو گیا (' + caseText(only) + ')' + (create.length ? '' : '؛ نتیجہ اپڈیٹ ہوا') + '۔ یومیہ کیس انٹری میں دیکھ سکتے ہیں۔', 'This case was saved (' + caseText(only) + ')' + (create.length ? '' : '; result updated') + '. See it in Daily Case Entry.'), 'good');
+    else showAct('✅ ' + bi(create.length + ' نئے کیس محفوظ ہو گئے' + (update.length ? '، ' + update.length + ' کے نتیجے اپڈیٹ ہوئے' : '') + '۔ یومیہ کیس انٹری میں دیکھ سکتے ہیں۔', create.length + ' cases saved' + (update.length ? ', ' + update.length + ' results updated' : '') + '. See them in Daily Case Entry.'), 'good');
   }catch(err){
     console.error(err);
     showAct('❌ ' + bi('محفوظ نہیں ہو سکا', 'Could not save') + ': ' + esc(err && err.message ? err.message : err), 'err');
   }
-  $('btnSave').disabled = false;
+  $('btnSave').disabled = false; SAVING = false;
 }
 
 /* ---------- printing ---------- */

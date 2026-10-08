@@ -225,14 +225,34 @@ html,body{overflow-x:hidden;}
   [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
 
   @media print{
-    body *{visibility:hidden;}
-    #reportPrintArea, #reportPrintArea *{visibility:visible;}
-    #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* Print ONLY the report sheet. The print modal is moved to be a direct child of <body> (see the
+       script below); every other body child is removed from the layout, so the page count is just
+       the report's own height (the old visibility:hidden trick kept the hidden page's height and
+       repeated the fixed modal on extra pages). */
+    body > *:not(#reportPrintModal){ display:none !important; }
+    #reportPrintModal{ position:static !important; display:block !important; background:none !important; padding:0 !important; overflow:visible !important; }
+    #reportPrintModal .modal-panel{ max-width:none !important; width:100% !important; max-height:none !important; overflow:visible !important; box-shadow:none !important; border-radius:0 !important; margin:0 !important; background:#fff !important; }
+    #reportPrintModal .modal-panel > div{ padding:0 !important; }
+    #reportPrintModal .modal-close, #reportPrintModal .actions{ display:none !important; }
+    #reportPrintArea{ position:static; width:100%; }
     /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
        to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
        clips a wide report table. Let the body grow to the full width for the capture. */
     html,body{overflow-x:visible !important;}
     #reportPrintArea .heading-icon{display:none;}
+    /* Page: A4 landscape so the wide results table fits; backgrounds MUST be forced on or the
+       navy header prints white-on-white (the header text disappears). */
+    @page{ size:A4 landscape; margin:10mm; }
+    #reportPrintArea, #reportPrintArea *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #reportPrintArea.print-sheet{ border:none; border-radius:0; padding:0; font-size:11px; }
+    #reportPrintArea table.report-table{ width:100% !important; min-width:0 !important; table-layout:fixed; font-size:10px; border:1px solid #888; }
+    #reportPrintArea table.report-table th{ padding:5px 3px; font-size:9px; line-height:1.2; word-wrap:break-word; overflow-wrap:anywhere; border:1px solid #888; }
+    #reportPrintArea table.report-table th:first-child, #reportPrintArea table.report-table td.nature-cell{ width:19%; }
+    #reportPrintArea table.report-table td{ padding:4px 3px; white-space:normal; border:1px solid #888; }
+    #reportPrintArea table.report-table td.nature-cell{ text-align:left; min-width:0; max-width:none; }
+    #reportPrintArea table.report-table thead{ display:table-header-group; }
+    #reportPrintArea table.report-table tr{ page-break-inside:avoid; break-inside:avoid; }
+    #reportPrintArea .p-sign{ page-break-inside:avoid; break-inside:avoid; margin-top:18px; }
     /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
        own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
        otherwise print completely blank with no explanation. Show a plain message instead. */
@@ -452,6 +472,9 @@ html.embedded .app-shell{ min-height:0; }
           <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
             <div class="btn gold" onclick="saveCurrentReport()" data-en="💾 Save This Month's Report" data-ur="💾 اس مہینے کی رپورٹ محفوظ کریں">💾 Save This Month's Report</div>
             <div class="btn ghost" onclick="printCurrentReport()" data-en="🖨️ Print / Preview" data-ur="🖨️ پرنٹ / پیش منظر">🖨️ Print / Preview</div>
+            <div class="btn ghost" onclick="downloadReportPdf()" data-en="📄 PDF" data-ur="📄 PDF">📄 PDF</div>
+            <div class="btn ghost" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
+            <div class="btn ghost" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
             <div class="btn ghost" onclick="recalcCurrentReport()" data-en="🔄 Recalculate from Case List" data-ur="🔄 Case List سے دوبارہ شمار کریں">🔄 Recalculate from Case List</div>
           </div>
         </div>
@@ -558,6 +581,8 @@ html.embedded .app-shell{ min-height:0; }
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
           <div class="btn ghost" onclick="downloadReportPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+          <div class="btn ghost" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
+          <div class="btn ghost" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
           <div class="btn ghost" onclick="closeReportPrint()" data-en="Close" data-ur="بند کریں">Close</div>
         </div>
       </div>
@@ -566,6 +591,8 @@ html.embedded .app-shell{ min-height:0; }
 
 <script>
   var isUrdu = false;
+  // Move the print modal to <body> level so printing can hide everything else cleanly (see @media print).
+  (function(){ var m = document.getElementById('reportPrintModal'); if(m && m.parentNode !== document.body) document.body.appendChild(m); })();
 
 
   /* ================= Shared sidebar / mobile-drawer interactivity ================= */
@@ -1182,9 +1209,21 @@ html.embedded .app-shell{ min-height:0; }
 
   // ---------- Monthly Progress Report ----------
 
+  // One canonical row label per kind of case, so a difference of spelling or capital letters
+  // never splits one row into two (e.g. "CRL.P." and "Crl.P.L.A." are the same kind of case here).
+  function canonType(t){
+    t = String(t || '').replace(/\s+/g,' ').trim();
+    if(/^crl\.?\s*p\.?\s*(l\.?\s*a\.?)?$/i.test(t)) return 'CRL.P.';
+    return t;
+  }
+  var RELIEF_FIX = { 'other sentanc':'Other Sentence', 'compormise':'Compromise', 'against acquital':'Against Acquittal' };
+  function canonRelief(r){
+    r = String(r || '').replace(/\s+/g,' ').trim();
+    if(!r || r === 'Not Applicable') return '';
+    return RELIEF_FIX[r.toLowerCase()] || r;
+  }
   function natureLabel(c){
-    var relief = (c.relief && c.relief !== 'Not Applicable') ? (' ' + c.relief) : '';
-    return (c.type + relief).trim();
+    return (canonType(c.type) + ' ' + canonRelief(c.relief)).replace(/\s+/g,' ').trim();
   }
 
   function buildReportData(officer, month, year){
@@ -1198,25 +1237,33 @@ html.embedded .app-shell{ min-height:0; }
       return true;
     });
 
-    var natureMap = {};
+    var cols = RESULTS.slice();
+    var colByKey = {};
+    cols.forEach(function(col){ colByKey[String(col).trim().toLowerCase()] = col; });
+
+    var natureMap = {}, names = {}, uncounted = [];
     filtered.forEach(function(c){
-      var nat = natureLabel(c);
-      if(!natureMap[nat]) natureMap[nat] = {};
-      natureMap[nat][c.result] = (natureMap[nat][c.result] || 0) + 1;
+      var nat = natureLabel(c), key = nat.toLowerCase();
+      var col = colByKey[String(c.result || '').trim().toLowerCase()];
+      if(!col){   // a result that is blank or not among the report's columns can't be placed in the table
+        uncounted.push((c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || '') + ' (' + (c.result ? c.result : (isUrdu ? 'نتیجہ خالی' : 'no result')) + ')');
+        return;
+      }
+      if(!natureMap[key]){ natureMap[key] = {}; names[key] = nat; }
+      natureMap[key][col] = (natureMap[key][col] || 0) + 1;
     });
 
-    var natures = Object.keys(natureMap).sort();
-    var cols = RESULTS.slice();
+    var keys = Object.keys(natureMap).sort(function(a, b){ return names[a].localeCompare(names[b], 'en', {sensitivity:'base', numeric:true}); });
 
-    var rows = natures.map(function(nat){
+    var rows = keys.map(function(key){
       var counts = {};
       var rowTotal = 0;
       cols.forEach(function(col){
-        var v = natureMap[nat][col] || 0;
+        var v = natureMap[key][col] || 0;
         counts[col] = v;
         rowTotal += v;
       });
-      return { nature: nat, counts: counts, total: rowTotal };
+      return { nature: names[key], counts: counts, total: rowTotal };
     });
 
     var grand = {};
@@ -1227,7 +1274,7 @@ html.embedded .app-shell{ min-height:0; }
       grandTotal += r.total;
     });
 
-    return { cols: cols, rows: rows, grand: grand, grandTotal: grandTotal, caseCount: filtered.length };
+    return { cols: cols, rows: rows, grand: grand, grandTotal: grandTotal, caseCount: filtered.length, uncounted: uncounted };
   }
 
   // Turns a fresh buildReportData() result into the editable shape used by currentReport
@@ -1237,7 +1284,7 @@ html.embedded .app-shell{ min-height:0; }
     var rows = data.rows.map(function(r){
       return { nature: r.nature, counts: Object.assign({}, r.counts), autoCounts: Object.assign({}, r.counts), total: r.total };
     });
-    return { cols: data.cols.slice(), rows: rows, grand: Object.assign({}, data.grand), grandTotal: data.grandTotal, caseCount: data.caseCount };
+    return { cols: data.cols.slice(), rows: rows, grand: Object.assign({}, data.grand), grandTotal: data.grandTotal, caseCount: data.caseCount, uncounted: (data.uncounted || []).slice() };
   }
 
   function escapeAttr(s){
@@ -1352,6 +1399,11 @@ html.embedded .app-shell{ min-height:0; }
   function renderReportMeta(r, savedNote){
     var metaEn = '<div><b>Officer:</b> '+r.officer+'</div><div><b>Month:</b> '+r.monthName+' '+r.year+'</div><div><b>Prepared By:</b> '+r.clerk+'</div><div><b>Total Cases (from Case List):</b> '+r.caseCount+'</div>';
     var metaUr = '<div><b>آفیسر:</b> '+r.officer+'</div><div><b>مہینہ:</b> '+r.monthName+' '+r.year+'</div><div><b>ترتیب دہندہ:</b> '+r.clerk+'</div><div><b>کل کیسز (Case List سے):</b> '+r.caseCount+'</div>';
+    if(r.uncounted && r.uncounted.length){
+      var un = r.uncounted.slice(0, 6).join('، ') + (r.uncounted.length > 6 ? ' …' : '');
+      metaEn += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' case(s) are NOT in the table below because their Result is blank or not one of the columns: '+escapeAttr(un)+'</div>';
+      metaUr += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' کیس نیچے میز میں شامل نہیں کیونکہ ان کا نتیجہ خالی ہے یا کالموں میں نہیں: '+escapeAttr(un)+'</div>';
+    }
     if(savedNote){
       metaEn += '<div style="color:var(--gold-deep); font-weight:700;">(Saved report — '+savedNote+')</div>';
       metaUr += '<div style="color:var(--gold-deep); font-weight:700;">(محفوظ شدہ رپورٹ — '+savedNote+')</div>';
@@ -1392,6 +1444,7 @@ html.embedded .app-shell{ min-height:0; }
     currentReport.grand = fresh.grand;
     currentReport.grandTotal = fresh.grandTotal;
     currentReport.caseCount = fresh.caseCount;
+    currentReport.uncounted = fresh.uncounted;
     renderReportMeta(currentReport);
     renderReportTable(currentReport);
   }
@@ -1637,6 +1690,221 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('reportPrintModal').classList.remove('open');
   }
 
+
+  /* ================= Excel / Word downloads of the report ================= */
+  var RLIBS = {
+    jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'],
+    docx:['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js','https://unpkg.com/docx@9.7.1/dist/index.iife.js']
+  };
+  var RLIBCHK = { jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; } };
+  function rAddScript(src){ return new Promise(function(res, rej){ var el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = function(){ rej(new Error('load ' + src)); }; document.head.appendChild(el); }); }
+  async function rLoadLib(name){
+    if(RLIBCHK[name]()) return;
+    var err = null;
+    for(var i = 0; i < RLIBS[name].length; i++){
+      try{ await rAddScript(RLIBS[name][i]); if(RLIBCHK[name]()) return; }catch(e){ err = e; }
+    }
+    throw err || new Error('library ' + name);
+  }
+  function reportFileBase(){
+    var r = currentReport || {};
+    var of = String(r.officer || 'Officer').replace(/\s*[—–-]\s*(APG|DPG)\s*$/i,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    var mn = String(r.monthName || 'Report').replace(/[^A-Za-z0-9]+/g,'-');
+    return 'CampOffice-MonthlyReport-' + of + '-' + mn + '-' + (r.year || '');
+  }
+  function reportDownloadBlob(blob, name){
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  function reportHeadingText(){ return isUrdu ? headingUr : headingEn; }
+  function stampLines(st){ return [st.name, st.designation, st.address].filter(function(v){ return v && String(v).trim(); }).join('\n').split('\n'); }
+  function xmlEsc(v){ return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function colLetter(i){ var s2 = ''; i++; while(i > 0){ var m = (i - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; i = Math.floor((i - 1) / 26); } return s2; }
+
+  async function buildReportXlsx(){
+    var r = currentReport, nC = r.cols.length, lastCol = nC + 1;       // A = nature, B.. = results, last = total
+    var L = colLetter(lastCol);
+    function t(ref, text, st){ return '<c r="'+ref+'" s="'+st+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(text)+'</t></is></c>'; }
+    function n(ref, val, st){ return '<c r="'+ref+'" s="'+st+'"><v>'+(val || 0)+'</v></c>'; }
+    function f(ref, formula, val, st){ return '<c r="'+ref+'" s="'+st+'"><f>'+formula+'</f><v>'+(val || 0)+'</v></c>'; }
+    var rows = '', merges = [], rowNo = 0;
+    function addRow(cells, ht){ rowNo++; rows += '<row r="'+rowNo+'"'+(ht ? ' ht="'+ht+'" customHeight="1"' : '')+'>'+cells(rowNo)+'</row>'; return rowNo; }
+    var headLines = reportHeadingText().split('\n');
+    headLines.forEach(function(line, i){ addRow(function(rn){ merges.push('A'+rn+':'+L+rn); return t('A'+rn, line, i === 0 ? 1 : 9); }, i === 0 ? 22 : 15); });
+    addRow(function(rn){ merges.push('A'+rn+':'+L+rn); return t('A'+rn, 'Monthly Progress Report', 10); }, 22);
+    addRow(function(rn){ merges.push('A'+rn+':'+colLetter(Math.max(1, Math.floor(lastCol/2)))+rn); merges.push(colLetter(Math.max(2, Math.floor(lastCol/2)+1))+rn+':'+L+rn);
+      return t('A'+rn, 'Officer: ' + r.officer, 2) + t(colLetter(Math.max(2, Math.floor(lastCol/2)+1))+rn, r.monthName + ' ' + r.year, 11); }, 18);
+    var headRow = addRow(function(rn){
+      var h = t('A'+rn, 'Nature of Case', 3);
+      r.cols.forEach(function(c, i){ h += t(colLetter(i+1)+rn, c, 3); });
+      return h + t(L+rn, 'Total', 3);
+    }, 48);
+    var first = rowNo + 1;
+    r.rows.forEach(function(row){
+      addRow(function(rn){
+        var out = t('A'+rn, row.nature, 4);
+        r.cols.forEach(function(c, i){ out += n(colLetter(i+1)+rn, row.counts[c], 5); });
+        return out + f(L+rn, 'SUM(B'+rn+':'+colLetter(nC)+rn+')', row.total, 6);
+      }, 18);
+    });
+    var lastData = rowNo;
+    if(r.rows.length){
+      addRow(function(rn){
+        var out = t('A'+rn, 'G. Total', 7);
+        r.cols.forEach(function(c, i){ var cl = colLetter(i+1); out += f(cl+rn, 'SUM('+cl+first+':'+cl+lastData+')', r.grand[c], 8); });
+        return out + f(L+rn, 'SUM('+L+first+':'+L+lastData+')', r.grandTotal, 8);
+      }, 20);
+    }
+    if(r.uncounted && r.uncounted.length){
+      addRow(function(rn){ merges.push('A'+rn+':'+L+rn); return t('A'+rn, 'Note: ' + r.uncounted.length + ' case(s) not in the table (result blank / not a column): ' + r.uncounted.join(', '), 12); }, 30);
+    }
+    rowNo++;                                              // blank spacer
+    var sl = stampLines(stampLeft), sr2 = stampLines(stampRight), mx = Math.max(sl.length, sr2.length);
+    var rightStart = colLetter(Math.max(3, lastCol - 3));
+    for(var i = 0; i < mx; i++){
+      (function(i){ addRow(function(rn){
+        var out = '';
+        if(sl[i]){ out += t('A'+rn, sl[i], i === 0 ? 13 : 16); }
+        if(sr2[i]){ merges.push(rightStart+rn+':'+L+rn); out += t(rightStart+rn, sr2[i], i === 0 ? 14 : 15); }
+        return out;
+      }, 15); })(i);
+    }
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<numFmts count="1"><numFmt numFmtId="164" formatCode="0;-0;;@"/></numFmts>' +
+      '<fonts count="8">' +
+      '<font><sz val="10"/><name val="Arial"/></font>' +                                                      // 0
+      '<font><b/><sz val="13"/><color rgb="FF1B3F63"/><name val="Arial"/></font>' +                           // 1 heading
+      '<font><b/><sz val="11"/><name val="Arial"/></font>' +                                                  // 2 meta bold
+      '<font><b/><sz val="9"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +                            // 3 head white
+      '<font><b/><sz val="10"/><name val="Arial"/></font>' +                                                  // 4 bold
+      '<font><sz val="9"/><color rgb="FF444444"/><name val="Arial"/></font>' +                                // 5 grey
+      '<font><b/><sz val="12"/><color rgb="FF1B3F63"/><name val="Arial"/></font>' +                           // 6 title
+      '<font><sz val="9"/><color rgb="FFB3261E"/><name val="Arial"/></font>' +                                // 7 red note
+      '</fonts>' +
+      '<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFEFE9D8"/><bgColor indexed="64"/></patternFill></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F3"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+      '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+      '<border><left style="thin"><color rgb="FF888888"/></left><right style="thin"><color rgb="FF888888"/></right><top style="thin"><color rgb="FF888888"/></top><bottom style="thin"><color rgb="FF888888"/></bottom><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="17">' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                                                                                                              // 0
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                        // 1 heading line 1
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                          // 2 officer
+      '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' + // 3 head
+      '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +             // 4 nature
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf>' +               // 5 number
+      '<xf numFmtId="164" fontId="4" fillId="4" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf>' + // 6 row total
+      '<xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center"/></xf>' +             // 7 G.total label
+      '<xf numFmtId="164" fontId="4" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center"/></xf>' + // 8 G.total number
+      '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                        // 9 grey centre (heading lines 2+)
+      '<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                        // 10 title
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                         // 11 month right
+      '<xf numFmtId="0" fontId="7" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>' +                                // 12 note
+      '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                          // 13 stamp bold left
+      '<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                         // 14 stamp bold right
+      '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                         // 15 stamp grey right
+      '<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                          // 16 stamp grey left
+      '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    // style 9 (grey, centred) is also used for stamp lines in col A — acceptable; left stamp uses 13/9
+    var widths = [34]; for(var wi = 0; wi < nC; wi++) widths.push(12.5); widths.push(10);
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + rows + '</sheetData><mergeCells count="'+merges.length+'">' + merges.map(function(m){ return '<mergeCell ref="'+m+'"/>'; }).join('') + '</mergeCells>' +
+      '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.25" footer="0.25"/>' +
+      '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+    var zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+    zip.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Monthly Report" sheetId="1" r:id="rId1"/></sheets><calcPr fullCalcOnLoad="1"/></workbook>');
+    zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+    zip.file('xl/styles.xml', styles);
+    zip.file('xl/worksheets/sheet1.xml', sheet);
+    return await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+
+  async function buildReportDocx(){
+    var D = window.docx, r = currentReport, FONT = 'Arial', nC = r.cols.length;
+    var TOTAL_W = 15700, FIRST_W = 3000, OTHER_W = Math.floor((TOTAL_W - FIRST_W) / (nC + 1));
+    var W = [FIRST_W]; for(var i = 0; i <= nC; i++) W.push(OTHER_W);
+    var AL = D.AlignmentType;
+    function run(tx, o){ o = o || {}; return new D.TextRun({text:String(tx == null ? '' : tx), font:FONT, size:o.size || 18, bold:!!o.bold, color:o.color, rightToLeft:!!o.rtl}); }
+    function para(parts, o){ o = o || {}; return new D.Paragraph({children:parts, alignment:o.align, spacing:{before:o.before || 0, after:o.after || 0}, bidirectional:!!o.rtl}); }
+    var bd = {style:D.BorderStyle.SINGLE, size:4, color:'888888'};
+    function cell(txt, i, o){
+      o = o || {};
+      return new D.TableCell({
+        children:[para([run(txt, {size:o.size || 17, bold:o.bold, color:o.color})], {align:o.align})],
+        width:{size:W[i], type:D.WidthType.DXA}, verticalAlign:D.VerticalAlign.CENTER,
+        shading:o.fill ? {type:D.ShadingType.CLEAR, color:'auto', fill:o.fill} : undefined,
+        margins:{top:60, bottom:60, left:60, right:60}
+      });
+    }
+    var kids = [];
+    reportHeadingText().split('\n').forEach(function(line, i){
+      kids.push(para([run(line, {size:i === 0 ? 26 : 19, bold:i === 0, color:i === 0 ? '1B3F63' : '444444', rtl:isUrdu})], {align:AL.CENTER, after:i === 0 ? 20 : 0, rtl:isUrdu}));
+    });
+    kids.push(para([run('Monthly Progress Report', {size:24, bold:true, color:'1B3F63'})], {align:AL.CENTER, before:120, after:100}));
+    kids.push(new D.Table({width:{size:TOTAL_W, type:D.WidthType.DXA}, columnWidths:[TOTAL_W/2, TOTAL_W/2], layout:D.TableLayoutType.FIXED,
+      borders:{top:{style:D.BorderStyle.NONE}, bottom:{style:D.BorderStyle.NONE}, left:{style:D.BorderStyle.NONE}, right:{style:D.BorderStyle.NONE}, insideHorizontal:{style:D.BorderStyle.NONE}, insideVertical:{style:D.BorderStyle.NONE}},
+      rows:[new D.TableRow({children:[
+        new D.TableCell({width:{size:TOTAL_W/2, type:D.WidthType.DXA}, children:[para([run('Officer: ' + r.officer, {size:20, bold:true})])]}),
+        new D.TableCell({width:{size:TOTAL_W/2, type:D.WidthType.DXA}, children:[para([run(r.monthName + ' ' + r.year, {size:20, bold:true})], {align:AL.RIGHT})]})
+      ]})]}));
+    kids.push(para([run('')], {after:60}));
+    var trs = [new D.TableRow({tableHeader:true, cantSplit:true, children:[cell('Nature of Case', 0, {bold:true, color:'FFFFFF', fill:'2A5A84', size:16})]
+      .concat(r.cols.map(function(c, i){ return cell(c, i + 1, {bold:true, color:'FFFFFF', fill:'2A5A84', size:15, align:AL.CENTER}); }))
+      .concat([cell('Total', nC + 1, {bold:true, color:'FFFFFF', fill:'2A5A84', size:16, align:AL.CENTER})])})];
+    if(!r.rows.length){
+      trs.push(new D.TableRow({children:[new D.TableCell({columnSpan:nC + 2, width:{size:TOTAL_W, type:D.WidthType.DXA}, children:[para([run('No cases found', {size:18})], {align:AL.CENTER})]})]}));
+    } else {
+      r.rows.forEach(function(row){
+        trs.push(new D.TableRow({cantSplit:true, children:[cell(row.nature, 0, {bold:true, size:17})]
+          .concat(r.cols.map(function(c, i){ return cell(row.counts[c] ? String(row.counts[c]) : '', i + 1, {align:AL.CENTER}); }))
+          .concat([cell(String(row.total), nC + 1, {bold:true, align:AL.CENTER, fill:'F3F3F3'})])}));
+      });
+      trs.push(new D.TableRow({cantSplit:true, children:[cell('G. Total', 0, {bold:true, fill:'EFE9D8', size:17})]
+        .concat(r.cols.map(function(c, i){ return cell(r.grand[c] ? String(r.grand[c]) : '', i + 1, {bold:true, align:AL.CENTER, fill:'EFE9D8'}); }))
+        .concat([cell(String(r.grandTotal), nC + 1, {bold:true, align:AL.CENTER, fill:'EFE9D8'})])}));
+    }
+    kids.push(new D.Table({rows:trs, width:{size:TOTAL_W, type:D.WidthType.DXA}, columnWidths:W, layout:D.TableLayoutType.FIXED,
+      borders:{top:bd, bottom:bd, left:bd, right:bd, insideHorizontal:bd, insideVertical:bd}}));
+    if(r.uncounted && r.uncounted.length){
+      kids.push(para([run('Note: ' + r.uncounted.length + ' case(s) are not in the table (result blank or not one of the columns): ' + r.uncounted.join(', '), {size:15, color:'B3261E'})], {before:80}));
+    }
+    function stampCell(st, align){
+      var ls = stampLines(st);
+      return new D.TableCell({width:{size:TOTAL_W/2, type:D.WidthType.DXA}, children:ls.map(function(line, i){ return para([run(line, {size:18, bold:i === 0, color:i === 0 ? '111111' : '444444'})], {align:align}); })});
+    }
+    var none = {style:D.BorderStyle.NONE};
+    kids.push(para([run('')], {before:200}));
+    kids.push(new D.Table({width:{size:TOTAL_W, type:D.WidthType.DXA}, columnWidths:[TOTAL_W/2, TOTAL_W/2], layout:D.TableLayoutType.FIXED,
+      borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none},
+      rows:[new D.TableRow({cantSplit:true, children:[stampCell(stampLeft, AL.LEFT), stampCell(stampRight, AL.RIGHT)]})]}));
+    var doc = new D.Document({
+      creator:'Camp Office, Prosecutor General Punjab', title:'Monthly Progress Report — ' + r.officer + ' — ' + r.monthName + ' ' + r.year,
+      sections:[{
+        properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:567, left:567, right:567}}},
+        children:kids
+      }]
+    });
+    return await D.Packer.toBlob(doc);
+  }
+
+  async function downloadReportXlsx(){
+    if(!currentReport){ alert(isUrdu ? 'پہلے رپورٹ بنائیں' : 'Please generate a report first'); return; }
+    try{ await rLoadLib('jszip'); reportDownloadBlob(await buildReportXlsx(), reportFileBase() + '.xlsx'); }
+    catch(err){ console.error(err); alert((isUrdu ? 'Excel فائل نہیں بن سکی: ' : 'Could not build the Excel file: ') + (err && err.message ? err.message : err)); }
+  }
+  async function downloadReportDocx(){
+    if(!currentReport){ alert(isUrdu ? 'پہلے رپورٹ بنائیں' : 'Please generate a report first'); return; }
+    try{ await rLoadLib('docx'); reportDownloadBlob(await buildReportDocx(), reportFileBase() + '.docx'); }
+    catch(err){ console.error(err); alert((isUrdu ? 'Word فائل نہیں بن سکی: ' : 'Could not build the Word file: ') + (err && err.message ? err.message : err)); }
+  }
+
   /* ================= Real "Download PDF" — an actual file, not the print dialog =================
      The old Download PDF button just called window.print() and relied on the user picking
      "Save as PDF" in the browser's print window, which stamps its own header/footer onto the
@@ -1677,7 +1945,7 @@ html.embedded .app-shell{ min-height:0; }
     var target = document.getElementById('reportPrintArea');
     var mn = String(currentReport.monthName || 'Report').replace(/[^A-Za-z0-9]+/g,'-');
     var yr = currentReport.year || '';
-    var filename = "CampOffice-MonthlyReport-"+mn+"-"+yr+".pdf";
+    var filename = reportFileBase()+".pdf";
 
     /* Capture a plain off-screen COPY of the content (appended straight to <body>) rather than
        the in-modal element itself, so the modal's own layout/visibility can't affect the
@@ -1702,7 +1970,7 @@ html.embedded .app-shell{ min-height:0; }
     html2canvas(captureHost, {scale:2, useCORS:true, logging:false}).then(function(canvas){
       captureHost.remove();
       var JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-      var pdf = new JsPDFCtor({unit:"mm", format:"a4", orientation:"portrait"});
+      var pdf = new JsPDFCtor({unit:"mm", format:"a4", orientation:"landscape"});
       var marginMm = 12;
       var imgWmm = pdf.internal.pageSize.getWidth() - marginMm*2;
       var imgHmm = canvas.height * imgWmm / canvas.width;

@@ -1693,10 +1693,11 @@ html.embedded .app-shell{ min-height:0; }
 
   /* ================= Excel / Word downloads of the report ================= */
   var RLIBS = {
+    pdflib:['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'],
     jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'],
     docx:['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js','https://unpkg.com/docx@9.7.1/dist/index.iife.js']
   };
-  var RLIBCHK = { jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; } };
+  var RLIBCHK = { pdflib:function(){ return window.PDFLib; }, jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; } };
   function rAddScript(src){ return new Promise(function(res, rej){ var el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = function(){ rej(new Error('load ' + src)); }; document.head.appendChild(el); }); }
   async function rLoadLib(name){
     if(RLIBCHK[name]()) return;
@@ -1905,6 +1906,193 @@ html.embedded .app-shell{ min-height:0; }
     catch(err){ console.error(err); alert((isUrdu ? 'Word فائل نہیں بن سکی: ' : 'Could not build the Word file: ') + (err && err.message ? err.message : err)); }
   }
 
+
+  /* ================= Real vector PDF (pdf-lib) =================
+     Sharp, selectable text; A4 landscape; the table header repeats on every page; rows are never cut
+     in the middle; the sign-off block is never split. Text the standard PDF fonts cannot draw (Urdu
+     heading or stamps) is drawn by the browser onto a small picture and placed as an image. */
+  function pdfLatin(sx){ return /^[\x20-\x7E -ÿ–—‘’“”•]*$/.test(sx); }
+  function pdfSafe(sx){ return String(sx == null ? '' : sx).replace(/[^\x20-\x7E -ÿ–—‘’“”•]/g, '?'); }
+  function rasterText(text, px, bold, color){
+    var sc = 3, cv = document.createElement('canvas'), cx = cv.getContext('2d');
+    var font = (bold ? 'bold ' : '') + (px * sc) + 'px "Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Arial,sans-serif';
+    cx.font = font;
+    var rtl = /[؀-ۿ]/.test(text);
+    cx.direction = rtl ? 'rtl' : 'ltr';
+    var w = Math.ceil(cx.measureText(text).width) + 8, h = Math.ceil(px * sc * 1.9);
+    cv.width = w; cv.height = h;
+    cx = cv.getContext('2d'); cx.font = font; cx.direction = rtl ? 'rtl' : 'ltr';
+    cx.fillStyle = color || '#111'; cx.textBaseline = 'middle'; cx.textAlign = rtl ? 'right' : 'left';
+    cx.fillText(text, rtl ? w - 4 : 4, h / 2);
+    return new Promise(function(res){ cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res({bytes:new Uint8Array(ab), w:w / sc, h:h / sc}); }); }, 'image/png'); });
+  }
+  function emblemPng(){
+    return new Promise(function(res){
+      try{
+        var cs = getComputedStyle(document.body);
+        var svg = String(PUNJAB_EMBLEM_SVG).replace(/var\((--[a-z-]+)\)/g, function(m0, name){ return (cs.getPropertyValue(name) || '#2A5A84').trim(); });
+        var img = new Image();
+        img.onload = function(){
+          var cv = document.createElement('canvas'); cv.width = 240; cv.height = 240;
+          cv.getContext('2d').drawImage(img, 0, 0, 240, 240);
+          cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res(new Uint8Array(ab)); }); }, 'image/png');
+        };
+        img.onerror = function(){ res(null); };
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+      }catch(e){ res(null); }
+    });
+  }
+  async function buildReportPdf(){
+    var PL = window.PDFLib, r = currentReport, nC = r.cols.length;
+    var doc = await PL.PDFDocument.create();
+    var fR = await doc.embedFont(PL.StandardFonts.Helvetica), fB = await doc.embedFont(PL.StandardFonts.HelveticaBold);
+    var PW = 841.89, PH = 595.28, M = 28;
+    var NAVY = PL.rgb(0.165, 0.353, 0.518), GOLD = PL.rgb(0.937, 0.914, 0.847), LGREY = PL.rgb(0.953, 0.953, 0.953), LINE = PL.rgb(0.53, 0.53, 0.53), INK = PL.rgb(0.07, 0.07, 0.07), GREYTX = PL.rgb(0.27, 0.27, 0.27), WHITE = PL.rgb(1, 1, 1);
+    var firstW = 165, colW = (PW - 2 * M - firstW) / (nC + 1);
+    var pages = [], page = null, y = 0;
+    function newPage(){ page = doc.addPage([PW, PH]); pages.push(page); y = PH - M; }
+    function wrap(text, font, size, width){
+      var words = pdfSafe(text).split(/\s+/).filter(Boolean), lines = [], cur = '';
+      words.forEach(function(w0){
+        var t0 = cur ? cur + ' ' + w0 : w0;
+        if(font.widthOfTextAtSize(t0, size) <= width || !cur){ cur = t0; } else { lines.push(cur); cur = w0; }
+      });
+      if(cur) lines.push(cur);
+      // a single very long word: hard-split so it never leaves its cell
+      var out = [];
+      lines.forEach(function(ln){
+        while(font.widthOfTextAtSize(ln, size) > width && ln.length > 2){
+          var k = ln.length; while(k > 1 && font.widthOfTextAtSize(ln.slice(0, k), size) > width) k--;
+          out.push(ln.slice(0, k)); ln = ln.slice(k);
+        }
+        out.push(ln);
+      });
+      return out.length ? out : [''];
+    }
+    async function centredLine(text, size, bold, color){
+      if(pdfLatin(text)){
+        var f = bold ? fB : fR, w0 = f.widthOfTextAtSize(pdfSafe(text), size);
+        page.drawText(pdfSafe(text), {x:(PW - w0) / 2, y:y - size, size:size, font:f, color:color});
+        y -= size * 1.35;
+      } else {
+        var im = await rasterText(text, size, bold, '#222'), emb = await doc.embedPng(im.bytes);
+        var hh = size * 1.5, ww = im.w * (hh / im.h);
+        page.drawImage(emb, {x:(PW - ww) / 2, y:y - hh + 2, width:ww, height:hh});
+        y -= hh;
+      }
+    }
+    newPage();
+    var emb = await emblemPng();
+    if(emb){ var em = await doc.embedPng(emb); page.drawImage(em, {x:(PW - 40) / 2, y:y - 40, width:40, height:40}); y -= 46; }
+    var headLines = reportHeadingText().split('\n');
+    for(var i = 0; i < headLines.length; i++){ await centredLine(headLines[i], i === 0 ? 13 : 10.5, i === 0, i === 0 ? PL.rgb(0.1, 0.25, 0.4) : GREYTX); }
+    y -= 4;
+    await centredLine('Monthly Progress Report', 12.5, true, PL.rgb(0.1, 0.25, 0.4));
+    y -= 6;
+    var offTxt = pdfSafe('Officer: ' + r.officer), monTxt = pdfSafe(r.monthName + ' ' + r.year);
+    page.drawText(offTxt, {x:M, y:y - 10, size:10.5, font:fB, color:INK});
+    page.drawText(monTxt, {x:PW - M - fB.widthOfTextAtSize(monTxt, 10.5), y:y - 10, size:10.5, font:fB, color:INK});
+    y -= 20;
+
+    var HS = 7.4, BS = 8.4, PAD = 4, HPAD = 2.5;
+    // shrink the header font a little until the longest header word fits its column (never split a word)
+    (function(){
+      var longest = 0; r.cols.concat(['Total']).forEach(function(c0){ String(c0).split(/\s+/).forEach(function(w0){ if(w0.length > longest) longest = w0.length; }); });
+      var longestWord = ''; r.cols.concat(['Total']).forEach(function(c0){ String(c0).split(/\s+/).forEach(function(w0){ if(w0.length >= longest) longestWord = w0; }); });
+      while(HS > 5.6 && fB.widthOfTextAtSize(pdfSafe(longestWord), HS) > colW - 2 * HPAD) HS -= 0.2;
+    })();
+    function drawHeader(){
+      var cells = ['Nature of Case'].concat(r.cols, ['Total']);
+      var wrapped = cells.map(function(c0, i){ return wrap(c0, fB, HS, (i === 0 ? firstW : colW) - 2 * (i === 0 ? PAD : HPAD)); });
+      var mxl = 1; wrapped.forEach(function(w0){ mxl = Math.max(mxl, w0.length); });
+      var hh = mxl * (HS + 2) + 2 * PAD;
+      if(y - hh < M + 30){ newPage(); }
+      var x = M;
+      cells.forEach(function(c0, i){
+        var cw = i === 0 ? firstW : colW;
+        page.drawRectangle({x:x, y:y - hh, width:cw, height:hh, color:NAVY, borderColor:LINE, borderWidth:0.5});
+        var lines = wrapped[i], ty = y - (hh - lines.length * (HS + 2)) / 2 - HS;
+        lines.forEach(function(ln, li){
+          var lw = fB.widthOfTextAtSize(ln, HS);
+          page.drawText(ln, {x:i === 0 ? x + PAD : x + (cw - lw) / 2, y:ty - li * (HS + 2), size:HS, font:fB, color:WHITE});
+        });
+        x += cw;
+      });
+      y -= hh;
+    }
+    function drawRow(label, vals, total, opts){
+      opts = opts || {};
+      var lines = wrap(label, fB, BS, firstW - 2 * PAD);
+      var rh = Math.max(19, lines.length * (BS + 2.2) + 2 * PAD - 1);
+      if(y - rh < M + 26){ newPage(); drawHeader(); }
+      var x = M;
+      page.drawRectangle({x:x, y:y - rh, width:firstW, height:rh, color:opts.fill || WHITE, borderColor:LINE, borderWidth:0.5});
+      lines.forEach(function(ln, li){ page.drawText(ln, {x:x + PAD, y:y - PAD - BS - li * (BS + 2.2) + 1, size:BS, font:fB, color:INK}); });
+      x += firstW;
+      vals.concat([total]).forEach(function(v, i){
+        var isTot = i === vals.length;
+        page.drawRectangle({x:x, y:y - rh, width:colW, height:rh, color:opts.fill || (isTot ? LGREY : WHITE), borderColor:LINE, borderWidth:0.5});
+        var tx = v ? String(v) : '';
+        if(tx){ var f = (isTot || opts.fill) ? fB : fR, tw = f.widthOfTextAtSize(tx, BS + 0.6); page.drawText(tx, {x:x + (colW - tw) / 2, y:y - rh / 2 - BS / 2 + 1.5, size:BS + 0.6, font:f, color:INK}); }
+        x += colW;
+      });
+      y -= rh;
+    }
+    drawHeader();
+    if(!r.rows.length){
+      var nf = 'No cases found';
+      page.drawText(nf, {x:M, y:y - 16, size:10, font:fR, color:INK}); y -= 24;
+    } else {
+      r.rows.forEach(function(row){ drawRow(row.nature, r.cols.map(function(c0){ return row.counts[c0]; }), row.total); });
+      drawRow('G. Total', r.cols.map(function(c0){ return r.grand[c0]; }), r.grandTotal, {fill:GOLD});
+    }
+    if(r.uncounted && r.uncounted.length){
+      var note = wrap('Note: ' + r.uncounted.length + ' case(s) are not in the table (result blank or not one of the columns): ' + r.uncounted.join(', '), fR, 8, PW - 2 * M);
+      if(y - note.length * 11 - 10 < M + 30) newPage();
+      y -= 6;
+      note.forEach(function(ln){ page.drawText(ln, {x:M, y:y - 8, size:8, font:fR, color:PL.rgb(0.7, 0.15, 0.12)}); y -= 11; });
+    }
+    // sign-off block (kept together on one page)
+    var stL = stampLines(stampLeft), stR = stampLines(stampRight), mxs = Math.max(stL.length, stR.length);
+    var signH = mxs * 13 + 24;
+    if(y - signH < M + 10) newPage();
+    y -= 22;
+    async function stampCol(lines, rightAlign){
+      var yy = y;
+      for(var k = 0; k < lines.length; k++){
+        var ln = lines[k], bold = k === 0, size = 9.5, f = bold ? fB : fR, col = bold ? INK : GREYTX;
+        if(pdfLatin(ln)){
+          var tw = f.widthOfTextAtSize(pdfSafe(ln), size);
+          page.drawText(pdfSafe(ln), {x:rightAlign ? PW - M - tw : M, y:yy - size, size:size, font:f, color:col});
+        } else {
+          var im = await rasterText(ln, size, bold, bold ? '#111' : '#444'), eb = await doc.embedPng(im.bytes), hh = size * 1.5, ww = im.w * (hh / im.h);
+          page.drawImage(eb, {x:rightAlign ? PW - M - ww : M, y:yy - hh + 2, width:ww, height:hh});
+        }
+        yy -= 13;
+      }
+    }
+    await stampCol(stL, false); await stampCol(stR, true);
+    // footer with page numbers
+    pages.forEach(function(pg, i){
+      var ft = pdfSafe('Camp Office, Prosecutor General Punjab   |   Page ' + (i + 1) + ' of ' + pages.length);
+      pg.drawText(ft, {x:(PW - fR.widthOfTextAtSize(ft, 7)) / 2, y:14, size:7, font:fR, color:PL.rgb(0.45, 0.45, 0.45)});
+    });
+    doc.setTitle('Monthly Progress Report — ' + pdfSafe(r.officer) + ' — ' + r.monthName + ' ' + r.year);
+    doc.setCreator('Camp Office, Prosecutor General Punjab');
+    return await doc.save();
+  }
+  async function downloadReportPdf(){
+    if(!currentReport){ alert(isUrdu ? 'پہلے رپورٹ بنائیں' : 'Please generate a report first'); return; }
+    try{
+      await rLoadLib('pdflib');
+      var bytes = await buildReportPdf();
+      reportDownloadBlob(new Blob([bytes], {type:'application/pdf'}), reportFileBase() + '.pdf');
+    }catch(err){
+      console.error('vector PDF failed, using the picture-based PDF instead:', err);
+      downloadReportPdfImage();
+    }
+  }
+
   /* ================= Real "Download PDF" — an actual file, not the print dialog =================
      The old Download PDF button just called window.print() and relied on the user picking
      "Save as PDF" in the browser's print window, which stamps its own header/footer onto the
@@ -1931,7 +2119,7 @@ html.embedded .app-shell{ min-height:0; }
       });
     });
   }
-  function downloadReportPdf(){
+  function downloadReportPdfImage(){
     if(!currentReport){
       alert(isUrdu ? 'پہلے رپورٹ بنائیں' : 'Please generate a report first');
       return;

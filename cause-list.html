@@ -1711,12 +1711,28 @@ function san(s){
   return String(s == null ? '' : s).replace(/[‘’‛]/g,"'").replace(/[“”]/g,'"').replace(/[–—−]/g,'-')
     .replace(/ /g,' ').replace(/[​-‏‪-‮]/g,'').replace(/[^\x20-\x7E¡-ÿ]/g,'?');
 }
+function pdfEmblemPng(){
+  return new Promise(function(res){
+    try{
+      var pal = {'--navy':'#2A5A84','--gold':'#B8860B','--gold-light':'#d4a839','--gold-deep':'#8a660a'};
+      var svg = String(PUNJAB_EMBLEM_SVG).replace(/var\((--[a-z-]+)\)/g, function(m0, n){ return pal[n] || '#2A5A84'; });
+      var img = new Image();
+      img.onload = function(){
+        var cv = document.createElement('canvas'); cv.width = 240; cv.height = 240;
+        cv.getContext('2d').drawImage(img, 0, 0, 240, 240);
+        cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res(new Uint8Array(ab)); }); }, 'image/png');
+      };
+      img.onerror = function(){ res(null); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }catch(e){ res(null); }
+  });
+}
 async function buildPdf(days){
   var L = PDFLib, doc = await L.PDFDocument.create();
   var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold);
-  var PW = 841.89, PH = 595.28, M = 24, FOOT = 20;
+  var PW = 841.89, PH = 595.28, M = 24, FOOT = 32;
   var cols = [{h:'Bench',w:34},{h:'Sr.',w:34},{h:'Case No',w:100},{h:'Title of Case',w:192},{h:'Nature',w:125},{h:'Section',w:84},{h:'B.Type',w:32},{h:'Officer',w:93},{h:'Result',w:100}];
-  var navy = L.rgb(.106,.247,.388), gold = L.rgb(.97,.92,.77), yel = L.rgb(1,.965,.8), grey = L.rgb(.45,.45,.45), line = L.rgb(.72,.72,.72), black = L.rgb(.1,.1,.1), white = L.rgb(1,1,1), red = L.rgb(.99,.9,.9);
+  var goldL = L.rgb(.722,.525,.043), navy = L.rgb(.106,.247,.388), gold = L.rgb(.97,.92,.77), yel = L.rgb(1,.965,.8), grey = L.rgb(.45,.45,.45), line = L.rgb(.72,.72,.72), black = L.rgb(.1,.1,.1), white = L.rgb(1,1,1), red = L.rgb(.99,.9,.9);
   var page = null, y = 0;
   function wrap(text, font, size, width){
     var out = [], paras = san(text).split('\n');
@@ -1787,8 +1803,18 @@ async function buildPdf(days){
     y -= rh;
   }
   newPage();
+  /* letterhead (same standard look as the Monthly Progress Report): emblem, office heading, gold + navy rule */
+  var headTop = y, embBytes = await pdfEmblemPng();
+  if(embBytes){ var emb = await doc.embedPng(embBytes); page.drawImage(emb, {x:M, y:y - 40, width:40, height:40}); }
+  var h1t = 'Camp Office Prosecutor General Punjab', h2t = 'Supreme Court of Pakistan, Islamabad';
+  page.drawText(h1t, {x:(PW - FB.widthOfTextAtSize(h1t, 14.5)) / 2, y:y - 14, size:14.5, font:FB, color:navy});
+  page.drawText(h2t, {x:(PW - F.widthOfTextAtSize(h2t, 9.5)) / 2, y:y - 28, size:9.5, font:F, color:grey});
+  y = headTop - 46;
+  page.drawLine({start:{x:M, y:y}, end:{x:PW - M, y:y}, thickness:2.2, color:goldL});
+  page.drawLine({start:{x:M, y:y - 3.6}, end:{x:PW - M, y:y - 3.6}, thickness:.7, color:navy});
+  y -= 16;
   var t = san(exportTitle());
-  page.drawText(t, {x:(PW - FB.widthOfTextAtSize(t, 15)) / 2, y:y - 15, size:15, font:FB, color:navy}); y -= 22;
+  page.drawText(t, {x:(PW - FB.widthOfTextAtSize(t, 13)) / 2, y:y - 13, size:13, font:FB, color:navy}); y -= 19;
   var st = san(subLine(days));
   page.drawText(st, {x:(PW - F.widthOfTextAtSize(st, 8.5)) / 2, y:y - 9, size:8.5, font:F, color:grey}); y -= 18;
   days.forEach(function(d){
@@ -1802,12 +1828,17 @@ async function buildPdf(days){
     });
     y -= 6;
   });
-  var pages = doc.getPages(), foot = 'Camp Office, Prosecutor General Punjab   -   ' + san(exportTitle());
+  var pages = doc.getPages(), nowD = new Date();
+  var genD = nowD.getDate() + ' ' + ['January','February','March','April','May','June','July','August','September','October','November','December'][nowD.getMonth()] + ' ' + nowD.getFullYear();
   pages.forEach(function(p, i){
+    p.drawLine({start:{x:M, y:26}, end:{x:PW - M, y:26}, thickness:.6, color:line});
+    p.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:M, y:15, size:7, font:F, color:grey});
+    var mid = 'Generated ' + genD;
+    p.drawText(mid, {x:(PW - F.widthOfTextAtSize(mid, 7)) / 2, y:15, size:7, font:F, color:grey});
     var s = 'Page ' + (i + 1) + ' of ' + pages.length;
-    p.drawText(san(foot), {x:M, y:12, size:7, font:F, color:grey});
-    p.drawText(s, {x:PW - M - F.widthOfTextAtSize(s, 7.5), y:12, size:7.5, font:F, color:grey});
+    p.drawText(s, {x:PW - M - FB.widthOfTextAtSize(s, 7.4), y:15, size:7.4, font:FB, color:navy});
   });
+  doc.setTitle(san(exportTitle())); doc.setCreator('Camp Office, Prosecutor General Punjab');
   return await doc.save();
 }
 

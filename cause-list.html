@@ -790,7 +790,7 @@ var CLParser = (function(){
       var lawyers = e.c3.filter(function(x){ return x; }).join(' ');
       res.push({idx:res.length, hid:e.head.hid, date:e.date, bench:e.head.bench, sitting:e.head.sitting, judges:e.head.judges, sr:msr, sub:e.sub, caseno:caseno, main:mainCase,
         nature: natText, section: msec ? msec[1].trim() : '', bt: mbt ? mbt[1] : '',
-        title:title, lawyers:lawyers, pg: PGRE.test(lawyers), page:e.page});
+        title:title, lawyers:lawyers, pg: PGRE.test(lawyers), partyPg: !PGRE.test(lawyers) && /(through|thr\.?)\s+(its\s+)?(P\.?\s?G\.?|Prosecutor General)/i.test(title) && /Punjab/i.test(title), page:e.page});
     });
     return res;
   }
@@ -1339,7 +1339,11 @@ async function readPdf(file){
       if(p % 4 === 0 || p === doc.numPages){ showRead('⏳ ' + bi('پڑھ رہا ہوں — صفحہ ' + p + ' از ' + doc.numPages, 'Reading page ' + p + ' of ' + doc.numPages + '…')); await new Promise(function(r){ setTimeout(r, 0); }); }
     }
     var meta = CLParser.meta(pages[0] || []);
-    if(!meta){ showRead('❌ ' + bi('یہ Cause List کی PDF نہیں لگتی۔', 'This does not look like a Cause List PDF.'), 'err'); return; }
+    if(!meta){
+      var p0 = (pages[0] || []).map(function(i){ return i.t; }).join(' ');
+      if(/Cause\s+List\s+Search\s+Results/i.test(p0)){ showRead('ℹ️ ' + bi('یہ «Cause List Search Results» والی (Supplementary طرز کی) PDF ہے۔ اس کا الگ سسٹم اگلے مرحلے میں بنے گا؛ یہاں صرف Final Cause List ڈالیں۔', 'This is a “Cause List Search Results” (supplementary-style) PDF. It will get its own importer next; please upload only a Final Cause List here.'), 'err'); return; }
+      showRead('❌ ' + bi('یہ Cause List کی PDF نہیں لگتی۔', 'This does not look like a Cause List PDF.'), 'err'); return;
+    }
     if(meta.kind !== 'FINAL'){
       showRead('ℹ️ ' + bi('یہ ' + esc(meta.kind) + ' CAUSE LIST ہے۔ ابھی صرف Final Cause List تیار ہے؛ باقی اگلے مرحلے میں آئیں گی۔', 'This is a ' + esc(meta.kind) + ' list. Only the Final Cause List is supported for now.'), 'err'); return;
     }
@@ -1347,7 +1351,9 @@ async function readPdf(file){
     var punjab = list.filter(function(e){ return e.pg; }).length;
     if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
     ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = [];
-    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases'), 'good');
+    var skipped = list.filter(function(e){ return e.partyPg; });
+    var skipNote = skipped.length ? '<br><span style="color:#8A5A00">⚠ ' + bi(skipped.length + ' ایسے کیس شامل نہیں کیے: فریق «State through PG Punjab» ہے مگر وکیلوں کے خانے میں PG/Addl. PG نہیں لکھا — دیکھ لیں اگر یہ بھی ہمارے ہیں تو «کیس شامل کریں» سے خود ڈال دیں: ', skipped.length + ' case(s) NOT included: the State through PG Punjab is a party, but no PG/Addl. PG is listed among the lawyers — check, and add by hand with “Add case” if they are ours: ') + '<bdi dir="ltr">' + skipped.map(function(e){ return esc(e.caseno + ' (' + (e.bench || '') + ')'); }).join(', ') + '</bdi></span>' : '';
+    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + skipNote, 'good');
     dropDraft(); changed();
     window.scrollTo(0, 0);
   }catch(err){

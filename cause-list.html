@@ -435,6 +435,9 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 .cl-hist .hw.r{ background:#fde9e9; color:#8c1d18; border:1px solid #e0a1a1; }
 .cl-hist .hw.y{ background:#fff7d6; color:#5c4500; border:1px solid #d9a400; }
 
+.cl-supp{display:inline-block;margin-top:3px;padding:1px 6px;border-radius:9px;background:#fdebd2;color:#8a4b00;border:1px solid #e3b469;font-size:10px;font-weight:700;letter-spacing:.03em}
+.cl-pill.supp{border-color:#e3b469}
+
 </style>
 </head><body>
 
@@ -501,7 +504,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
   <div class="cl-card no-print" id="uploadCard">
     <div class="cl-drop" id="dropZone" onclick="document.getElementById('pdfFile').click()">
       <b>① Final Cause List کی PDF یہاں ڈالیں یا کلک کر کے منتخب کریں</b>
-      Drop the Final Cause List PDF here, or click to choose &nbsp;·&nbsp; (PDF only)
+      Drop the Final Cause List PDF here, or click to choose &nbsp;·&nbsp; (PDF only) &nbsp;|&nbsp; Supplementary: use the “➕ Supplementary شامل کریں” button after the Final list is loaded
     </div>
     <input type="file" id="pdfFile" accept="application/pdf,.pdf" style="display:none">
     <div id="readMsg" class="cl-msg" style="display:none"></div>
@@ -528,6 +531,8 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
       <button class="cl-btn ghost" onclick="exportFile('xlsx')">⬇ Excel</button>
       <button class="cl-btn ghost" onclick="exportFile('docx')">⬇ Word</button>
       <span class="cl-sep"></span>
+      <button class="cl-btn" onclick="document.getElementById('suppFile').click()" title="Supplementary list PDF">➕ Supplementary شامل کریں</button>
+      <input type="file" id="suppFile" accept="application/pdf,.pdf" style="display:none">
       <button class="cl-btn ghost" onclick="newUpload()">New PDF / نئی PDF</button>
     </div>
     <div id="actMsg" class="cl-msg" style="display:none"></div>
@@ -759,7 +764,7 @@ var CLParser = (function(){
         }
         head = {bench: mb[1], sitting: sitting, judges: judges, hid: ++hidc}; cur = null; i = j; continue;
       }
-      if(/^(FINAL|PROPOSED) CAUSE LIST|^Page \d+ of/.test(full) || /^BENCH - [IVX]+$/.test(full) || /^\d\d-\w{3}-\d{4}$/.test(full)){ i++; continue; }
+      if(/^(FINAL|PROPOSED|SUPPLEMENTARY) CAUSE LIST|^Page \d+ of/.test(full) || /^BENCH - [IVX]+$/.test(full) || /^\d\d-\w{3}-\d{4}$/.test(full)){ i++; continue; }
       var m0 = c[0].trim().match(/^(?:and \((\d+)\)|(\d+))$/);
       if(m0 && /\d+(?:-[A-Z])?\/\d/.test(c[1])){
         cur = {sr: m0[2] || null, sub: m0[1] || null, date: date, head: head || {bench:'',sitting:'',judges:[],hid:0}, page: pn, c1:[c[1]], c2:[c[2]], c3:[c[3]]};
@@ -804,7 +809,54 @@ var CLParser = (function(){
     var m = txt.match(/(FINAL|PROPOSED|SUPPLEMENTARY)\s+CAUSE\s+LIST\s+(\d+)\s+of\s+(\d{4})/i);
     return m ? {kind:m[1].toUpperCase(), no:m[2], year:m[3]} : null;
   }
-  return {meta:meta, toLines:toLines, build:build, parseCaseNo:parseCaseNo, PGRE:PGRE};
+
+  /* ===== "Cause List Search Results" export (table layout: Sr.# | Case No | Parties | Lawyers | Time) ===== */
+  var MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function isSearchResults(firstPageItems){
+    return /Cause\s+List\s+Search\s+Results/i.test(firstPageItems.map(function(i){ return i.t; }).join(' '));
+  }
+  function buildSR(pages){
+    var out = [], head = null, date = null, label = '', hidc = 0, cur = null;
+    pages.forEach(function(items, pi){
+      var ws = items.filter(function(i){ return i.t.trim() !== ''; });
+      ws.sort(function(a,b){ return (Math.round(a.top) - Math.round(b.top)) || (a.x - b.x); });
+      var rows = [];
+      ws.forEach(function(w){ var last = rows[rows.length-1]; if(last && Math.abs(last.top - w.top) < 3) last.w.push(w); else rows.push({top:w.top, w:[w]}); });
+      rows.forEach(function(r){
+        var cells = ['','','','',''];
+        r.w.sort(function(a,b){ return a.x - b.x; }).forEach(function(w){
+          var k = w.x < 80 ? 0 : w.x < 150 ? 1 : w.x < 290 ? 2 : w.x < 480 ? 3 : 4;
+          cells[k] += (cells[k] ? ' ' : '') + w.t.trim();
+        });
+        var full = cells.join(' ').replace(/\s+/g, ' ').trim();
+        if(!full || /^Cause List Search Results$|^Grouped By:|^Page \d+ of \d+$/i.test(full)) return;
+        if(/^Sr\.#\s+Case No\s+Parties\s+Lawyers\s+Time$/i.test(full)) return;
+        var mb = full.match(/BENCH\s*-\s*([IVX]+)\s*$/);
+        if(mb && r.w.length === 1 && full === full.toUpperCase()){ head = {bench:mb[1], sitting:'', judges:[], hid:++hidc}; cur = null; return; }
+        if(head && r.w.length === 1 && /^JUSTICE\s/.test(full) && full === full.toUpperCase()){ head.judges.push(full); return; }
+        var md = full.match(/^(\d\d)-(\d\d)-(\d{4})$/);
+        if(md){ date = md[1] + '-' + MONS[+md[2] - 1] + '-' + md[3]; cur = null; return; }
+        if(/^[A-Z]{2,5}-\d+$/.test(full)){ label = full; return; }
+        var m0 = cells[0].trim().match(/^(?:and \((\d+)\)|(\d+))$/);
+        if(m0 && cells[1]){
+          cur = {sr:m0[2] || null, sub:m0[1] || null, date:date, head:head || {bench:'', sitting:'', judges:[], hid:0}, page:pi + 1, c1:[cells[1]], c2:[cells[2]], c3:[cells[3]], time:cells[4]};
+          out.push(cur);
+        } else if(cur){ cur.c1.push(cells[1]); cur.c2.push(cells[2]); cur.c3.push(cells[3]); }
+      });
+    });
+    var res = [], msr = null;
+    out.forEach(function(e){
+      if(e.sr) msr = e.sr;
+      var l1 = e.c1.filter(function(x){ return x; }), caseno = (l1[0] || '').trim();
+      if(l1[1] && /\/\d{0,3}$/.test(caseno) && /^\d{1,4}$/.test(l1[1].trim())) caseno += l1[1].trim();
+      var title = e.c2.filter(function(x){ return x; }).join(' '), lawyers = e.c3.filter(function(x){ return x; }).join(' ');
+      res.push({idx:res.length, hid:e.head.hid, date:e.date, bench:e.head.bench, sitting:'', judges:e.head.judges, sr:msr, sub:e.sub, caseno:caseno, main:'',
+        nature:'', section:'', bt:'', title:title, lawyers:lawyers, pg:PGRE.test(lawyers),
+        partyPg: !PGRE.test(lawyers) && /(through|thr\.?)\s+(its\s+)?(P\.?\s?G\.?|Prosecutor General)/i.test(title) && /Punjab/i.test(title), page:e.page, time:e.time, label:label});
+    });
+    return res;
+  }
+  return {meta:meta, toLines:toLines, build:build, buildSR:buildSR, isSearchResults:isSearchResults, parseCaseNo:parseCaseNo, PGRE:PGRE};
 })();
 if(typeof module !== 'undefined') module.exports = CLParser;
 
@@ -833,7 +885,7 @@ var DAYN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturda
 
 var ST = { meta:null, rows:[], fileName:'', offDay:{}, offBench:{} };
 var HIST = [], FUT = [];
-var VIEW = {day:'', bench:''};
+var VIEW = {day:'', bench:'', supp:false};
 var RID = 0, EDIT_ID = null, ADD_MODE = false;
 var CTX = { user:null, canWrite:false, canLists:false };
 
@@ -912,7 +964,7 @@ function uncertainReasons(r){
   if(!r.type || !r.no || !r.year || !validNo(r.no)) u.push('کیس نمبر واضح نہیں / Case number unclear');
   if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title)) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
   if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
-  if(!r.natText && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
+  if(!r.natText && !r.supp && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
   return u;
 }
 function rowsFromParsed(list){
@@ -979,21 +1031,22 @@ function visibleDays(){
   var out = [];
   groupRows().forEach(function(d){
     if(VIEW.day && d.iso !== VIEW.day) return;
-    var bs = d.benches.filter(function(b){ return !VIEW.bench || b.bench === VIEW.bench; });
+    var bs = d.benches.map(function(b){ return VIEW.supp ? {bench:b.bench, hid:b.hid, sitting:b.sitting, judges:b.judges, rows:b.rows.filter(function(r){ return r.supp; })} : b; })
+      .filter(function(b){ return (!VIEW.bench || b.bench === VIEW.bench) && b.rows.length; });
     if(bs.length) out.push({iso:d.iso, benches:bs});
   });
   return out;
 }
-function inView(r){ return (!VIEW.day || r.iso === VIEW.day) && (!VIEW.bench || r.bench === VIEW.bench); }
+function inView(r){ return (!VIEW.day || r.iso === VIEW.day) && (!VIEW.bench || r.bench === VIEW.bench) && (!VIEW.supp || r.supp); }
 function viewLabel(){
-  return (VIEW.day ? dayName(VIEW.day) + ' ' + dmyFromIso(VIEW.day) : 'All days') + ' · ' + (VIEW.bench ? 'Bench ' + VIEW.bench : 'All benches');
+  return (VIEW.day ? dayName(VIEW.day) + ' ' + dmyFromIso(VIEW.day) : 'All days') + ' · ' + (VIEW.bench ? 'Bench ' + VIEW.bench : 'All benches') + (VIEW.supp ? ' · Supplementary only' : '');
 }
 function renderViewBar(){
   if(!ST.rows.length){ $('viewBar').innerHTML = ''; return; }
   var all = groupRows(), dayCnt = {}, benchCnt = {}, benchOrder = [];
   all.forEach(function(d){
     d.benches.forEach(function(b){
-      var n = b.rows.filter(function(r){ return r.mine; }).length;
+      var n = b.rows.filter(function(r){ return r.mine && (!VIEW.supp || r.supp); }).length;
       dayCnt[d.iso] = (dayCnt[d.iso] || 0) + n;
       if(!VIEW.day || VIEW.day === d.iso){ if(!(b.bench in benchCnt)){ benchCnt[b.bench] = 0; benchOrder.push(b.bench); } benchCnt[b.bench] += n; }
     });
@@ -1003,9 +1056,14 @@ function renderViewBar(){
   benchOrder.sort(function(x, y){ return benchNum(x) - benchNum(y); });
   var total = 0; Object.keys(dayCnt).forEach(function(k){ total += dayCnt[k]; });
   var h = '<div class="cl-navrow"><span class="cl-navlab">دن / Day</span><button class="cl-pill' + (!VIEW.day ? ' on' : '') + '" data-view="day" data-v="">All / سب <i>' + total + '</i></button>';
-  all.forEach(function(d){ h += '<button class="cl-pill' + (VIEW.day === d.iso ? ' on' : '') + '" data-view="day" data-v="' + esc(d.iso) + '">' + esc(dayName(d.iso).slice(0, 3)) + ' ' + esc(d.iso.slice(8, 10)) + ' <i>' + dayCnt[d.iso] + '</i></button>'; });
+  all.forEach(function(d){ if(!dayCnt[d.iso]) return; h += '<button class="cl-pill' + (VIEW.day === d.iso ? ' on' : '') + '" data-view="day" data-v="' + esc(d.iso) + '">' + esc(dayName(d.iso).slice(0, 3)) + ' ' + esc(d.iso.slice(8, 10)) + ' <i>' + dayCnt[d.iso] + '</i></button>'; });
   h += '</div><div class="cl-navrow"><span class="cl-navlab">بنچ / Bench</span><button class="cl-pill' + (!VIEW.bench ? ' on' : '') + '" data-view="bench" data-v="">All / سب</button>';
-  benchOrder.forEach(function(b){ h += '<button class="cl-pill' + (VIEW.bench === b ? ' on' : '') + '" data-view="bench" data-v="' + esc(b) + '">' + esc(b) + ' <i>' + benchCnt[b] + '</i></button>'; });
+  benchOrder.forEach(function(b){ if(!benchCnt[b]) return; h += '<button class="cl-pill' + (VIEW.bench === b ? ' on' : '') + '" data-view="bench" data-v="' + esc(b) + '">' + esc(b) + ' <i>' + benchCnt[b] + '</i></button>'; });
+  var suppN = ST.rows.filter(function(r){ return r.supp && r.mine; }).length;
+  if(suppN){
+    h += '</div><div class="cl-navrow"><span class="cl-navlab">لسٹ / List</span><button class="cl-pill' + (!VIEW.supp ? ' on' : '') + '" data-view="supp" data-v="">All / سب</button>' +
+         '<button class="cl-pill supp' + (VIEW.supp ? ' on' : '') + '" data-view="supp" data-v="1">Supplementary / سپلیمنٹری <i>' + suppN + '</i></button>';
+  }
   h += '</div><div class="cl-navrow"><span class="cl-navlab">آفیسر / Officer</span><select id="bulkOff">' + officerOptions('', '— choose officer —') + '</select>' +
        '<button class="cl-btn sm gold" onclick="applyBulkOfficer()">دکھائے گئے سب پر لگائیں / Apply to all shown</button>' +
        '<span class="cl-navnote">Showing / زیرِ نظر: <b>' + esc(viewLabel()) + '</b> — print &amp; downloads follow this view</span></div>';
@@ -1025,10 +1083,10 @@ function applyBulkOfficer(){
 }
 document.addEventListener('click', function(e){
   var b = e.target.closest('[data-view]'); if(!b) return;
-  if(b.dataset.view === 'day') VIEW.day = b.dataset.v; else VIEW.bench = b.dataset.v;
+  if(b.dataset.view === 'day') VIEW.day = b.dataset.v; else if(b.dataset.view === 'supp') VIEW.supp = !!b.dataset.v; else VIEW.bench = b.dataset.v;
   render();
 });
-function benchTitle(b){ return 'BENCH ' + b.bench; }
+function benchTitle(b){ return 'BENCH ' + b.bench + (b.rows && b.rows[0] && b.rows[0].supp ? ' — SUPPLEMENTARY' : ''); }
 function judgesText(b){ return (b.judges || []).map(judgeNice).join(' · '); }
 
 /* ---------- existing records (duplicates / relisted) ---------- */
@@ -1081,7 +1139,7 @@ function undo(){ if(!HIST.length) return; FUT.push(snap()); setSnap(HIST.pop());
 function redo(){ if(!FUT.length) return; HIST.push(snap()); setSnap(FUT.pop()); changed(true); }
 var _dt = null;
 function writeDraft(){
-  try{ if(ST.rows.length) localStorage.setItem('clDraft_v1', JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, view:{day:VIEW.day, bench:VIEW.bench}, at:new Date().toISOString(), rid:RID})); }catch(e){ if(!window._dwarn){ window._dwarn = 1; showAct(bi('براؤزر میں مسودہ محفوظ نہیں ہو سکا — صفحہ ریفریش کیا تو PDF دوبارہ ڈالنی پڑے گی۔', 'Could not keep the draft in this browser — after a refresh you will need to upload the PDF again.'), 'err'); } }
+  try{ if(ST.rows.length) localStorage.setItem('clDraft_v1', JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, view:{day:VIEW.day, bench:VIEW.bench, supp:VIEW.supp}, at:new Date().toISOString(), rid:RID})); }catch(e){ if(!window._dwarn){ window._dwarn = 1; showAct(bi('براؤزر میں مسودہ محفوظ نہیں ہو سکا — صفحہ ریفریش کیا تو PDF دوبارہ ڈالنی پڑے گی۔', 'Could not keep the draft in this browser — after a refresh you will need to upload the PDF again.'), 'err'); } }
 }
 function saveDraft(){ clearTimeout(_dt); _dt = setTimeout(writeDraft, 400); }
 window.addEventListener('pagehide', writeDraft);
@@ -1101,7 +1159,7 @@ function restoreDraft(auto){
   try{
     var d = JSON.parse(localStorage.getItem('clDraft_v1'));
     ST.meta = d.meta; ST.rows = d.rows; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || ''; RID = Math.max(RID, d.rid || 0);
-    if(d.view){ VIEW.day = d.view.day || ''; VIEW.bench = d.view.bench || ''; }
+    if(d.view){ VIEW.day = d.view.day || ''; VIEW.bench = d.view.bench || ''; VIEW.supp = !!d.view.supp; }
     HIST = []; FUT = []; $('draftBanner').style.display = 'none'; changed(true);
   }catch(e){ showAct(bi('مسودہ بحال نہیں ہو سکا', 'Could not restore the draft'), 'err'); }
 }
@@ -1123,10 +1181,16 @@ function rowHtml(r, first){
   h += '<td class="cl-col-inc" style="width:30px">' + (r.mine ? '<input type="checkbox" data-act="inc" ' + (r.include ? 'checked' : '') + '>' : '') + '</td>';
   h += '<td class="cl-c">' + esc(r.bench) + '</td>';
   h += '<td class="cl-c">' + esc(srText(r)) + '</td>';
-  h += '<td class="cl-c">' + esc(caseText(r)) + (r.main ? '<span class="cl-sub">IN ' + esc(r.main) + '</span>' : '') + '</td>';
+  h += '<td class="cl-c">' + esc(caseText(r)) + (r.supp ? '<span class="cl-supp">SUPP</span>' : '') + (r.main ? '<span class="cl-sub">IN ' + esc(r.main) + '</span>' : '') + '</td>';
   h += '<td>' + esc(joinTitle(r.title, r.versus));
   if(r.mine){
     h += '<div class="cl-flag-btns">';
+    if(r.supp){
+      var od = ST.rows.filter(function(x){ return x !== r && x.mine && x.iso !== r.iso && normType(x.type) === normType(r.type) && normNo(x.no) === normNo(r.no) && String(x.year || '') === String(r.year || ''); })
+        .map(function(x){ return x.iso; }).sort();
+      if(od.length) h += '<span class="cl-flag b">ℹ️ اسی کیس کی دوسری تاریخ بھی اس لسٹ میں ہے (' + od.map(function(i){ return dayName(i).slice(0, 3) + ' ' + dmyFromIso(i); }).join('، ') + ') — الگ پیشی، الگ گنتی / same case also on another date in this list — a separate hearing, counted separately</span> ';
+    }
+    if(r.gone) h += '<span class="cl-flag y" title="Supplementary PDF">⚠ نئی PDF میں نہیں ملا — لسٹ سے ہٹ گیا ہو سکتا ہے، تصدیق کریں / not found in the newer PDF — may have been removed, please verify</span> ';
     if(r.unc.length) h += '<button class="cl-flag y' + (r.confirmed ? ' done' : '') + '" data-act="ok" title="' + esc(r.unc.join(' | ')) + '">' + (r.confirmed ? '✓ تصدیق ہو گئی' : '⚠ تصدیق کریں') + '</button> ';
     if(st.ex){
       if(r.force) h += '<button class="cl-flag r done" data-act="force">✓ Force entry (دوبارہ درج ہو گا)</button> ';
@@ -1153,6 +1217,10 @@ function rowHtml(r, first){
   h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit">✎</button> <button data-act="del" title="Remove from this import">🗑</button>' : '') + '</td>';
   return h + '</tr>';
 }
+function listTitle(){
+  var m = ST.meta, t = !m ? 'Cause List' : (m.no ? (m.kind === 'FINAL' ? 'Final Cause List ' : m.kind + ' ') + m.no + ' of ' + m.year : (m.label || m.kind));
+  return t + (VIEW.supp ? ' — Supplementary cases' : '');
+}
 function render(){
   var days = visibleDays(), h = '';
   renderViewBar();
@@ -1175,7 +1243,7 @@ function render(){
   $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length;
   var mineN = 0; days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(r){ if(r.mine) mineN++; }); }); });
   $('toolCard').style.display = ST.rows.length ? '' : 'none';
-  var pt = ST.meta ? (ST.meta.kind === 'FINAL' ? 'Final Cause List ' : ST.meta.kind + ' ') + ST.meta.no + ' of ' + ST.meta.year : 'Cause List';
+  var pt = listTitle();
   var dts = days.map(function(d){ return d.iso; });
   var rng = dts.length ? dmyFromIso(dts[0]) + (dts.length > 1 ? ' to ' + dmyFromIso(dts[dts.length-1]) : '') : '';
   $('printTitle').innerHTML = '<h1>' + esc(pt) + ' — Punjab Prosecution Cases</h1><div>' + esc(rng) + ' &nbsp;|&nbsp; Punjab cases: ' + mineN + ' &nbsp;|&nbsp; Printed: ' + esc(dmyFromIso(new Date().toISOString().slice(0,10))) + '</div>';
@@ -1324,8 +1392,65 @@ async function loadPdfjs(){
   throw err || new Error('pdf.js');
 }
 
+
+/* ---------- note: cases where PG Punjab is only a party, not among the lawyers ---------- */
+function partyNote(list){
+  var skipped = list.filter(function(e){ return e.partyPg; });
+  if(!skipped.length) return '';
+  return '<br><span style="color:#8A5A00">⚠ ' + bi(skipped.length + ' ایسے کیس شامل نہیں کیے: فریق «State through PG Punjab» ہے مگر وکیلوں کے خانے میں PG/Addl. PG نہیں لکھا — دیکھ لیں اگر یہ بھی ہمارے ہیں تو «نیا کیس شامل کریں» سے خود ڈال دیں: ', skipped.length + ' case(s) NOT included: the State through PG Punjab is a party, but no PG/Addl. PG is listed among the lawyers — check, and add by hand with “Add case” if they are ours: ') + '<bdi dir="ltr">' + skipped.map(function(e){ return esc(e.caseno + ' (' + (e.bench || '') + ')'); }).join(', ') + '</bdi></span>';
+}
+function rowKey(r){ return [r.iso, normType(r.type), normNo(r.no), String(r.year || '')].join('|'); }
+
+/* ---------- Supplementary list: adds only the cases that are not already in the list on screen ---------- */
+function addSupplementary(file, doc, pages, meta, isSR){
+  var list = isSR ? CLParser.buildSR(pages) : CLParser.build(CLParser.toLines(pages));
+  var label = isSR ? ((list[0] && list[0].label) || 'Search Results') : ('SUPPLEMENTARY ' + (meta ? meta.no + ' of ' + meta.year : ''));
+  var punjab = list.filter(function(e){ return e.pg; }).length;
+  if(!list.length){ showRead('❌ ' + bi('اس PDF میں کوئی کیس نہیں ملا۔', 'No cases were found in this PDF.'), 'err'); return; }
+  var standalone = !ST.rows.length;
+  var existing = {};
+  ST.rows.forEach(function(r){ existing[rowKey(r)] = true; });
+  var fresh = rowsFromParsed(list);
+  fresh.forEach(function(r){ r.supp = true; r.suppLabel = label; r.hid += 5000; if(r.mine) r.unc = uncertainReasons(r); });
+  var blocks = {}, add = [], dup = 0;
+  fresh.forEach(function(r){ var k = [r.iso, r.bench, r.hid, r.sr].join('|'); (blocks[k] = blocks[k] || []).push(r); });
+  Object.keys(blocks).forEach(function(k){
+    var b = blocks[k];
+    if(!b.some(function(r){ return r.mine && !existing[rowKey(r)]; })){ dup += b.filter(function(r){ return r.mine; }).length; return; }
+    b.forEach(function(r){ if(!existing[rowKey(r)]) add.push(r); else if(r.mine) dup++; });
+  });
+  /* Final-list cases on the dates this PDF covers, but missing from it (may have been removed from the list) */
+  var gone = [];
+  if(!standalone){
+    var allKeys = {}, dates = {};
+    list.forEach(function(e){ var cn = CLParser.parseCaseNo(e.caseno), iso = isoFromDmy(e.date); dates[iso] = true; allKeys[[iso, normType(cn.type), normNo(cn.no), String(cn.year || '')].join('|')] = true; });
+    ST.rows.forEach(function(r){
+      if(r.supp || !r.mine) return;
+      var miss = !!dates[r.iso] && !allKeys[rowKey(r)];
+      r.gone = miss; if(miss) gone.push(r);
+    });
+  }
+  pushHist();
+  if(standalone){
+    ST.meta = {kind:'SUPPLEMENTARY', no:(meta && meta.no) || '', year:(meta && meta.year) || '', label:label}; ST.fileName = file.name; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = [];
+  }
+  ST.rows = ST.rows.concat(add);
+  VIEW.day = ''; VIEW.bench = ''; VIEW.supp = !standalone && add.some(function(r){ return r.mine; });
+  var addMine = add.filter(function(r){ return r.mine; }).length;
+  var h = (addMine ? '✅ ' : 'ℹ️ ') + esc(file.name) + '<br>' + bi(
+    doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس — ان میں سے <b>' + addMine + ' نئے Supplementary کیس شامل ہوئے</b>' + (dup ? '، ' + dup + ' پہلے سے لسٹ میں تھے (چھوڑ دیے)' : '') + '۔',
+    doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases — <b>' + addMine + ' new Supplementary case(s) added</b>' + (dup ? ', ' + dup + ' already in the list (skipped)' : '') + '.');
+  if(!addMine && !standalone) h += '<br>' + bi('اس PDF میں کوئی نیا پنجاب کیس نہیں ملا؛ سب پہلے ہی لسٹ میں ہیں۔', 'No new Punjab case in this PDF — all are already in the list.');
+  if(!isSR || true) h += '<br><span class="cl-sub">' + bi('اس PDF میں کیس کی «نوعیت»، دفعات اور بنچ ٹائپ نہیں ہوتے — آپ ایڈٹ سے بھر سکتے ہیں۔', 'This PDF does not carry the nature, sections or bench type — fill them with Edit if needed.') + '</span>';
+  if(gone.length) h += '<br><span style="color:#8A5A00">⚠ ' + bi(gone.length + ' کیس Final لسٹ میں ہیں مگر اس نئی PDF میں نہیں ملے (ہو سکتا ہے لسٹ سے ہٹ گئے ہوں، یا یہ PDF اس حصے کو شامل نہ کرتی ہو) — ان پر پیلا نشان لگا ہے، تصدیق کر لیں: ', gone.length + ' case(s) in the Final list were not found in this newer PDF (may have been removed, or this PDF may not cover that part) — marked in yellow, please verify: ') + '<bdi dir="ltr">' + gone.map(function(r){ return esc(caseText(r) + ' (' + dmyFromIso(r.iso).slice(0, 6) + ', ' + r.bench + ')'); }).join(', ') + '</bdi></span>';
+  h += partyNote(list);
+  showRead(h, addMine || standalone ? 'good' : '');
+  dropDraft(); changed();
+  window.scrollTo(0, 0);
+}
+
 /* ---------- reading the PDF ---------- */
-async function readPdf(file){
+async function readPdf(file, asSupp){
   if(!file) return;
   showRead('⏳ ' + bi('PDF پڑھنے والا تیار ہو رہا ہے…', 'Preparing the reader…'));
   try{
@@ -1339,21 +1464,20 @@ async function readPdf(file){
       if(p % 4 === 0 || p === doc.numPages){ showRead('⏳ ' + bi('پڑھ رہا ہوں — صفحہ ' + p + ' از ' + doc.numPages, 'Reading page ' + p + ' of ' + doc.numPages + '…')); await new Promise(function(r){ setTimeout(r, 0); }); }
     }
     var meta = CLParser.meta(pages[0] || []);
-    if(!meta){
-      var p0 = (pages[0] || []).map(function(i){ return i.t; }).join(' ');
-      if(/Cause\s+List\s+Search\s+Results/i.test(p0)){ showRead('ℹ️ ' + bi('یہ «Cause List Search Results» والی (Supplementary طرز کی) PDF ہے۔ اس کا الگ سسٹم اگلے مرحلے میں بنے گا؛ یہاں صرف Final Cause List ڈالیں۔', 'This is a “Cause List Search Results” (supplementary-style) PDF. It will get its own importer next; please upload only a Final Cause List here.'), 'err'); return; }
-      showRead('❌ ' + bi('یہ Cause List کی PDF نہیں لگتی۔', 'This does not look like a Cause List PDF.'), 'err'); return;
+    var isSR = !meta && CLParser.isSearchResults(pages[0] || []);
+    if(!meta && !isSR){ showRead('❌ ' + bi('یہ Cause List کی PDF نہیں لگتی۔', 'This does not look like a Cause List PDF.'), 'err'); return; }
+    if(meta && meta.kind === 'PROPOSED'){
+      showRead('ℹ️ ' + bi('یہ PROPOSED CAUSE LIST ہے۔ ابھی اس کا سسٹم تیار نہیں؛ یہاں Final یا Supplementary PDF ڈالیں۔', 'This is a PROPOSED list — not supported yet. Please upload a Final or Supplementary PDF here.'), 'err'); return;
     }
-    if(meta.kind !== 'FINAL'){
-      showRead('ℹ️ ' + bi('یہ ' + esc(meta.kind) + ' CAUSE LIST ہے۔ ابھی صرف Final Cause List تیار ہے؛ باقی اگلے مرحلے میں آئیں گی۔', 'This is a ' + esc(meta.kind) + ' list. Only the Final Cause List is supported for now.'), 'err'); return;
+    if(asSupp && meta && meta.kind === 'FINAL'){
+      showRead('❌ ' + bi('یہ Final Cause List ہے۔ «Supplementary شامل کریں» میں Supplementary PDF ڈالیں؛ نئی Final کے لیے «New PDF» دبائیں۔', 'This is a Final list. Use “Add Supplementary” only for a Supplementary PDF; press “New PDF” for a new Final list.'), 'err'); return;
     }
+    if(isSR || asSupp || (meta && meta.kind === 'SUPPLEMENTARY')){ addSupplementary(file, doc, pages, meta, isSR); return; }
     var list = CLParser.build(CLParser.toLines(pages));
     var punjab = list.filter(function(e){ return e.pg; }).length;
     if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
-    ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = [];
-    var skipped = list.filter(function(e){ return e.partyPg; });
-    var skipNote = skipped.length ? '<br><span style="color:#8A5A00">⚠ ' + bi(skipped.length + ' ایسے کیس شامل نہیں کیے: فریق «State through PG Punjab» ہے مگر وکیلوں کے خانے میں PG/Addl. PG نہیں لکھا — دیکھ لیں اگر یہ بھی ہمارے ہیں تو «کیس شامل کریں» سے خود ڈال دیں: ', skipped.length + ' case(s) NOT included: the State through PG Punjab is a party, but no PG/Addl. PG is listed among the lawyers — check, and add by hand with “Add case” if they are ours: ') + '<bdi dir="ltr">' + skipped.map(function(e){ return esc(e.caseno + ' (' + (e.bench || '') + ')'); }).join(', ') + '</bdi></span>' : '';
-    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + skipNote, 'good');
+    ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false;
+    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list), 'good');
     dropDraft(); changed();
     window.scrollTo(0, 0);
   }catch(err){
@@ -1364,10 +1488,11 @@ async function readPdf(file){
 function newUpload(){
   if(!ST.rows.length) return;
   confirmBox('New PDF / نئی PDF', bi2('موجودہ فہرست اور یہاں منتخب کیے ہوئے نتیجے اسکرین سے ہٹ جائیں گے (جو محفوظ ہو چکے وہ ڈیٹا بیس میں رہیں گے)۔', 'The current list and any results chosen here will be cleared (anything already saved stays in the database).'), function(){
-    ST.rows = []; ST.meta = null; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; showRead(''); showAct(''); try{ localStorage.removeItem('clDraft_v1'); }catch(e){} changed(); $('pdfFile').value = '';
+    ST.rows = []; ST.meta = null; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; showRead(''); showAct(''); try{ localStorage.removeItem('clDraft_v1'); }catch(e){} changed(); $('pdfFile').value = '';
   });
 }
 $('pdfFile').addEventListener('change', function(){ readPdf(this.files[0]); });
+$('suppFile').addEventListener('change', function(){ var f = this.files[0]; this.value = ''; readPdf(f, true); });
 (function(){
   var z = $('dropZone');
   ['dragenter','dragover'].forEach(function(n){ z.addEventListener(n, function(e){ e.preventDefault(); z.classList.add('over'); }); });
@@ -1412,7 +1537,7 @@ function buildDoc(r, officer, withExtras){
     d.natureText = r.natText || '';
     d.benchJudges = (r.judges || []).map(judgeNice).join(' / ');
     d.sitting = r.sitting ? r.sitting.replace(/^\(|\)$/g,'') : '';
-    d.source = 'cause-list-' + (ST.meta ? ST.meta.no + '-' + ST.meta.year : '');
+    d.source = r.supp ? 'cause-list-supplementary' + (r.suppLabel ? '-' + String(r.suppLabel).replace(/\s+/g,'_') : '') : 'cause-list-' + (ST.meta ? ST.meta.no + '-' + ST.meta.year : '');
   }
   return d;
 }
@@ -1497,12 +1622,11 @@ function doPrint(){ window.print(); }
 
 /* =====================  DOWNLOADS: PDF / EXCEL / WORD  ===================== */
 function exportTitle(){
-  var pt = ST.meta ? (ST.meta.kind === 'FINAL' ? 'Final Cause List ' : ST.meta.kind + ' ') + ST.meta.no + ' of ' + ST.meta.year : 'Cause List';
-  return pt + ' — Punjab Prosecution Cases';
+  return listTitle() + ' — Punjab Prosecution Cases';
 }
 function exportFileBase(){
-  var suf = (VIEW.day ? '_' + VIEW.day : '') + (VIEW.bench ? '_Bench_' + VIEW.bench : '');
-  return 'Cause_List_' + (ST.meta ? ST.meta.no + '_of_' + ST.meta.year : 'Punjab') + '_Punjab_Cases' + suf;
+  var suf = (VIEW.day ? '_' + VIEW.day : '') + (VIEW.bench ? '_Bench_' + VIEW.bench : '') + (VIEW.supp ? '_Supplementary' : '');
+  return 'Cause_List_' + (ST.meta && ST.meta.no ? ST.meta.no + '_of_' + ST.meta.year + '_' : '') + 'Punjab_Cases' + suf;
 }
 /* what is printed/downloaded = what is on screen, minus rows that were un-ticked */
 function exportModel(){
@@ -1514,7 +1638,7 @@ function exportModel(){
     d.benches.forEach(function(b){
       var rows = b.rows.filter(function(r){ return keep[[r.iso, r.bench, r.hid, r.sr].join('|')] && (!r.mine || r.include); });
       if(rows.length) benches.push({bench:b.bench, sitting:(b.sitting || '').replace(/^\(|\)$/g,''), judges:judgesText(b), rows:rows.map(function(r){
-        return {bench:r.bench, sr:srText(r), caseNo:caseText(r), caseSub:r.main ? 'IN ' + r.main : '', title:joinTitle(r.title, r.versus),
+        return {bench:r.bench, sr:srText(r), caseNo:caseText(r), caseSub:(r.supp ? 'SUPPLEMENTARY' + (r.main ? ' · ' : '') : '') + (r.main ? 'IN ' + r.main : ''), title:joinTitle(r.title, r.versus),
           nature:typeName(r.type) || r.type, natSub:r.natText, section:r.section, bt:r.bt, officer:r.mine ? effOfficer(r) : '', result:r.result, mine:r.mine, r:r};
       })});
     });

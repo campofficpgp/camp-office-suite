@@ -1945,12 +1945,23 @@ html.embedded .app-shell{ min-height:0; }
   async function buildReportPdf(){
     var PL = window.PDFLib, r = currentReport, nC = r.cols.length;
     var doc = await PL.PDFDocument.create();
-    var fR = await doc.embedFont(PL.StandardFonts.Helvetica), fB = await doc.embedFont(PL.StandardFonts.HelveticaBold);
-    var PW = 841.89, PH = 595.28, M = 28;
-    var NAVY = PL.rgb(0.165, 0.353, 0.518), GOLD = PL.rgb(0.937, 0.914, 0.847), LGREY = PL.rgb(0.953, 0.953, 0.953), LINE = PL.rgb(0.53, 0.53, 0.53), INK = PL.rgb(0.07, 0.07, 0.07), GREYTX = PL.rgb(0.27, 0.27, 0.27), WHITE = PL.rgb(1, 1, 1);
-    var firstW = 165, colW = (PW - 2 * M - firstW) / (nC + 1);
-    var pages = [], page = null, y = 0;
-    function newPage(){ page = doc.addPage([PW, PH]); pages.push(page); y = PH - M; }
+    var fR = await doc.embedFont(PL.StandardFonts.Helvetica), fB = await doc.embedFont(PL.StandardFonts.HelveticaBold), fI = await doc.embedFont(PL.StandardFonts.HelveticaOblique);
+    var PW = 841.89, PH = 595.28, M = 34, TOP = 26, BOT = 40;
+    var NAVY = PL.rgb(0.106, 0.247, 0.388), NAVY2 = PL.rgb(0.165, 0.353, 0.518), GOLDL = PL.rgb(0.722, 0.525, 0.043);
+    var INK = PL.rgb(0.09, 0.11, 0.14), GREYTX = PL.rgb(0.35, 0.38, 0.42), WHITE = PL.rgb(1, 1, 1);
+    var ZEBRA = PL.rgb(0.957, 0.968, 0.982), TOTBG = PL.rgb(0.894, 0.925, 0.957), BORDER = PL.rgb(0.74, 0.79, 0.85), BOXBG = PL.rgb(0.965, 0.973, 0.984);
+    var firstW = 170, colW = (PW - 2 * M - firstW) / (nC + 1);
+    var pages = [], page = null, y = 0, first = true;
+    var now = new Date(), genDate = now.getDate() + ' ' + MONTHS_EN[now.getMonth()] + ' ' + now.getFullYear();
+    function hline(x1, x2, yy, th, col){ page.drawLine({start:{x:x1, y:yy}, end:{x:x2, y:yy}, thickness:th, color:col}); }
+    function txt(t0, o){ page.drawText(pdfSafe(t0), o); }
+    function newPage(){
+      page = doc.addPage([PW, PH]); pages.push(page); y = PH - TOP;
+      if(!first){   // slim running header on continuation pages
+        txt('Monthly Progress Report  —  ' + r.officer + '  —  ' + r.monthName + ' ' + r.year, {x:M, y:y - 8, size:8, font:fI, color:GREYTX});
+        hline(M, PW - M, y - 13, 0.6, BORDER); y -= 24;
+      }
+    }
     function wrap(text, font, size, width){
       var words = pdfSafe(text).split(/\s+/).filter(Boolean), lines = [], cur = '';
       words.forEach(function(w0){
@@ -1958,7 +1969,6 @@ html.embedded .app-shell{ min-height:0; }
         if(font.widthOfTextAtSize(t0, size) <= width || !cur){ cur = t0; } else { lines.push(cur); cur = w0; }
       });
       if(cur) lines.push(cur);
-      // a single very long word: hard-split so it never leaves its cell
       var out = [];
       lines.forEach(function(ln){
         while(font.widthOfTextAtSize(ln, size) > width && ln.length > 2){
@@ -1972,113 +1982,156 @@ html.embedded .app-shell{ min-height:0; }
     async function centredLine(text, size, bold, color){
       if(pdfLatin(text)){
         var f = bold ? fB : fR, w0 = f.widthOfTextAtSize(pdfSafe(text), size);
-        page.drawText(pdfSafe(text), {x:(PW - w0) / 2, y:y - size, size:size, font:f, color:color});
-        y -= size * 1.35;
+        txt(text, {x:(PW - w0) / 2, y:y - size, size:size, font:f, color:color});
+        y -= size * 1.38;
       } else {
-        var im = await rasterText(text, size, bold, '#222'), emb = await doc.embedPng(im.bytes);
-        var hh = size * 1.5, ww = im.w * (hh / im.h);
+        var im = await rasterText(text, size, bold, bold ? '#1b3f63' : '#555'), emb = await doc.embedPng(im.bytes);
+        var hh = size * 1.55, ww = im.w * (hh / im.h);
         page.drawImage(emb, {x:(PW - ww) / 2, y:y - hh + 2, width:ww, height:hh});
         y -= hh;
       }
     }
-    newPage();
-    var emb = await emblemPng();
-    if(emb){ var em = await doc.embedPng(emb); page.drawImage(em, {x:(PW - 40) / 2, y:y - 40, width:40, height:40}); y -= 46; }
-    var headLines = reportHeadingText().split('\n');
-    for(var i = 0; i < headLines.length; i++){ await centredLine(headLines[i], i === 0 ? 13 : 10.5, i === 0, i === 0 ? PL.rgb(0.1, 0.25, 0.4) : GREYTX); }
-    y -= 4;
-    await centredLine('Monthly Progress Report', 12.5, true, PL.rgb(0.1, 0.25, 0.4));
-    y -= 6;
-    var offTxt = pdfSafe('Officer: ' + r.officer), monTxt = pdfSafe(r.monthName + ' ' + r.year);
-    page.drawText(offTxt, {x:M, y:y - 10, size:10.5, font:fB, color:INK});
-    page.drawText(monTxt, {x:PW - M - fB.widthOfTextAtSize(monTxt, 10.5), y:y - 10, size:10.5, font:fB, color:INK});
-    y -= 20;
+    newPage(); first = false;
 
-    var HS = 7.4, BS = 8.4, PAD = 4, HPAD = 2.5;
-    // shrink the header font a little until the longest header word fits its column (never split a word)
-    (function(){
-      var longest = 0; r.cols.concat(['Total']).forEach(function(c0){ String(c0).split(/\s+/).forEach(function(w0){ if(w0.length > longest) longest = w0.length; }); });
-      var longestWord = ''; r.cols.concat(['Total']).forEach(function(c0){ String(c0).split(/\s+/).forEach(function(w0){ if(w0.length >= longest) longestWord = w0; }); });
-      while(HS > 5.6 && fB.widthOfTextAtSize(pdfSafe(longestWord), HS) > colW - 2 * HPAD) HS -= 0.2;
-    })();
-    function drawHeader(){
-      var cells = ['Nature of Case'].concat(r.cols, ['Total']);
-      var wrapped = cells.map(function(c0, i){ return wrap(c0, fB, HS, (i === 0 ? firstW : colW) - 2 * (i === 0 ? PAD : HPAD)); });
-      var mxl = 1; wrapped.forEach(function(w0){ mxl = Math.max(mxl, w0.length); });
-      var hh = mxl * (HS + 2) + 2 * PAD;
-      if(y - hh < M + 30){ newPage(); }
-      var x = M;
-      cells.forEach(function(c0, i){
-        var cw = i === 0 ? firstW : colW;
-        page.drawRectangle({x:x, y:y - hh, width:cw, height:hh, color:NAVY, borderColor:LINE, borderWidth:0.5});
-        var lines = wrapped[i], ty = y - (hh - lines.length * (HS + 2)) / 2 - HS;
-        lines.forEach(function(ln, li){
-          var lw = fB.widthOfTextAtSize(ln, HS);
-          page.drawText(ln, {x:i === 0 ? x + PAD : x + (cw - lw) / 2, y:ty - li * (HS + 2), size:HS, font:fB, color:WHITE});
-        });
-        x += cw;
-      });
-      y -= hh;
+    /* ---- letterhead: emblem left, heading centred, gold + navy rule ---- */
+    var headTop = y, embBytes = await emblemPng();
+    if(embBytes){ var em = await doc.embedPng(embBytes); page.drawImage(em, {x:M, y:y - 46, width:46, height:46}); }
+    var headLines = reportHeadingText().split('\n');
+    y -= 1;
+    for(var i = 0; i < headLines.length; i++){ await centredLine(headLines[i], i === 0 ? 14.5 : 9.6, i === 0, i === 0 ? NAVY : GREYTX); }
+    y = Math.min(y, headTop - 48) - 3;
+    hline(M, PW - M, y, 2.2, GOLDL); hline(M, PW - M, y - 3.6, 0.7, NAVY);
+    y -= 15;
+
+    /* ---- title ---- */
+    await centredLine('MONTHLY PROGRESS REPORT', 14, true, NAVY);
+    var sub = r.monthName + ' ' + r.year, sw = fR.widthOfTextAtSize(pdfSafe(sub), 10);
+    txt(sub, {x:(PW - sw) / 2, y:y - 9, size:10, font:fR, color:GREYTX});
+    y -= 19;
+
+    /* ---- information box ---- */
+    var boxH = 38, boxW = PW - 2 * M;
+    page.drawRectangle({x:M, y:y - boxH, width:boxW, height:boxH, color:BOXBG, borderColor:BORDER, borderWidth:0.8});
+    page.drawRectangle({x:M, y:y - boxH, width:4, height:boxH, color:NAVY2});
+    var clerk = (r.clerk && r.clerk !== '—') ? r.clerk : '—';
+    function field(label, value, x, yy, maxW){
+      txt(label, {x:x, y:yy, size:7.2, font:fB, color:GREYTX});
+      var v = wrap(value, fB, 10.5, maxW)[0];
+      txt(v, {x:x, y:yy - 12.5, size:10.5, font:fB, color:INK});
     }
-    function drawRow(label, vals, total, opts){
-      opts = opts || {};
+    field('OFFICER', r.officer, M + 16, y - 12, boxW * 0.40);
+    field('MONTH', r.monthName + ' ' + r.year, M + boxW * 0.46, y - 12, boxW * 0.2);
+    field('TOTAL CASES (HEARINGS)', String(r.caseCount), M + boxW * 0.68, y - 12, boxW * 0.14);
+    field('PREPARED BY', clerk, M + boxW * 0.84 - 14, y - 12, boxW * 0.16);
+    y -= boxH + 11;
+
+    /* ---- table ---- */
+    var HS = 7.6, BS = 9, PAD = 5, HPAD = 2.5;
+    (function(){
+      var allWords = []; r.cols.concat(['Total']).forEach(function(c0){ pdfSafe(String(c0)).split(/\s+/).forEach(function(w0){ if(w0) allWords.push(w0); }); });
+      function widest(sz){ var m0 = 0; allWords.forEach(function(w0){ m0 = Math.max(m0, fB.widthOfTextAtSize(w0, sz)); }); return m0; }
+      while(HS > 5.2 && widest(HS) > colW - 2 * HPAD) HS -= 0.2;
+    })();
+    var cells = r.cols.slice(), wrapped = cells.map(function(c0){ return wrap(c0, fB, HS, colW - 2 * HPAD); });
+    var mxl = 1; wrapped.forEach(function(w0){ mxl = Math.max(mxl, w0.length); });
+    var h1 = 16, h2 = mxl * (HS + 2) + 2 * 4;
+    function drawHeader(){
+      if(y - (h1 + h2) < BOT + 60){ newPage(); }
+      var top = y, x = M;
+      // merged tall cells: Nature of Case, Total
+      page.drawRectangle({x:x, y:top - h1 - h2, width:firstW, height:h1 + h2, color:NAVY, borderColor:WHITE, borderWidth:0.6});
+      txt('Nature of Case', {x:x + PAD + 1, y:top - (h1 + h2) / 2 - HS / 2 + 1, size:HS + 1.6, font:fB, color:WHITE});
+      // "Result of Cases" super header
+      page.drawRectangle({x:x + firstW, y:top - h1, width:colW * nC, height:h1, color:NAVY, borderColor:WHITE, borderWidth:0.6});
+      var st = 'RESULT OF CASES', stw = fB.widthOfTextAtSize(st, 8.2);
+      txt(st, {x:x + firstW + (colW * nC - stw) / 2, y:top - h1 / 2 - 3, size:8.2, font:fB, color:WHITE});
+      x += firstW;
+      cells.forEach(function(c0, i){
+        page.drawRectangle({x:x, y:top - h1 - h2, width:colW, height:h2, color:NAVY2, borderColor:WHITE, borderWidth:0.6});
+        var lines = wrapped[i], ty = top - h1 - (h2 - lines.length * (HS + 2)) / 2 - HS + 0.5;
+        lines.forEach(function(ln, li){ var lw = fB.widthOfTextAtSize(ln, HS); txt(ln, {x:x + (colW - lw) / 2, y:ty - li * (HS + 2), size:HS, font:fB, color:WHITE}); });
+        x += colW;
+      });
+      page.drawRectangle({x:x, y:top - h1 - h2, width:colW, height:h1 + h2, color:NAVY, borderColor:WHITE, borderWidth:0.6});
+      var tw0 = fB.widthOfTextAtSize('Total', HS + 1.6); txt('Total', {x:x + (colW - tw0) / 2, y:top - (h1 + h2) / 2 - HS / 2 + 1, size:HS + 1.6, font:fB, color:WHITE});
+      y -= h1 + h2;
+    }
+    var rowIdx = 0, MINRH = 22;
+    (function(){
+      var stL0 = stampLines(stampLeft), stR0 = stampLines(stampRight), m0 = Math.max(stL0.length, stR0.length);
+      var reserve = 12 + 30 + 14 + m0 * 11.5 + 6 + 8 + ((r.uncounted && r.uncounted.length) ? 34 : 0);
+      var n0 = (r.rows.length || 0) + 1, avail = (y - h1 - h2) - BOT - reserve;
+      MINRH = Math.max(16.5, Math.min(22, Math.floor(avail / n0)));
+    })();
+    function drawRow(label, vals, total, kind){
+      var isG = kind === 'grand';
       var lines = wrap(label, fB, BS, firstW - 2 * PAD);
-      var rh = Math.max(19, lines.length * (BS + 2.2) + 2 * PAD - 1);
-      if(y - rh < M + 26){ newPage(); drawHeader(); }
-      var x = M;
-      page.drawRectangle({x:x, y:y - rh, width:firstW, height:rh, color:opts.fill || WHITE, borderColor:LINE, borderWidth:0.5});
-      lines.forEach(function(ln, li){ page.drawText(ln, {x:x + PAD, y:y - PAD - BS - li * (BS + 2.2) + 1, size:BS, font:fB, color:INK}); });
+      var rh = lines.length === 1 ? MINRH : Math.max(MINRH, lines.length * (BS + 2.4) + 2 * 5);
+      if(y - rh < BOT + 22){ newPage(); drawHeader(); }
+      var bg = isG ? NAVY : (rowIdx % 2 ? ZEBRA : WHITE), x = M;
+      page.drawRectangle({x:x, y:y - rh, width:firstW, height:rh, color:bg, borderColor:BORDER, borderWidth:0.5});
+      var ty = y - (rh - lines.length * (BS + 2.4)) / 2 - BS + 0.6;
+      lines.forEach(function(ln, li){ txt(ln, {x:x + PAD + 1, y:ty - li * (BS + 2.4), size:BS, font:fB, color:isG ? WHITE : INK}); });
       x += firstW;
       vals.concat([total]).forEach(function(v, i){
         var isTot = i === vals.length;
-        page.drawRectangle({x:x, y:y - rh, width:colW, height:rh, color:opts.fill || (isTot ? LGREY : WHITE), borderColor:LINE, borderWidth:0.5});
+        page.drawRectangle({x:x, y:y - rh, width:colW, height:rh, color:isG ? NAVY : (isTot ? TOTBG : bg), borderColor:BORDER, borderWidth:0.5});
         var tx = v ? String(v) : '';
-        if(tx){ var f = (isTot || opts.fill) ? fB : fR, tw = f.widthOfTextAtSize(tx, BS + 0.6); page.drawText(tx, {x:x + (colW - tw) / 2, y:y - rh / 2 - BS / 2 + 1.5, size:BS + 0.6, font:f, color:INK}); }
+        if(tx){ var f = (isTot || isG) ? fB : fR, sz = BS + 1, tw = f.widthOfTextAtSize(tx, sz); txt(tx, {x:x + (colW - tw) / 2, y:y - rh / 2 - sz * 0.35, size:sz, font:f, color:isG ? WHITE : (isTot ? NAVY : INK)}); }
         x += colW;
       });
-      y -= rh;
+      y -= rh; if(!isG) rowIdx++;
     }
     drawHeader();
     if(!r.rows.length){
-      var nf = 'No cases found';
-      page.drawText(nf, {x:M, y:y - 16, size:10, font:fR, color:INK}); y -= 24;
+      txt('No cases found for this officer and month.', {x:M, y:y - 18, size:10, font:fI, color:GREYTX}); y -= 30;
     } else {
       r.rows.forEach(function(row){ drawRow(row.nature, r.cols.map(function(c0){ return row.counts[c0]; }), row.total); });
-      drawRow('G. Total', r.cols.map(function(c0){ return r.grand[c0]; }), r.grandTotal, {fill:GOLD});
+      drawRow('G. Total', r.cols.map(function(c0){ return r.grand[c0]; }), r.grandTotal, 'grand');
     }
     if(r.uncounted && r.uncounted.length){
       var note = wrap('Note: ' + r.uncounted.length + ' case(s) are not in the table (result blank or not one of the columns): ' + r.uncounted.join(', '), fR, 8, PW - 2 * M);
-      if(y - note.length * 11 - 10 < M + 30) newPage();
-      y -= 6;
-      note.forEach(function(ln){ page.drawText(ln, {x:M, y:y - 8, size:8, font:fR, color:PL.rgb(0.7, 0.15, 0.12)}); y -= 11; });
+      if(y - note.length * 11 - 10 < BOT + 20) newPage();
+      y -= 8;
+      note.forEach(function(ln){ txt(ln, {x:M, y:y - 8, size:8, font:fR, color:PL.rgb(0.7, 0.15, 0.12)}); y -= 11; });
     }
-    // sign-off block (kept together on one page)
+
+    /* ---- sign-off: signature line, then name / designation / office ---- */
     var stL = stampLines(stampLeft), stR = stampLines(stampRight), mxs = Math.max(stL.length, stR.length);
-    var signH = mxs * 13 + 24;
-    if(y - signH < M + 10) newPage();
-    y -= 22;
-    async function stampCol(lines, rightAlign){
-      var yy = y;
+    var signH = 12 + 30 + 14 + mxs * 11.5 + 6;
+    if(y - signH < BOT - 4) newPage();
+    y -= 12;
+    async function signCol(label, lines, rightAlign){
+      var lineW = 190, x0 = rightAlign ? PW - M - lineW : M;
+      txt(label, {x:x0, y:y - 8, size:7.6, font:fB, color:GREYTX});
+      hline(x0, x0 + lineW, y - 30, 0.8, INK);
+      var yy = y - 32;
       for(var k = 0; k < lines.length; k++){
-        var ln = lines[k], bold = k === 0, size = 9.5, f = bold ? fB : fR, col = bold ? INK : GREYTX;
+        var ln = lines[k], bold = k === 0, size = 8.8, f = bold ? fB : fR, col = bold ? INK : GREYTX;
         if(pdfLatin(ln)){
           var tw = f.widthOfTextAtSize(pdfSafe(ln), size);
-          page.drawText(pdfSafe(ln), {x:rightAlign ? PW - M - tw : M, y:yy - size, size:size, font:f, color:col});
+          txt(ln, {x:rightAlign ? PW - M - tw : M, y:yy - size, size:size, font:f, color:col});
         } else {
-          var im = await rasterText(ln, size, bold, bold ? '#111' : '#444'), eb = await doc.embedPng(im.bytes), hh = size * 1.5, ww = im.w * (hh / im.h);
+          var im = await rasterText(ln, size, bold, bold ? '#111' : '#555'), eb = await doc.embedPng(im.bytes), hh = size * 1.5, ww = im.w * (hh / im.h);
           page.drawImage(eb, {x:rightAlign ? PW - M - ww : M, y:yy - hh + 2, width:ww, height:hh});
         }
-        yy -= 13;
+        yy -= 11.5;
       }
     }
-    await stampCol(stL, false); await stampCol(stR, true);
-    // footer with page numbers
+    await signCol('PREPARED BY', stL, false); await signCol('APPROVED BY', stR, true);
+
+    /* ---- footer on every page ---- */
     pages.forEach(function(pg, i){
-      var ft = pdfSafe('Camp Office, Prosecutor General Punjab   |   Page ' + (i + 1) + ' of ' + pages.length);
-      pg.drawText(ft, {x:(PW - fR.widthOfTextAtSize(ft, 7)) / 2, y:14, size:7, font:fR, color:PL.rgb(0.45, 0.45, 0.45)});
+      pg.drawLine({start:{x:M, y:30}, end:{x:PW - M, y:30}, thickness:0.6, color:BORDER});
+      pg.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:M, y:19, size:7, font:fR, color:GREYTX});
+      var mid = 'Generated ' + genDate, mw = fR.widthOfTextAtSize(mid, 7);
+      pg.drawText(mid, {x:(PW - mw) / 2, y:19, size:7, font:fR, color:GREYTX});
+      var pn = 'Page ' + (i + 1) + ' of ' + pages.length, pw0 = fB.widthOfTextAtSize(pn, 7.4);
+      pg.drawText(pn, {x:PW - M - pw0, y:19, size:7.4, font:fB, color:NAVY});
     });
     doc.setTitle('Monthly Progress Report — ' + pdfSafe(r.officer) + ' — ' + r.monthName + ' ' + r.year);
     doc.setCreator('Camp Office, Prosecutor General Punjab');
+    doc.setAuthor((r.clerk && r.clerk !== '—') ? r.clerk : 'Camp Office, Prosecutor General Punjab');
     return await doc.save();
   }
   async function downloadReportPdf(){

@@ -87,6 +87,8 @@
     s += '#a11y-panel .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;}';
     s += '#a11y-panel .hd h2{margin:0;}';
     s += '#a11y-panel .hd .x{min-height:34px;min-width:34px;padding:0;font-size:16px;line-height:1;}';
+    s += '#a11y-panel .hd .btns{display:flex;gap:6px;align-items:center;}';
+    s += '#a11y-panel.full{position:fixed;top:10px;left:10px;right:10px;bottom:10px;inset-inline-end:10px;width:auto;max-height:none;z-index:99991;}';
     s += '#a11y-panel h2{margin:0 0 10px;font:700 15px/1.3 "Segoe UI",Tahoma,Arial,sans-serif;color:#10263D;}';
     s += '#a11y-panel .row{display:flex;align-items:center;gap:8px;margin:8px 0;}';
     s += '#a11y-panel .lab{flex:1;font-weight:600;font-size:13px;}';
@@ -142,6 +144,7 @@
   function setPref(k, v) { P[k] = v; save(); applyPrefs(); refreshPanel(); }
   function openPanel(open) {
     panel.hidden = !open; fab.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (!open && panel.classList.contains('full')) { panel.classList.remove('full'); var fb0 = panel.querySelector('[data-act="full"]'); if (fb0) { fb0.textContent = '⛶'; fb0.title = 'Full screen / فل اسکرین'; fb0.setAttribute('aria-label', fb0.title); } }
     if (open) { var f = panel.querySelector('button'); if (f) f.focus(); } else { fab.focus(); }
   }
   function buildToolbar() {
@@ -155,7 +158,10 @@
     panel.hidden = true;
     var hd = el('div', { 'class': 'hd' });
     hd.appendChild(el('h2', null, 'Accessibility / رسائی'));
-    hd.appendChild(el('button', { type: 'button', 'class': 'x', 'data-act': 'close', 'aria-label': 'Close / بند', title: 'Close / بند' }, '✕'));
+    var hb = el('span', { 'class': 'btns' });
+    hb.appendChild(el('button', { type: 'button', 'class': 'x', 'data-act': 'full', 'aria-label': 'Full screen / فل اسکرین', title: 'Full screen / فل اسکرین' }, '⛶'));
+    hb.appendChild(el('button', { type: 'button', 'class': 'x', 'data-act': 'close', 'aria-label': 'Close / بند', title: 'Close / بند' }, '✕'));
+    hd.appendChild(hb);
     panel.appendChild(hd);
 
     var r1 = el('div', { 'class': 'row' });
@@ -199,6 +205,7 @@
       if (a === 'smaller') { setPref('size', Math.max(0, P.size - 1)); say('Text size ' + STEPS[P.size] + '%'); }
       else if (a === 'bigger') { setPref('size', Math.min(STEPS.length - 1, P.size + 1)); say('Text size ' + STEPS[P.size] + '%'); }
       else if (a === 'reset') { P = JSON.parse(JSON.stringify(D)); save(); applyPrefs(); refreshPanel(); say('Settings reset'); }
+      else if (a === 'full') { var on = !panel.classList.contains('full'); panel.classList.toggle('full', on); var fb = panel.querySelector('[data-act="full"]'); fb.textContent = on ? '🗗' : '⛶'; fb.title = on ? 'Exit full screen / فل اسکرین ختم' : 'Full screen / فل اسکرین'; fb.setAttribute('aria-label', fb.title); }
       else if (a === 'close') { openPanel(false); }
       else if (k) { setPref(k, !P[k]); say(b.getAttribute('aria-labelledby') ? document.getElementById(b.getAttribute('aria-labelledby')).textContent + (P[k] ? ' on' : ' off') : ''); }
     });

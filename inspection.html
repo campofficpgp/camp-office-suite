@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspection Desk — Camp Office PG Punjab</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#2A5A84; --navy2:#3d6f9c; --navy3:#1B3F63;
+    --gold:#B8860B; --gold-light:#d4a839; --gold-deep:#8a660a;
+    --bg:#F6F5F1; --card:#ffffff; --border:#E1DDD3; --text:#28394A; --muted:#647581;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+    --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar), same softened
+     navy/green/teal/ocean/sepia/contrast/night set used across the whole project (Dashboard /
+     Weekly Court Roster / Daily Case Entry / Case Notice). Navy is the default set in :root
+     above; the rest override the same tokens so every existing rule that already reads
+     var(--navy)/var(--gold)/etc. re-colors and re-shapes itself. */
+  body[data-theme="green"]{ /* Green */
+    --navy:#1a6b45; --navy2:#2f8a5c; --navy3:#12492f;
+    --gold:#C9A227; --gold-light:#ddbb52; --gold-deep:#9c7d1e;
+    --bg:#F6F8F6; --card:#ffffff; --border:#DEE6E0; --text:#233229; --muted:#5E6F64;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+    --sidebar-bg:#12492f; --sidebar-bg2:#1a6b45; --sidebar-text:#e8f2ec; --sidebar-muted:#a6c2b2;
+  }
+  body[data-theme="teal"]{ /* Teal */
+    --navy:#128f89; --navy2:#26a89f; --navy3:#0c655f;
+    --gold:#96762a; --gold-light:#b8934a; --gold-deep:#6f5720;
+    --bg:#F4F9F8; --card:#ffffff; --border:#DCEBE9; --text:#22302F; --muted:#5C7071;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:110deg;
+    --sidebar-bg:#0c655f; --sidebar-bg2:#128f89; --sidebar-text:#e6f4f2; --sidebar-muted:#a5cac6;
+  }
+  body[data-theme="ocean"]{ /* Ocean */
+    --navy:#1670a0; --navy2:#2a8cc4; --navy3:#0f4a6e;
+    --gold:#c9852a; --gold-light:#dba24f; --gold-deep:#9c6620;
+    --bg:#F2F8FB; --card:#ffffff; --border:#D8E9F0; --text:#1A3444; --muted:#5A7E8F;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:130deg;
+    --sidebar-bg:#0f4a6e; --sidebar-bg2:#1670a0; --sidebar-text:#e8f4fa; --sidebar-muted:#a8cfe0;
+  }
+  body[data-theme="sepia"]{ /* Sepia */
+    --navy:#6d5330; --navy2:#8a6c40; --navy3:#4a381f;
+    --gold:#a3742a; --gold-light:#c2924a; --gold-deep:#7d591f;
+    --bg:#f6efe0; --card:#fcf7ee; --border:#e5d9bd; --text:#42341f; --muted:#83725a;
+    --radius-lg:8px; --radius-sm:6px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:140deg;
+    --sidebar-bg:#4a381f; --sidebar-bg2:#6d5330; --sidebar-text:#f3e9d8; --sidebar-muted:#d0bd97;
+  }
+  body[data-theme="contrast"]{ /* High Contrast */
+    --navy:#111111; --navy2:#2a2a2a; --navy3:#000000;
+    --gold:#8a4b00; --gold-light:#b3661a; --gold-deep:#663700;
+    --bg:#fafafa; --card:#ffffff; --border:#1a1a1a; --text:#0a0a0a; --muted:#2e2e2e;
+    --radius-lg:6px; --radius-sm:4px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:180deg;
+    --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0;
+  }
+  body[data-theme="night"]{ /* Night */
+    --navy:#5b7bb0; --navy2:#7292c4; --navy3:#3f5580;
+    --gold:#d4a13d; --gold-light:#e0b968; --gold-deep:#a87f2c;
+    --bg:#181c26; --card:#232838; --border:#333a4e; --text:#dcdfe8; --muted:#96a0b8;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#12151f; --sidebar-bg2:#1e2436; --sidebar-text:#dcdfe8; --sidebar-muted:#96a0b8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:30px; height:30px; flex-shrink:0; display:inline-flex;}
+  .brand-logo svg{width:100%; height:100%; display:block;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:22px 20px 60px; min-width:0; width:100%;}
+
+  /* ===== AI Draft / suggestion styling (Stage 11 guardrail: always visually distinct,
+     never looks like normal saved data, never blocks the user, never writes by itself) ===== */
+  .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
+  [dir="rtl"] .ai-box{border-left:1px solid #c9b3ea; border-right:4px solid #7b3fd4; border-radius:8px 0 0 8px;}
+  .ai-box.show{display:block;}
+  .relist-note{background:#eaf4ec; border:1px solid #9cc8a6; border-left:4px solid #2e7d4f; border-radius:0 8px 8px 0; padding:9px 14px; font-size:12.5px; color:#1f4a31;}
+  .relist-note.clash{background:#fdf0e6; border-color:#e3b58a; border-left-color:#c46a1c; color:#6b3a10;}
+  [dir="rtl"] .relist-note{border-left:1px solid #9cc8a6; border-right:4px solid #2e7d4f; border-radius:8px 0 0 8px;}
+  [dir="rtl"] .relist-note.clash{border-left-color:#e3b58a; border-right-color:#c46a1c;}
+  .ai-box .ai-tag{display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:11px; color:#7b3fd4; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px;}
+  .ai-box .ai-hint{font-size:11px; color:#6b5c8a; margin-top:6px; font-style:italic;}
+  .ai-box ul{margin:4px 0 0; padding-left:18px;}
+  [dir="rtl"] .ai-box ul{padding-left:0; padding-right:18px;}
+  .ai-box li{margin-bottom:3px;}
+  .ai-box mark{background:#e6d9fa; color:#3d2a5c; padding:0 2px; border-radius:3px; font-weight:600;}
+  .ai-box .ai-dup-actions{margin-top:8px; display:flex; gap:8px;}
+  .ai-box .ai-dup-actions .btn{padding:5px 12px; font-size:11.5px;}
+
+  .tab-switch{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab-switch .btn{padding:10px 20px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+  .field textarea{resize:vertical; min-height:56px;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.gold{background:var(--gold); color:var(--navy3); border-color:var(--gold-deep);}
+  .btn.gold:hover{background:var(--gold-light);}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.case-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:1140px;}
+  table.case-table th{background:var(--navy); color:#fff; text-align:left; padding:10px 10px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.case-table td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; white-space:nowrap;}
+  table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
+  table.case-table tr:last-child td{border-bottom:none;}
+  table.case-table tr:hover td{background:#faf8f2;}
+  .result-pill{display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; white-space:nowrap;}
+  .result-pending{background:#fdf0e0; color:#9c5b0e;}
+  .result-allowed{background:#e6f6ea; color:#2c7a3d;}
+  .result-dismissed{background:#fdecec; color:#a33a3a;}
+  .result-leave{background:#e3ecfb; color:#1c4faa;}
+  .result-compromise{background:#f3e6fa; color:#7a2ea3;}
+  .result-other{background:#f0efe8; color:var(--muted);}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:720px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  /* Monthly Progress Report */
+  table.report-table{width:100%; border-collapse:collapse; background:var(--card); font-size:11.5px; min-width:900px;}
+  table.report-table th{background:var(--navy); color:#fff; text-align:center; padding:8px 8px; font-weight:600; font-size:10.5px;}
+  table.report-table td{padding:7px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:center; white-space:nowrap;}
+  table.report-table td.nature-cell{text-align:left; white-space:normal; min-width:190px; max-width:220px; font-weight:600;}
+  [dir="rtl"] table.report-table td.nature-cell{text-align:right;}
+  table.report-table tr.grand-total-row td{background:#efe9d8; font-weight:700;}
+  table.report-table tr:hover td{background:#faf8f2;}
+  table.report-table td.edited-cell{background:#fdf0d0;}
+  .cell-input{width:42px; text-align:center; border:1px solid var(--border); border-radius:4px; padding:3px 2px; font-size:11.5px; background:#fff;}
+  .cell-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .nature-input{width:150px; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:11.5px; font-weight:600; background:#fff;}
+  .nature-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .row-del{cursor:pointer; color:#a33a3a; font-weight:700; margin-left:6px; font-size:12px;}
+  [dir="rtl"] .row-del{margin-left:0; margin-right:6px;}
+  .report-legend{font-size:11px; color:var(--muted); margin-top:10px; display:flex; align-items:center; gap:6px;}
+  .report-legend .swatch{display:inline-block; width:12px; height:12px; background:#fdf0d0; border:1px solid var(--border); border-radius:3px;}
+  .report-meta{display:flex; flex-wrap:wrap; gap:18px; margin-bottom:14px; font-size:12.5px;}
+  .report-meta b{color:var(--navy);}
+  .saved-report-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:8px; font-size:12.5px; flex-wrap:wrap;}
+
+  .print-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:30px 34px; font-size:13px;}
+  .print-sheet .p-head{font-weight:700; font-size:15px; white-space:pre-line; line-height:1.4;}
+  .print-sheet .p-sub{font-size:12px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* Print letterhead (p-head/p-sub) is editable in place — same ✎ edit / ↺ reset pattern used in
+     the Weekly Court Roster and Case Notice tools, so it always shows the same office address. */
+  .print-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .print-sheet .p-head-row{margin-bottom:16px;}
+  .print-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .print-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .print-sheet .p-sub-row{margin-bottom:16px;}
+  .print-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .print-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .print-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:260px; font-family:inherit; text-align:center;}
+  .print-sheet .p-officer{display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; font-weight:600;}
+  .print-sheet .p-sign{display:flex; justify-content:space-between; align-items:flex-start; margin-top:24px; font-size:12.5px; gap:16px;}
+  /* Sign-off stamps: left = prepared by, right = approved by. Each is a small editable
+     Name/Designation/Office-Address block (✎ edit, ✕ clear). */
+  .print-sheet .p-stamp-block{flex:1; min-width:0;}
+  .print-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  [dir="rtl"] .print-sheet .p-stamp-block[data-side="right"]{text-align:left;}
+  .print-sheet .p-stamp-line{font-size:11.5px; color:var(--navy); line-height:1.5; white-space:pre-line;}
+  .print-sheet .p-stamp-line:first-child{font-weight:700;}
+  .print-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .print-sheet .p-stamp-icons{margin-top:4px;}
+  .print-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
+  .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+
+  [dir="rtl"] table.case-table th, [dir="rtl"] table.case-table td{text-align:right;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #reportPrintArea, #reportPrintArea *{visibility:visible;}
+    #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
+       to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
+       clips a wide report table. Let the body grow to the full width for the capture. */
+    html,body{overflow-x:visible !important;}
+    #reportPrintArea .heading-icon{display:none;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
+       own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
+       otherwise print completely blank with no explanation. Show a plain message instead. */
+    #reportPrintArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please use this page's own \"Print / Preview\" button first, then press Print inside that preview.\A براہ کرم پہلے اس صفحے کا اپنا \"Print / Preview\" بٹن کھولیں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+  #authGate, .userbar-ce{ display:none !important; }
+}
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
+.no-ai .needs-ai{ display:none !important; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+</style>
+<style>
+.wrap{max-width:1500px;}
+.cl-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
+.cl-head p{ margin:0; color:var(--muted); font-size:13px; }
+.cl-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; margin-bottom:14px; }
+.cl-btn{ padding:8px 14px; border-radius:6px; border:1px solid var(--navy); background:var(--navy); color:#fff; cursor:pointer; font-size:13px; font-family:inherit; line-height:1.3; }
+.cl-btn:hover{ filter:brightness(1.08); }
+.cl-btn.ghost{ background:transparent; color:var(--navy); }
+.cl-btn.gold{ background:var(--gold); border-color:var(--gold-deep); color:#fff; }
+.cl-btn.red{ background:#b3261e; border-color:#8c1d18; color:#fff; }
+.cl-btn.sm{ padding:4px 9px; font-size:12px; }
+.cl-btn[disabled]{ opacity:.45; cursor:not-allowed; filter:none; }
+.cl-bar{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.cl-bar + .cl-bar{ margin-top:10px; }
+.cl-sep{ width:1px; align-self:stretch; background:var(--border); margin:0 4px; }
+.cl-stats{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.cl-chip{ border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12.5px; background:var(--card); color:var(--text); }
+.cl-chip b{ color:var(--navy); }
+.cl-chip.warn{ border-color:#d9a400; background:#fff7d6; color:#5c4500; }
+.cl-chip.bad{ border-color:#d33; background:#fde9e9; color:#8c1d18; }
+.cl-chip.ok{ border-color:#2e7d4f; background:#e8f5ec; color:#1b5e3a; }
+.cl-msg{ margin-top:10px; font-size:13px; padding:9px 12px; border-radius:8px; background:#eef4fa; border:1px solid #c5d6e6; color:#1d3a57; line-height:1.8; }
+.cl-msg.err{ background:#fde9e9; border-color:#e0a1a1; color:#7a1a16; }
+.cl-msg.good{ background:#e8f5ec; border-color:#9cc8a6; color:#1b5e3a; }
+.cl-msg.warn{ background:#fff7d6; border-color:#d9a400; color:#5c4500; }
+.cl-field label{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px; }
+.cl-field input, .cl-field select, .cl-field textarea{ width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; box-sizing:border-box; }
+.cl-nav{ position:sticky; top:0; z-index:30; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:8px 12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.cl-navrow{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:3px 0; }
+.cl-pill{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:20px; padding:5px 13px; font-size:13px; cursor:pointer; font-family:inherit; }
+.cl-pill i{ font-style:normal; font-size:11px; background:rgba(0,0,0,.08); border-radius:10px; padding:0 6px; margin-inline-start:3px; }
+.cl-pill:hover{ border-color:var(--navy); }
+.cl-pill.on{ background:var(--navy); color:#fff; border-color:var(--navy); font-weight:700; }
+.cl-pill.on i{ background:rgba(255,255,255,.25); }
+.cl-pill i.w{ background:#d9a400; color:#fff; }
+.cl-pill i.g{ background:#2e7d4f; color:#fff; }
+.cl-modal-bg{ position:fixed; inset:0; background:rgba(10,14,26,.55); z-index:9000; display:none; align-items:flex-start; justify-content:center; padding:20px 12px; overflow-y:auto; }
+.cl-modal-bg.show{ display:flex; }
+.cl-modal{ background:var(--card); color:var(--text); border-radius:12px; width:100%; max-width:760px; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+.cl-modal.wide{ max-width:980px; }
+.cl-modal h3{ margin:0 0 12px; color:var(--navy); font-size:17px; }
+.cl-modal .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:10px; }
+.cl-modal .full{ grid-column:1/-1; }
+.cl-modal .sect{ grid-column:1/-1; font-weight:700; color:var(--navy3); border-bottom:1px solid var(--border); padding-bottom:3px; margin-top:6px; font-size:13px; }
+.cl-modal .foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
+.cl-note{ font-size:12px; color:var(--muted); margin:8px 2px; line-height:1.8; }
+.cl-tw{ overflow-x:auto; }
+.cl-empty{ padding:26px; text-align:center; color:var(--muted); }
+
+/* ---- proforma sheets ---- */
+.pf-sheet{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; margin-bottom:16px; }
+.pf-title{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--navy3); color:#fff; padding:9px 14px; border-radius:8px; font-weight:700; font-size:15px; margin-bottom:10px; }
+.pf-title small{ font-weight:400; opacity:.9; font-size:12.5px; }
+.pf-office{ text-align:center; font-weight:700; color:var(--navy3); margin:4px 0 8px; letter-spacing:.3px; }
+.pf-meta{ display:flex; gap:18px; flex-wrap:wrap; font-size:13px; margin:0 0 10px; }
+.pf-meta b{ color:var(--navy3); }
+table.pf-t{ width:100%; border-collapse:collapse; font-size:12.5px; }
+table.pf-t th{ background:var(--navy); color:#fff; padding:6px 6px; text-align:center; font-size:11.5px; border:1px solid rgba(255,255,255,.35); vertical-align:middle; }
+table.pf-t th.l{ text-align:start; }
+table.pf-t td{ padding:6px 6px; border:1px solid var(--border); vertical-align:top; }
+table.pf-t td.n{ text-align:center; font-variant-numeric:tabular-nums; }
+table.pf-t td.n button{ border:0; background:rgba(42,90,132,.12); color:var(--navy3); font-weight:700; border-radius:6px; padding:2px 9px; cursor:pointer; font-family:inherit; font-size:12.5px; }
+table.pf-t td.n button:hover{ background:var(--navy); color:#fff; }
+table.pf-t td.z{ color:var(--muted); }
+table.pf-t tr.tot td{ background:rgba(184,134,11,.16); font-weight:700; }
+table.pf-t tr:nth-child(even) td{ background:rgba(0,0,0,.02); }
+table.pf-t tr.tot:nth-child(even) td{ background:rgba(184,134,11,.16); }
+table.pf-t select, table.pf-t input{ width:100%; min-width:70px; padding:4px 5px; border:1px solid var(--border); border-radius:5px; background:var(--card); color:var(--text); font-size:12px; font-family:inherit; box-sizing:border-box; }
+table.pf-t select.miss, table.pf-t input.miss{ border-color:#d33; background:#fdecec; }
+table.pf-t td.sm{ font-size:11.5px; }
+.pf-sign{ display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-top:34px; font-size:12.5px; }
+.pf-sign > div{ min-width:200px; text-align:center; }
+.pf-sign .ln{ border-top:1px solid var(--text); padding-top:4px; margin-top:34px; line-height:1.6; }
+.pf-sub{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+.ov-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+.ov-card{ border:1px solid var(--border); border-radius:10px; padding:10px 12px; background:var(--card); }
+.ov-card h4{ margin:0 0 6px; color:var(--navy3); font-size:14px; }
+.ov-card .row{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:2px 0; }
+.ok{ color:#1b5e3a; } .warnc{ color:#8a4b00; } .badc{ color:#8c1d18; }
+.pf-act button{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:6px; cursor:pointer; padding:3px 7px; font-size:12px; }
+.pf-act button:hover{ background:rgba(0,0,0,.05); }
+.pf-ro input, .pf-ro select{ pointer-events:none; opacity:.8; }
+
+table.pf-t td.sm div{ line-height:1.35; }
+.pf-note{ font-size:12px; margin:8px 2px 0; color:var(--muted); }
+@media print{
+  @page{ size:legal landscape; margin:8mm; }
+  body *{ visibility:visible !important; }
+  .pf-p2{ break-before:page; page-break-before:always; margin-top:0 !important; }
+  table.pf-t select.miss, table.pf-t input.miss{ background:transparent !important; }
+  html,body{ overflow:visible !important; background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .sidebar, .sidebar-backdrop, .topbar, .userbar-ce, .app-footer, .no-print, #authGate, .cl-modal-bg, .cl-nav, .cl-head, .pf-act{ display:none !important; }
+  .app-shell, .main-col{ display:block; }
+  .wrap{ max-width:none !important; padding:0 !important; }
+  .pf-sheet{ border:none; padding:0; margin:0 0 6px; page-break-after:always; }
+  .pf-sheet:last-child{ page-break-after:auto; }
+  table.pf-t{ font-size:10.5px; }
+  table.pf-t tr{ break-inside:avoid; }
+  table.pf-t thead{ display:table-header-group; }
+  table.pf-t select, table.pf-t input{ border:0; background:transparent; appearance:none; -webkit-appearance:none; padding:0; }
+  table.pf-t td.n button{ background:transparent; padding:0; }
+  .pf-title{ background:#1B3F63 !important; color:#fff !important; }
+}
+@media(max-width:700px){ .cl-modal .grid{ grid-template-columns:1fr; } .cl-nav{ position:static; } }
+
+</style>
+</head><body>
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
+    <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label">Lookup</span></a>
+        <a class="nav-item" href="cause-list.html"><span class="ico">📥</span><span class="label">Cause List Import</span></a>
+        <a class="nav-item active" href="inspection.html"><span class="ico">📑</span><span class="label">Inspection Desk</span></a>
+        <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html" target="_blank"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label" data-en="Portal" data-ur="پورٹل">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+      <div class="topbar">
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span>Inspection Desk</span></div>
+    <div class="right-controls">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+    </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div class="user-chip-sm"><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
+  </div>
+<div class="wrap">
+
+  <div class="cl-head no-print">
+    <h2>Inspection Desk — انسپیکشن ڈیسک</h2>
+    <p>Yearly inspection proformas A–I, prepared from the office's own records. &nbsp;|&nbsp; سالانہ انسپیکشن کے پرفارمے A تا I، دفتر کے اپنے ریکارڈ سے تیار۔</p>
+  </div>
+
+  <div id="dbWarn" class="cl-msg warn no-print" style="display:none; margin-bottom:12px;"></div>
+  <div id="actMsg" class="cl-msg no-print" style="display:none; margin-bottom:12px;"></div>
+
+  <div class="cl-card no-print" id="ctlCard">
+    <div class="cl-bar">
+      <div class="cl-field" style="min-width:300px"><label for="insSel">Inspection (period) / انسپیکشن (مدت)</label><select id="insSel" onchange="setIns(this.value)"></select></div>
+      <div class="cl-field" style="min-width:260px" id="offBox"><label for="offSel">Prosecutor (for A and B) / پراسیکیوٹر (A اور B کے لیے)</label><select id="offSel" onchange="setOfficer(this.value)"></select></div>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost" onclick="printView()">🖨 Print / پرنٹ</button>
+      <button class="cl-btn gold" id="btnNewIns" onclick="openInsForm()" style="display:none">＋ New inspection / نئی انسپیکشن</button>
+    </div>
+    <div class="cl-stats" id="stats"></div>
+  </div>
+
+  <div class="cl-nav no-print" id="tabs"></div>
+
+  <div id="view"></div>
+
+  <div class="cl-note no-print">
+    ہر عدد پر کلک کریں تو اس کے پیچھے کے اصل کیس سامنے آ جاتے ہیں۔ A اور B کی گنتی روزانہ کیس انٹری کے ڈیٹا سے خود بنتی ہے؛ C تا I اپیل کمیٹی رجسٹر سے۔ &nbsp;|&nbsp;
+    Click any number to see the cases behind it. A and B are counted automatically from Daily Case Entry; C–I are generated from the Appeal Committee register.
+  </div>
+
+  <!-- generic dialog -->
+  <div class="cl-modal-bg" id="mBg">
+    <div class="cl-modal" id="mBox">
+      <h3 id="mTitle"></h3>
+      <div id="mBody"></div>
+      <div class="foot" id="mFoot"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var isUrdu = false;
+  /* ================= Shared sidebar / mobile-drawer interactivity ================= */
+  (function(){
+    var sidebarEl = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    var mobileBtn = document.getElementById('mobileMenuBtn');
+    if(mobileBtn) mobileBtn.addEventListener('click', function(){
+      sidebarEl.classList.add('mobile-open'); backdrop.classList.add('show');
+    });
+    if(backdrop) backdrop.addEventListener('click', function(){
+      sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show');
+    });
+    document.querySelectorAll('.nav-group-head').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById(btn.dataset.group).classList.toggle('open');
+      });
+    });
+    document.querySelectorAll('.sidebar .nav-item:not(.disabled), .sidebar .nav-subitem').forEach(function(el){
+      el.addEventListener('click', function(){
+        if(window.innerWidth <= 960){ sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show'); }
+      });
+    });
+  })();
+
+  var PUNJAB_EMBLEM_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="var(--navy)" stroke="var(--gold)" stroke-width="2.2"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="0.6" opacity="0.55"/><circle cx="43" cy="27" r="8.5" fill="var(--gold-light)"/><circle cx="46.3" cy="24.3" r="7" fill="var(--navy)"/><g transform="translate(58,22) scale(0.62)"><path d="M0,-8 L2.3,-2.6 L8,-2.5 L3.4,1.2 L5,7 L0,3.6 L-5,7 L-3.4,1.2 L-8,-2.5 L-2.3,-2.6 Z" fill="var(--gold-light)"/></g><path d="M27,42 Q32.5,37.5 38,42 T49,42 T60,42 T71,42 T73,42" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,47 Q32.5,42.5 38,47 T49,47 T60,47 T71,47 T73,47" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,52 Q32.5,47.5 38,52 T49,52 T60,52 T71,52 T73,52" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,57 Q32.5,52.5 38,57 T49,57 T60,57 T71,57 T73,57" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="1"/><path d="M27,62 Q32.5,57.5 38,62 T49,62 T60,62 T71,62 T73,62" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/><path d="M63.16,93.03 Q67.40,84.90 59.23,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M63.98,91.14 Q64.62,90.98 65.43,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.98,91.14 Q63.54,90.64 63.27,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q65.15,88.60 65.85,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q63.94,88.47 63.44,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q65.20,86.15 65.75,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q63.91,86.27 63.17,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q64.78,83.65 65.13,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q63.46,84.02 62.48,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q63.89,81.10 64.03,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q62.56,81.71 61.39,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q62.53,78.52 62.48,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q61.23,79.34 59.87,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q75.07,79.88 69.75,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M65.86,89.79 Q66.52,89.85 67.52,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M65.86,89.79 Q65.61,89.17 65.70,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q68.86,86.35 69.89,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q67.81,85.74 67.78,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q70.58,82.88 71.58,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q69.38,82.41 69.18,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q71.67,79.45 72.58,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q70.33,79.16 69.90,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q72.11,76.04 72.87,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q70.66,76.01 69.96,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q71.90,72.68 72.43,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q70.39,72.94 69.40,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q80.94,73.74 75.68,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M67.33,88.16 Q67.99,88.24 69.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M67.33,88.16 Q67.10,87.54 67.22,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q71.60,83.21 72.65,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q70.57,82.57 70.60,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q74.37,78.31 75.42,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q73.20,77.75 73.09,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q76.31,73.52 77.31,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q74.99,73.11 74.68,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q77.39,68.84 78.27,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q75.95,68.65 75.39,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q77.61,64.27 78.30,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q76.08,64.35 75.24,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q32.60,84.90 40.77,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M36.02,91.14 Q36.46,90.64 36.73,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.02,91.14 Q35.38,90.98 34.57,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q36.06,88.47 36.56,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q34.85,88.60 34.15,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q36.09,86.27 36.83,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q34.80,86.15 34.25,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q36.54,84.02 37.52,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q35.22,83.65 34.87,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q37.44,81.71 38.61,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q36.11,81.10 35.97,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q38.77,79.34 40.13,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q37.47,78.52 37.52,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q24.93,79.88 30.25,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M34.14,89.79 Q34.39,89.17 34.30,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M34.14,89.79 Q33.48,89.85 32.48,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q32.19,85.74 32.22,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q31.14,86.35 30.11,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q30.62,82.41 30.82,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q29.42,82.88 28.42,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q29.67,79.16 30.10,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q28.33,79.45 27.42,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q29.34,76.01 30.04,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q27.89,76.04 27.13,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q29.61,72.94 30.60,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q28.10,72.68 27.57,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q19.06,73.74 24.32,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M32.67,88.16 Q32.90,87.54 32.78,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M32.67,88.16 Q32.01,88.24 31.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q29.43,82.57 29.40,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q28.40,83.21 27.35,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q26.80,77.75 26.91,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q25.63,78.31 24.58,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q25.01,73.11 25.32,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q23.69,73.52 22.69,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q24.05,68.65 24.61,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q22.61,68.84 21.73,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q23.92,64.35 24.76,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q22.39,64.27 21.70,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M45,84 Q50,80.5 55,84 Q52,87 50,90.5 Q48,87 45,84 Z" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="0.5"/><text x="50" y="73" font-size="8.5" fill="var(--gold-light)" text-anchor="middle">حکومتِ پنجاب</text></svg>';
+  var THEMES = [
+    { id:'navy', nameEn:'Navy', nameUr:'نیلا', navy:'#2A5A84', gold:'#B8860B' },
+    { id:'green', nameEn:'Green', nameUr:'سبز', navy:'#1a6b45', gold:'#C9A227' },
+    { id:'teal', nameEn:'Teal', nameUr:'ٹیل', navy:'#128f89', gold:'#96762a' },
+    { id:'ocean', nameEn:'Ocean', nameUr:'سمندری', navy:'#1670a0', gold:'#c9852a' },
+    { id:'sepia', nameEn:'Sepia', nameUr:'بھورا', navy:'#6d5330', gold:'#a3742a' },
+    { id:'contrast', nameEn:'Contrast', nameUr:'کنٹراسٹ', navy:'#111111', gold:'#8a4b00' },
+    { id:'night', nameEn:'Night', nameUr:'تاریک', navy:'#5b7bb0', gold:'#d4a13d' }
+  ];
+  var currentTheme = (function(){ try{ return localStorage.getItem('cmpTheme') || 'navy'; }catch(e){ return 'navy'; } })();
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){
+    document.getElementById('themePicker').classList.toggle('open');
+  }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    try{ localStorage.setItem('cmpTheme', id); }catch(e){}
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+/* =====================  INSPECTION DESK  ===================== */
+var LISTS = {
+  officers: ['Tariq Siddique — APG','Ahmad Raza Gilani — APG','Rai Akhtar Hussain — APG','M. Irfan Zia — DPG','Ms. Memoona Ehsan Ul Haq — DPG','Sajjad Hussain — DPG','Mirza Abid Majeed — DPG']
+};
+var CASES = [], INSP = [], REFS = [], MANUAL = {}, BROWS = {}, OVR = {};
+var CFG = { assign:{}, ac:{ name:'', designation:'Duty Clerk' }, chairman:'Chairman Appeal Committee', incharge:'In-Charge Prosecution Office' };
+var CTX = { user:null, canWrite:false, canAdmin:false };
+var UI = { tab:'overview', ins:'', officer:'', rSrc:'', rQ:'' };
+var ERRS = {};
+var OFFICE_NAME = 'PGP CAMP OFFICE, SUPREME COURT OF PAKISTAN';
+
+function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function $(id){ return document.getElementById(id); }
+function bi(ur, en){ return '<bdi dir="rtl">' + ur + '</bdi> <span style="opacity:.5">/</span> <bdi dir="ltr">' + en + '</bdi>'; }
+function fmtD(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : (iso || ''); }
+function todayIso(){ var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function encId(s){ return String(s || '').replace(/[^A-Za-z0-9]+/g, '_'); }
+function shortOff(o){ return String(o || '').replace(/\s+—\s+/, ' ').trim(); }
+function toast(msg, cls){ var b = $('actMsg'); b.className = 'cl-msg no-print' + (cls ? ' ' + cls : ''); b.innerHTML = msg; b.style.display = msg ? '' : 'none'; if(msg && cls === 'good'){ clearTimeout(toast.t); toast.t = setTimeout(function(){ b.style.display = 'none'; }, 4000); } }
+
+/* ---------- proforma A definitions ---------- */
+var A1 = [
+  {k:'p_death_pet', t:'Petition (including jail petition) against death sentence'},
+  {k:'p_death_app', t:'Appeal against death sentence'},
+  {k:'p_life_pet', t:'Petition (including jail petition) against life imprisonment'},
+  {k:'p_life_app', t:'Appeal against Life Imprisonment'},
+  {k:'p_other_pet', t:'Petition (including jail petition) against other Conviction'},
+  {k:'p_other_app', t:'Appeal against other Conviction'},
+  {k:'p_susp', t:'Petition for Suspension of Sentence'},
+  {k:'p_acq_pros', t:'Appeal against acquittal filed by /prosecution'},
+  {k:'p_acq_resp', t:'Petition against acquittal filed by Respondent'},
+  {k:'p_review', t:'Petition for Review filed by prosecution'},
+  {k:'p_enh_resp', t:'Petition for leave to appeal for enhancement filed by Respondent'},
+  {k:'p_enh_pros', t:'Petition for leave to appeal for enhancement filed by prosecution'}
+];
+var A2 = [
+  {k:'q_post', t:'Petition for leave to appeal relating to post Arrest Bail'},
+  {k:'q_pre', t:'Petition for leave to appeal relating to Pre-Arrest Bail'},
+  {k:'q_cancel', t:'Petition for leave to appeal relating to cancellation of Bail'},
+  {k:'q_cancel_pros', t:'Petition for leave to appeal relating to cancellation of Bail by Prosecution'}
+];
+var COLS1 = [['total','Total decided'],['dismissed','Dismissed'],['allowed','Allowed and acquitted'],['converted','Converted to lesser sentence'],['leave','Leave granted'],['compromise','Compromise'],['disposed','Disposed off']];
+var COLS2 = [['total','Total decided'],['dismissed','Dismissed'],['allowed','Allowed'],['converted','Converted'],['leave','Leave granted'],['compromise','Allowed on compromise'],['statutory','Allowed on Statutory Ground'],['disposed','Disposed off']];
+var ROWLABEL = {}; A1.concat(A2).forEach(function(r){ ROWLABEL[r.k] = r.t; });
+
+function norm(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function kindOf(t){
+  var n = norm(t);
+  if(n === 'crlpla' || n === 'jp' || n === 'crlp' || n === 'jailpetition' || n === 'jailp' || n === 'cp' || n === 'crlpl') return 'petition';
+  if(n === 'crla') return 'appeal';
+  if(n === 'reviewpetition' || n === 'crlrp' || n === 'crlsmrp') return 'review';
+  return '';
+}
+function petitionerPart(c){
+  var t = String(c.title || ''), m = t.split(/\s+(?:v\.?|vs\.?|versus)\s+/i);
+  return (m.length > 1 ? m[0] : t).trim();
+}
+function stateIsPetitioner(c){ return /^(the\s+)?(state|prosecutor\s*general|p\.?\s?g\.?\b)/i.test(petitionerPart(c)); }
+
+/* result -> column group (defaults; shown to the user for confirmation) */
+function resultGroup(res, part){
+  var r = String(res || '').trim().toLowerCase();
+  if(!r || r === 'adjourned' || r === 'adjurned') return 'pending';
+  if(r === 'dismissed' || r === 'dismissed dnp') return 'dismissed';
+  if(r === 'dismissed as w/d' || r === 'dismissed infructuous' || r === 'dismissed abated') return 'disposed';
+  if(r === 'allowed') return 'allowed';
+  if(r === 'partly allowed') return part === 'II' ? 'allowed' : 'converted';
+  if(r === 'allowed though compromise') return 'compromise';
+  if(r === 'converted into lesser sentence' || r === 'converted into lessor sentence') return 'converted';
+  if(r === 'leave granted') return 'leave';
+  return 'disposed';
+}
+
+/* case -> row of proforma A (Part I or II) */
+function classify(c){
+  var o = OVR[UI.ins + '__' + c.id];
+  if(o){ if(o.row === 'none') return {part:null, row:null, why:'Marked by the clerk as not counted', ov:true}; return {part:o.row.charAt(0) === 'q' ? 'II' : 'I', row:o.row, ov:true}; }
+  var rel = String(c.relief || '').trim(), k = kindOf(c.type), st = stateIsPetitioner(c), r;
+  if(rel === 'Bail After Arrest') r = 'q_post';
+  else if(rel === 'Bail Before Arrest') r = 'q_pre';
+  else if(rel === 'Cancellation of Bail') r = st ? 'q_cancel_pros' : 'q_cancel';
+  else if(/bail/i.test(rel)) return {part:null, row:null, why:'Relief "' + rel + '" does not match a row of the proforma'};
+  else if(rel === 'Suspension of Sentence') r = 'p_susp';
+  else if(rel === 'Enhancement of Sentence') r = st ? 'p_enh_pros' : 'p_enh_resp';
+  else if(rel === 'Against Acquittal' || rel === 'Setting Aside of Acquittal' || rel === 'Acquittal') r = st ? 'p_acq_pros' : 'p_acq_resp';
+  else if(k === 'review'){ if(st) r = 'p_review'; else return {part:null, row:null, why:'Review petition by a private party — not a row of the proforma'}; }
+  else if(k && (rel === 'Death Sentence' || rel === 'Life Imprisonment' || rel === 'Other Sentence')){
+    r = 'p_' + (rel === 'Death Sentence' ? 'death' : rel === 'Life Imprisonment' ? 'life' : 'other') + '_' + (k === 'appeal' ? 'app' : 'pet');
+  } else return {part:null, row:null, why:'Type "' + (c.type || '—') + '" with relief "' + (rel || '—') + '" does not match a row of the proforma'};
+  return {part:r.charAt(0) === 'q' ? 'II' : 'I', row:r};
+}
+
+function curIns(){ return INSP.filter(function(x){ return x.id === UI.ins; })[0] || null; }
+function casesInPeriod(officer){
+  var ins = curIns(); if(!ins) return [];
+  return CASES.filter(function(c){ return c.officer === officer && c.date && c.date >= ins.start && c.date <= ins.end; });
+}
+function caseText(c){ return (c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || ''); }
+
+/* Build proforma A for one prosecutor */
+function buildA(officer){
+  var rows = {}, uncounted = [], pendingN = 0;
+  A1.concat(A2).forEach(function(r){ rows[r.k] = {total:[], dismissed:[], allowed:[], converted:[], leave:[], compromise:[], statutory:[], disposed:[]}; });
+  casesInPeriod(officer).forEach(function(c){
+    var cl = classify(c);
+    var g = resultGroup(c.result, cl.part || 'I');
+    if(g === 'pending'){ pendingN++; return; }
+    if(!cl.row){ uncounted.push({c:c, why:cl.why}); return; }
+    rows[cl.row].total.push(c); rows[cl.row][g].push(c);
+  });
+  return {rows:rows, uncounted:uncounted, pendingN:pendingN};
+}
+function manualKey(officer, row){ return UI.ins + '__' + encId(officer) + '__' + row; }
+
+/* Proforma B rows for one prosecutor */
+function buildB(officer){
+  var out = [];
+  casesInPeriod(officer).forEach(function(c){
+    var rel = String(c.relief || '');
+    if(rel !== 'Death Sentence' && rel !== 'Life Imprisonment') return;
+    var g = resultGroup(c.result, 'I');
+    if(g !== 'allowed' && g !== 'converted' && g !== 'compromise') return;
+    var id = UI.ins + '__' + c.id, x = BROWS[id] || {};
+    out.push({id:id, caseId:c.id, c:c, appealNo:caseText(c), judgDate:c.date, submitDate:x.submitDate || '', notSubmitted:!!x.notSubmitted,
+      grounds:(x.grounds != null ? x.grounds : ''), defGrounds:rel + ' — ' + c.result, manual:false});
+  });
+  Object.keys(BROWS).forEach(function(id){
+    var x = BROWS[id];
+    if(x.manual && x.inspectionId === UI.ins && x.officer === officer) out.push({id:id, caseId:'', c:null, appealNo:x.appealNo || '', judgDate:x.judgDate || '', submitDate:x.submitDate || '', notSubmitted:!!x.notSubmitted, grounds:x.grounds || '', defGrounds:'', manual:true});
+  });
+  out.sort(function(a, b){ return (a.judgDate || '').localeCompare(b.judgDate || ''); });
+  return out;
+}
+
+/* ---------- Appeal Committee register ---------- */
+var NATURES = [
+  'Against acquittal from death sentence', 'Against acquittal from life imprisonment', 'Against conversion from death sentence',
+  'Against conversion from life imprisonment', 'Against acquittal from other Conviction', 'Against conversion from other conviction', 'Other nature of reference'
+];
+function refsHere(src){ return REFS.filter(function(r){ return r.inspectionId === UI.ins && (!src || r.source === src); }).sort(function(a, b){ return (a.diaryDate || '').localeCompare(b.diaryDate || '') || String(a.diaryNo || '').localeCompare(String(b.diaryNo || '')); }); }
+function natureName(r){ var i = +r.nature; var n = NATURES[i] || ''; return (i === 6 && r.natureOther) ? n + ' — ' + r.natureOther : n; }
+function firText(r){ return [r.firNo, r.firDate ? fmtD(r.firDate) : '', r.sections, r.ps].filter(Boolean).join(' '); }
+function opinionTxt(r){ return r.opinion === 'fit' ? 'FIT' : r.opinion === 'notfit' ? 'NOT FIT' : ''; }
+function filingTxt(r){
+  if(r.filingStatus === 'filed') return 'Filed' + (r.petitionNo ? ' — ' + r.petitionNo : '') + (r.petitionTitle ? ' ' + r.petitionTitle : '') + (r.filingDate ? ' ' + fmtD(r.filingDate) : '');
+  if(r.filingStatus === 'pending') return 'Pending with prosecutor';
+  if(r.filingStatus === 'returned') return 'Returned back as NOT FIT';
+  return '';
+}
+function compTxt(r){ return r.compliance === 'yes' ? 'YES' : r.compliance === 'no' ? 'NO' : ''; }
+function refMissing(r){
+  var m = [];
+  if(!r.diaryNo) m.push('Diary No'); if(!r.diaryDate) m.push('Diary date'); if(!r.firNo) m.push('FIR No'); if(!r.judgmentDate) m.push('Judgment date');
+  if(!r.submitDate) m.push('Submission date'); if(!r.opinion) m.push('AC opinion');
+  if(r.opinion === 'fit' && !r.filingStatus) m.push('Filing status');
+  if(!r.compliance) m.push('Compliance sought');
+  return m;
+}
+
+/* ---------- dialog helpers ---------- */
+function openModal(title, html, btns, wide){
+  $('mTitle').textContent = title; $('mBody').innerHTML = html;
+  $('mBox').className = 'cl-modal' + (wide ? ' wide' : '');
+  var f = $('mFoot'); f.innerHTML = '';
+  (btns || [{label:'Close / بند کریں', cls:'ghost'}]).forEach(function(b){
+    var el = document.createElement('button'); el.className = 'cl-btn ' + (b.cls || ''); el.textContent = b.label;
+    el.onclick = function(){ if(b.fn){ if(b.fn() === false) return; } closeModal(); };
+    f.appendChild(el);
+  });
+  $('mBg').classList.add('show');
+}
+function closeModal(){ $('mBg').classList.remove('show'); }
+function canEdit(){ var i = curIns(); return CTX.canWrite && !(i && i.locked); }
+function guardEdit(){
+  if(!CTX.canWrite){ toast('⛔ ' + bi('آپ کو تبدیلی کی اجازت نہیں (صرف دیکھنے کی رسائی)۔', 'You do not have permission to change data (view-only access).'), 'err'); return false; }
+  var i = curIns(); if(i && i.locked){ toast('🔒 ' + bi('یہ انسپیکشن لاک ہے۔ ایڈمن اسے کھول سکتا ہے۔', 'This inspection is locked. An admin can unlock it.'), 'err'); return false; }
+  return true;
+}
+function stamp(o){ o.updatedAt = firebase.firestore.FieldValue.serverTimestamp(); o.updatedBy = CTX.user ? CTX.user.email : ''; return o; }
+function dbErr(e){ console.error(e); toast('❌ ' + bi('محفوظ نہیں ہو سکا', 'Could not save') + ': ' + esc(e && e.message ? e.message : e) + (e && e.code === 'permission-denied' ? ' — ' + bi('ڈیٹا بیس رولز میں اجازت باقی ہے', 'database rules need the new permission') : ''), 'err'); }
+
+/* ---------- selectors / navigation ---------- */
+function setIns(id){ UI.ins = id; renderAll(); }
+function setOfficer(o){ UI.officer = o; renderAll(); }
+function setTab(t){ UI.tab = t; renderAll(); window.scrollTo(0, 0); }
+var TABS = [['overview','Overview','جائزہ'],['A','Proforma A','پرفارما A'],['B','Proforma B','پرفارما B'],['reg','AC Register','اپیل کمیٹی رجسٹر'],['C','C','C'],['D','D','D'],['E','E','E'],['F','F','F'],['G','G','G'],['H','H','H'],['I','I','I'],['settings','Settings','ترتیبات']];
+
+function missingA(officer){
+  var a = buildA(officer), n = 0;
+  A1.concat(A2).forEach(function(r){
+    if(a.rows[r.k].total.length){ var m = MANUAL[manualKey(officer, r.k)] || {}; if(!m.opinion || !m.fit) n++; }
+  });
+  return n;
+}
+function missingB(officer){ return buildB(officer).filter(function(r){ return !r.submitDate && !r.notSubmitted; }).length; }
+function missingRefs(){ var n = 0; refsHere().forEach(function(r){ if(refMissing(r).length) n++; }); return n; }
+function badge(n, label){ return '<i class="' + (n ? 'w' : 'g') + '" title="' + esc(label) + '">' + (n ? n : '✓') + '</i>'; }
+
+function renderSelectors(){
+  var s = $('insSel'), h = '';
+  INSP.forEach(function(x){ h += '<option value="' + esc(x.id) + '"' + (x.id === UI.ins ? ' selected' : '') + '>' + esc(x.title) + ' (' + fmtD(x.start) + ' → ' + fmtD(x.end) + ')' + (x.locked ? ' 🔒' : '') + '</option>'; });
+  s.innerHTML = h || '<option value="">— no inspection yet —</option>';
+  var o = $('offSel'); h = '';
+  LISTS.officers.forEach(function(x){ h += '<option' + (x === UI.officer ? ' selected' : '') + '>' + esc(x) + '</option>'; });
+  o.innerHTML = h;
+  $('btnNewIns').style.display = CTX.canAdmin ? '' : 'none';
+  $('offBox').style.display = (UI.tab === 'A' || UI.tab === 'B' || UI.tab === 'overview') ? '' : 'none';
+}
+function renderStats(){
+  var ins = curIns(), s = $('stats');
+  if(!ins){ s.innerHTML = ''; return; }
+  var nCases = CASES.filter(function(c){ return c.date && c.date >= ins.start && c.date <= ins.end; }).length;
+  s.innerHTML = '<span class="cl-chip">📅 <b>' + fmtD(ins.start) + '</b> → <b>' + fmtD(ins.end) + '</b>' + (ins.locked ? ' 🔒' : '') + '</span>' +
+    '<span class="cl-chip">⚖️ ' + bi('اس مدت کے کیسز', 'Cases in period') + ': <b>' + nCases + '</b></span>' +
+    '<span class="cl-chip">📒 ' + bi('اپیل کمیٹی ریفرنسز', 'AC references') + ': <b>' + refsHere().length + '</b></span>' +
+    (CTX.canWrite ? '' : '<span class="cl-chip warn">👁 ' + bi('صرف دیکھنے کی رسائی', 'View-only access') + '</span>');
+}
+function renderTabs(){
+  var h = '<div class="cl-navrow">';
+  TABS.forEach(function(t){
+    if(t[0] === 'settings' && !CTX.canAdmin) return;
+    var b = '';
+    if(t[0] === 'A') b = badge(missingA(UI.officer), 'Rows with decided cases but opinion/fit not filled');
+    else if(t[0] === 'B') b = badge(missingB(UI.officer), 'Rows without judgment-copy date');
+    else if(t[0] === 'reg'){ var n = missingRefs(); b = '<i class="' + (n ? 'w' : 'g') + '">' + refsHere().length + '</i>'; }
+    h += '<button class="cl-pill' + (UI.tab === t[0] ? ' on' : '') + '" onclick="setTab(\'' + t[0] + '\')">' + (t[1].length === 1 ? 'Proforma ' + t[1] : t[1]) + b + '</button>';
+  });
+  $('tabs').innerHTML = h + '</div>';
+}
+var RT = 0;
+function renderAll(){
+  clearTimeout(RT);
+  var ae = document.activeElement;
+  if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $('view').contains(ae)){ RT = setTimeout(renderAll, 900); return; }
+  renderSelectors(); renderStats(); renderTabs();
+  var v = $('view');
+  if(!INSP.length){ v.innerHTML = noInspection(); return; }
+  var f = {overview:viewOverview, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
+  v.innerHTML = f ? f() : '';
+  var w = [];
+  ['cases', 'inspections', 'inspectionRefs', 'inspectionManual', 'inspectionB', 'inspectionOverrides', 'inspectionConfig'].forEach(function(c){ if(ERRS[c] === 'permission-denied') w.push(c); });
+  var dw = $('dbWarn');
+  if(w.length){ dw.style.display = ''; dw.innerHTML = '⚠️ ' + bi('ڈیٹا بیس کے رولز میں اس صفحے کی نئی اجازتیں ابھی شامل نہیں ہوئیں، اس لیے یہ صفحہ ڈیٹا پڑھ/لکھ نہیں سکتا۔ ایڈمن سے رولز اپڈیٹ کروائیں۔', 'The database rules do not yet include this page\'s collections, so it cannot read or save data. Ask the admin to update the rules.') + ' <bdi dir="ltr">(' + w.join(', ') + ')</bdi>'; }
+  else dw.style.display = 'none';
+}
+function noInspection(){
+  return '<div class="cl-card"><div class="cl-empty">' + bi('ابھی کوئی انسپیکشن نہیں بنی۔', 'No inspection has been created yet.') +
+    (CTX.canAdmin ? '<br><br><button class="cl-btn gold" onclick="openInsForm()">＋ ' + bi('پہلی انسپیکشن بنائیں', 'Create the first inspection') + '</button>' : '<br>' + bi('ایڈمن سے کہیں کہ انسپیکشن بنائے۔', 'Ask an admin to create one.')) + '</div></div>';
+}
+
+/* ---------- common sheet parts ---------- */
+function periodTxt(){ var i = curIns(); return i ? fmtD(i.start) + ' to ' + fmtD(i.end) : ''; }
+function sheetHead(title){
+  return '<div class="pf-title"><span>' + esc(title) + '</span><small>Period of Inspection: ' + esc(periodTxt()) + '</small></div><div class="pf-office">' + esc(OFFICE_NAME) + '</div>';
+}
+function clerkFor(officer){ var a = CFG.assign[encId(officer)] || {}; return {name:a.clerk || '', des:a.designation || 'Junior Clerk'}; }
+function signProsecutor(officer){
+  var c = clerkFor(officer);
+  return '<div class="pf-sign"><div><div class="ln"><b>' + esc(c.name || '________________') + '</b><br>' + esc(c.des) + '<br><span class="pf-sub">Clerk (complete name) / کلرک</span></div></div>' +
+    '<div><div class="ln"><b>' + esc(shortOff(officer)) + '</b><br><span class="pf-sub">Prosecutor / پراسیکیوٹر</span></div></div>' +
+    '<div><div class="ln"><b>' + esc(CFG.incharge) + '</b><br><span class="pf-sub">Counter signature of In-Charge</span></div></div></div>';
+}
+function signAC(){
+  return '<div class="pf-sign"><div><div class="ln"><b>' + esc(CFG.ac.name || '________________') + '</b><br>' + esc(CFG.ac.designation || 'Duty Clerk') + '<br><span class="pf-sub">Clerk / Secretary AC (complete name)</span></div></div>' +
+    '<div><div class="ln"><b>' + esc(CFG.chairman) + '</b></div></div></div>';
+}
+function needOfficer(){ return '<div class="cl-card"><div class="cl-empty">' + bi('اوپر سے پراسیکیوٹر منتخب کریں۔', 'Select a prosecutor above.') + '</div></div>'; }
+function roClass(){ return canEdit() ? '' : ' pf-ro'; }
+
+/* ---------- Overview ---------- */
+function viewOverview(){
+  var ins = curIns(), h = '<div class="cl-card"><h3 style="margin:0 0 8px;color:var(--navy)">' + esc(ins.title) + '</h3>';
+  h += '<div class="cl-note" style="margin:0 0 10px">' + bi('نیچے ہر پراسیکیوٹر اور اپیل کمیٹی کی تکمیل کی حالت ہے۔ سبز ✓ = مکمل، پیلا نمبر = کتنی چیزیں باقی ہیں۔', 'Completion status of every prosecutor and of the Appeal Committee. Green ✓ = complete, yellow number = items still missing.') + '</div><div class="ov-grid">';
+  LISTS.officers.forEach(function(o, i){
+    var a = buildA(o), cnt = 0; A1.concat(A2).forEach(function(r){ cnt += a.rows[r.k].total.length; });
+    var mA = missingA(o), mB = missingB(o), b = buildB(o).length, c = clerkFor(o);
+    h += '<div class="ov-card"><h4>' + esc(shortOff(o)) + '</h4>' +
+      '<div class="row"><span>' + bi('کلرک', 'Clerk') + '</span><span>' + esc(c.name || '—') + '</span></div>' +
+      '<div class="row"><span>A — ' + bi('فیصل شدہ کیسز', 'decided cases') + '</span><b>' + cnt + '</b></div>' +
+      '<div class="row"><span>A — ' + bi('رائے/موزونیت باقی', 'opinion/fit missing') + '</span><b class="' + (mA ? 'warnc' : 'ok') + '">' + (mA || '✓') + '</b></div>' +
+      '<div class="row"><span>B — ' + bi('بری/تبدیل کیسز', 'acquitted/converted') + '</span><b>' + b + '</b></div>' +
+      '<div class="row"><span>B — ' + bi('کاپی کی تاریخ باقی', 'copy date missing') + '</span><b class="' + (mB ? 'warnc' : 'ok') + '">' + (mB || '✓') + '</b></div>' +
+      '<div style="margin-top:6px"><button class="cl-btn sm ghost" onclick="UI.officer=LISTS.officers[' + i + '];setTab(\'A\')">A</button> <button class="cl-btn sm ghost" onclick="UI.officer=LISTS.officers[' + i + '];setTab(\'B\')">B</button></div></div>';
+  });
+  var sc = refsHere('sc').length, ot = refsHere('other').length, mr = missingRefs();
+  h += '<div class="ov-card"><h4>' + bi('اپیل کمیٹی', 'Appeal Committee') + '</h4>' +
+    '<div class="row"><span>' + bi('سیکرٹری/کلرک', 'Secretary/clerk') + '</span><span>' + esc(CFG.ac.name || '—') + '</span></div>' +
+    '<div class="row"><span>C/D — ' + bi('سپریم کورٹ کے پراسیکیوٹرز سے', 'from SC prosecutors') + '</span><b>' + sc + '</b></div>' +
+    '<div class="row"><span>E/F — ' + bi('دیگر ذرائع سے', 'from other quarters') + '</span><b>' + ot + '</b></div>' +
+    '<div class="row"><span>' + bi('نامکمل اندراجات', 'incomplete entries') + '</span><b class="' + (mr ? 'warnc' : 'ok') + '">' + (mr || '✓') + '</b></div>' +
+    '<div style="margin-top:6px"><button class="cl-btn sm ghost" onclick="setTab(\'reg\')">' + bi('رجسٹر', 'Register') + '</button></div></div>';
+  h += '</div></div>';
+  return h;
+}
+
+/* ---------- Proforma A ---------- */
+function numCell(n, part, row, col){ return n ? '<td class="n"><button onclick="showCell(\'' + part + '\',\'' + row + '\',\'' + col + '\')">' + n + '</button></td>' : '<td class="n z">0</td>'; }
+function selCell(officer, row, field, opts, hasRows){
+  var m = MANUAL[manualKey(officer, row)] || {}, v = m[field] || '', h = '<select class="' + (hasRows && !v ? 'miss' : '') + '" onchange="saveManual(\'' + officer.replace(/'/g, '') + '\',\'' + row + '\',\'' + field + '\',this.value)"' + (canEdit() ? '' : ' disabled') + '><option value="">—</option>';
+  opts.forEach(function(o){ h += '<option' + (o === v ? ' selected' : '') + '>' + o + '</option>'; });
+  return '<td>' + h + '</select></td>';
+}
+function tableA(officer, a, part, rowsDef, cols){
+  var h = '<div class="cl-tw"><table class="pf-t"><thead><tr><th class="l" rowspan="2" style="min-width:230px">Nature of Case decided</th><th colspan="' + cols.length + '">Outcome of cases</th><th rowspan="2">Opinion submitted<br>Yes / Not</th><th rowspan="2">Case found fit for assailing or not</th></tr><tr>';
+  cols.forEach(function(c){ h += '<th>' + c[1] + '</th>'; });
+  h += '</tr></thead><tbody>';
+  var tot = {}; cols.forEach(function(c){ tot[c[0]] = 0; });
+  rowsDef.forEach(function(r){
+    var cells = a.rows[r.k], has = cells.total.length > 0;
+    h += '<tr><td><b>' + esc(r.t) + '</b></td>';
+    cols.forEach(function(c){
+      var n = (cells[c[0]] || []).length; tot[c[0]] += n;
+      h += c[0] === 'statutory' ? '<td class="n z">0</td>' : numCell(n, part, r.k, c[0]);
+    });
+    h += selCell(officer, r.k, 'opinion', ['Yes', 'Not', 'N.A.'], has) + selCell(officer, r.k, 'fit', ['Fit', 'Not fit', 'N.A.'], has) + '</tr>';
+  });
+  h += '<tr class="tot"><td>Total</td>';
+  cols.forEach(function(c){ h += '<td class="n">' + tot[c[0]] + '</td>'; });
+  return h + '<td></td><td></td></tr></tbody></table></div>';
+}
+function viewA(){
+  var o = UI.officer; if(!o) return needOfficer();
+  var a = buildA(o), h = '<div class="pf-sheet' + roClass() + '">' + sheetHead('Proforma A — Part-I') + '<div class="pf-meta"><span>Name of Prosecutor: <b>' + esc(shortOff(o)) + '</b></span></div>';
+  h += tableA(o, a, 'I', A1, COLS1);
+  h += '<div class="pf-title pf-p2" style="margin-top:16px"><span>Proforma A — Part-II</span><small>Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += tableA(o, a, 'II', A2, COLS2);
+  h += signProsecutor(o) + '</div>';
+  var notes = '';
+  if(a.pendingN) notes += '<div class="cl-chip">⏳ ' + bi('زیرِ سماعت/ملتوی پیشیاں (شمار نہیں ہوئیں)', 'Adjourned / pending hearings (not counted)') + ': <b>' + a.pendingN + '</b></div> ';
+  if(a.uncounted.length){
+    notes += '<div class="cl-msg warn" style="margin-top:8px">⚠️ ' + bi('یہ فیصل شدہ کیسز پرفارما کی کسی قطار میں فٹ نہیں ہوئے — دیکھ کر قطار منتخب کر دیں:', 'These decided cases did not fit any row of the proforma — please pick a row for each:') + '</div>';
+    notes += '<div class="cl-card cl-tw no-print"><table class="pf-t"><thead><tr><th class="l">Case</th><th class="l">Title</th><th>Date</th><th>Relief</th><th>Result</th><th class="l">Why</th><th>Put in row</th></tr></thead><tbody>';
+    a.uncounted.forEach(function(u){ notes += caseRowHtml(u.c, u.why); });
+    notes += '</tbody></table></div>';
+  }
+  return h + (notes ? '<div class="no-print">' + notes + '</div>' : '');
+}
+function rowSelect(c){
+  var cur = OVR[UI.ins + '__' + c.id], h = '<select onchange="setOvr(\'' + c.id + '\',this.value)"' + (canEdit() ? '' : ' disabled') + '><option value="">' + (cur ? '(auto)' : '— choose —') + '</option>';
+  h += '<optgroup label="Part-I">'; A1.forEach(function(r){ h += '<option value="' + r.k + '"' + (cur && cur.row === r.k ? ' selected' : '') + '>' + esc(r.t) + '</option>'; });
+  h += '</optgroup><optgroup label="Part-II">'; A2.forEach(function(r){ h += '<option value="' + r.k + '"' + (cur && cur.row === r.k ? ' selected' : '') + '>' + esc(r.t) + '</option>'; });
+  return h + '</optgroup><option value="none"' + (cur && cur.row === 'none' ? ' selected' : '') + '>Not counted / شمار نہ کریں</option></select>';
+}
+function caseRowHtml(c, why){
+  return '<tr><td class="sm"><b>' + esc(caseText(c)) + '</b></td><td class="sm">' + esc(c.title) + '</td><td class="n sm">' + fmtD(c.date) + '</td><td class="sm">' + esc(c.relief) + '</td><td class="sm">' + esc(c.result) + '</td><td class="sm">' + esc(why || '') + '</td><td>' + rowSelect(c) + '</td></tr>';
+}
+function showCell(part, row, col){
+  var a = buildA(UI.officer), list = a.rows[row][col] || [], cols = part === 'I' ? COLS1 : COLS2, cn = '';
+  cols.forEach(function(c){ if(c[0] === col) cn = c[1]; });
+  var h = '<div class="cl-note" style="margin-top:0"><b>' + esc(ROWLABEL[row]) + '</b> — ' + esc(cn) + ' (' + list.length + ')</div><div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">Case</th><th class="l">Title</th><th>Date</th><th>Relief</th><th>Result</th><th class="l">Why here</th><th>Move to row</th></tr></thead><tbody>';
+  list.forEach(function(c){ h += caseRowHtml(c, classify(c).ov ? 'Chosen by the clerk' : 'Automatic: relief "' + (c.relief || '') + '", type ' + (c.type || '') + (stateIsPetitioner(c) ? ', State is petitioner' : '')); });
+  openModal('Cases behind the number / نمبر کے پیچھے کے کیسز', h + '</tbody></table></div>', null, true);
+}
+function setOvr(caseId, row){
+  if(!guardEdit()) return;
+  var id = UI.ins + '__' + caseId;
+  var p = row ? db.collection('inspectionOverrides').doc(id).set(stamp({inspectionId:UI.ins, caseId:caseId, row:row})) : db.collection('inspectionOverrides').doc(id).delete();
+  p.then(function(){ closeModal(); toast('✅ ' + bi('قطار محفوظ ہو گئی', 'Row saved'), 'good'); }).catch(dbErr);
+}
+function saveManual(officer, row, field, val){
+  if(!guardEdit()) return;
+  var o = LISTS.officers.filter(function(x){ return x.replace(/'/g, '') === officer; })[0] || officer;
+  var d = {inspectionId:UI.ins, officer:o, row:row}; d[field] = val;
+  db.collection('inspectionManual').doc(manualKey(o, row)).set(stamp(d), {merge:true}).catch(dbErr);
+}
+
+/* ---------- Proforma B ---------- */
+function viewB(){
+  var o = UI.officer; if(!o) return needOfficer();
+  var rows = buildB(o), h = '<div class="pf-sheet' + roClass() + '">' + sheetHead('Proforma B') + '<div class="pf-meta"><span>Name of Prosecutor: <b>' + esc(shortOff(o)) + '</b></span></div>' +
+    '<div class="pf-office" style="font-weight:600">FIR wise detail of acquittal or converted cases relating to death or life imprisonment</div>' +
+    '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l">Appeal / Petition No.</th><th>Date of Judgment</th><th>Date of submission of copy of judgment to AC (If submitted)</th><th class="l" style="min-width:300px">Major and material grounds of acquittal or conversion i.e. any prosecution evidence / witness was withheld or any expert / forensic report was not produced or any case property was not produced during trial etc.</th><th class="pf-act no-print"></th></tr></thead><tbody>';
+  if(!rows.length) h += '<tr><td colspan="6" class="cl-empty">' + bi('اس مدت میں موت/عمر قید کے کوئی بری یا تبدیل شدہ کیس نہیں ملے۔ ضرورت ہو تو نیچے ہاتھ سے قطار شامل کریں۔', 'No acquitted/converted death or life imprisonment cases found in this period. Add a row manually below if needed.') + '</td></tr>';
+  rows.forEach(function(r, i){
+    var miss = !r.submitDate && !r.notSubmitted;
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td>' + (r.manual ? '<input value="' + esc(r.appealNo) + '" onchange="saveB(\'' + r.id + '\',{appealNo:this.value})" placeholder="Crl.P.L.A No. …">' : '<b>' + esc(r.appealNo) + '</b><span class="pf-sub">' + esc(r.c.title) + '</span>') + '</td>' +
+      '<td class="n">' + (r.manual ? '<input type="date" value="' + esc(r.judgDate) + '" onchange="saveB(\'' + r.id + '\',{judgDate:this.value})">' : fmtD(r.judgDate)) + '</td>' +
+      '<td><input type="date" class="' + (miss ? 'miss' : '') + '" value="' + esc(r.submitDate) + '" onchange="saveB(\'' + r.id + '\',{submitDate:this.value,notSubmitted:false})"' + (r.notSubmitted ? ' disabled' : '') + '>' +
+      '<label class="pf-sub"><input type="checkbox" style="width:auto;min-width:0" ' + (r.notSubmitted ? 'checked ' : '') + 'onchange="saveB(\'' + r.id + '\',{notSubmitted:this.checked,submitDate:this.checked?\'\':\'' + esc(r.submitDate) + '\'})"> Not submitted</label></td>' +
+      '<td><input value="' + esc(r.grounds) + '" placeholder="' + esc(r.defGrounds || 'Grounds…') + '" onchange="saveB(\'' + r.id + '\',{grounds:this.value})"></td>' +
+      '<td class="pf-act no-print">' + (r.manual && canEdit() ? '<button onclick="delB(\'' + r.id + '\')">🗑</button>' : '') + '</td></tr>';
+  });
+  h += '</tbody></table></div>' + (canEdit() ? '<div class="no-print" style="margin-top:8px"><button class="cl-btn sm" onclick="addB()">＋ ' + bi('ہاتھ سے قطار', 'Add row manually') + '</button></div>' : '') + signProsecutor(o) + '</div>';
+  return h;
+}
+function saveB(id, patch){
+  if(!guardEdit()) return;
+  var o = UI.officer, d = {inspectionId:UI.ins, officer:o}, base = BROWS[id] || {};
+  if(!base.manual && id.indexOf('__') > 0) d.caseId = id.split('__')[1];
+  Object.keys(patch).forEach(function(k){ d[k] = patch[k]; });
+  db.collection('inspectionB').doc(id).set(stamp(d), {merge:true}).catch(dbErr);
+}
+function addB(){
+  if(!guardEdit()) return;
+  var id = UI.ins + '__m' + Date.now();
+  db.collection('inspectionB').doc(id).set(stamp({inspectionId:UI.ins, officer:UI.officer, manual:true, appealNo:'', judgDate:'', submitDate:'', notSubmitted:false, grounds:''})).catch(dbErr);
+}
+function delB(id){
+  if(!guardEdit()) return;
+  openModal('Delete row / قطار حذف', bi('یہ ہاتھ سے بنائی گئی قطار حذف ہو جائے گی۔', 'This manually added row will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspectionB').doc(id).delete().catch(dbErr); }}]);
+}
+
+/* ---------- helpers for references ---------- */
+function dt(x){ return x ? fmtD(x) : ''; }
+function ln(x){ return x ? '<div>' + esc(x) + '</div>' : ''; }
+function diaryCell(r){ return ln(r.diaryNo) + ln(dt(r.diaryDate)); }
+function firCell(r){ return ln(r.firNo) + ln(dt(r.firDate)) + ln(r.sections) + ln(r.ps); }
+function judgCell(r, withNature){ return ln(dt(r.judgmentDate)) + (withNature ? ln(natureName(r)) : ''); }
+function petCell(r){ return r.filingStatus === 'filed' ? ln(r.petitionNo) + ln(r.petitionTitle) + ln(dt(r.filingDate)) : ''; }
+function offShort(o){ return shortOff(o); }
+var PRED = {
+  recv: function(){ return true; },
+  fit: function(r){ return r.opinion === 'fit'; },
+  notfit: function(r){ return r.opinion === 'notfit'; },
+  pend: function(r){ return !r.opinion; },
+  prov: function(r){ return !!r.sentProvDate; },
+  sanc: function(r){ return !!r.sanctionDate; },
+  filed: function(r){ return r.filingStatus === 'filed'; }
+};
+var C_COLS = [['recv','No. of references received in AC'],['fit','References found fit for assailing'],['notfit','References found not fit'],['pend','No. of references pending for opinion'],['prov','No. of references sent to Provincial AC'],['sanc','No. of references submitted for sanction'],['filed','No. of references filed']];
+var E_COLS = [['recv','No. of references received in AC'],['fit','References found fit for assailing'],['notfit','References found not fit & consigned'],['pend','No. of references pending for opinion'],['prov','No. of references submitted for sanction'],['filed','No. of references filed']];
+
+function viewCE(src){
+  var cols = src === 'sc' ? C_COLS : E_COLS, pf = src === 'sc' ? 'C' : 'E', all = refsHere(src);
+  var ttl = src === 'sc' ? 'APPEAL COMMITTEE FOR SUPREME COURT OF PAKISTAN (references received from Prosecutors conducting prosecution in SC)' : 'APPEAL COMMITTEE FOR SUPREME COURT OF PAKISTAN (references received from other quarter(s) / Appeal Committees)';
+  var h = '<div class="pf-sheet">' + '<div class="pf-title"><span>' + esc(ttl) + '</span><small>Proforma-' + pf + ' &nbsp;|&nbsp; Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l" style="min-width:220px">Nature of reference received</th>';
+  cols.forEach(function(c){ h += '<th>' + c[1] + '</th>'; });
+  h += '</tr></thead><tbody>';
+  var tot = {}; cols.forEach(function(c){ tot[c[0]] = 0; });
+  NATURES.forEach(function(nm, i){
+    var rs = all.filter(function(r){ return +r.nature === i; });
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td>' + esc(nm) + '</td>';
+    cols.forEach(function(c){
+      var n = rs.filter(PRED[c[0]]).length; tot[c[0]] += n;
+      h += n ? '<td class="n"><button onclick="showRefs(\'' + src + '\',' + i + ',\'' + c[0] + '\')">' + n + '</button></td>' : '<td class="n z">0</td>';
+    });
+    h += '</tr>';
+  });
+  h += '<tr class="tot"><td colspan="2">Total</td>';
+  cols.forEach(function(c){ h += '<td class="n">' + tot[c[0]] + '</td>'; });
+  h += '</tr></tbody></table></div>';
+  h += '<div class="pf-note">Note: Please provide FIR wise detail of references on Proforma ' + (src === 'sc' ? 'D' : 'F') + '</div>' + signAC() + '</div>';
+  return h + '<div class="cl-note no-print">' + bi('یہ گنتی اپیل کمیٹی رجسٹر سے خود بنتی ہے۔ ریفرنس بدلیں تو یہ خود بدل جائے گی۔', 'These counts are generated from the Appeal Committee register and change as you edit references.') + '</div>';
+}
+function showRefs(src, ni, kind){
+  var list = refsHere(src).filter(function(r){ return +r.nature === ni && PRED[kind](r); });
+  var h = '<div class="cl-note" style="margin-top:0"><b>' + esc(NATURES[ni]) + '</b> (' + list.length + ')</div><div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">Diary No &amp; Date</th><th class="l">FIR / U/S / PS</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th><th></th></tr></thead><tbody>';
+  list.forEach(function(r){ h += '<tr><td>' + diaryCell(r) + '</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + dt(r.judgmentDate) + '</td><td class="n sm">' + dt(r.submitDate) + '</td><td class="n">' + opinionTxt(r) + '</td><td class="pf-act"><button onclick="closeModal();editRef(\'' + r.id + '\')">✎</button></td></tr>'; });
+  openModal('References behind the number / نمبر کے پیچھے کے ریفرنس', h + '</tbody></table></div>', null, true);
+}
+
+function viewDF(src){
+  var pf = src === 'sc' ? 'D' : 'F', rs = refsHere(src), sc = src === 'sc';
+  var ttl = sc ? 'FIR wise detail of references received from Prosecutors conducting prosecution in SC' : 'FIR wise detail of references (references received from other quarter(s) / Appeal Committees)';
+  var h = '<div class="pf-sheet"><div class="pf-title"><span>' + esc(ttl) + '</span><small>Proforma ' + pf + ' &nbsp;|&nbsp; Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l">Diary No &amp; Date</th><th class="l">FIR No. &amp; U/S &amp; Police Station</th><th>Date of Judgment / Order' + (sc ? '' : ' &amp; nature') + '</th><th>Date of submission to AC</th><th>Opinion of AC Fit / Not Fit</th><th>' + (sc ? 'Sending date to Dir. App / PPD' : 'Sending date for sanction') + '</th><th>Date receiving to AC for filing</th><th>Date of entrustment to prosecutor for filing</th><th class="l">Filing status with Petition No. allotted by court &amp; date</th><th>Compliance report sought by AC or not</th><th class="pf-act no-print"></th></tr></thead><tbody>';
+  if(!rs.length) h += '<tr><td colspan="12" class="cl-empty">' + bi('اس پرفارما کے لیے ابھی کوئی ریفرنس درج نہیں۔ "اپیل کمیٹی رجسٹر" میں شامل کریں۔', 'No references entered yet for this block. Add them in the AC Register.') + '</td></tr>';
+  rs.forEach(function(r, i){
+    var nf = r.opinion === 'notfit', na = sc && nf ? 'N.A' : '';
+    var sendC = nf ? (sc ? 'N.A' : (r.returnedDate ? 'Sent back on ' + dt(r.returnedDate) : '')) : dt(r.sentProvDate);
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + diaryCell(r) + '</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + judgCell(r, !sc) + '</td><td class="n sm">' + dt(r.submitDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b></td>' +
+      '<td class="n sm">' + esc(sendC) + '</td><td class="n sm">' + (na || dt(r.receivedForFilingDate)) + '</td><td class="n sm">' + (na || dt(r.entrustFileDate)) + '</td><td class="sm">' + (na || petCell(r)) + '</td><td class="n"><b>' + compTxt(r) + '</b></td>' +
+      '<td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
+  });
+  h += '</tbody></table></div>' + signAC() + '</div>';
+  return h;
+}
+
+/* G: summary of what was entrusted to prosecutors */
+function gCounts(){
+  var all = refsHere();
+  var eo = all.filter(function(r){ return r.entrustOpDate || r.opinionBy; }), ef = all.filter(function(r){ return r.entrustFileDate || r.filingBy; });
+  return {
+    eo:eo, ret:eo.filter(function(r){ return r.opinionStatus === 'returned'; }), pen:eo.filter(function(r){ return r.opinionStatus !== 'returned'; }), cmpO:eo.filter(function(r){ return r.compliance === 'yes'; }),
+    rf:all.filter(function(r){ return r.receivedForFilingDate; }), ef:ef, fil:ef.filter(function(r){ return r.filingStatus === 'filed'; }), penF:ef.filter(function(r){ return r.filingStatus === 'pending'; }), cmpF:ef.filter(function(r){ return r.compliance === 'yes'; })
+  };
+}
+function viewG(){
+  var g = gCounts();
+  function box(label, n){ return '<td class="n"><div class="pf-sub" style="margin:0 0 4px;color:inherit">' + label + '</div><b style="font-size:18px">' + n + '</b></td>'; }
+  var h = '<div class="pf-sheet"><div class="pf-title"><span>APPEAL COMMITTEE (Detail of references entrusted to prosecutor for opinion or Filing)</span><small>Proforma G &nbsp;|&nbsp; Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><tbody><tr>' + box('No. of references entrusted for opinion', g.eo.length) + box('No. of references returned after rendering opinion', g.ret.length) + box('No. of references pending with prosecutors for opinion', g.pen.length) + box('No. of Compliance reports sought by AC', g.cmpO.length) + '</tr>' +
+    '<tr>' + box('No. of references received for filing', g.rf.length) + box('No. of references entrusted for filing', g.ef.length) + box('No. of references filed', g.fil.length) + box('No. of references pending with prosecutor for filing', g.penF.length) + box('No. of Compliance reports sought by AC', g.cmpF.length) + '</tr></tbody></table></div>';
+  h += '<div class="pf-note">Note: 1. Please provide detail of FIR wise of references entrusted for opinion on Proforma H.<br>2. Please provide detail of FIR wise of references entrusted for filing on Proforma I.</div>' + signAC() + '</div>';
+  return h + '<div class="cl-note no-print">' + bi('G کی گنتی H اور I کی تفصیل سے خود بنتی ہے۔', 'G is generated from the details of H and I.') + '</div>';
+}
+function viewH(){
+  var rs = gCounts().eo;
+  var h = '<div class="pf-sheet"><div class="pf-title"><span>Detail of references entrusted for Opinion</span><small>Proforma-H &nbsp;|&nbsp; Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l">Case FIR No. &amp; Police Station</th><th>Date of entrustment</th><th class="l">Name of prosecutor to whom reference was entrusted</th><th>Whether reference returned or yet pending</th><th>Date of returning</th><th>Opinion regarding Fit / Not Fit</th><th>Whether Compliance report was sought or not by AC</th><th class="pf-act no-print"></th></tr></thead><tbody>';
+  if(!rs.length) h += '<tr><td colspan="9" class="cl-empty">' + bi('کوئی ریفرنس رائے کے لیے سپرد درج نہیں۔ رجسٹر میں "رائے کے لیے سپردگی" کی تاریخ/پراسیکیوٹر بھریں۔', 'No reference entrusted for opinion is recorded. Fill the "entrusted for opinion" fields in the register.') + '</td></tr>';
+  rs.slice().sort(function(a, b){ return (a.entrustOpDate || '').localeCompare(b.entrustOpDate || ''); }).forEach(function(r, i){
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + dt(r.entrustOpDate) + '</td><td class="sm">' + esc(offShort(r.opinionBy)) + '</td><td class="n">' + (r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : '') + '</td><td class="n sm">' + dt(r.opinionReturnDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b></td><td class="n"><b>' + compTxt(r) + '</b></td><td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
+  });
+  return h + '</tbody></table></div>' + signAC() + '</div>';
+}
+function viewI(){
+  var rs = gCounts().ef;
+  var h = '<div class="pf-sheet"><div class="pf-title"><span>Detail of references entrusted for Filing</span><small>Proforma-I &nbsp;|&nbsp; Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l">Case FIR No. &amp; Police Station</th><th>Date of judgment or order</th><th>Date of entrustment</th><th class="l">Name of prosecutor to whom reference was entrusted</th><th>Whether reference filed or yet pending</th><th class="l">Date of filing with petition No. allotted by SC</th><th>Whether Compliance report was sought or not by AC</th><th class="pf-act no-print"></th></tr></thead><tbody>';
+  if(!rs.length) h += '<tr><td colspan="9" class="cl-empty">' + bi('کوئی ریفرنس فائلنگ کے لیے سپرد درج نہیں۔', 'No reference entrusted for filing is recorded.') + '</td></tr>';
+  rs.slice().sort(function(a, b){ return (a.entrustFileDate || '').localeCompare(b.entrustFileDate || ''); }).forEach(function(r, i){
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + judgCell(r, true) + '</td><td class="n sm">' + dt(r.entrustFileDate) + '</td><td class="sm">' + esc(offShort(r.filingBy)) + '</td><td class="n">' + (r.filingStatus === 'filed' ? 'Filed' : r.filingStatus === 'returned' ? 'Returned Back as NOT FIT' : r.filingStatus === 'pending' ? 'Pending' : '') + '</td><td class="sm">' + petCell(r) + '</td><td class="n"><b>' + compTxt(r) + '</b></td><td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
+  });
+  return h + '</tbody></table></div>' + signAC() + '</div>';
+}
+
+/* ---------- AC register ---------- */
+function regRows(){
+  var q = (UI.rQ || '').toLowerCase(), rs = refsHere(UI.rSrc).filter(function(r){
+    if(!q) return true;
+    return [r.diaryNo, r.firNo, r.sections, r.ps, r.petitionNo, r.petitionTitle, r.remarks, natureName(r)].join(' ').toLowerCase().indexOf(q) >= 0;
+  });
+  if(!rs.length) return '<tr><td colspan="9" class="cl-empty">' + bi('کوئی اندراج نہیں ملا۔', 'No entries found.') + '</td></tr>';
+  var h = '';
+  rs.forEach(function(r, i){
+    var miss = refMissing(r);
+    h += '<tr><td class="n">' + (i + 1) + '</td><td class="sm">' + (r.source === 'sc' ? 'SC' : 'Other') + '</td><td class="sm">' + diaryCell(r) + '</td><td class="sm">' + esc(natureName(r)) + '</td><td class="sm">' + firCell(r) + '</td>' +
+      '<td class="n sm">' + dt(r.judgmentDate) + '<br>' + dt(r.submitDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b></td><td class="sm">' + esc(filingTxt(r)) + '</td>' +
+      '<td class="sm">' + (miss.length ? '<span class="warnc" title="' + esc(miss.join(', ')) + '">⚠ ' + miss.length + '</span>' : '<span class="ok">✓</span>') + '</td>' +
+      '<td class="pf-act">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button> <button onclick="delRef(\'' + r.id + '\')">🗑</button>' : '<button onclick="editRef(\'' + r.id + '\')">👁</button>') + '</td></tr>';
+  });
+  return h;
+}
+function regSearch(v){ UI.rQ = v; $('regBody').innerHTML = regRows(); }
+function regSrc(v){ UI.rSrc = v; renderAll(); }
+function viewReg(){
+  var h = '<div class="cl-card"><div class="cl-bar"><div class="cl-field"><label>' + bi('ذریعہ', 'Source') + '</label><select onchange="regSrc(this.value)"><option value="">All / سب</option><option value="sc"' + (UI.rSrc === 'sc' ? ' selected' : '') + '>SC prosecutors (C/D)</option><option value="other"' + (UI.rSrc === 'other' ? ' selected' : '') + '>Other quarters (E/F)</option></select></div>' +
+    '<div class="cl-field" style="min-width:220px"><label>' + bi('تلاش', 'Search') + '</label><input id="regQ" value="' + esc(UI.rQ) + '" oninput="regSearch(this.value)" placeholder="Diary / FIR / Petition…"></div><span class="cl-sep"></span>' +
+    (canEdit() ? '<button class="cl-btn gold" onclick="editRef(\'\')">＋ ' + bi('نیا ریفرنس', 'Add reference') + '</button>' : '') + '</div>';
+  h += '<div class="cl-note">' + bi('ہر ریفرنس ایک بار یہاں درج کریں — پرفارما C سے I تک سب خود بن جائیں گے۔ ⚠ کا مطلب ہے کوئی ضروری خانہ باقی ہے (نشان پر ماؤس رکھیں)۔', 'Enter each reference once here — Proformas C to I are generated automatically. ⚠ means a required field is missing (hover to see which).') + '</div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>#</th><th>Source</th><th class="l">Diary No &amp; Date</th><th class="l">Nature</th><th class="l">FIR / U/S / PS</th><th>Judgment<br>Submitted</th><th>Opinion</th><th class="l">Filing</th><th></th><th></th></tr></thead><tbody id="regBody">' + regRows() + '</tbody></table></div></div>';
+  return h;
+}
+
+var RF = [
+  ['sect', 'Reference / ریفرنس'],
+  ['source', 'Source / ذریعہ', 'sel', [['sc', 'SC prosecutors (Proforma C/D)'], ['other', 'Other quarters (Proforma E/F)']]],
+  ['diaryNo', 'Diary No', 'txt'], ['diaryDate', 'Diary date', 'date'],
+  ['nature', 'Nature of reference', 'natsel'], ['natureOther', 'If "Other nature" — which', 'txt'],
+  ['sect', 'FIR / ایف آئی آر'],
+  ['firNo', 'FIR No (e.g. 105/2007)', 'txt'], ['firDate', 'FIR date', 'date'], ['sections', 'U/S (sections)', 'txt'], ['ps', 'Police Station', 'txt'],
+  ['sect', 'Judgment and Appeal Committee opinion / فیصلہ اور اپیل کمیٹی کی رائے'],
+  ['judgmentDate', 'Date of Judgment / Order', 'date'], ['submitDate', 'Date of submission to AC', 'date'],
+  ['opinion', 'Opinion of AC', 'sel', [['fit', 'FIT'], ['notfit', 'NOT FIT']]],
+  ['sentProvDate', 'Sending date to Dir. App / PPD (or for sanction)', 'date'], ['sanctionDate', 'Date submitted for sanction (Proforma C, if any)', 'date'], ['returnedDate', 'If NOT FIT (from other quarters): sent-back date', 'date'],
+  ['sect', 'Entrusted to prosecutor for opinion (Proforma H) / رائے کے لیے سپردگی'],
+  ['entrustOpDate', 'Date of entrustment', 'date'], ['opinionBy', 'Prosecutor', 'offsel'], ['opinionStatus', 'Returned or pending', 'sel', [['returned', 'Returned'], ['pending', 'Pending']]], ['opinionReturnDate', 'Date of returning', 'date'],
+  ['sect', 'Filing (Proforma I) / فائلنگ'],
+  ['receivedForFilingDate', 'Date receiving to AC for filing', 'date'], ['entrustFileDate', 'Date of entrustment for filing', 'date'], ['filingBy', 'Prosecutor (filing)', 'offsel'],
+  ['filingStatus', 'Filing status', 'sel', [['filed', 'Filed'], ['pending', 'Pending with prosecutor'], ['returned', 'Returned back as NOT FIT']]],
+  ['petitionNo', 'Petition No. allotted by court (e.g. Crl.P.L.A No. 968/2026)', 'txt'], ['petitionTitle', 'Petition title (e.g. The State Vs …)', 'txt'], ['filingDate', 'Date of filing', 'date'],
+  ['sect', 'Other / دیگر'],
+  ['compliance', 'Compliance report sought by AC', 'sel', [['yes', 'YES'], ['no', 'NO']]], ['remarks', 'Remarks', 'txt']
+];
+function fieldHtml(f, v){
+  var id = 'rf_' + f[0], dis = canEdit() ? '' : ' disabled';
+  if(f[2] === 'txt') return '<div class="cl-field"><label>' + esc(f[1]) + '</label><input id="' + id + '" value="' + esc(v) + '"' + dis + '></div>';
+  if(f[2] === 'date') return '<div class="cl-field"><label>' + esc(f[1]) + '</label><input type="date" id="' + id + '" value="' + esc(v) + '"' + dis + '></div>';
+  var opts = [['', '—']];
+  if(f[2] === 'sel') opts = opts.concat(f[3]);
+  else if(f[2] === 'natsel') NATURES.forEach(function(n, i){ opts.push([String(i), (i + 1) + '. ' + n]); });
+  else if(f[2] === 'offsel') LISTS.officers.forEach(function(o){ opts.push([o, shortOff(o)]); });
+  var h = '<div class="cl-field"><label>' + esc(f[1]) + '</label><select id="' + id + '"' + dis + '>';
+  opts.forEach(function(o){ h += '<option value="' + esc(o[0]) + '"' + (String(v) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; });
+  return h + '</select></div>';
+}
+function editRef(id){
+  var r = id ? REFS.filter(function(x){ return x.id === id; })[0] : null;
+  if(id && !r) return;
+  saveRef.okDup = false;
+  if(!id && !guardEdit()) return;
+  r = r || {source:'sc'};
+  var h = '<div class="grid">';
+  RF.forEach(function(f){ h += f[0] === 'sect' ? '<div class="sect">' + esc(f[1]) + '</div>' : fieldHtml(f, r[f[0]] != null ? r[f[0]] : ''); });
+  h += '</div>';
+  var btns = [{label:'Close / بند کریں', cls:'ghost'}];
+  if(canEdit()) btns.push({label:'Save / محفوظ کریں', cls:'gold', fn:function(){ return saveRef(id); }});
+  openModal(id ? 'Edit reference / ریفرنس میں ترمیم' : 'New reference / نیا ریفرنس', h, btns, true);
+}
+function saveRef(id){
+  if(!guardEdit()) return false;
+  var d = {inspectionId:UI.ins};
+  RF.forEach(function(f){ if(f[0] !== 'sect') d[f[0]] = ($('rf_' + f[0]).value || '').trim(); });
+  if(!d.diaryNo){ toast('⚠️ ' + bi('ڈائری نمبر لکھنا ضروری ہے۔', 'Diary No is required.'), 'warn'); return false; }
+  if(d.nature === ''){ toast('⚠️ ' + bi('ریفرنس کی نوعیت منتخب کریں۔', 'Please choose the nature of reference.'), 'warn'); return false; }
+  var dup = REFS.filter(function(x){ return x.id !== id && x.inspectionId === UI.ins && x.source === d.source && String(x.diaryNo).toLowerCase() === d.diaryNo.toLowerCase() && x.diaryDate === d.diaryDate; });
+  if(dup.length && !saveRef.okDup){ saveRef.okDup = true; toast('⚠️ ' + bi('اسی ڈائری نمبر اور تاریخ کا ریفرنس پہلے سے موجود ہے۔ دوبارہ "محفوظ کریں" دبائیں اگر یہ واقعی الگ ہے۔', 'A reference with the same diary no. and date already exists. Press Save again if it is really a different one.'), 'warn'); return false; }
+  saveRef.okDup = false;
+  var col = db.collection('inspectionRefs'), p = id ? col.doc(id).set(stamp(d), {merge:true}) : col.add(stamp(d));
+  p.then(function(){ toast('✅ ' + bi('ریفرنس محفوظ ہو گیا', 'Reference saved'), 'good'); }).catch(dbErr);
+}
+function delRef(id){
+  if(!guardEdit()) return;
+  var r = REFS.filter(function(x){ return x.id === id; })[0]; if(!r) return;
+  openModal('Delete reference / ریفرنس حذف', bi('ڈائری نمبر ' + esc(r.diaryNo) + ' کا یہ ریفرنس حذف ہو جائے گا۔ کیا آپ واقعی حذف کرنا چاہتے ہیں؟', 'Reference with diary no. ' + esc(r.diaryNo) + ' will be deleted. Are you sure?'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspectionRefs').doc(id).delete().catch(dbErr); }}]);
+}
+
+/* ---------- inspection periods and settings ---------- */
+function defaultPeriod(){
+  var d = new Date(), y = d.getMonth() >= 4 ? d.getFullYear() - 1 : d.getFullYear() - 2;
+  return {title:'Inspection ' + y + '-' + String(y + 1).slice(2), start:y + '-05-01', end:(y + 1) + '-04-30'};
+}
+function openInsForm(id){
+  if(!CTX.canAdmin){ toast('⛔ ' + bi('صرف ایڈمن انسپیکشن بنا سکتا ہے۔', 'Only an admin can create inspections.'), 'err'); return; }
+  var x = id ? INSP.filter(function(i){ return i.id === id; })[0] : defaultPeriod();
+  var h = '<div class="grid"><div class="cl-field full"><label>Title / عنوان</label><input id="in_title" value="' + esc(x.title) + '"></div>' +
+    '<div class="cl-field"><label>Period from / آغاز</label><input type="date" id="in_start" value="' + esc(x.start) + '"></div>' +
+    '<div class="cl-field"><label>Period to / اختتام</label><input type="date" id="in_end" value="' + esc(x.end) + '"></div></div>' +
+    '<div class="cl-note">' + bi('عام طور پر 1 مئی سے 30 اپریل تک۔ A اور B اسی مدت کے کیسز سے بنتے ہیں۔', 'Normally 1 May to 30 April. A and B are built from the cases in this period.') + '</div>';
+  openModal(id ? 'Edit inspection / انسپیکشن میں ترمیم' : 'New inspection / نئی انسپیکشن', h, [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Save / محفوظ کریں', cls:'gold', fn:function(){ return saveIns(id); }}]);
+}
+function saveIns(id){
+  var t = $('in_title').value.trim(), s = $('in_start').value, e = $('in_end').value;
+  if(!t || !s || !e || s > e){ toast('⚠️ ' + bi('عنوان اور درست تاریخیں درکار ہیں۔', 'A title and valid dates are required.'), 'warn'); return false; }
+  var d = {title:t, start:s, end:e};
+  var p = id ? db.collection('inspections').doc(id).set(stamp(d), {merge:true}) : db.collection('inspections').add(stamp(Object.assign(d, {locked:false})));
+  p.then(function(ref){ if(!id && ref && ref.id){ UI.ins = ref.id; } toast('✅ ' + bi('انسپیکشن محفوظ ہو گئی', 'Inspection saved'), 'good'); renderAll(); }).catch(dbErr);
+}
+function toggleLock(id){
+  var x = INSP.filter(function(i){ return i.id === id; })[0]; if(!x || !CTX.canAdmin) return;
+  db.collection('inspections').doc(id).set(stamp({locked:!x.locked}), {merge:true}).catch(dbErr);
+}
+function delIns(id){
+  if(!CTX.canAdmin) return;
+  var n = REFS.filter(function(r){ return r.inspectionId === id; }).length;
+  if(n){ toast('⚠️ ' + bi('اس انسپیکشن میں ' + n + ' ریفرنس درج ہیں، اس لیے حذف نہیں ہو سکتی۔ لاک کر دیں۔', 'This inspection has ' + n + ' references, so it cannot be deleted. Lock it instead.'), 'warn'); return; }
+  openModal('Delete inspection / انسپیکشن حذف', bi('یہ انسپیکشن حذف ہو جائے گی۔', 'This inspection will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspections').doc(id).delete().then(function(){ if(UI.ins === id) UI.ins = ''; }).catch(dbErr); }}]);
+}
+function saveCfg(path, val){
+  if(!CTX.canAdmin){ toast('⛔ ' + bi('صرف ایڈمن ترتیبات بدل سکتا ہے۔', 'Only an admin can change settings.'), 'err'); return; }
+  var parts = path.split('.'), d = {}, cur = d;
+  parts.forEach(function(p, i){ if(i === parts.length - 1) cur[p] = val; else { cur[p] = {}; cur = cur[p]; } });
+  db.collection('inspectionConfig').doc('main').set(stamp(d), {merge:true}).then(function(){ toast('✅ ' + bi('محفوظ', 'Saved'), 'good'); }).catch(dbErr);
+}
+function viewSettings(){
+  var h = '<div class="cl-card"><h3 style="margin:0 0 8px;color:var(--navy)">' + bi('انسپیکشن کی مدتیں', 'Inspection periods') + '</h3><div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">Title</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead><tbody>';
+  INSP.forEach(function(x){
+    h += '<tr><td>' + esc(x.title) + '</td><td class="n">' + fmtD(x.start) + '</td><td class="n">' + fmtD(x.end) + '</td><td class="n">' + (x.locked ? '🔒 Locked' : 'Open') + '</td><td class="pf-act"><button onclick="openInsForm(\'' + x.id + '\')">✎</button> <button onclick="toggleLock(\'' + x.id + '\')">' + (x.locked ? '🔓' : '🔒') + '</button> <button onclick="delIns(\'' + x.id + '\')">🗑</button></td></tr>';
+  });
+  h += '</tbody></table></div><div style="margin-top:8px"><button class="cl-btn gold sm" onclick="openInsForm()">＋ ' + bi('نئی انسپیکشن', 'New inspection') + '</button></div></div>';
+  h += '<div class="cl-card"><h3 style="margin:0 0 8px;color:var(--navy)">' + bi('پراسیکیوٹر ↔ کلرک', 'Prosecutor ↔ clerk') + '</h3><div class="cl-note" style="margin-top:0">' + bi('پرفارما A اور B پر دستخط کے لیے ہر پراسیکیوٹر کے ساتھ منسلک کلرک کا مکمل نام۔', 'Complete name of the clerk attached to each prosecutor — printed under Proforma A and B.') + '</div><div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">Prosecutor</th><th class="l">Clerk (complete name)</th><th class="l">Designation</th></tr></thead><tbody>';
+  LISTS.officers.forEach(function(o){
+    var k = encId(o), a = CFG.assign[k] || {};
+    h += '<tr><td>' + esc(shortOff(o)) + '</td><td><input value="' + esc(a.clerk || '') + '" onchange="saveCfg(\'assign.' + k + '.clerk\',this.value.trim())"></td><td><input value="' + esc(a.designation || 'Junior Clerk') + '" onchange="saveCfg(\'assign.' + k + '.designation\',this.value.trim())"></td></tr>';
+  });
+  h += '</tbody></table></div></div>';
+  h += '<div class="cl-card"><h3 style="margin:0 0 8px;color:var(--navy)">' + bi('اپیل کمیٹی اور دستخط', 'Appeal Committee and signatures') + '</h3><div class="grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">' +
+    '<div class="cl-field"><label>AC Clerk / Secretary (complete name)</label><input value="' + esc(CFG.ac.name) + '" onchange="saveCfg(\'ac.name\',this.value.trim())"></div>' +
+    '<div class="cl-field"><label>Designation</label><input value="' + esc(CFG.ac.designation) + '" onchange="saveCfg(\'ac.designation\',this.value.trim())"></div>' +
+    '<div class="cl-field"><label>Counter-signature (C–I)</label><input value="' + esc(CFG.chairman) + '" onchange="saveCfg(\'chairman\',this.value.trim())"></div>' +
+    '<div class="cl-field"><label>Counter-signature (A, B)</label><input value="' + esc(CFG.incharge) + '" onchange="saveCfg(\'incharge\',this.value.trim())"></div></div></div>';
+  return h;
+}
+function printView(){ window.print(); }
+
+/* ---------- live data ---------- */
+function listen(name, onData){
+  db.collection(name).onSnapshot(function(qs){ ERRS[name] = ''; onData(qs); ensureSel(); renderAll(); }, function(err){ console.error(name, err); ERRS[name] = err.code || 'error'; renderAll(); });
+}
+function mapDocs(qs, withId){ var o = {}; qs.forEach(function(d){ var x = d.data(); x.id = d.id; o[d.id] = x; }); return o; }
+function ensureSel(){
+  if(INSP.length && !curIns()){ UI.ins = INSP.slice().sort(function(a, b){ return (b.start || '').localeCompare(a.start || ''); })[0].id; }
+  if(!UI.officer || LISTS.officers.indexOf(UI.officer) < 0) UI.officer = LISTS.officers[0] || '';
+}
+function startLiveData(){
+  db.collection('lookupLists').doc('caseEntry').onSnapshot(function(doc){ if(doc.exists && Array.isArray(doc.data().officers) && doc.data().officers.length) LISTS.officers = doc.data().officers; ensureSel(); renderAll(); }, function(e){ console.error('lists', e); });
+  db.collection('cases').onSnapshot(function(qs){ var a = []; qs.forEach(function(d){ var c = d.data(); c.id = d.id; a.push(c); }); CASES = a; ERRS.cases = ''; $('authGate').style.display = 'none'; renderAll(); },
+    function(err){ ERRS.cases = err.code || 'error'; gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true); });
+  listen('inspections', function(qs){ INSP = Object.values(mapDocs(qs)); });
+  listen('inspectionRefs', function(qs){ REFS = Object.values(mapDocs(qs)); });
+  listen('inspectionManual', function(qs){ MANUAL = mapDocs(qs); });
+  listen('inspectionB', function(qs){ BROWS = mapDocs(qs); });
+  listen('inspectionOverrides', function(qs){ OVR = mapDocs(qs); });
+  db.collection('inspectionConfig').doc('main').onSnapshot(function(doc){
+    ERRS.inspectionConfig = '';
+    var d = doc.exists ? doc.data() : {};
+    CFG = { assign:d.assign || {}, ac:Object.assign({name:'', designation:'Duty Clerk'}, d.ac || {}), chairman:d.chairman || 'Chairman Appeal Committee', incharge:d.incharge || 'In-Charge Prosecution Office' };
+    renderAll();
+  }, function(err){ ERRS.inspectionConfig = err.code || 'error'; renderAll(); });
+}
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+$('mBg').addEventListener('mousedown', function(e){ if(e.target === this) closeModal(); });
+
+
+/* ---------- sign-in and roles (same pattern as the other Camp Office pages) ---------- */
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+    return;
+  }
+  db.collection('users').doc(user.uid).get().then(function(doc){
+    var u = doc.exists ? doc.data() : {};
+    var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+    var legacyAdmin = u.role === 'admin';
+    if(!approved && !legacyAdmin){
+      gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+      return;
+    }
+    var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+    var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+    CTX.user = {uid:user.uid, email:user.email, role:r2};
+    CTX.canWrite = isAdm || r2 === 'data_entry';
+    CTX.canAdmin = isAdm;
+    $('ceUserEmail').textContent = user.email;
+    var rn = ROLE_NAMES[r2] || [r2, r2];
+    $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+    startLiveData();
+  }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+});
+$('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
+document.body.setAttribute('data-theme', currentTheme);
+renderThemePicker();
+renderAll();
+
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+</body>
+</html>
+

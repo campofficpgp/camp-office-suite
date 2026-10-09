@@ -819,15 +819,16 @@ function renderAll(){
   var ae = document.activeElement;
   if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $('view').contains(ae)){ RT = setTimeout(renderAll, 900); return; }
   renderSelectors(); renderStats(); renderTabs();
-  var v = $('view');
-  if(!INSP.length){ v.innerHTML = noInspection(); return; }
-  var f = {overview:viewOverview, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
-  v.innerHTML = f ? f() : '';
   var w = [];
   ['cases', 'inspections', 'inspectionRefs', 'inspectionManual', 'inspectionB', 'inspectionOverrides', 'inspectionConfig'].forEach(function(c){ if(ERRS[c] === 'permission-denied') w.push(c); });
   var dw = $('dbWarn');
   if(w.length){ dw.style.display = ''; dw.innerHTML = '⚠️ ' + bi('ڈیٹا بیس کے رولز میں اس صفحے کی نئی اجازتیں ابھی شامل نہیں ہوئیں، اس لیے یہ صفحہ ڈیٹا پڑھ/لکھ نہیں سکتا۔ ایڈمن سے رولز اپڈیٹ کروائیں۔', 'The database rules do not yet include this page\'s collections, so it cannot read or save data. Ask the admin to update the rules.') + ' <bdi dir="ltr">(' + w.join(', ') + ')</bdi>'; }
   else dw.style.display = 'none';
+
+  var v = $('view');
+  if(!INSP.length){ v.innerHTML = noInspection(); return; }
+  var f = {overview:viewOverview, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
+  v.innerHTML = f ? f() : '';
 }
 function noInspection(){
   return '<div class="cl-card"><div class="cl-empty">' + bi('ابھی کوئی انسپیکشن نہیں بنی۔', 'No inspection has been created yet.') +

@@ -397,3 +397,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+
+/* version: 2026-10-09 full-screen button */

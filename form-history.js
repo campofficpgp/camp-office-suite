@@ -81,8 +81,8 @@
 
     function addButtons() {
       if (st.btns) return;
-      var anchor = null;
-      if (!isModal(m)) anchor = m.querySelector('button[id$="_saveBtn"]');
+      var anchor = m.querySelector('[data-fh-save]');          // a page can mark its own Save button
+      if (!anchor && !isModal(m)) anchor = m.querySelector('button[id$="_saveBtn"]');
       var all = anchor ? [] : m.querySelectorAll('[onclick]');
       for (var i = 0; i < all.length; i++) { if (/save/i.test(all[i].getAttribute('onclick') || '')) { anchor = all[i]; break; } }
       if (!anchor) { var a = m.querySelector('.actions button, .actions .btn'); anchor = a; }
@@ -133,8 +133,14 @@
       else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
     });
 
+    function rebuild() {            // for pop-ups whose buttons/fields the page rebuilds each time it opens one
+      st.btns = null; st.hist = []; st.idx = -1; if (st.timer) { clearTimeout(st.timer); st.timer = null; }
+      if (!isOpen(m)) return;
+      if (!st.open) watch(); else { addButtons(); setTimeout(function () { if (st.open) push(); }, 200); }
+    }
     function watch() {
       var o = isOpen(m);
+      if (o && st.open && st.btns && !st.btns.undo.isConnected) { st.btns = null; addButtons(); }
       if (o && !st.open) {
         st.open = true; st.hist = []; st.idx = -1; addButtons();
         setTimeout(function () { if (st.open) { push(); } }, 200);
@@ -145,7 +151,7 @@
     new MutationObserver(watch).observe(m, { attributes: true, attributeFilter: ['class', 'style'] });
     if (!isModal(m)) setInterval(watch, 700);
     watch();
-    st.api = { undo: undo, redo: redo, push: push, state: st };
+    st.api = { undo: undo, redo: redo, push: push, rebuild: rebuild, state: st };
   }
 
   function init() {

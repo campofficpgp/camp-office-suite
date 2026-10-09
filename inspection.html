@@ -515,6 +515,8 @@ table.pf-t td.sm div{ line-height:1.35; }
       <div class="cl-field" style="min-width:260px" id="offBox"><label for="offSel">Prosecutor (for A and B) / پراسیکیوٹر (A اور B کے لیے)</label><select id="offSel" onchange="setOfficer(this.value)"></select></div>
       <span class="cl-sep"></span>
       <button class="cl-btn gold" id="btnNewIns" onclick="openInsForm()" style="display:none">＋ New inspection / نئی انسپیکشن</button>
+      <button class="cl-btn ghost" id="btnUndo" type="button" onclick="hxUndo()" style="display:none" title="Undo the last change (Ctrl+Z)">↶ واپس / Undo</button>
+      <button class="cl-btn ghost" id="btnRedo" type="button" onclick="hxRedo()" style="display:none" title="Redo (Ctrl+Y)">↷ دوبارہ / Redo</button>
     </div>
     <div class="cl-bar exp-bar">
       <div class="cl-field" style="min-width:340px"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
@@ -796,11 +798,12 @@ function openModal(title, html, btns, wide){
   $('mBox').className = 'cl-modal' + (wide ? ' wide' : '');
   var f = $('mFoot'); f.innerHTML = '';
   (btns || [{label:'Close / بند کریں', cls:'ghost'}]).forEach(function(b){
-    var el = document.createElement('button'); el.className = 'cl-btn ' + (b.cls || ''); el.textContent = b.label;
+    var el = document.createElement('button'); el.className = 'cl-btn ' + (b.cls || ''); el.textContent = b.label; if(b.fh) el.setAttribute('data-fh-save', '1');
     el.onclick = function(){ if(b.fn){ if(b.fn() === false) return; } closeModal(); };
     f.appendChild(el);
   });
   $('mBg').classList.add('show');
+  var mb = $('mBox'); if(mb.__fh && mb.__fh.api && mb.__fh.api.rebuild) mb.__fh.api.rebuild();
 }
 function closeModal(){ $('mBg').classList.remove('show'); }
 function canEdit(){ var i = curIns(); return CTX.canWrite && !(i && i.locked); }
@@ -865,7 +868,7 @@ function renderAll(){
   clearTimeout(RT);
   var ae = document.activeElement;
   if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $('view').contains(ae)){ RT = setTimeout(renderAll, 900); return; }
-  renderSelectors(); renderStats(); renderTabs();
+  renderSelectors(); renderStats(); renderTabs(); hxButtons();
   var w = [];
   ['cases', 'inspections', 'inspectionRefs', 'inspectionManual', 'inspectionB', 'inspectionOverrides', 'inspectionConfig'].forEach(function(c){ if(ERRS[c] === 'permission-denied') w.push(c); });
   var dw = $('dbWarn');
@@ -988,14 +991,14 @@ function showCell(part, row, col){
 function setOvr(caseId, row){
   if(!guardEdit()) return;
   var id = UI.ins + '__' + caseId;
-  var p = row ? db.collection('inspectionOverrides').doc(id).set(stamp({inspectionId:UI.ins, caseId:caseId, row:row})) : db.collection('inspectionOverrides').doc(id).delete();
+  var p = track('Row choice / قطار کا انتخاب', 'inspectionOverrides', id, function(r){ return row ? r.set(stamp({inspectionId:UI.ins, caseId:caseId, row:row})) : r.delete(); });
   p.then(function(){ closeModal(); toast('✅ ' + bi('قطار محفوظ ہو گئی', 'Row saved'), 'good'); }).catch(dbErr);
 }
 function saveManual(officer, row, field, val){
   if(!guardEdit()) return;
   var o = LISTS.officers.filter(function(x){ return x.replace(/'/g, '') === officer; })[0] || officer;
   var d = {inspectionId:UI.ins, officer:o, row:row}; d[field] = val;
-  db.collection('inspectionManual').doc(manualKey(o, row)).set(stamp(d), {merge:true}).catch(dbErr);
+  track('Opinion / fit cell', 'inspectionManual', manualKey(o, row), function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr);
 }
 
 /* ---------- Proforma B ---------- */
@@ -1022,16 +1025,16 @@ function saveB(id, patch){
   var o = UI.officer, d = {inspectionId:UI.ins, officer:o}, base = BROWS[id] || {};
   if(!base.manual && id.indexOf('__') > 0) d.caseId = id.split('__')[1];
   Object.keys(patch).forEach(function(k){ d[k] = patch[k]; });
-  db.collection('inspectionB').doc(id).set(stamp(d), {merge:true}).catch(dbErr);
+  track('Proforma B entry', 'inspectionB', id, function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr);
 }
 function addB(){
   if(!guardEdit()) return;
   var id = UI.ins + '__m' + Date.now();
-  db.collection('inspectionB').doc(id).set(stamp({inspectionId:UI.ins, officer:UI.officer, manual:true, appealNo:'', judgDate:'', submitDate:'', notSubmitted:false, grounds:''})).catch(dbErr);
+  track('Add row (B)', 'inspectionB', id, function(r){ return r.set(stamp({inspectionId:UI.ins, officer:UI.officer, manual:true, appealNo:'', judgDate:'', submitDate:'', notSubmitted:false, grounds:''})); }).catch(dbErr);
 }
 function delB(id){
   if(!guardEdit()) return;
-  openModal('Delete row / قطار حذف', bi('یہ ہاتھ سے بنائی گئی قطار حذف ہو جائے گی۔', 'This manually added row will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspectionB').doc(id).delete().catch(dbErr); }}]);
+  openModal('Delete row / قطار حذف', bi('یہ ہاتھ سے بنائی گئی قطار حذف ہو جائے گی۔', 'This manually added row will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ track('Delete row (B)', 'inspectionB', id, function(r){ return r.delete(); }).catch(dbErr); }}]);
 }
 
 /* ---------- helpers for references ---------- */
@@ -1210,7 +1213,7 @@ function editRef(id){
   RF.forEach(function(f){ h += f[0] === 'sect' ? '<div class="sect">' + esc(f[1]) + '</div>' : fieldHtml(f, r[f[0]] != null ? r[f[0]] : ''); });
   h += '</div>';
   var btns = [{label:'Close / بند کریں', cls:'ghost'}];
-  if(canEdit()) btns.push({label:'Save / محفوظ کریں', cls:'gold', fn:function(){ return saveRef(id); }});
+  if(canEdit()) btns.push({label:'Save / محفوظ کریں', cls:'gold', fh:true, fn:function(){ return saveRef(id); }});
   openModal(id ? 'Edit reference / ریفرنس میں ترمیم' : 'New reference / نیا ریفرنس', h, btns, true);
 }
 function saveRef(id){
@@ -1222,13 +1225,14 @@ function saveRef(id){
   var dup = REFS.filter(function(x){ return x.id !== id && x.inspectionId === UI.ins && x.source === d.source && String(x.diaryNo).toLowerCase() === d.diaryNo.toLowerCase() && x.diaryDate === d.diaryDate; });
   if(dup.length && !saveRef.okDup){ saveRef.okDup = true; toast('⚠️ ' + bi('اسی ڈائری نمبر اور تاریخ کا ریفرنس پہلے سے موجود ہے۔ دوبارہ "محفوظ کریں" دبائیں اگر یہ واقعی الگ ہے۔', 'A reference with the same diary no. and date already exists. Press Save again if it is really a different one.'), 'warn'); return false; }
   saveRef.okDup = false;
-  var col = db.collection('inspectionRefs'), p = id ? col.doc(id).set(stamp(d), {merge:true}) : col.add(stamp(d));
+  var rid = id || db.collection('inspectionRefs').doc().id;
+  var p = track(id ? 'Edit reference / ریفرنس میں ترمیم' : 'New reference / نیا ریفرنس', 'inspectionRefs', rid, function(r){ return r.set(stamp(d), {merge:true}); });
   p.then(function(){ toast('✅ ' + bi('ریفرنس محفوظ ہو گیا', 'Reference saved'), 'good'); }).catch(dbErr);
 }
 function delRef(id){
   if(!guardEdit()) return;
   var r = REFS.filter(function(x){ return x.id === id; })[0]; if(!r) return;
-  openModal('Delete reference / ریفرنس حذف', bi('ڈائری نمبر ' + esc(r.diaryNo) + ' کا یہ ریفرنس حذف ہو جائے گا۔ کیا آپ واقعی حذف کرنا چاہتے ہیں؟', 'Reference with diary no. ' + esc(r.diaryNo) + ' will be deleted. Are you sure?'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspectionRefs').doc(id).delete().catch(dbErr); }}]);
+  openModal('Delete reference / ریفرنس حذف', bi('ڈائری نمبر ' + esc(r.diaryNo) + ' کا یہ ریفرنس حذف ہو جائے گا۔ کیا آپ واقعی حذف کرنا چاہتے ہیں؟', 'Reference with diary no. ' + esc(r.diaryNo) + ' will be deleted. Are you sure?'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ track('Delete reference / ریفرنس حذف', 'inspectionRefs', id, function(r){ return r.delete(); }).catch(dbErr); }}]);
 }
 
 /* ---------- inspection periods and settings ---------- */
@@ -1243,14 +1247,16 @@ function openInsForm(id){
     '<div class="cl-field"><label>Period from / آغاز</label><input type="date" id="in_start" value="' + esc(x.start) + '"></div>' +
     '<div class="cl-field"><label>Period to / اختتام</label><input type="date" id="in_end" value="' + esc(x.end) + '"></div></div>' +
     '<div class="cl-note">' + bi('عام طور پر 1 مئی سے 30 اپریل تک۔ A اور B اسی مدت کے کیسز سے بنتے ہیں۔', 'Normally 1 May to 30 April. A and B are built from the cases in this period.') + '</div>';
-  openModal(id ? 'Edit inspection / انسپیکشن میں ترمیم' : 'New inspection / نئی انسپیکشن', h, [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Save / محفوظ کریں', cls:'gold', fn:function(){ return saveIns(id); }}]);
+  openModal(id ? 'Edit inspection / انسپیکشن میں ترمیم' : 'New inspection / نئی انسپیکشن', h, [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Save / محفوظ کریں', cls:'gold', fh:true, fn:function(){ return saveIns(id); }}]);
 }
 function saveIns(id){
   var t = $('in_title').value.trim(), s = $('in_start').value, e = $('in_end').value;
   if(!t || !s || !e || s > e){ toast('⚠️ ' + bi('عنوان اور درست تاریخیں درکار ہیں۔', 'A title and valid dates are required.'), 'warn'); return false; }
   var d = {title:t, start:s, end:e};
-  var p = id ? db.collection('inspections').doc(id).set(stamp(d), {merge:true}) : db.collection('inspections').add(stamp(Object.assign(d, {locked:false})));
-  p.then(function(ref){ if(!id && ref && ref.id){ UI.ins = ref.id; } toast('✅ ' + bi('انسپیکشن محفوظ ہو گئی', 'Inspection saved'), 'good'); renderAll(); }).catch(dbErr);
+  var iid = id || db.collection('inspections').doc().id;
+  if(!id) d.locked = false;
+  var p = track(id ? 'Edit inspection / انسپیکشن میں ترمیم' : 'New inspection / نئی انسپیکشن', 'inspections', iid, function(r){ return r.set(stamp(d), {merge:true}); });
+  p.then(function(){ if(!id){ UI.ins = iid; } toast('✅ ' + bi('انسپیکشن محفوظ ہو گئی', 'Inspection saved'), 'good'); renderAll(); }).catch(dbErr);
 }
 function toggleLock(id){
   var x = INSP.filter(function(i){ return i.id === id; })[0]; if(!x || !CTX.canAdmin) return;
@@ -1260,13 +1266,13 @@ function delIns(id){
   if(!CTX.canAdmin) return;
   var n = REFS.filter(function(r){ return r.inspectionId === id; }).length;
   if(n){ toast('⚠️ ' + bi('اس انسپیکشن میں ' + n + ' ریفرنس درج ہیں، اس لیے حذف نہیں ہو سکتی۔ لاک کر دیں۔', 'This inspection has ' + n + ' references, so it cannot be deleted. Lock it instead.'), 'warn'); return; }
-  openModal('Delete inspection / انسپیکشن حذف', bi('یہ انسپیکشن حذف ہو جائے گی۔', 'This inspection will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ db.collection('inspections').doc(id).delete().then(function(){ if(UI.ins === id) UI.ins = ''; }).catch(dbErr); }}]);
+  openModal('Delete inspection / انسپیکشن حذف', bi('یہ انسپیکشن حذف ہو جائے گی۔', 'This inspection will be deleted.'), [{label:'Cancel / منسوخ', cls:'ghost'}, {label:'Delete / حذف', cls:'red', fn:function(){ track('Delete inspection / انسپیکشن حذف', 'inspections', id, function(r){ return r.delete(); }).then(function(){ if(UI.ins === id) UI.ins = ''; }).catch(dbErr); }}]);
 }
 function saveCfg(path, val){
   if(!CTX.canAdmin){ toast('⛔ ' + bi('صرف ایڈمن ترتیبات بدل سکتا ہے۔', 'Only an admin can change settings.'), 'err'); return; }
   var parts = path.split('.'), d = {}, cur = d;
   parts.forEach(function(p, i){ if(i === parts.length - 1) cur[p] = val; else { cur[p] = {}; cur = cur[p]; } });
-  db.collection('inspectionConfig').doc('main').set(stamp(d), {merge:true}).then(function(){ toast('✅ ' + bi('محفوظ', 'Saved'), 'good'); }).catch(dbErr);
+  track('Setting / ترتیب', 'inspectionConfig', 'main', function(r){ return r.set(stamp(d), {merge:true}); }).then(function(){ toast('✅ ' + bi('محفوظ', 'Saved'), 'good'); }).catch(dbErr);
 }
 function viewSettings(){
   var h = '<div class="cl-card"><h3 style="margin:0 0 8px;color:var(--navy)">' + bi('انسپیکشن کی مدتیں', 'Inspection periods') + '</h3><div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">Title</th><th>From</th><th>To</th><th>Status</th><th></th></tr></thead><tbody>';
@@ -2057,6 +2063,75 @@ function expFillScopes(){
   if(cur) s.value = cur;
 }
 
+/* ---------- Undo / Redo (every change on this page is saved at once, so Undo puts the earlier value back) ---------- */
+var HX = {undo:[], redo:[], q:Promise.resolve()}, HX_MAX = 60;
+function hxStable(v){
+  if(v === null || typeof v !== 'object') return JSON.stringify(v === undefined ? null : v);
+  if(typeof v.toMillis === 'function') return 't' + v.toMillis();
+  if(Array.isArray(v)) return '[' + v.map(hxStable).join(',') + ']';
+  return '{' + Object.keys(v).sort().map(function(k){ return JSON.stringify(k) + ':' + hxStable(v[k]); }).join(',') + '}';
+}
+function hxClean(d){
+  if(!d) return 'null';
+  var o = {}; Object.keys(d).forEach(function(k){ if(k !== 'updatedAt' && k !== 'updatedBy') o[k] = d[k]; });
+  return hxStable(o);
+}
+function hxSnap(ref){ return ref.get().then(function(s){ return s.exists ? s.data() : null; }); }
+function track(label, coll, id, doWrite){
+  var ref = db.collection(coll).doc(id), before = null;
+  var p = HX.q.then(function(){ return hxSnap(ref); }).then(function(b){ before = b; return doWrite(ref); }).then(function(){ return hxSnap(ref); }).then(function(after){
+    if(hxClean(before) === hxClean(after)) return;
+    HX.undo.push({label:label, coll:coll, id:id, before:before, after:after, ins:UI.ins});
+    if(HX.undo.length > HX_MAX) HX.undo.shift();
+    HX.redo = [];
+    hxButtons();
+  });
+  HX.q = p.catch(function(){});      // edits and Undo/Redo run strictly one after another, in the order they were made
+  return p;
+}
+function hxButtons(){
+  var u = $('btnUndo'), r = $('btnRedo'); if(!u || !r) return;
+  var show = !!CTX.canWrite;
+  u.style.display = r.style.display = show ? '' : 'none';
+  u.disabled = !HX.undo.length; r.disabled = !HX.redo.length;
+  u.title = HX.undo.length ? 'Undo: ' + HX.undo[HX.undo.length - 1].label + ' (Ctrl+Z)' : 'Nothing to undo / واپس کرنے کو کچھ نہیں';
+  r.title = HX.redo.length ? 'Redo: ' + HX.redo[HX.redo.length - 1].label + ' (Ctrl+Y)' : 'Nothing to redo / دوبارہ کرنے کو کچھ نہیں';
+}
+function hxStep(kind){
+  if(!CTX.canWrite){ guardEdit(); return; }
+  HX.q = HX.q.then(function(){
+    var from = kind === 'undo' ? HX.undo : HX.redo, to = kind === 'undo' ? HX.redo : HX.undo;
+    if(!from.length) return;
+    var a = from[from.length - 1], ins = INSP.filter(function(x){ return x.id === a.ins; })[0];
+    if(ins && ins.locked && a.coll !== 'inspections'){ toast('🔒 ' + bi('یہ انسپیکشن لاک ہے۔ ایڈمن اسے کھول سکتا ہے۔', 'This inspection is locked. An admin can unlock it.'), 'err'); return; }
+    var ref = db.collection(a.coll).doc(a.id), expect = kind === 'undo' ? a.after : a.before, target = kind === 'undo' ? a.before : a.after;
+    return hxSnap(ref).then(function(cur){
+      if(hxClean(cur) !== hxClean(expect)){
+        from.pop();
+        toast('⚠️ ' + bi('اس کے بعد کسی اور نے یہی چیز بدل دی ہے، اس لیے ' + (kind === 'undo' ? 'واپسی' : 'دوبارہ') + ' نہیں کی گئی۔', 'Someone changed this item after your edit, so it was not ' + (kind === 'undo' ? 'undone' : 'redone') + '.'), 'warn');
+        return;
+      }
+      var w = target ? ref.set(stamp(Object.assign({}, target))) : ref.delete();
+      return w.then(function(){
+        from.pop(); to.push(a);
+        toast((kind === 'undo' ? '↶ ' + bi('واپس کر دیا', 'Undone') : '↷ ' + bi('دوبارہ کر دیا', 'Redone')) + ': ' + esc(a.label), 'good');
+      });
+    });
+  }).catch(dbErr).then(function(){ hxButtons(); renderAll(); });
+}
+function hxUndo(){ hxStep('undo'); }
+function hxRedo(){ hxStep('redo'); }
+document.addEventListener('keydown', function(e){
+  if(!(e.ctrlKey || e.metaKey) || $('mBg').classList.contains('show')) return;
+  var t = e.target, tt = (t.type || '').toLowerCase();
+  if(t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && !/^(checkbox|radio|button|submit)$/.test(tt))) return;   // the browser's own typing-undo handles text boxes
+  var k = (e.key || '').toLowerCase();
+  if(k === 'z' && !e.shiftKey){ e.preventDefault(); hxUndo(); }
+  else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); hxRedo(); }
+});
+/* field-by-field Undo/Redo inside the pop-up forms (shared form-history.js) */
+window.addEventListener('load', function(){ if(window.__formHistory) window.__formHistory.setup($('mBox')); });
+
 
 /* ---------- sign-in and roles (same pattern as the other Camp Office pages) ---------- */
 auth.onAuthStateChanged(function(user){
@@ -2095,6 +2170,7 @@ renderAll();
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>
+<script src="form-history.js" defer></script>
 </body>
 </html>
 

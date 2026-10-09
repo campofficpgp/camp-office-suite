@@ -388,7 +388,6 @@ table.pf-t td.sm{ font-size:11.5px; }
 table.pf-t td.sm div{ line-height:1.35; }
 .pf-note{ font-size:12px; margin:8px 2px 0; color:var(--muted); }
 @media print{
-  @page{ size:legal landscape; margin:8mm; }
   body *{ visibility:visible !important; }
   .pf-p2{ break-before:page; page-break-before:always; margin-top:0 !important; }
   table.pf-t select.miss, table.pf-t input.miss{ background:transparent !important; }
@@ -406,6 +405,48 @@ table.pf-t td.sm div{ line-height:1.35; }
   .pf-title{ background:#1B3F63 !important; color:#fff !important; }
 }
 @media(max-width:700px){ .cl-modal .grid{ grid-template-columns:1fr; } .cl-nav{ position:static; } }
+
+/* =====================  EXPORT: bar + print sheet (#printArea)  ===================== */
+.exp-bar{ border-top:1px dashed var(--border); padding-top:10px; }
+#printArea{ display:none; }
+@media print{
+  body.printing-exp > *:not(#printArea){ display:none !important; }
+  body.printing-exp #printArea{ display:block !important; }
+  body.printing-exp{ background:#fff !important; margin:0 !important; padding:0 !important; }
+}
+#printArea{ font-family:Calibri,Arial,"Segoe UI",sans-serif; color:#111; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+#printArea .pa-sheet{ break-after:page; page-break-after:always; }
+#printArea .pa-sheet:last-child{ break-after:auto; page-break-after:auto; }
+#printArea .pa-lh{ display:flex; align-items:center; gap:10px; position:relative; min-height:42px; }
+#printArea .pa-em{ width:42px; height:42px; flex:none; position:absolute; left:0; top:0; }
+#printArea .pa-em svg{ width:42px; height:42px; display:block; }
+#printArea .pa-lt{ flex:1; text-align:center; }
+#printArea .pa-lt .a{ font-size:15pt; font-weight:700; color:#1B3F63; line-height:1.15; }
+#printArea .pa-lt .b{ font-size:9.5pt; color:#666; margin-top:2px; }
+#printArea .pa-rule{ border-top:2.2pt solid #B8860B; border-bottom:.7pt solid #1B3F63; height:2.4pt; margin:5px 0 8px; }
+#printArea .pa-ban{ background:#1B3F63; color:#fff; padding:4px 8px; display:flex; justify-content:space-between; align-items:baseline; font-weight:700; font-size:11.5pt; margin-bottom:6px; }
+#printArea .pa-ban small{ font-weight:400; font-size:8.5pt; }
+#printArea .pa-meta{ font-size:10pt; color:#666; margin:0 2px 3px; }
+#printArea .pa-meta b{ color:#1B3F63; font-size:10.5pt; }
+#printArea .pa-head{ text-align:center; font-weight:700; color:#1B3F63; font-size:9.5pt; margin:4px 10px 6px; }
+#printArea table.pa-t{ width:100%; border-collapse:collapse; table-layout:fixed; }
+#printArea table.pa-t th{ background:#2A5A84; color:#fff; border:.5pt solid #fff; padding:3px 3px; text-align:center; vertical-align:middle; font-size:.95em; line-height:1.2; overflow-wrap:break-word; }
+#printArea table.pa-t td{ border:.4pt solid #9FB0C3; padding:3px 4px; vertical-align:top; line-height:1.25; overflow-wrap:anywhere; white-space:normal; }
+#printArea table.pa-t td.c{ text-align:center; vertical-align:middle; }
+#printArea table.pa-t td.b{ font-weight:700; }
+#printArea table.pa-t td .s{ font-size:.88em; color:#666; font-weight:400; }
+#printArea table.pa-t tr.z td{ background:#F4F7FB; }
+#printArea table.pa-t tr.tot td{ background:#1B3F63; color:#fff; font-weight:700; }
+#printArea table.pa-t tr.tot td .s{ color:#fff; }
+#printArea table.pa-t tr.sec td{ background:#F8EBC4; color:#1B3F63; font-weight:700; }
+#printArea table.pa-t thead{ display:table-header-group; }
+#printArea table.pa-t tr{ break-inside:avoid; page-break-inside:avoid; }
+#printArea .pa-note{ font-size:8pt; font-style:italic; color:#666; margin-top:4px; }
+#printArea .pa-sign{ display:flex; justify-content:space-around; gap:28px; margin-top:34px; break-inside:avoid; page-break-inside:avoid; font-size:9pt; text-align:center; }
+#printArea .pa-sign > div{ flex:1; max-width:260px; }
+#printArea .pa-sign .ln{ border-top:.7pt solid #111; margin-bottom:3px; }
+#printArea .pa-sign b{ color:#1B3F63; font-size:10pt; }
+#printArea .pa-sign span{ color:#666; font-size:8pt; }
 
 </style>
 </head><body>
@@ -473,8 +514,14 @@ table.pf-t td.sm div{ line-height:1.35; }
       <div class="cl-field" style="min-width:300px"><label for="insSel">Inspection (period) / انسپیکشن (مدت)</label><select id="insSel" onchange="setIns(this.value)"></select></div>
       <div class="cl-field" style="min-width:260px" id="offBox"><label for="offSel">Prosecutor (for A and B) / پراسیکیوٹر (A اور B کے لیے)</label><select id="offSel" onchange="setOfficer(this.value)"></select></div>
       <span class="cl-sep"></span>
-      <button class="cl-btn ghost" onclick="printView()">🖨 Print / پرنٹ</button>
       <button class="cl-btn gold" id="btnNewIns" onclick="openInsForm()" style="display:none">＋ New inspection / نئی انسپیکشن</button>
+    </div>
+    <div class="cl-bar exp-bar">
+      <div class="cl-field" style="min-width:340px"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
+      <button class="cl-btn ghost" onclick="exportPrint()" title="Print on A4 landscape">🖨 Print / پرنٹ</button>
+      <button class="cl-btn" onclick="exportFile('pdf')">📄 PDF</button>
+      <button class="cl-btn" onclick="exportFile('xlsx')">📊 Excel</button>
+      <button class="cl-btn" onclick="exportFile('docx')">📝 Word</button>
     </div>
     <div class="cl-stats" id="stats"></div>
   </div>
@@ -1240,7 +1287,7 @@ function viewSettings(){
     '<div class="cl-field"><label>Counter-signature (A, B)</label><input value="' + esc(CFG.incharge) + '" onchange="saveCfg(\'incharge\',this.value.trim())"></div></div></div>';
   return h;
 }
-function printView(){ window.print(); }
+function printView(){ exportPrint(); }
 
 /* ---------- live data ---------- */
 function listen(name, onData){
@@ -1269,6 +1316,746 @@ function startLiveData(){
 }
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
 $('mBg').addEventListener('mousedown', function(e){ if(e.target === this) closeModal(); });
+
+/* =====================  EXPORT MODEL  =====================
+   One neutral description of every proforma ("sheet"). PDF, Excel, Word and Print are all drawn from it,
+   so the four always show exactly the same numbers and wording.
+   sheet = { id, name (<=31, Excel tab), title, sub, meta:[[label,value]], heading, widths:[...relative],
+             head:[[{t,cs,rs}]], rows:[{c:[{t,sub,b,a,n}], tot, sec}], notes:[..], sign:[{name,l1,l2}] }          */
+var EXP_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function expToday(){ var d = new Date(); return d.getDate() + ' ' + EXP_MONTHS[d.getMonth()] + ' ' + d.getFullYear(); }
+function H(t, cs, rs){ return {t:t, cs:cs || 1, rs:rs || 1}; }
+function Cc(t, o){ o = o || {}; return {t:t == null ? '' : t, sub:o.sub || '', b:!!o.b, a:o.a || 'l', n:typeof t === 'number'}; }
+function Cn(t, o){ o = o || {}; return {t:t == null ? '' : t, sub:'', b:!!o.b, a:'c', n:typeof t === 'number'}; }
+function lns(parts){ return parts.filter(function(x){ return x !== '' && x != null; }).join('\n'); }
+function signProsecutorModel(officer){
+  var c = clerkFor(officer);
+  return [{name:c.name || '', l1:c.des, l2:'Clerk (complete name)'}, {name:shortOff(officer), l1:'', l2:'Prosecutor'}, {name:CFG.incharge, l1:'', l2:'Counter signature of In-Charge'}];
+}
+function signACModel(){ return [{name:CFG.ac.name || '', l1:CFG.ac.designation || 'Duty Clerk', l2:'Clerk / Secretary AC (complete name)'}, {name:CFG.chairman, l1:'', l2:'Counter signature'}]; }
+function sheetBase(id, name, title, meta, heading){ return {id:id, name:name, title:title, sub:'Period of Inspection: ' + periodTxt(), meta:meta || [], heading:heading || '', notes:[], sign:[]}; }
+function safeName(s){ return String(s).replace(/[\\\/\?\*\[\]:]/g, ' ').slice(0, 31); }
+
+/* ---- Proforma A (two pages: Part-I and Part-II) ---- */
+function surname(o){ var t = shortOff(o).split(/\s+/); return t.length > 1 ? t[t.length - 2] : t[0]; }
+function modelA(officer){
+  var a = buildA(officer), out = [], meta = [['Name of Prosecutor', shortOff(officer)]];
+  function table(sh, defs, cols, part){
+    var tot = {}; cols.forEach(function(c){ tot[c[0]] = 0; });
+    sh.rows = [];
+    defs.forEach(function(r){
+      var cells = a.rows[r.k], has = cells.total.length > 0, m = MANUAL[manualKey(officer, r.k)] || {};
+      var row = [Cc(r.t, {b:true})];
+      cols.forEach(function(c){ var n = c[0] === 'statutory' ? 0 : (cells[c[0]] || []).length; tot[c[0]] += n; row.push(Cn(n, {b:c[0] === 'total'})); });
+      row.push(Cn(m.opinion || (has ? '' : 'N.A.')), Cn(m.fit || (has ? '' : 'N.A.')));
+      sh.rows.push({c:row});
+    });
+    var t = [Cc('Total', {b:true})]; cols.forEach(function(c){ var x = Cn(tot[c[0]], {b:true}); x.sum = true; t.push(x); }); t.push(Cn(''), Cn(''));
+    sh.rows.push({c:t, tot:true});
+  }
+  var s1 = sheetBase('A1', 'A-I ' + surname(officer), 'Proforma A — Part-I', meta);
+  s1.widths = [30, 6.5, 7, 8.5, 9.5, 6.5, 7.5, 7, 8.5, 9.5];
+  s1.head = [[H('Nature of Case decided', 1, 2), H('Outcome of cases', 7), H('Opinion submitted Yes / Not', 1, 2), H('Case found fit for assailing or not', 1, 2)], COLS1.map(function(c){ return H(c[1]); })];
+  table(s1, A1, COLS1, 'I'); out.push(s1);
+  var s2 = sheetBase('A2', 'A-II ' + surname(officer), 'Proforma A — Part-II', meta);
+  s2.widths = [27, 6, 6.5, 6, 6.5, 6, 8, 8.5, 6.5, 9, 9.5];
+  s2.head = [[H('Nature of Case decided', 1, 2), H('Outcome of cases', 8), H('Opinion submitted Yes / Not', 1, 2), H('Case found fit for assailing or not', 1, 2)], COLS2.map(function(c){ return H(c[1]); })];
+  table(s2, A2, COLS2, 'II');
+  s2.notes = ['Note: 1. Detail of FIR wise of Murder References / Appeals against death and Appeals against Life Imprisonment be provided on Proforma B.'];
+  s2.sign = signProsecutorModel(officer); out.push(s2);
+  return out;
+}
+/* ---- Proforma B ---- */
+function modelB(officer){
+  var rows = buildB(officer), sh = sheetBase('B', 'B ' + surname(officer), 'Proforma B', [['Name of Prosecutor', shortOff(officer)]], 'FIR wise detail of acquittal or converted cases relating to death or life imprisonment');
+  sh.widths = [5, 22, 12, 18, 43];
+  sh.head = [[H('Sr. No.'), H('Appeal / Petition No.'), H('Date of Judgment'), H('Date of submission of copy of judgment to AC (If submitted)'), H('Major and material grounds of acquittal or conversion i.e. any prosecution evidence / witness was withheld or any expert / forensic report was not produced or any case property was not produced during trial etc.')]];
+  sh.rows = rows.length ? rows.map(function(r, i){
+    return {c:[Cn((i + 1) + '.'), Cc(r.appealNo, {b:true, sub:r.c ? r.c.title : ''}), Cn(dt(r.judgDate)), Cn(r.notSubmitted ? 'Not submitted' : dt(r.submitDate)), Cc(r.grounds || r.defGrounds)]};
+  }) : [{c:[Cn(''), Cc('Nil'), Cn(''), Cn(''), Cc('No acquitted / converted death or life imprisonment cases in this period.')]}];
+  sh.sign = signProsecutorModel(officer);
+  return [sh];
+}
+/* ---- C and E ---- */
+function modelCE(src){
+  var cols = src === 'sc' ? C_COLS : E_COLS, pf = src === 'sc' ? 'C' : 'E', all = refsHere(src);
+  var sh = sheetBase(pf, 'Proforma ' + pf, 'Proforma-' + pf, [], src === 'sc' ? 'APPEAL COMMITTEE FOR SUPREME COURT OF PAKISTAN (references received from Prosecutors conducting prosecution in SC)' : 'APPEAL COMMITTEE FOR SUPREME COURT OF PAKISTAN (references received from other quarter(s) / Appeal Committees)');
+  var w = src === 'sc' ? [5, 25, 9, 9, 9, 10, 11, 11, 11] : [5, 29, 11, 11, 11, 11, 11, 11];
+  sh.widths = w;
+  sh.head = [[H('Sr. No.'), H('Nature of reference received')].concat(cols.map(function(c){ return H(c[1]); }))];
+  var tot = {}; cols.forEach(function(c){ tot[c[0]] = 0; });
+  sh.rows = NATURES.map(function(nm, i){
+    var rs = all.filter(function(r){ return +r.nature === i; });
+    var cells = [Cn((i + 1) + '.'), Cc(nm)];
+    cols.forEach(function(c){ var n = rs.filter(PRED[c[0]]).length; tot[c[0]] += n; cells.push(Cn(n)); });
+    return {c:cells};
+  });
+  var t = [Cc('Total', {b:true})]; t[0].cs = 2; cols.forEach(function(c){ var x = Cn(tot[c[0]], {b:true}); x.sum = true; t.push(x); });
+  sh.rows.push({c:t, tot:true});
+  sh.notes = ['Note: Please provide FIR wise detail of references on Proforma ' + (src === 'sc' ? 'D' : 'F')];
+  sh.sign = signACModel();
+  return [sh];
+}
+/* ---- D and F ---- */
+function modelDF(src){
+  var sc = src === 'sc', pf = sc ? 'D' : 'F', rs = refsHere(src);
+  var sh = sheetBase(pf, 'Proforma ' + pf, 'Proforma ' + pf, [], sc ? 'FIR wise detail of references received from Prosecutors conducting prosecution in SC' : 'FIR wise detail of references (references received from other quarter(s) / Appeal Committees)');
+  sh.widths = [4, 11, 13, 10, 8, 7, 8.5, 8.5, 9, 13, 8];
+  sh.head = [[H('Sr. No.'), H('Diary No & Date'), H('FIR No. & U/S & Police Station'), H(sc ? 'Date of Judgment / Order' : 'Date of Judgment / Order & nature'), H('Date of submission to AC'), H('Opinion of AC Fit / Not Fit'), H(sc ? 'Sending date to Dir. App / PPD' : 'Sending date for sanction'), H('Date receiving to AC for filing'), H('Date of entrustment to prosecutor for filing'), H('Filing status with Petition No. allotted by court & date'), H('Compliance report sought by AC or not')]];
+  sh.rows = rs.length ? rs.map(function(r, i){
+    var nf = r.opinion === 'notfit', na = sc && nf ? 'N.A' : '';
+    var send = nf ? (sc ? 'N.A' : (r.returnedDate ? 'Sent back on ' + dt(r.returnedDate) : '')) : dt(r.sentProvDate);
+    return {c:[Cn((i + 1) + '.'), Cc(lns([r.diaryNo, dt(r.diaryDate)]), {b:true}), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(lns([dt(r.judgmentDate), sc ? '' : natureName(r)])), Cn(dt(r.submitDate)), Cn(opinionTxt(r), {b:true}), Cn(send),
+      Cn(na || dt(r.receivedForFilingDate)), Cn(na || dt(r.entrustFileDate)), Cc(na || (r.filingStatus === 'filed' ? lns([r.petitionNo, r.petitionTitle, dt(r.filingDate)]) : '')), Cn(compTxt(r), {b:true})]};
+  }) : [{c:[Cn('')].concat([Cc('Nil')]).concat([1,2,3,4,5,6,7,8,9].map(function(){ return Cc(''); }))}];
+  sh.sign = signACModel();
+  return [sh];
+}
+/* ---- G, H, I ---- */
+function modelG(){
+  var g = gCounts(), sh = sheetBase('G', 'Proforma G', 'Proforma G', [], 'APPEAL COMMITTEE (Detail of references entrusted to prosecutor for opinion or Filing)');
+  sh.widths = [80, 20];
+  sh.head = [[H('Particulars'), H('No.')]];
+  function row(t, n){ return {c:[Cc(t), Cn(n, {b:true})]}; }
+  sh.rows = [{sec:'References entrusted to prosecutors for OPINION'}, row('No. of references entrusted for opinion', g.eo.length), row('No. of references returned after rendering opinion', g.ret.length), row('No. of references pending with prosecutors for opinion', g.pen.length), row('No. of Compliance reports sought by AC', g.cmpO.length),
+    {sec:'References entrusted to prosecutors for FILING'}, row('No. of references received for filing', g.rf.length), row('No. of references entrusted for filing', g.ef.length), row('No. of references filed', g.fil.length), row('No. of references pending with prosecutor for filing', g.penF.length), row('No. of Compliance reports sought by AC', g.cmpF.length)];
+  sh.notes = ['Note: 1. Please provide detail of FIR Wise of references entrusted for opinion on Proforma H.', '2. Please provide detail of FIR Wise of references entrusted for filing on Proforma I.'];
+  sh.sign = signACModel();
+  return [sh];
+}
+function modelH(){
+  var rs = gCounts().eo.slice().sort(function(a, b){ return (a.entrustOpDate || '').localeCompare(b.entrustOpDate || ''); });
+  var sh = sheetBase('H', 'Proforma H', 'Proforma-H', [], 'Detail of references entrusted for Opinion');
+  sh.widths = [5, 22, 11, 22, 12, 11, 9, 8];
+  sh.head = [[H('Sr. No.'), H('Case FIR No. & Police Station'), H('Date of entrustment'), H('Name of prosecutor to whom reference was entrusted'), H('Whether reference returned or yet pending'), H('Date of returning'), H('Opinion regarding Fit / Not Fit'), H('Whether Compliance report was sought or not by AC')]];
+  sh.rows = rs.length ? rs.map(function(r, i){
+    return {c:[Cn((i + 1) + '.'), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(dt(r.entrustOpDate)), Cc(offShort(r.opinionBy)), Cn(r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : ''), Cn(dt(r.opinionReturnDate)), Cn(opinionTxt(r), {b:true}), Cn(compTxt(r), {b:true})]};
+  }) : [{c:[Cn(''), Cc('Nil')].concat([1,2,3,4,5,6].map(function(){ return Cc(''); }))}];
+  sh.sign = signACModel();
+  return [sh];
+}
+function modelI(){
+  var rs = gCounts().ef.slice().sort(function(a, b){ return (a.entrustFileDate || '').localeCompare(b.entrustFileDate || ''); });
+  var sh = sheetBase('I', 'Proforma I', 'Proforma-I', [], 'Detail of references entrusted for Filing');
+  sh.widths = [5, 20, 12, 10, 18, 12, 15, 8];
+  sh.head = [[H('Sr. No.'), H('Case FIR No. & Police Station'), H('Date of judgment or order'), H('Date of entrustment'), H('Name of prosecutor to whom reference was entrusted'), H('Whether reference filed or yet pending'), H('Date of filing with petition No. allotted by SC'), H('Whether Compliance report was sought or not by AC')]];
+  sh.rows = rs.length ? rs.map(function(r, i){
+    return {c:[Cn((i + 1) + '.'), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(lns([dt(r.judgmentDate), natureName(r)])), Cn(dt(r.entrustFileDate)), Cc(offShort(r.filingBy)),
+      Cn(r.filingStatus === 'filed' ? 'Filed' : r.filingStatus === 'returned' ? 'Returned Back as NOT FIT' : r.filingStatus === 'pending' ? 'Pending' : ''), Cc(r.filingStatus === 'filed' ? lns([r.petitionNo, r.petitionTitle, dt(r.filingDate)]) : ''), Cn(compTxt(r), {b:true})]};
+  }) : [{c:[Cn(''), Cc('Nil')].concat([1,2,3,4,5,6].map(function(){ return Cc(''); }))}];
+  sh.sign = signACModel();
+  return [sh];
+}
+
+/* ---- scopes ---- */
+var EXP_SCOPES = [['cur', 'This page only / صرف یہ صفحہ'], ['ab', 'A + B of selected prosecutor / منتخب پراسیکیوٹر کے A اور B'], ['ac', 'Appeal Committee C–I / اپیل کمیٹی C تا I'], ['all', 'Complete file — all prosecutors + C–I / مکمل فائل']];
+function curModel(){
+  var t = UI.tab, o = UI.officer;
+  if(t === 'A') return {sheets:modelA(o), label:'Proforma_A_' + shortOff(o)};
+  if(t === 'B') return {sheets:modelB(o), label:'Proforma_B_' + shortOff(o)};
+  if(t === 'C') return {sheets:modelCE('sc'), label:'Proforma_C'};
+  if(t === 'D') return {sheets:modelDF('sc'), label:'Proforma_D'};
+  if(t === 'E') return {sheets:modelCE('other'), label:'Proforma_E'};
+  if(t === 'F') return {sheets:modelDF('other'), label:'Proforma_F'};
+  if(t === 'G') return {sheets:modelG(), label:'Proforma_G'};
+  if(t === 'H') return {sheets:modelH(), label:'Proforma_H'};
+  if(t === 'I') return {sheets:modelI(), label:'Proforma_I'};
+  return null;
+}
+function acSheets(){ return [].concat(modelCE('sc'), modelDF('sc'), modelCE('other'), modelDF('other'), modelG(), modelH(), modelI()); }
+function buildExport(scope){
+  if(scope === 'cur') return curModel();
+  if(scope === 'ab') return {sheets:[].concat(modelA(UI.officer), modelB(UI.officer)), label:'Proforma_A_B_' + shortOff(UI.officer)};
+  if(scope === 'ac') return {sheets:acSheets(), label:'Appeal_Committee_C_to_I'};
+  var all = [];
+  LISTS.officers.forEach(function(o){ if(casesInPeriod(o).length || buildB(o).length) all = all.concat(modelA(o), modelB(o)); });
+  return {sheets:all.concat(acSheets()), label:'Complete_Inspection_File'};
+}
+function expFileBase(label){
+  var i = curIns();
+  return ('Inspection_' + label + (i ? '_' + i.start + '_to_' + i.end : '')).replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_');
+}
+function expSubject(){ var i = curIns(); return 'Inspection proformas — ' + (i ? i.title + ' (' + fmtD(i.start) + ' to ' + fmtD(i.end) + ')' : ''); }
+
+/* =====================  EXPORT RENDERERS: PDF + PRINT  ===================== */
+var EXP_LIBS = {
+  pdflib:['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'],
+  jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'],
+  docx:['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js','https://unpkg.com/docx@9.7.1/dist/index.iife.js']
+};
+var EXP_CHK = {pdflib:function(){ return window.PDFLib; }, jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; }};
+function expAddScript(src){ return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('Could not load ' + src)); }; document.head.appendChild(s); }); }
+async function expLoadLib(name){
+  if(EXP_CHK[name]()) return;
+  var err = null;
+  for(var i = 0; i < EXP_LIBS[name].length; i++){ try{ await expAddScript(EXP_LIBS[name][i]); if(EXP_CHK[name]()) return; }catch(e){ err = e; } }
+  throw err || new Error('library ' + name);
+}
+function pdfLatin(s){ return /^[\x20-\x7E -ÿ–—‘’“”•]*$/.test(s); }
+function pdfSafe(s){ return String(s == null ? '' : s).replace(/[^\x20-\x7E -ÿ–—‘’“”•]/g, '?'); }
+function rasterText(text, px, bold, color){
+  var sc = 3, cv = document.createElement('canvas'), cx = cv.getContext('2d');
+  var font = (bold ? 'bold ' : '') + (px * sc) + 'px "Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Arial,sans-serif';
+  cx.font = font; var rtl = /[؀-ۿ]/.test(text); cx.direction = rtl ? 'rtl' : 'ltr';
+  var w = Math.ceil(cx.measureText(text).width) + 8, h = Math.ceil(px * sc * 1.9);
+  cv.width = w; cv.height = h; cx = cv.getContext('2d'); cx.font = font; cx.direction = rtl ? 'rtl' : 'ltr';
+  cx.fillStyle = color || '#111'; cx.textBaseline = 'middle'; cx.textAlign = rtl ? 'right' : 'left'; cx.fillText(text, rtl ? w - 4 : 4, h / 2);
+  return new Promise(function(res){ cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res({bytes:new Uint8Array(ab), w:w / sc, h:h / sc}); }); }, 'image/png'); });
+}
+function expEmblemPng(){
+  return new Promise(function(res){
+    try{
+      var pal = {'--navy':'#2A5A84','--gold':'#B8860B','--gold-light':'#d4a839','--gold-deep':'#8a660a'};
+      var svg = String(PUNJAB_EMBLEM_SVG).replace(/var\((--[a-z-]+)\)/g, function(m0, n){ return pal[n] || '#2A5A84'; });
+      var img = new Image();
+      img.onload = function(){ var cv = document.createElement('canvas'); cv.width = 240; cv.height = 240; cv.getContext('2d').drawImage(img, 0, 0, 240, 240); cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res(new Uint8Array(ab)); }); }, 'image/png'); };
+      img.onerror = function(){ res(null); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }catch(e){ res(null); }
+  });
+}
+function expEmblemSvg(){
+  var pal = {'--navy':'#2A5A84','--gold':'#B8860B','--gold-light':'#d4a839','--gold-deep':'#8a660a'};
+  return String(PUNJAB_EMBLEM_SVG).replace(/var\((--[a-z-]+)\)/g, function(m0, n){ return pal[n] || '#2A5A84'; });
+}
+function expStrings(sh){
+  var a = [sh.title, sh.sub, sh.heading].concat(sh.notes || []);
+  (sh.meta || []).forEach(function(m){ a.push(m[1]); });
+  sh.head.forEach(function(r){ r.forEach(function(c){ a.push(c.t); }); });
+  sh.rows.forEach(function(r){ if(r.sec) a.push(r.sec); else r.c.forEach(function(c){ a.push(String(c.t)); a.push(c.sub); }); });
+  (sh.sign || []).forEach(function(s){ a.push(s.name, s.l1, s.l2); });
+  return a;
+}
+function gridHead(sh, nCols){
+  /* place header cells on the column grid (handles rowspans) */
+  var occ = [], out = [];
+  sh.head.forEach(function(row, ri){
+    var col = 0, cells = [];
+    row.forEach(function(c){
+      while(occ[ri] && occ[ri][col]) col++;
+      cells.push({t:c.t, c0:col, cs:c.cs, rs:c.rs, r0:ri});
+      for(var rr = ri; rr < ri + c.rs; rr++){ occ[rr] = occ[rr] || []; for(var cc = col; cc < col + c.cs; cc++) occ[rr][cc] = true; }
+      col += c.cs;
+    });
+    out = out.concat(cells);
+  });
+  return out;
+}
+
+/* ---------------- PDF ---------------- */
+async function buildExpPdf(sheets){
+  var L = PDFLib, doc = await L.PDFDocument.create();
+  var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold), FI = await doc.embedFont(L.StandardFonts.HelveticaOblique);
+  var PW = 841.89, PH = 595.28, M = 28, TOP = 26, FOOT = 38, BOT = M;
+  var navy = L.rgb(.106, .247, .388), navy2 = L.rgb(.165, .353, .518), goldL = L.rgb(.722, .525, .043), goldT = L.rgb(.973, .922, .769), ink = L.rgb(.09, .11, .14), grey = L.rgb(.4, .42, .46), white = L.rgb(1, 1, 1);
+  var zebra = L.rgb(.957, .968, .982), border = L.rgb(.62, .68, .75), lineC = L.rgb(.72, .72, .72), totBg = navy;
+  var RAS = {}, emb = null, embBytes = await expEmblemPng();
+  if(embBytes) emb = await doc.embedPng(embBytes);
+  for(var si = 0; si < sheets.length; si++){
+    var strs = expStrings(sheets[si]);
+    for(var k = 0; k < strs.length; k++){ var s0 = String(strs[k] || ''); s0.split('\n').forEach(function(seg){ if(seg && !pdfLatin(seg)) RAS[seg] = null; }); }
+  }
+  for(var key in RAS){ var im = await rasterText(key, 9, false, '#111'); RAS[key] = {w:im.w, h:im.h, png:await doc.embedPng(im.bytes)}; }
+  var page = null, y = 0, pages = [];
+  function txt(t, o){ page.drawText(pdfSafe(t), o); }
+  function wrapSeg(seg, font, size, width){
+    if(seg && !pdfLatin(seg) && RAS[seg]) return [{img:RAS[seg], t:seg}];
+    var words = pdfSafe(seg).split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function(w0){
+      while(font.widthOfTextAtSize(w0, size) > width && w0.length > 1){
+        var k2 = w0.length; while(k2 > 1 && font.widthOfTextAtSize(w0.slice(0, k2), size) > width) k2--;
+        if(cur){ lines.push(cur); cur = ''; } lines.push(w0.slice(0, k2)); w0 = w0.slice(k2);
+      }
+      var t0 = cur ? cur + ' ' + w0 : w0;
+      if(font.widthOfTextAtSize(t0, size) <= width || !cur) cur = t0; else { lines.push(cur); cur = w0; }
+    });
+    if(cur) lines.push(cur);
+    return (lines.length ? lines : ['']).map(function(t){ return {t:t}; });
+  }
+  function wrap(text, font, size, width){ var out = []; String(text == null ? '' : text).split('\n').forEach(function(seg){ out = out.concat(wrapSeg(seg, font, size, width)); }); return out; }
+  function drawLine(l, x, yTop, size, font, color, align, width){
+    /* yTop = top of this line box; returns nothing */
+    if(l.img){
+      var k = size / 9, ww = l.img.w * k, hh = l.img.h * k; if(ww > width){ hh = hh * width / ww; ww = width; }
+      var xi = align === 'c' ? x + (width - ww) / 2 : x;
+      page.drawImage(l.img.png, {x:xi, y:yTop - size * .62 - hh / 2, width:ww, height:hh});
+      return;
+    }
+    var tw = font.widthOfTextAtSize(pdfSafe(l.t), size), xx2 = align === 'c' ? x + (width - tw) / 2 : x;
+    txt(l.t, {x:xx2, y:yTop - size * .95, size:size, font:font, color:color});
+  }
+  var x = 0;
+  function footerAndMeta(){}
+  function newPage(sh, cont){
+    page = doc.addPage([PW, PH]); pages.push(page); y = PH - TOP;
+    if(cont){
+      var rh = sh.title + (sh.meta.length ? '  —  ' + sh.meta[0][1] : '') + '  —  ' + sh.sub;
+      txt(rh, {x:M, y:y - 8, size:8, font:FI, color:grey});
+      page.drawLine({start:{x:M, y:y - 13}, end:{x:PW - M, y:y - 13}, thickness:.6, color:lineC}); y -= 22;
+    }
+  }
+  function letterhead(){
+    var top = y;
+    if(emb) page.drawImage(emb, {x:M, y:y - 40, width:40, height:40});
+    var h1 = 'Camp Office Prosecutor General Punjab', h2 = 'Supreme Court of Pakistan, Islamabad';
+    txt(h1, {x:(PW - FB.widthOfTextAtSize(h1, 14.5)) / 2, y:y - 14, size:14.5, font:FB, color:navy});
+    txt(h2, {x:(PW - F.widthOfTextAtSize(h2, 9.5)) / 2, y:y - 28, size:9.5, font:F, color:grey});
+    y = top - 46;
+    page.drawLine({start:{x:M, y:y}, end:{x:PW - M, y:y}, thickness:2.2, color:goldL});
+    page.drawLine({start:{x:M, y:y - 3.6}, end:{x:PW - M, y:y - 3.6}, thickness:.7, color:navy}); y -= 14;
+  }
+  function banner(sh){
+    page.drawRectangle({x:M, y:y - 21, width:PW - 2 * M, height:21, color:navy});
+    txt(sh.title, {x:M + 8, y:y - 14.5, size:11.5, font:FB, color:white});
+    var sw = F.widthOfTextAtSize(pdfSafe(sh.sub), 8.5);
+    txt(sh.sub, {x:PW - M - 8 - sw, y:y - 14, size:8.5, font:F, color:white}); y -= 29;
+    sh.meta.forEach(function(m){
+      var lab = m[0] + ':  ';
+      txt(lab, {x:M + 2, y:y - 9.5, size:9.5, font:F, color:grey});
+      var lw = F.widthOfTextAtSize(lab, 9.5);
+      var ls = wrap(m[1], FB, 10, PW - 2 * M - lw - 10); x = M + 2 + lw; var yy = y;
+      ls.forEach(function(l){ drawLine(l, x, yy, 10, FB, navy, 'l', PW - 2 * M - lw - 10); yy -= 13; }); y = yy - 3;
+    });
+    if(sh.heading){
+      wrap(sh.heading, FB, 9.5, PW - 2 * M - 20).forEach(function(l){ x = M + 10; drawLine(l, x, y, 9.5, FB, navy, 'c', PW - 2 * M - 20); y -= 13; });
+      y -= 3;
+    }
+  }
+  async function drawSheet(sh){
+    newPage(sh, false); letterhead(); banner(sh);
+    var nCols = sh.widths.length, sumW = sh.widths.reduce(function(a, b){ return a + b; }, 0), tw = PW - 2 * M;
+    var cw = sh.widths.map(function(w){ return w / sumW * tw; }), cx0 = [], acc = M; cw.forEach(function(w){ cx0.push(acc); acc += w; });
+    function spanW(c0, cs){ var w = 0; for(var i = c0; i < c0 + cs; i++) w += cw[i]; return w; }
+    var fs = nCols >= 10 ? 7.6 : nCols >= 8 ? 8 : 8.6, lh = fs * 1.26;
+    /* header layout */
+    var hc = gridHead(sh, nCols), nH = sh.head.length, hs = 8.2;
+    hc.forEach(function(c){ pdfSafe(c.t).split(/\s+/).forEach(function(w0){ var ww = FB.widthOfTextAtSize(w0, hs), av = spanW(c.c0, c.cs) - 6; if(ww > av) hs = Math.max(5.6, hs * av / ww); }); });
+    var hlh = hs * 1.22, hrow = [], i;
+    for(i = 0; i < nH; i++) hrow.push(0);
+    hc.forEach(function(c){ c.lines = wrap(c.t, FB, hs, spanW(c.c0, c.cs) - 6); c.need = c.lines.length * hlh + 8; });
+    hc.filter(function(c){ return c.rs === 1; }).forEach(function(c){ hrow[c.r0] = Math.max(hrow[c.r0], c.need); });
+    hc.filter(function(c){ return c.rs > 1; }).forEach(function(c){ var s = 0; for(var r = c.r0; r < c.r0 + c.rs; r++) s += hrow[r]; if(s < c.need){ var last = c.r0 + c.rs - 1; hrow[last] += c.need - s; } });
+    hrow = hrow.map(function(h){ return Math.max(h, 16); });
+    var headH = hrow.reduce(function(a, b){ return a + b; }, 0);
+    function drawHeader(){
+      var ry = []; var yy = y; hrow.forEach(function(h){ ry.push(yy); yy -= h; });
+      hc.forEach(function(c){
+        var w = spanW(c.c0, c.cs), h = 0; for(var r = c.r0; r < c.r0 + c.rs; r++) h += hrow[r];
+        page.drawRectangle({x:cx0[c.c0], y:ry[c.r0] - h, width:w, height:h, color:navy2, borderColor:white, borderWidth:.5});
+        var th = c.lines.length * hlh, ty = ry[c.r0] - (h - th) / 2;
+        c.lines.forEach(function(l){ x = cx0[c.c0]; drawLine(l, x, ty, hs, FB, white, 'c', w); ty -= hlh; });
+      });
+      y -= headH;
+    }
+    /* body row measure */
+    function measure(row){
+      if(row.sec){ var ls = wrap(row.sec, FB, fs + .6, tw - 12); return {sec:true, lines:ls, h:ls.length * (fs + .6) * 1.26 + 8}; }
+      var cells = [], c0 = 0, maxH = 0;
+      row.c.forEach(function(c){
+        var cs = c.cs || 1, w = spanW(c0, cs), font = c.b || row.tot ? FB : F;
+        var ls = wrap(String(c.t), font, fs, w - 6), sl = c.sub ? wrap(c.sub, F, fs - 1, w - 6) : [];
+        var h = ls.length * lh + sl.length * (fs - 1) * 1.26 + 7; maxH = Math.max(maxH, h);
+        cells.push({c0:c0, cs:cs, w:w, ls:ls, sl:sl, font:font, a:c.a, cell:c}); c0 += cs;
+      });
+      return {cells:cells, h:Math.max(maxH, row.tot ? 19 : 18)};
+    }
+    var meas = sh.rows.map(measure);
+    if(y - headH - meas[0].h < BOT + FOOT){ newPage(sh, true); }
+    drawHeader();
+    meas.forEach(function(m, ri){
+      var row = sh.rows[ri];
+      if(y - m.h < BOT + FOOT){ newPage(sh, true); drawHeader(); }
+      if(m.sec){
+        page.drawRectangle({x:M, y:y - m.h, width:tw, height:m.h, color:goldT, borderColor:border, borderWidth:.4});
+        var yy = y - 4; m.lines.forEach(function(l){ x = M + 6; drawLine(l, x, yy, fs + .6, FB, navy, 'l', tw - 12); yy -= (fs + .6) * 1.26; });
+        y -= m.h; return;
+      }
+      m.cells.forEach(function(cl){
+        var fill = row.tot ? totBg : (ri % 2 ? zebra : white);
+        page.drawRectangle({x:cx0[cl.c0], y:y - m.h, width:cl.w, height:m.h, color:fill, borderColor:border, borderWidth:.4});
+        var col = row.tot ? white : ink, th = cl.ls.length * lh + cl.sl.length * (fs - 1) * 1.26;
+        var ty = (cl.a === 'c' || row.tot) ? y - Math.max(3.5, (m.h - th) / 2) : y - 3.5;
+        x = cx0[cl.c0] + 3;
+        cl.ls.forEach(function(l){ drawLine(l, x, ty, fs, cl.font, col, cl.a === 'c' ? 'c' : 'l', cl.w - 6); ty -= lh; });
+        cl.sl.forEach(function(l){ drawLine(l, x, ty, fs - 1, F, row.tot ? white : grey, cl.a === 'c' ? 'c' : 'l', cl.w - 6); ty -= (fs - 1) * 1.26; });
+      });
+      y -= m.h;
+    });
+    y -= 8;
+    (sh.notes || []).forEach(function(n){ wrap(n, FI, 8, tw).forEach(function(l){ if(y - 12 < BOT + FOOT) newPage(sh, true); x = M; drawLine(l, x, y, 8, FI, grey, 'l', tw); y -= 11; }); });
+    if(sh.sign && sh.sign.length){
+      if(y - 78 < BOT + FOOT) newPage(sh, true);
+      y -= 10; var n = sh.sign.length, slot = tw / n, top = y - 38;
+      sh.sign.forEach(function(s, i){
+        var cxm = M + slot * (i + .5), lw = Math.min(190, slot - 40);
+        page.drawLine({start:{x:cxm - lw / 2, y:top}, end:{x:cxm + lw / 2, y:top}, thickness:.7, color:ink});
+        var yy = top - 3;
+        [[s.name, FB, 9, navy], [s.l1, F, 8.5, ink], [s.l2, F, 7.6, grey]].forEach(function(p){
+          if(!p[0]) return;
+          wrap(p[0], p[1], p[2], slot - 20).forEach(function(l){ x = cxm - (slot - 20) / 2; drawLine(l, x, yy, p[2], p[1], p[3], 'c', slot - 20); yy -= p[2] * 1.3; });
+        });
+      });
+      y = top - 40;
+    }
+  }
+  for(var q = 0; q < sheets.length; q++) await drawSheet(sheets[q]);
+  var gen = expToday();
+  pages.forEach(function(p, i){
+    p.drawLine({start:{x:M, y:28}, end:{x:PW - M, y:28}, thickness:.6, color:lineC});
+    p.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:M, y:16, size:7, font:F, color:grey});
+    var mid = 'Generated ' + gen; p.drawText(mid, {x:(PW - F.widthOfTextAtSize(mid, 7)) / 2, y:16, size:7, font:F, color:grey});
+    var s = 'Page ' + (i + 1) + ' of ' + pages.length; p.drawText(s, {x:PW - M - FB.widthOfTextAtSize(s, 7.4), y:16, size:7.4, font:FB, color:navy});
+  });
+  doc.setTitle(pdfSafe(expSubject())); doc.setCreator('Camp Office, Prosecutor General Punjab'); doc.setSubject('Yearly inspection proformas');
+  return await doc.save();
+}
+
+/* ---------------- PRINT (HTML built from the same model) ---------------- */
+function expHtml(sheets){
+  var gen = expToday();
+  function cell(c, tag){ return c; }
+  var h = '<style>@page{ size:A4 landscape; margin:9mm 9mm 15mm; @bottom-left{ content:"Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad"; font:7pt Arial; color:#666 } @bottom-center{ content:"Generated ' + gen + '"; font:7pt Arial; color:#666 } @bottom-right{ content:"Page " counter(page) " of " counter(pages); font:bold 7.4pt Arial; color:#1B3F63 } }</style>';
+  sheets.forEach(function(sh){
+    var sum = sh.widths.reduce(function(a, b){ return a + b; }, 0), nCols = sh.widths.length;
+    var fsz = nCols >= 10 ? '8.4pt' : nCols >= 8 ? '8.8pt' : '9.4pt';
+    h += '<section class="pa-sheet"><div class="pa-lh"><div class="pa-em">' + expEmblemSvg() + '</div><div class="pa-lt"><div class="a">Camp Office Prosecutor General Punjab</div><div class="b">Supreme Court of Pakistan, Islamabad</div></div></div><div class="pa-rule"></div>';
+    h += '<div class="pa-ban"><span>' + esc(sh.title) + '</span><small>' + esc(sh.sub) + '</small></div>';
+    sh.meta.forEach(function(m){ h += '<div class="pa-meta">' + esc(m[0]) + ': <b>' + esc(m[1]) + '</b></div>'; });
+    if(sh.heading) h += '<div class="pa-head">' + esc(sh.heading) + '</div>';
+    h += '<table class="pa-t" style="font-size:' + fsz + '"><colgroup>' + sh.widths.map(function(w){ return '<col style="width:' + (w / sum * 100).toFixed(2) + '%">'; }).join('') + '</colgroup><thead>';
+    sh.head.forEach(function(row){ h += '<tr>' + row.map(function(c){ return '<th' + (c.cs > 1 ? ' colspan="' + c.cs + '"' : '') + (c.rs > 1 ? ' rowspan="' + c.rs + '"' : '') + '>' + esc(c.t) + '</th>'; }).join('') + '</tr>'; });
+    h += '</thead><tbody>';
+    sh.rows.forEach(function(r, ri){
+      if(r.sec){ h += '<tr class="sec"><td colspan="' + nCols + '">' + esc(r.sec) + '</td></tr>'; return; }
+      h += '<tr class="' + (r.tot ? 'tot' : (ri % 2 ? 'z' : '')) + '">' + r.c.map(function(c){
+        return '<td' + ((c.cs || 1) > 1 ? ' colspan="' + c.cs + '"' : '') + ' class="' + (c.a === 'c' ? 'c' : '') + (c.b ? ' b' : '') + '">' + esc(c.t).replace(/\n/g, '<br>') + (c.sub ? '<div class="s">' + esc(c.sub) + '</div>' : '') + '</td>';
+      }).join('') + '</tr>';
+    });
+    h += '</tbody></table>';
+    (sh.notes || []).forEach(function(n){ h += '<div class="pa-note">' + esc(n) + '</div>'; });
+    if(sh.sign && sh.sign.length){
+      h += '<div class="pa-sign">' + sh.sign.map(function(s){ return '<div><div class="ln"></div>' + (s.name ? '<b>' + esc(s.name) + '</b><br>' : '<br>') + (s.l1 ? esc(s.l1) + '<br>' : '') + '<span>' + esc(s.l2) + '</span></div>'; }).join('') + '</div>';
+    }
+    h += '</section>';
+  });
+  return h;
+}
+
+/* =====================  EXPORT RENDERERS: EXCEL + WORD, AND THE BUTTONS  ===================== */
+function xe(s){ return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function colL(i){ var s = ''; i++; while(i > 0){ var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+
+/* ---------------- Excel (.xlsx written directly with JSZip, from the model) ---------------- */
+async function buildExpXlsx(sheets){
+  var emb = await expEmblemPng();
+  var FONTS = ['<font><sz val="10"/><color rgb="FF111111"/><name val="Calibri"/></font>'], FIDX = {};
+  var FILLS = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'], LIDX = {};
+  var BORD = ['<border><left/><right/><top/><bottom/><diagonal/></border>'], BIDX = {};
+  var XFS = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'], XIDX = {};
+  function reg(list, idx, key, xml){ if(idx[key] == null){ idx[key] = list.length; list.push(xml); } return idx[key]; }
+  var BDX = {
+    thin:'<border><left style="thin"><color rgb="FF9FB0C3"/></left><right style="thin"><color rgb="FF9FB0C3"/></right><top style="thin"><color rgb="FF9FB0C3"/></top><bottom style="thin"><color rgb="FF9FB0C3"/></bottom><diagonal/></border>',
+    sig:'<border><left/><right/><top style="thin"><color rgb="FF111111"/></top><bottom/><diagonal/></border>',
+    gold:'<border><left/><right/><top/><bottom style="thick"><color rgb="FFB8860B"/></bottom><diagonal/></border>'
+  };
+  function st(o){
+    o = o || {};
+    var fid = (o.b || o.i || o.sz || o.c) ? reg(FONTS, FIDX, [o.b, o.i, o.sz, o.c].join('|'), '<font>' + (o.b ? '<b/>' : '') + (o.i ? '<i/>' : '') + '<sz val="' + (o.sz || 10) + '"/><color rgb="FF' + (o.c || '111111') + '"/><name val="Calibri"/></font>') : 0;
+    var lid = o.fill ? reg(FILLS, LIDX, o.fill, '<fill><patternFill patternType="solid"><fgColor rgb="FF' + o.fill + '"/><bgColor indexed="64"/></patternFill></fill>') : 0;
+    var bid = o.bd ? reg(BORD, BIDX, o.bd, BDX[o.bd]) : 0;
+    var key = [fid, lid, bid, o.a || '', o.v || '', o.wrap ? 1 : 0].join('|');
+    return reg(XFS, XIDX, key, '<xf numFmtId="0" fontId="' + fid + '" fillId="' + lid + '" borderId="' + bid + '" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="' + (o.a === 'c' ? 'center' : o.a === 'r' ? 'right' : 'left') + '" vertical="' + (o.v || 'top') + '"' + (o.wrap ? ' wrapText="1"' : '') + '/></xf>');
+  }
+  var NAVY = '1B3F63', NAVY2 = '2A5A84', GOLD = 'B8860B', GOLDT = 'F8EBC4', ZEB = 'F4F7FB', GREY = '666666';
+  var TOTALW = 148, used = {};
+  function uniqueName(n){
+    var base = safeName(n) || 'Sheet', nm = base, k = 2;
+    while(used[nm.toLowerCase()]){ var suf = ' (' + k++ + ')'; nm = base.slice(0, 31 - suf.length) + suf; }
+    used[nm.toLowerCase()] = 1; return nm;
+  }
+  function est(text, w, bold){
+    var per = Math.max(3, w * (bold ? 0.98 : 1.08) - 1), n = 0;
+    String(text == null ? '' : text).split('\n').forEach(function(p){ n += Math.max(1, Math.ceil(p.length / per)); });
+    return n;
+  }
+  var sheetXml = [], names = [], titlesDef = [], hasDraw = [];
+  sheets.forEach(function(sh, si){
+    var nCols = sh.widths.length, sum = sh.widths.reduce(function(a, b){ return a + b; }, 0);
+    var cw = sh.widths.map(function(w){ return +(w / sum * TOTALW).toFixed(2); });
+    function spanW(c0, cs){ var w = 0; for(var i = c0; i < c0 + cs; i++) w += cw[i]; return w; }
+    var rows = {}, merges = [], r = 0;
+    function row(ht){ r++; rows[r] = {ht:ht, cells:{}}; return r; }
+    function put(rr, c, xml){ rows[rr].cells[c] = xml; }
+    function cellXml(rr, c, v, s, o){
+      o = o || {}; var ref = colL(c) + rr;
+      if(o.f) return '<c r="' + ref + '" s="' + s + '"><f>' + o.f + '</f><v>' + v + '</v></c>';
+      if(typeof v === 'number') return '<c r="' + ref + '" s="' + s + '"><v>' + v + '</v></c>';
+      if(v === '' || v == null) return '<c r="' + ref + '" s="' + s + '"/>';
+      if(o.sub) return '<c r="' + ref + '" s="' + s + '" t="inlineStr"><is><r><rPr>' + (o.b ? '<b/>' : '') + '<sz val="10"/><color rgb="FF111111"/><rFont val="Calibri"/></rPr><t xml:space="preserve">' + xe(v) + '\n</t></r><r><rPr><sz val="8.5"/><color rgb="FF666666"/><rFont val="Calibri"/></rPr><t xml:space="preserve">' + xe(o.sub) + '</t></r></is></c>';
+      return '<c r="' + ref + '" s="' + s + '" t="inlineStr"><is><t xml:space="preserve">' + xe(v) + '</t></is></c>';
+    }
+    function merged(rr, c0, c1, v, s, o){            // one text across columns c0..c1 (blank styled cells fill the rest)
+      put(rr, c0, cellXml(rr, c0, v, s, o));
+      for(var c = c0 + 1; c <= c1; c++) put(rr, c, cellXml(rr, c, '', s));
+      if(c1 > c0) merges.push(colL(c0) + rr + ':' + colL(c1) + rr);
+    }
+    /* letterhead */
+    var r1 = row(24); merged(r1, 0, nCols - 1, 'Camp Office Prosecutor General Punjab', st({b:1, sz:15, c:NAVY, a:'c', v:'center'}));
+    var r2 = row(18); merged(r2, 0, nCols - 1, 'Supreme Court of Pakistan, Islamabad', st({sz:10, c:GREY, a:'c', v:'center'}));
+    var r3 = row(5); merged(r3, 0, nCols - 1, '', st({bd:'gold'}));
+    var r4 = row(8); void r4;
+    /* banner */
+    var rb = row(22), bs = st({b:1, sz:12, c:'FFFFFF', fill:NAVY, v:'center', a:'l'}), bsr = st({sz:9.5, c:'FFFFFF', fill:NAVY, v:'center', a:'r'});
+    if(nCols >= 5){ var k = nCols, need = sh.sub.length * 1.05 + 4, got = 0; while(k > 2 && got < need){ k--; got += spanW(k, 1); } merged(rb, 0, k - 1, '  ' + sh.title, bs); merged(rb, k, nCols - 1, sh.sub + '  ', bsr); }
+    else merged(rb, 0, nCols - 1, '  ' + sh.title + '      ' + sh.sub, bs);
+    (sh.meta || []).forEach(function(m){ var rm = row(18); merged(rm, 0, nCols - 1, m[0] + ':  ' + m[1], st({b:1, sz:11, c:NAVY, v:'center'})); });
+    if(sh.heading){ var rh = row(Math.max(18, est(sh.heading, TOTALW, true) * 14 + 6)); merged(rh, 0, nCols - 1, sh.heading, st({b:1, sz:10.5, c:NAVY, a:'c', v:'center', wrap:1})); }
+    row(6);
+    /* header (spans) */
+    var hc = gridHead(sh, nCols), hdr0 = r + 1, hs = st({b:1, sz:9.5, c:'FFFFFF', fill:NAVY2, bd:'thin', a:'c', v:'center', wrap:1}), hRows = [];
+    sh.head.forEach(function(){ hRows.push(row(16)); });
+    var hNeed = sh.head.map(function(){ return 16; });
+    hc.forEach(function(c){
+      var rr = hRows[c.r0], need = est(c.t, spanW(c.c0, c.cs), true) * 13 + 8;
+      if(c.rs === 1) hNeed[c.r0] = Math.max(hNeed[c.r0], need); else { var last = c.r0 + c.rs - 1, tot = 0; for(var q = c.r0; q < c.r0 + c.rs; q++) tot += hNeed[q]; if(tot < need) hNeed[last] += need - tot; }
+    });
+    hRows.forEach(function(rr, i){ rows[rr].ht = hNeed[i]; });
+    hc.forEach(function(c){
+      var rr = hRows[c.r0], r2x = hRows[c.r0 + c.rs - 1];
+      put(rr, c.c0, cellXml(rr, c.c0, c.t, hs));
+      for(var q = c.r0; q < c.r0 + c.rs; q++) for(var cc = c.c0; cc < c.c0 + c.cs; cc++) if(!(q === c.r0 && cc === c.c0)) put(hRows[q], cc, cellXml(hRows[q], cc, '', hs));
+      if(c.cs > 1 || c.rs > 1) merges.push(colL(c.c0) + rr + ':' + colL(c.c0 + c.cs - 1) + r2x);
+    });
+    var hdrEnd = r, bodyStart = r + 1, totals = {}, sumFirst = bodyStart;
+    /* body */
+    sh.rows.forEach(function(rw, ri){
+      if(rw.sec){ var rs = row(Math.max(18, est(rw.sec, TOTALW, true) * 14 + 6)); merged(rs, 0, nCols - 1, rw.sec, st({b:1, sz:10, c:NAVY, fill:GOLDT, bd:'thin', v:'center', wrap:1})); return; }
+      var rr = row(0), c0 = 0, maxL = 1;
+      rw.c.forEach(function(c){
+        var cs = c.cs || 1, w = spanW(c0, cs), bold = c.b || rw.tot;
+        var s = rw.tot ? st({b:1, sz:10, c:'FFFFFF', fill:NAVY, bd:'thin', a:c.a === 'c' ? 'c' : 'l', v:'center', wrap:1})
+          : st({b:bold, sz:10, fill:ri % 2 ? ZEB : '', bd:'thin', a:c.a === 'c' ? 'c' : 'l', v:c.a === 'c' ? 'center' : 'top', wrap:1});
+        var l = est(c.t, w, bold) + (c.sub ? est(c.sub, w, false) : 0); maxL = Math.max(maxL, l);
+        if(c.sum){
+          var tv = totals[c0] || 0;
+          put(rr, c0, cellXml(rr, c0, tv, s, {f:'SUM(' + colL(c0) + sumFirst + ':' + colL(c0) + (rr - 1) + ')'}));
+        }else{
+          put(rr, c0, cellXml(rr, c0, c.n && typeof c.t === 'number' ? c.t : String(c.t == null ? '' : c.t), s, {sub:c.sub, b:c.b}));
+          if(typeof c.t === 'number') totals[c0] = (totals[c0] || 0) + c.t;
+        }
+        for(var q = c0 + 1; q < c0 + cs; q++) put(rr, q, cellXml(rr, q, '', s));
+        if(cs > 1) merges.push(colL(c0) + rr + ':' + colL(c0 + cs - 1) + rr);
+        c0 += cs;
+      });
+      rows[rr].ht = Math.max(rw.tot ? 20 : 18, maxL * 13 + 6);
+    });
+    var bodyEnd = r;
+    /* notes */
+    if((sh.notes || []).length){ row(6); sh.notes.forEach(function(n){ var rn = row(Math.max(16, est(n, TOTALW, false) * 13 + 4)); merged(rn, 0, nCols - 1, n, st({i:1, sz:9, c:GREY, wrap:1, v:'center'})); }); }
+    /* signatures */
+    if((sh.sign || []).length){
+      row(14); var n = sh.sign.length, bounds = [];
+      for(var i = 0; i <= n; i++) bounds.push(Math.round(i * nCols / n));
+      var rsp = row(30); void rsp;
+      var rl = row(0);
+      var lines = [[], [], []];
+      sh.sign.forEach(function(s, i){
+        var c0 = bounds[i], c1 = bounds[i + 1] - 1;
+        if(c1 < c0) return;
+        merged(rl, c0, c1, s.name || ' ', st({b:1, sz:10, c:NAVY, a:'c', bd:'sig', v:'top', wrap:1}));
+        lines[0].push([c0, c1, s.l1 || '']); lines[1].push([c0, c1, s.l2 || '']);
+      });
+      rows[rl].ht = Math.max.apply(null, sh.sign.map(function(s, i){ return est(s.name, spanW(bounds[i], Math.max(1, bounds[i + 1] - bounds[i])), true) * 13 + 5; }).concat([18]));
+      lines.slice(0, 2).forEach(function(L, li){
+        if(!L.some(function(x){ return x[2]; })) return;
+        var rr = row(0), mx = 1;
+        L.forEach(function(x){ merged(rr, x[0], x[1], x[2], st({sz:li ? 8.5 : 9.5, c:li ? GREY : '111111', a:'c', wrap:1, v:'top'})); mx = Math.max(mx, est(x[2], spanW(x[0], x[1] - x[0] + 1), false)); });
+        rows[rr].ht = mx * 12.5 + 3;
+      });
+    }
+    /* serialise */
+    var sd = '';
+    for(var rr = 1; rr <= r; rr++){
+      var rw2 = rows[rr], cols = Object.keys(rw2.cells).map(Number).sort(function(a, b){ return a - b; });
+      sd += '<row r="' + rr + '"' + (rw2.ht ? ' ht="' + rw2.ht + '" customHeight="1"' : '') + '>' + cols.map(function(c){ return rw2.cells[c]; }).join('') + '</row>';
+    }
+    var freeze = sh.rows.length > 25 ? '<pane ySplit="' + hdrEnd + '" topLeftCell="A' + (hdrEnd + 1) + '" activePane="bottomLeft" state="frozen"/>' : '';
+    var nm = uniqueName(sh.name);
+    names.push(nm);
+    titlesDef.push('\'' + nm.replace(/'/g, "''") + '\'!$' + hdr0 + ':$' + hdrEnd);
+    hasDraw.push(!!emb);
+    sheetXml.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"' + (si === 0 ? ' tabSelected="1"' : '') + '>' + freeze + '</sheetView></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="15"/><cols>' + cw.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + sd + '</sheetData>' + (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') +
+      '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.65" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
+      '<headerFooter><oddFooter>&amp;L&amp;8Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad&amp;C&amp;8Generated ' + xe(expToday()) + '&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter>' +
+      (emb ? '<drawing r:id="rId1"/>' : '') + '</worksheet>');
+  });
+  var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<fonts count="' + FONTS.length + '">' + FONTS.join('') + '</fonts><fills count="' + FILLS.length + '">' + FILLS.join('') + '</fills><borders count="' + BORD.length + '">' + BORD.join('') + '</borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="' + XFS.length + '">' + XFS.join('') + '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView activeTab="0"/></bookViews><sheets>' +
+    names.map(function(n, i){ return '<sheet name="' + xe(n) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets><definedNames>' +
+    titlesDef.map(function(t, i){ return '<definedName name="_xlnm.Print_Titles" localSheetId="' + i + '">' + xe(t) + '</definedName>'; }).join('') + '</definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>';
+  var zip = new JSZip(), R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  var ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>';
+  names.forEach(function(n, i){ ct += '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; if(emb) ct += '<Override PartName="/xl/drawings/drawing' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>'; });
+  zip.file('[Content_Types].xml', ct + '</Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  zip.file('xl/workbook.xml', wb);
+  zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    names.map(function(n, i){ return '<Relationship Id="rId' + (i + 1) + '" Type="' + R + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (names.length + 1) + '" Type="' + R + '/styles" Target="styles.xml"/></Relationships>');
+  zip.file('xl/styles.xml', styles);
+  var dr = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="' + R + '"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>70000</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>25000</xdr:rowOff></xdr:from><xdr:ext cx="480000" cy="480000"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Emblem"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="480000" cy="480000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
+  names.forEach(function(n, i){
+    zip.file('xl/worksheets/sheet' + (i + 1) + '.xml', sheetXml[i]);
+    if(emb){
+      zip.file('xl/worksheets/_rels/sheet' + (i + 1) + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/drawing" Target="../drawings/drawing' + (i + 1) + '.xml"/></Relationships>');
+      zip.file('xl/drawings/drawing' + (i + 1) + '.xml', dr);
+      zip.file('xl/drawings/_rels/drawing' + (i + 1) + '.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/image" Target="../media/emblem.png"/></Relationships>');
+    }
+  });
+  if(emb) zip.file('xl/media/emblem.png', emb);
+  return await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ---------------- Word (.docx via docx library, from the model) ---------------- */
+async function buildExpDocx(sheets){
+  var D = window.docx, FONT = 'Calibri', emb = await expEmblemPng();
+  var PWT = 15704;                                                // usable width in twips (A4 landscape, 1 cm margins)
+  var NAVY = '1B3F63', NAVY2 = '2A5A84', GOLD = 'B8860B', GOLDT = 'F8EBC4', ZEB = 'F4F7FB';
+  function isAr(t){ return /[؀-ۿ]/.test(t); }
+  function run(t, o){
+    o = o || {}; t = String(t == null ? '' : t); var ar = isAr(t);
+    return new D.TextRun({text:t, font:ar ? {ascii:'Arial', hAnsi:'Arial', cs:'Jameel Noori Nastaleeq'} : FONT, size:o.size || 18, bold:!!o.bold, italics:!!o.italics, color:o.color || '111111', rightToLeft:ar || undefined});
+  }
+  function paras(text, o){
+    o = o || {};
+    return String(text == null ? '' : text).split('\n').map(function(line){
+      return new D.Paragraph({children:[run(line, o)], alignment:o.align, spacing:{before:0, after:0, line:o.line || 250}});
+    });
+  }
+  var thin = {style:D.BorderStyle.SINGLE, size:4, color:'9FB0C3'}, none = {style:D.BorderStyle.NONE, size:0, color:'FFFFFF'};
+  var allThin = {top:thin, bottom:thin, left:thin, right:thin};
+  function tcell(children, w, o){
+    o = o || {};
+    return new D.TableCell({children:children.length ? children : [new D.Paragraph('')], width:{size:w, type:D.WidthType.DXA}, columnSpan:o.cs > 1 ? o.cs : undefined, rowSpan:o.rs > 1 ? o.rs : undefined,
+      verticalAlign:o.va || D.VerticalAlign.TOP, shading:o.fill ? {type:D.ShadingType.CLEAR, color:'auto', fill:o.fill} : undefined,
+      borders:o.borders || allThin, margins:{top:45, bottom:45, left:70, right:70}});
+  }
+  var sections = [];
+  sheets.forEach(function(sh, si){
+    var nCols = sh.widths.length, sum = sh.widths.reduce(function(a, b){ return a + b; }, 0);
+    var W = sh.widths.map(function(w){ return Math.round(w / sum * PWT); }); W[nCols - 1] += PWT - W.reduce(function(a, b){ return a + b; }, 0);
+    function spanW(c0, cs){ var w = 0; for(var i = c0; i < c0 + cs; i++) w += W[i]; return w; }
+    var kids = [];
+    /* letterhead */
+    var lhText = [new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('Camp Office Prosecutor General Punjab', {size:30, bold:true, color:NAVY})]}),
+      new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('Supreme Court of Pakistan, Islamabad', {size:19, color:'666666'})]})];
+    var lhCells = [tcell(emb ? [new D.Paragraph({children:[new D.ImageRun({type:'png', data:emb, transformation:{width:48, height:48}})]})] : [], 1100, {borders:{top:none, bottom:none, left:none, right:none}}),
+      tcell(lhText, PWT - 2200, {borders:{top:none, bottom:none, left:none, right:none}, va:D.VerticalAlign.CENTER}), tcell([], 1100, {borders:{top:none, bottom:none, left:none, right:none}})];
+    kids.push(new D.Table({rows:[new D.TableRow({children:lhCells})], width:{size:PWT, type:D.WidthType.DXA}, columnWidths:[1100, PWT - 2200, 1100], layout:D.TableLayoutType.FIXED,
+      borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none}}));
+    kids.push(new D.Paragraph({spacing:{before:0, after:120}, border:{bottom:{style:D.BorderStyle.SINGLE, size:18, color:GOLD, space:1}}, children:[]}));
+    /* banner */
+    kids.push(new D.Paragraph({shading:{type:D.ShadingType.CLEAR, color:'auto', fill:NAVY}, spacing:{before:0, after:100}, tabStops:[{type:D.TabStopType.RIGHT, position:PWT - 140}], indent:{left:100, right:100},
+      children:[run(sh.title, {size:24, bold:true, color:'FFFFFF'}), new D.TextRun({text:'\t' + sh.sub, font:FONT, size:18, color:'FFFFFF'})]}));
+    (sh.meta || []).forEach(function(m){ kids.push(new D.Paragraph({spacing:{after:60}, children:[run(m[0] + ':  ', {size:20, color:'666666'}), run(m[1], {size:21, bold:true, color:NAVY})]})); });
+    if(sh.heading) kids.push(new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{before:40, after:100}, children:[run(sh.heading, {size:20, bold:true, color:NAVY})]}));
+    /* table */
+    var fs = nCols >= 10 ? 16 : nCols >= 8 ? 17 : 18, trs = [];
+    sh.head.forEach(function(hr){
+      var c0 = 0;
+      var cells = hr.map(function(c){
+        var w = spanW(c0, c.cs); c0 += c.cs;
+        return tcell(paras(c.t, {size:fs, bold:true, color:'FFFFFF', align:D.AlignmentType.CENTER}), w, {cs:c.cs, rs:c.rs, fill:NAVY2, va:D.VerticalAlign.CENTER});
+      });
+      trs.push(new D.TableRow({tableHeader:true, cantSplit:true, children:cells}));
+    });
+    sh.rows.forEach(function(rw, ri){
+      if(rw.sec){ trs.push(new D.TableRow({cantSplit:true, children:[tcell(paras(rw.sec, {size:fs + 1, bold:true, color:NAVY}), PWT, {cs:nCols, fill:GOLDT})]})); return; }
+      var c0 = 0;
+      var cells = rw.c.map(function(c){
+        var cs = c.cs || 1, w = spanW(c0, cs); c0 += cs;
+        var al = c.a === 'c' ? D.AlignmentType.CENTER : undefined, col = rw.tot ? 'FFFFFF' : '111111', bold = !!(c.b || rw.tot), kids2 = paras(c.t, {size:fs, bold:bold, color:col, align:al});
+        if(c.sub) kids2 = kids2.concat(paras(c.sub, {size:fs - 2, color:rw.tot ? 'FFFFFF' : '666666', align:al}));
+        return tcell(kids2, w, {cs:cs, fill:rw.tot ? NAVY : (ri % 2 ? ZEB : undefined), va:c.a === 'c' ? D.VerticalAlign.CENTER : D.VerticalAlign.TOP});
+      });
+      trs.push(new D.TableRow({cantSplit:true, children:cells}));
+    });
+    kids.push(new D.Table({rows:trs, width:{size:PWT, type:D.WidthType.DXA}, columnWidths:W, layout:D.TableLayoutType.FIXED, borders:{top:thin, bottom:thin, left:thin, right:thin, insideHorizontal:thin, insideVertical:thin}}));
+    (sh.notes || []).forEach(function(n, i){ kids.push(new D.Paragraph({spacing:{before:i ? 0 : 100, after:0}, children:[run(n, {size:16, italics:true, color:'666666'})]})); });
+    /* signatures */
+    if((sh.sign || []).length){
+      var n = sh.sign.length, slot = Math.floor(PWT / n), gap = 500, cw2 = [], cells2 = [];
+      sh.sign.forEach(function(s, i){
+        var w = slot - (i < n - 1 ? 0 : 0), inner = w - gap;
+        var content = [].concat(paras(s.name || ' ', {size:19, bold:true, color:NAVY, align:D.AlignmentType.CENTER}), s.l1 ? paras(s.l1, {size:17, align:D.AlignmentType.CENTER}) : [], paras(s.l2, {size:15, color:'666666', align:D.AlignmentType.CENTER}));
+        cells2.push(tcell(content, inner, {borders:{top:{style:D.BorderStyle.SINGLE, size:6, color:'111111'}, bottom:none, left:none, right:none}})); cw2.push(inner);
+        cells2.push(tcell([], gap, {borders:{top:none, bottom:none, left:none, right:none}})); cw2.push(gap);
+      });
+      var tw = cw2.reduce(function(a, b){ return a + b; }, 0);
+      kids.push(new D.Paragraph({spacing:{before:700, after:0}, keepNext:true, children:[]}));
+      kids.push(new D.Table({rows:[new D.TableRow({cantSplit:true, children:cells2})], width:{size:tw, type:D.WidthType.DXA}, columnWidths:cw2, layout:D.TableLayoutType.FIXED,
+        borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none}}));
+    }
+    sections.push({
+      properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:760, left:567, right:567, footer:330}}},
+      footers:{default:new D.Footer({children:[new D.Paragraph({tabStops:[{type:D.TabStopType.CENTER, position:Math.round(PWT / 2)}, {type:D.TabStopType.RIGHT, position:PWT}],
+        border:{top:{style:D.BorderStyle.SINGLE, size:4, color:'B8B8B8', space:3}},
+        children:[new D.TextRun({children:['Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad\tGenerated ' + expToday() + '\tPage ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:14, color:'666666'})]})]})},
+      children:kids
+    });
+  });
+  var doc = new D.Document({creator:'Camp Office, Prosecutor General Punjab', title:expSubject(), description:'Yearly inspection proformas', sections:sections});
+  return await D.Packer.toBlob(doc);
+}
+
+/* ---------------- buttons ---------------- */
+function downloadBlob(blob, name){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+function expScopeVal(){ var s = $('expScope'); return s ? s.value : 'cur'; }
+function expPrepare(){
+  if(!curIns()){ toast('❌ ' + bi('پہلے انسپیکشن (مدت) منتخب کریں۔', 'Select an inspection period first.'), 'err'); return null; }
+  var sc = expScopeVal(), m = buildExport(sc);
+  if(!m){ toast('❌ ' + bi('اس صفحے کا کوئی پرفارما نہیں۔ اوپر سے A تا I میں سے کوئی ٹیب کھولیں، یا نیچے سے "مکمل فائل" وغیرہ چنیں۔', 'This page has no proforma. Open one of the tabs A–I, or choose "Complete file" etc. in the list.'), 'err'); return null; }
+  if(!m.sheets.length){ toast('❌ ' + bi('اس انتخاب میں کوئی پرفارما نہیں۔', 'Nothing to export for this choice.'), 'err'); return null; }
+  return m;
+}
+async function exportFile(kind){
+  var m = expPrepare(); if(!m) return;
+  toast('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
+  try{
+    var base = expFileBase(m.label);
+    if(kind === 'pdf'){ await expLoadLib('pdflib'); downloadBlob(new Blob([await buildExpPdf(m.sheets)], {type:'application/pdf'}), base + '.pdf'); }
+    else if(kind === 'xlsx'){ await expLoadLib('jszip'); downloadBlob(await buildExpXlsx(m.sheets), base + '.xlsx'); }
+    else { await expLoadLib('docx'); downloadBlob(await buildExpDocx(m.sheets), base + '.docx'); }
+    toast('✅ ' + bi('فائل تیار ہو گئی — ڈاؤن لوڈ فولڈر دیکھیں۔', 'File ready — check your Downloads folder.'), 'good');
+  }catch(err){
+    console.error(err);
+    toast('❌ ' + bi('فائل نہیں بن سکی', 'Could not build the file') + ': ' + esc(err && err.message ? err.message : err), 'err');
+  }
+}
+function exportPrint(){
+  var m = expPrepare(); if(!m) return;
+  var pa = $('printArea');
+  if(!pa){ pa = document.createElement('div'); pa.id = 'printArea'; document.body.appendChild(pa); }
+  pa.innerHTML = expHtml(m.sheets);
+  var old = document.title; document.title = expFileBase(m.label);
+  document.body.classList.add('printing-exp');
+  function done(){ document.body.classList.remove('printing-exp'); pa.innerHTML = ''; document.title = old; window.removeEventListener('afterprint', done); }
+  window.addEventListener('afterprint', done);
+  setTimeout(function(){ window.print(); }, 60);
+}
+function expFillScopes(){
+  var s = $('expScope'); if(!s) return; var cur = s.value;
+  s.innerHTML = EXP_SCOPES.map(function(x){ return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('');
+  if(cur) s.value = cur;
+}
 
 
 /* ---------- sign-in and roles (same pattern as the other Camp Office pages) ---------- */
@@ -1299,6 +2086,7 @@ auth.onAuthStateChanged(function(user){
 $('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
 document.body.setAttribute('data-theme', currentTheme);
 renderThemePicker();
+expFillScopes();
 renderAll();
 
 </script>

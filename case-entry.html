@@ -635,7 +635,7 @@ html.embedded .app-shell{ min-height:0; }
   // Result options expanded to match the Monthly Progress Report format (August 2026 sample you sent) — these become the report's columns.
   var RESULTS = [
     'Dismissed','Dismissed as W/D','Dismissed Infructuous','Dismissed DNP','Dismissed Abated',
-    'Allowed','Partly Allowed','Allowed though Compromise','Converted into Lessor Sentence',
+    'Allowed','Partly Allowed','Allowed though Compromise','Converted into Lesser Sentence',
     'Leave Granted','Pending','Other'
   ];
 
@@ -1239,12 +1239,13 @@ html.embedded .app-shell{ min-height:0; }
 
     var cols = RESULTS.slice();
     var colByKey = {};
-    cols.forEach(function(col){ colByKey[String(col).trim().toLowerCase()] = col; });
+    function resKey(v){ var k = String(v || '').trim().toLowerCase(); if(k === 'adjurned') k = 'adjourned'; if(k === 'converted into lessor sentence') k = 'converted into lesser sentence'; return k; }
+    cols.forEach(function(col){ colByKey[resKey(col)] = col; });
 
     var natureMap = {}, names = {}, uncounted = [];
     filtered.forEach(function(c){
       var nat = natureLabel(c), key = nat.toLowerCase();
-      var col = colByKey[String(c.result || '').trim().toLowerCase()];
+      var col = colByKey[resKey(c.result)];
       if(!col){   // a result that is blank or not among the report's columns can't be placed in the table
         uncounted.push((c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || '') + ' (' + (c.result ? c.result : (isUrdu ? 'نتیجہ خالی' : 'no result')) + ')');
         return;

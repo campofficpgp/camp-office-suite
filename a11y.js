@@ -80,6 +80,13 @@
     s += '#a11y-fab:hover{background:#1a3a5e;}';
     s += '#a11y-panel{position:absolute;bottom:56px;inset-inline-end:0;width:min(320px,calc(100vw - 28px));max-height:calc(100vh - 90px);overflow:auto;background:#fff;color:#10263D;border:2px solid #10263D;border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);}';
     s += '#a11y-panel[hidden]{display:none;}';
+    s += '#a11y-min{position:absolute;top:-11px;inset-inline-start:-9px;width:26px;height:26px;min-height:0;border-radius:50%;background:#fff;color:#10263D;border:2px solid #10263D;cursor:pointer;padding:0;font:700 16px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1;}';
+    s += '#a11y-min:hover{background:#eef3f8;}';
+    s += '#a11y-root.mini #a11y-fab{padding:0;width:44px;justify-content:center;opacity:.9;}';
+    s += '#a11y-root.mini #a11y-fab .t{display:none;}';
+    s += '#a11y-panel .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;}';
+    s += '#a11y-panel .hd h2{margin:0;}';
+    s += '#a11y-panel .hd .x{min-height:34px;min-width:34px;padding:0;font-size:16px;line-height:1;}';
     s += '#a11y-panel h2{margin:0 0 10px;font:700 15px/1.3 "Segoe UI",Tahoma,Arial,sans-serif;color:#10263D;}';
     s += '#a11y-panel .row{display:flex;align-items:center;gap:8px;margin:8px 0;}';
     s += '#a11y-panel .lab{flex:1;font-weight:600;font-size:13px;}';
@@ -142,10 +149,14 @@
     var root = el('div', { id: 'a11y-root' });
     fab = el('button', { id: 'a11y-fab', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'a11y-panel', 'aria-haspopup': 'dialog' });
     fab.appendChild(el('span', { 'aria-hidden': 'true' }, '♿'));
-    fab.appendChild(el('span', null, 'Accessibility / رسائی'));
+    fab.setAttribute('aria-label', 'Accessibility / رسائی');
+    fab.appendChild(el('span', { 'class': 't' }, 'Accessibility / رسائی'));
     panel = el('div', { id: 'a11y-panel', role: 'dialog', 'aria-label': 'Accessibility settings / رسائی کی ترتیبات' });
     panel.hidden = true;
-    panel.appendChild(el('h2', null, 'Accessibility / رسائی'));
+    var hd = el('div', { 'class': 'hd' });
+    hd.appendChild(el('h2', null, 'Accessibility / رسائی'));
+    hd.appendChild(el('button', { type: 'button', 'class': 'x', 'data-act': 'close', 'aria-label': 'Close / بند', title: 'Close / بند' }, '✕'));
+    panel.appendChild(hd);
 
     var r1 = el('div', { 'class': 'row' });
     r1.appendChild(el('span', { 'class': 'lab' }, 'Text size / حروف کا سائز'));
@@ -169,7 +180,16 @@
     panel.appendChild(el('p', { 'class': 'note' }, 'Your choices are saved in this browser for all portal pages. / آپ کی ترتیب اس براؤزر میں محفوظ رہتی ہے۔'));
     statusEl = el('div', { id: 'a11y-status', role: 'status', 'aria-live': 'polite' });
 
-    root.appendChild(panel); root.appendChild(fab); root.appendChild(statusEl);
+    var minBtn = el('button', { type: 'button', id: 'a11y-min' });
+    var mini = false; try { mini = localStorage.getItem('a11yMini_v1') === '1'; } catch (e) {}
+    function applyMini() {
+      root.className = mini ? 'mini' : '';
+      var t = mini ? 'Expand accessibility button / رسائی کا بٹن بڑا کریں' : 'Minimize accessibility button / رسائی کا بٹن چھوٹا کریں';
+      minBtn.textContent = mini ? '+' : '–'; minBtn.setAttribute('aria-label', t); minBtn.title = t;
+    }
+    applyMini();
+    minBtn.addEventListener('click', function () { mini = !mini; try { localStorage.setItem('a11yMini_v1', mini ? '1' : '0'); } catch (e) {} applyMini(); if (!panel.hidden) openPanel(false); });
+    root.appendChild(panel); root.appendChild(fab); root.appendChild(minBtn); root.appendChild(statusEl);
     document.body.appendChild(root);
 
     fab.addEventListener('click', function () { openPanel(panel.hidden); });

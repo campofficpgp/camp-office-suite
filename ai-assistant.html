@@ -392,7 +392,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('authGate').style.display = 'flex';
   }
 
-  var AI_URL = 'https://summarizecasenotes-246340921152.us-central1.run.app';
+  var AI_URL = 'https://askassistant-ocr2hbwqvq-uc.a.run.app';
   var IS_ADMIN = false;
 
   function escapeHtml(s){
@@ -408,7 +408,7 @@ html,body{overflow-x:hidden;}
   var STEER_EN = 'You assist a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. Reply in the user\'s language (Urdu or English). Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
   var STYLE_FAST = 'Be brief: at most about 120 words, no preamble, unless the user asks for detail or a full draft.';
   var STYLE_FULL = 'Give a complete, well-organised answer.';
-  var SPEED = (function(){ try{ return localStorage.getItem('aiSpeed') === 'full' ? 'full' : 'fast'; }catch(e){ return 'fast'; } })();
+  var SPEED = (function(){ try{ return localStorage.getItem('aiSpeed') === 'fast' ? 'fast' : 'full'; }catch(e){ return 'full'; } })();
   var ANS_CACHE = {};            // answers to identical first questions, this page session only
   var LAST = null;               // last sent {q, file} for Regenerate
   var CUR = null;                // running request {ctrl, timer, tick, aborted}

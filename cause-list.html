@@ -991,6 +991,35 @@ function typeKnown(t){ return LISTS.types.some(function(x){ return normType(x) =
 function judgeKnown(j){ return LISTS.judges.indexOf(j) >= 0; }
 function validNo(n){ return /^\d{1,8}(-[A-Z]{1,2})?$/.test(normNo(n)); }
 
+/* ---------- cases that are not ours although "P.G. Punjab" is named somewhere ----------
+   Rule A (agreed with the user): (1) a case number ending in a registry letter other than L (K Karachi, Q Quetta, P Peshawar ...) is another
+   registry's case; (2) a case where no Punjab lawyer is listed and P.G. Punjab appears only inside the "Notice to A.G. Sindh / KPK / Balochistan ..."
+   notice list is a notice to all provinces. Such cases are taken out automatically (white row, with the reason) and can be brought back with "➕ شامل". */
+var OTHER_PROV_RE = /A\.G\.\s*(Sindh|Khyber|Balochistan|KPK)|P\.?\s?G\.?\s+(Sindh|Balochistan|KP\b|Khyber)|Prosecutor General\s+(Sindh|Balochistan|Khyber)|Attorney General for Pakistan/i;
+var REG_NAMES = {K:'کراچی / Karachi', Q:'کوئٹہ / Quetta', P:'پشاور / Peshawar'};
+function lawyerPart(l){ var s = String(l||''), i = s.search(/\bNotice\s+to\b|\bto\s+A\.G\./i); return i >= 0 ? s.slice(0, i) : s; }
+function otherCourtReason(r){
+  var m = normNo(r.no).match(/-([A-Z]{1,2})$/);
+  if(m && m[1] !== 'L') return 'کیس نمبر کے ساتھ ' + m[1] + ' — ' + (REG_NAMES[m[1]] || 'دوسری رجسٹری') + ' کا کیس / case number ends with ' + m[1] + ' (not Lahore)';
+  var lw = String(r.lawyers||'');
+  if(!CLParser.PGRE.test(lawyerPart(lw)) && OTHER_PROV_RE.test(lw)) return 'ہمارا کوئی وکیل نہیں؛ صرف سب صوبوں کو نوٹس میں P.G. Punjab کا نام / no Punjab lawyer — only named in a notice to all provinces';
+  return '';
+}
+function applyAutoOut(r){
+  if(!r.mine || r.autoChk) return false;
+  r.autoChk = 1;
+  if(r.fromOther || r.manual || r.officer || r.result) return false;
+  var why = otherCourtReason(r);
+  if(!why) return false;
+  r.mine = false; r.autoOut = why; r.unc = []; r.confirmed = false;
+  return true;
+}
+function autoOutNote(){
+  var a = ST.rows.filter(function(r){ return r.autoOut && !r.mine; }); if(!a.length) return '';
+  return '<br><b>' + bi('خود نکالے گئے (دوسرے صوبے/رجسٹری کے): ', 'Taken out automatically (other province/registry): ') + a.length + '</b> — ' +
+    a.map(function(r){ return '<bdi dir="ltr">' + esc(caseText(r)) + '</bdi>'; }).join('، ') + '<br><small>' + bi('یہ سفید قطاروں میں ہیں؛ ضرورت ہو تو «➕ شامل» دبائیں۔', 'They stay in the list as white rows — press “➕ شامل” to bring one back.') + '</small>';
+}
+
 /* ---------- build the working rows from the parsed PDF ---------- */
 function newRow(o){
   var r = {
@@ -1006,6 +1035,7 @@ function uncertainReasons(r){
   if(!r.type || !r.no || !r.year || !validNo(r.no)) u.push('کیس نمبر واضح نہیں / Case number unclear');
   if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title + ' ' + (r.versus||''))) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
   if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
+  if(r.autoOut) u.push('پہلے خود نکالا گیا تھا: ' + r.autoOut);
   if(!r.natText && !r.supp && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
   return u;
 }
@@ -1030,6 +1060,7 @@ function rowsFromParsed(list){
       if(!cn.type && e.caseno){ r.type = e.caseno; }
       r.relief = mapRelief(e.nature);
       r.remarks = r.main ? 'IN ' + r.main : '';
+      applyAutoOut(r);
       if(r.mine) r.unc = uncertainReasons(r);
       rows.push(r);
     });
@@ -1200,6 +1231,7 @@ function checkDraft(){
 /* Lists saved before the "Notice" fix still carry the PDF's "Notice" tags in title/versus — tidy them when such a list is opened */
 function tidyOldRows(rows){
   (rows || []).forEach(function(r){
+    applyAutoOut(r);
     var t = cleanParty(r.title), v = cleanParty(r.versus);
     if(t !== r.title || v !== r.versus){
       r.title = t; r.versus = v;
@@ -1236,6 +1268,7 @@ function rowHtml(r, first){
   h += '<td class="cl-c">' + esc(srText(r)) + '</td>';
   h += '<td class="cl-c">' + esc(caseText(r)) + (r.supp ? '<span class="cl-supp">SUPP</span>' : '') + (r.main ? '<span class="cl-sub">IN ' + esc(r.main) + '</span>' : '') + '</td>';
   h += '<td>' + esc(joinTitle(r.title, r.versus));
+  if(!r.mine && r.autoOut) h += '<div class="cl-flag-btns"><span class="cl-flag y">🚫 خود نکالا گیا: ' + esc(r.autoOut) + '</span></div>';
   if(r.mine){
     h += '<div class="cl-flag-btns">';
     if(r.supp){
@@ -1324,6 +1357,8 @@ function stats(){
   if(VIEW.day || VIEW.bench) h += '<span class="cl-chip warn">' + bi('صرف یہ دکھ رہے کیس محفوظ ہوں گے', 'Only the cases shown will be saved') + ': <bdi dir="ltr"><b>' + esc(viewLabel()) + '</b></bdi></span>';
   h += '<span class="cl-chip">' + bi('منتخب', 'Selected') + ': <b>' + c.sel + '</b></span>';
   h += '<span class="cl-chip ok">' + bi('نئے محفوظ ہوں گے', 'To save') + ': <b>' + c.save + '</b></span>';
+  var ao = ST.rows.filter(function(r){ return r.autoOut && !r.mine; }).length;
+  if(ao) h += '<span class="cl-chip warn">' + bi('خود نکالے گئے', 'Taken out automatically') + ': <b>' + ao + '</b></span>';
   if(c.exists) h += '<span class="cl-chip">' + bi('پہلے سے موجود', 'Already saved') + ': <b>' + c.exists + '</b></span>';
   if(c.upd) h += '<span class="cl-chip">' + bi('نتیجہ اپڈیٹ ہو گا', 'Result updates') + ': <b>' + c.upd + '</b></span>';
   if(c.unc) h += '<span class="cl-chip warn">' + bi('تصدیق باقی', 'To confirm') + ': <b>' + c.unc + '</b></span>';
@@ -1533,7 +1568,7 @@ async function readPdf(file, asSupp){
     var punjab = list.filter(function(e){ return e.pg; }).length;
     if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
     ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; SL_CUR = null; renderSaved();
-    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list), 'good');
+    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list) + autoOutNote(), 'good');
     dropDraft(); changed();
     window.scrollTo(0, 0);
   }catch(err){

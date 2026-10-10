@@ -783,7 +783,10 @@ function buildB(officer){
   });
   Object.keys(BROWS).forEach(function(id){
     var x = BROWS[id];
-    if(x.manual && x.inspectionId === UI.ins && x.officer === officer) out.push({id:id, caseId:'', c:null, appealNo:x.appealNo || '', judgDate:x.judgDate || '', submitDate:x.submitDate || '', notSubmitted:!!x.notSubmitted, grounds:x.grounds || '', defGrounds:'', manual:true});
+    if(x.manual && x.inspectionId === UI.ins && x.officer === officer){
+      if(x.fromScan && x.scanKey && out.some(function(o){ return o.c && scKey(o.c.type, o.c.caseNo, o.c.year) === x.scanKey; })) return;   /* same case now exists in Daily Case Entry: one record per case */
+      out.push({id:id, caseId:'', c:null, appealNo:x.appealNo || '', judgDate:x.judgDate || '', submitDate:x.submitDate || '', notSubmitted:!!x.notSubmitted, grounds:x.grounds || '', defGrounds:'', manual:true, scanId:x.scanId || ''});
+    }
   });
   out.sort(function(a, b){ return (a.judgDate || '').localeCompare(b.judgDate || ''); });
   return out;
@@ -1088,6 +1091,52 @@ function openScanSug(){
     }}], true);
 }
 
+/* Scanning Desk judgments (death / life imprisonment, acquitted or converted) that are not in Daily Case Entry: offered as NEW rows */
+function scanNewB(rows){
+  var ins = curIns(), o = UI.officer; if(!ins) return [];
+  var have = {}; rows.forEach(function(r){ if(r.c) have[scKey(r.c.type, r.c.caseNo, r.c.year)] = 1; if(r.scanId) have['id:' + r.scanId] = 1; });
+  Object.keys(BROWS).forEach(function(id){ var x = BROWS[id]; if(x.inspectionId === UI.ins && x.scanId) have['id:' + x.scanId] = 1; });
+  return SCANS.filter(function(s){
+    if(s.docType !== 'Judgment' || s.officer !== o || !s.date || s.date < ins.start || s.date > ins.end) return false;
+    if(['Death sentence', 'Life imprisonment'].indexOf(s.sentence) < 0) return false;
+    if(['Allowed', 'Partly Allowed', 'Acquittal'].indexOf(s.outcome) < 0) return false;
+    return !have['id:' + s.id] && !have[scKey(s.caseType, s.caseNo, s.caseYear)];
+  }).sort(function(a, b){ return (a.date || '').localeCompare(b.date || ''); });
+}
+function scanNewBtn(rows){
+  var n = scanNewB(rows).length; if(!n) return '';
+  return ' <button class="cl-btn sm" style="background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="openScanNew()">📠 ' + bi('اسکین ڈیسک سے نئی قطاریں', 'Add rows from Scanning Desk') + ' (' + n + ')</button>';
+}
+function openScanNew(){
+  if(!guardEdit()) return;
+  var items = scanNewB(buildB(UI.officer)); if(!items.length){ toast(bi('کوئی نئی قطار نہیں', 'No new rows')); return; }
+  var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('یہ فیصلے اسکین ڈیسک میں ہیں (موت/عمر قید، بری یا تبدیل) مگر روزانہ کیس انٹری میں نہیں ملے۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔ ہر خانہ بدل سکتے ہیں۔', 'These judgments are in Scanning Desk (death / life imprisonment, acquitted or converted) but not in Daily Case Entry. Nothing is saved until you press Send. You may edit every cell.') + '</div>' +
+    '<div class="cl-tw"><table class="pf-t" id="scNewT"><thead><tr><th></th><th class="l">' + bi('اپیل / پٹیشن نمبر', 'Appeal / Petition No.') + '</th><th>' + bi('فیصلے کی تاریخ', 'Date of judgment') + '</th><th>' + bi('اپیل کمیٹی کو بھیجنے کی تاریخ', 'Date of submission to AC') + '</th><th class="l">' + bi('وجوہات', 'Grounds') + '</th></tr></thead><tbody>';
+  var Y = 'style="background:#fff3b0;color:#28394A"';
+  items.forEach(function(s, i){
+    var no = [s.caseType, (s.caseNo || '') + '/' + (s.caseYear || '')].filter(Boolean).join(' ');
+    h += '<tr data-i="' + i + '"><td><input type="checkbox" checked style="width:auto;min-width:0" data-ck="1" aria-label="select"></td>' +
+      '<td><input data-k="appealNo" value="' + esc(no) + '" ' + Y + '><span class="pf-sub">' + esc(s.title || '') + '</span><span class="pf-sub">' + esc(s.sentence) + ' — ' + esc(s.outcome) + '</span></td>' +
+      '<td><input type="date" data-k="judgDate" value="' + esc(s.date) + '" ' + Y + '></td>' +
+      '<td><input type="date" data-k="submitDate" value="' + esc(s.acDate || '') + '" ' + Y + '></td>' +
+      '<td><textarea data-k="grounds" rows="3" style="width:100%;background:#fff3b0;color:#28394A">' + esc(s.grounds || '') + '</textarea></td></tr>';
+  });
+  h += '</tbody></table></div>';
+  openModal('Add rows from Scanning Desk / اسکین ڈیسک سے قطاریں — Check and send / چیک کریں اور بھیجیں', h, [
+    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
+      var n = 0;
+      Array.prototype.forEach.call(document.querySelectorAll('#scNewT tbody tr'), function(tr){
+        if(!tr.querySelector('[data-ck]').checked) return;
+        var s = items[+tr.getAttribute('data-i')], p = {manual:true, fromScan:true, scanId:s.id, scanKey:scKey(s.caseType, s.caseNo, s.caseYear), caseId:'', notSubmitted:false};
+        Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'), function(el){ p[el.getAttribute('data-k')] = (el.value || '').trim(); });
+        if(!p.submitDate) delete p.submitDate;
+        saveB(UI.ins + '__s' + s.id, p); n++;
+      });
+      if(n) toast('✅ ' + bi(n + ' نئی قطاریں اسکین ڈیسک سے شامل ہوئیں', n + ' row(s) added from Scanning Desk'), 'good');
+    }}], true);
+}
+
 /* ---------- Proforma B ---------- */
 function viewB(){
   var o = UI.officer; if(!o) return needOfficer();
@@ -1104,7 +1153,7 @@ function viewB(){
       '<td><input value="' + esc(r.grounds) + '" placeholder="' + esc(r.defGrounds || 'Grounds…') + '" onchange="saveB(\'' + r.id + '\',{grounds:this.value})">' + (r.scanId ? '<span class="pf-sub no-print">📠 ' + bi('اسکین ڈیسک سے', 'from Scanning Desk') + '</span>' : '') + '</td>' +
       '<td class="pf-act no-print">' + (r.manual && canEdit() ? '<button onclick="delB(\'' + r.id + '\')">🗑</button>' : '') + '</td></tr>';
   });
-  h += '</tbody></table></div>' + (canEdit() ? '<div class="no-print" style="margin-top:8px"><button class="cl-btn sm" onclick="addB()">＋ ' + bi('ہاتھ سے قطار', 'Add row manually') + '</button>' + scanSugBtn(rows) + '</div>' : '') + signProsecutor(o) + '</div>';
+  h += '</tbody></table></div>' + (canEdit() ? '<div class="no-print" style="margin-top:8px"><button class="cl-btn sm" onclick="addB()">＋ ' + bi('ہاتھ سے قطار', 'Add row manually') + '</button>' + scanSugBtn(rows) + scanNewBtn(rows) + '</div>' : '') + signProsecutor(o) + '</div>';
   return h;
 }
 function saveB(id, patch){

@@ -1096,6 +1096,123 @@ function saveManual(officer, row, field, val){
   track('Opinion / fit cell', 'inspectionManual', manualKey(o, row), function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr);
 }
 
+
+/* ---------- Scanning Desk suggestions for the Appeal Committee register (Proformas C-I) ---------- */
+var SCNAT = {'Death sentence':[0,2], 'Life imprisonment':[1,3], 'Other conviction':[4,5]};
+function scFirNo(s){ var n = String(s.firNo || '').trim(), y = String(s.firYear || '').trim(); if(!n) return ''; return (y && n.indexOf('/') < 0) ? n + '/' + y : n; }
+function scNature(s){
+  var p = SCNAT[s.sentence]; if(!p) return '';
+  if(s.outcome === 'Acquittal') return String(p[0]);
+  if(s.outcome === 'Partly Allowed') return String(p[1]);
+  return '';          /* "Allowed" may be acquittal or conversion: the clerk chooses */
+}
+/* scans of the same case become ONE candidate: a judgment scan plus any opinion scan linked to it or carrying the same case number */
+function scanRefCands(){
+  var ins = curIns(); if(!ins) return [];
+  var groups = {}, order = [];
+  function put(k, s){ if(!groups[k]){ groups[k] = []; order.push(k); } groups[k].push(s); }
+  SCANS.forEach(function(s){
+    if(['Judgment', 'Opinion', 'Signed scan'].indexOf(s.docType) < 0) return;
+    var j = s.docType === 'Opinion' && s.linkedTo ? SCANS.filter(function(x){ return x.id === s.linkedTo; })[0] : null;
+    var key = j ? scKey(j.caseType, j.caseNo, j.caseYear) : scKey(s.caseType, s.caseNo, s.caseYear);
+    if(key === '||') key = 'id:' + s.id;
+    put(key, s);
+  });
+  var out = [];
+  order.forEach(function(k){
+    var list = groups[k], jud = list.filter(function(s){ return s.docType === 'Judgment'; })[0] || null;
+    var ops = list.filter(function(s){ return OPFIT[s.opinionStatus]; }).sort(function(a, b){ return String(b.opinionDate || '').localeCompare(String(a.opinionDate || '')); });
+    var op = ops.filter(function(s){ return s.opinionStatus === 'Fit for appeal / petition' || s.opinionStatus === 'Not fit'; })[0] || null;
+    var ac = ''; list.forEach(function(s){ if(s.acDate && (!ac || s.docType === 'Judgment')) ac = s.acDate; });
+    if(!ac && !op) return;                      /* not sent to the AC yet, no fit / not fit opinion: not a reference */
+    var base = jud || list[0], jdate = jud ? jud.date : '';
+    var rel = ac || (op && op.opinionDate) || jdate;
+    if(rel && (rel < ins.start || rel > ins.end)) return;
+    var ref = list.filter(function(s){ return s.firNo; })[0] || base;
+    out.push({
+      key: k, scanId: base.id, scanKey: k, title: base.title || '', caseTxt: [base.caseType, (base.caseNo || '') + (base.caseYear ? '/' + base.caseYear : '')].filter(Boolean).join(' '), n: list.length,
+      v: { source: 'sc', nature: jud ? scNature(jud) : '', firNo: scFirNo(ref), sections: ref.sections || '', ps: ref.station || '', judgmentDate: jdate || '', submitDate: ac || '',
+           opinion: op ? (op.opinionStatus === 'Not fit' ? 'notfit' : 'fit') : '' }
+    });
+  });
+  return out;
+}
+function scNormFir(x){ return String(x || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function scRefMatch(c){
+  var v = c.v, nf = scNormFir(v.firNo), nps = scNormFir(v.ps);
+  return REFS.filter(function(r){
+    if(r.inspectionId !== UI.ins) return false;
+    if(r.scanId === c.scanId || (r.scanKey && r.scanKey === c.scanKey)) return true;
+    if(!nf || scNormFir(r.firNo) !== nf) return false;
+    var rp = scNormFir(r.ps);
+    return !rp || !nps || rp.indexOf(nps) >= 0 || nps.indexOf(rp) >= 0 || (r.judgmentDate && r.judgmentDate === v.judgmentDate);
+  })[0] || null;
+}
+var SCF = ['nature', 'firNo', 'sections', 'ps', 'judgmentDate', 'submitDate', 'opinion'];
+function scanRefSug(){
+  var out = [];
+  scanRefCands().forEach(function(c){
+    var ex = scRefMatch(c);
+    if(!ex){ out.push({c:c, ex:null, fill:SCF.filter(function(f){ return c.v[f]; })}); return; }
+    var fill = SCF.filter(function(f){ return c.v[f] && !String(ex[f] == null ? '' : ex[f]).trim() && (f !== 'nature' || ex.nature === '' || ex.nature == null); });
+    if(fill.length) out.push({c:c, ex:ex, fill:fill});
+  });
+  return out;
+}
+function scanRefBtn(){
+  if(!canEdit()) return '';
+  var n = scanRefSug().length; if(!n) return '';
+  return '<button class="cl-btn" style="background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="openScanRef()">📠 ' + bi('اسکین ڈیسک سے ریفرنس کی تجاویز', 'Reference suggestions from Scanning Desk') + ' (' + n + ')</button>';
+}
+function openScanRef(){
+  if(!guardEdit()) return;
+  var items = scanRefSug(); if(!items.length){ toast(bi('کوئی نئی تجویز نہیں', 'No new suggestions')); return; }
+  var Y = 'background:#fff3b0;color:#28394A', nNew = items.filter(function(x){ return !x.ex; }).length;
+  var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('یہ ریفرنس اسکین ڈیسک کے فیصلوں/رائے سے بنے ہیں (جن کی اپیل کمیٹی کو جمع کرانے کی تاریخ یا فٹ/ناٹ فٹ رائے درج ہے)۔ ایک کیس کا ایک ہی ریفرنس بنتا ہے؛ جو رجسٹر میں پہلے سے ہے اس کے صرف خالی خانے بھرے جاتے ہیں۔ <b>ڈائری نمبر اور تاریخ اسکین میں نہیں ہوتے، آپ خود لکھیں</b> (خالی چھوڑ دیں تو رجسٹر میں ⚠ رہے گا)۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔', 'These references are built from Scanning Desk judgments / opinions that have a date of submission to AC or a fit / not fit opinion. One reference per case; if it is already in the register only its empty cells are filled. <b>Diary no. and date are not on the scans: type them yourself</b> (if left blank the register shows ⚠). Nothing is saved until you press Send.') + '</div>' +
+    '<div class="cl-tw"><table class="pf-t" id="scRefT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th class="l">' + bi('کارروائی', 'Action') + '</th><th>Source</th><th>Diary No</th><th>Diary date</th><th class="l">Nature</th><th>FIR No</th><th>U/S</th><th>Police Station</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th></tr></thead><tbody>';
+  function cell(it, f, mk){
+    var ex = it.ex, val = it.c.v[f] || '';
+    if(ex && String(ex[f] == null ? '' : ex[f]).trim()) return '<td class="sm" style="color:#6b7a89">' + esc(f === 'nature' ? natureName(ex) : f === 'opinion' ? opinionTxt(ex) : /Date$/.test(f) ? dt(ex[f]) : ex[f]) + '</td>';
+    if(ex && it.fill.indexOf(f) < 0) return '<td class="sm" style="color:#9aa7b3">—</td>';
+    return '<td>' + mk(val) + '</td>';
+  }
+  function inp(f, type){ return function(v){ return '<input data-k="' + f + '"' + (type ? ' type="' + type + '"' : '') + ' value="' + esc(v) + '" style="min-width:90px;' + (v ? Y : '') + '">'; }; }
+  function sel(f, opts){ return function(v){ var x = '<select data-k="' + f + '" style="min-width:' + (f === 'nature' ? '230' : '100') + 'px;' + (v ? Y : '') + '"><option value="">—</option>'; opts.forEach(function(o){ x += '<option value="' + esc(o[0]) + '"' + (String(v) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }); return x + '</select>'; }; }
+  var natOpts = NATURES.map(function(n, i){ return [String(i), (i + 1) + '. ' + n]; });
+  items.forEach(function(it, i){
+    var ex = it.ex, ok = !!ex || !!it.c.v.nature;
+    h += '<tr data-i="' + i + '"><td><input type="checkbox" ' + (ok ? 'checked ' : '') + 'style="width:auto;min-width:0" data-ck="1" aria-label="select"></td>' +
+      '<td><b>' + esc(it.c.caseTxt || it.c.title) + '</b><span class="pf-sub">' + esc(it.c.caseTxt ? it.c.title : '') + '</span><span class="pf-sub">📠 ' + it.c.n + ' ' + bi('اسکین', 'scan(s)') + '</span></td>' +
+      '<td class="sm">' + (ex ? '<b>' + bi('موجود ریفرنس میں خالی خانے', 'Fills empty cells') + '</b><span class="pf-sub">Diary ' + esc(ex.diaryNo || '—') + '</span>' : '<b>' + bi('نیا ریفرنس', 'New reference') + '</b>') + '</td>' +
+      (ex ? '<td class="sm" style="color:#6b7a89">' + (ex.source === 'other' ? 'Other' : 'SC') + '</td><td class="sm" style="color:#6b7a89">' + esc(ex.diaryNo || '') + '</td><td class="sm" style="color:#6b7a89">' + dt(ex.diaryDate) + '</td>'
+            : '<td>' + sel('source', [['sc', 'SC (C/D)'], ['other', 'Other (E/F)']])('sc') + '</td><td>' + inp('diaryNo')('') + '</td><td>' + inp('diaryDate', 'date')('') + '</td>') +
+      cell(it, 'nature', sel('nature', natOpts)) + cell(it, 'firNo', inp('firNo')) + cell(it, 'sections', inp('sections')) + cell(it, 'ps', inp('ps')) +
+      cell(it, 'judgmentDate', inp('judgmentDate', 'date')) + cell(it, 'submitDate', inp('submitDate', 'date')) + cell(it, 'opinion', sel('opinion', [['fit', 'FIT'], ['notfit', 'NOT FIT']])) + '</tr>';
+  });
+  h += '</tbody></table></div><div class="cl-note">' + bi('نیا ریفرنس: ' + nNew + ' · موجود میں اضافہ: ' + (items.length - nNew) + '۔ جس قطار میں "Nature" خالی ہو وہ پہلے سے ٹک نہیں، نوعیت چن کر ٹک کریں۔', 'New: ' + nNew + ' · additions to existing: ' + (items.length - nNew) + '. A row whose Nature is empty is not ticked: choose the nature, then tick it.') + '</div>';
+  openModal('Reference suggestions / ریفرنس کی تجاویز — Check and send / چیک کریں اور بھیجیں', h, [
+    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
+      var jobs = [], bad = 0;
+      Array.prototype.forEach.call(document.querySelectorAll('#scRefT tbody tr'), function(tr){
+        if(!tr.querySelector('[data-ck]').checked) return;
+        var it = items[+tr.getAttribute('data-i')], d = {};
+        Array.prototype.forEach.call(tr.querySelectorAll('[data-k]'), function(el){ var v = (el.value || '').trim(); if(v) d[el.getAttribute('data-k')] = v; });
+        if(!it.ex && (d.nature == null || d.nature === '')){ bad++; return; }
+        jobs.push({it:it, d:d});
+      });
+      if(bad){ toast('⚠️ ' + bi('جن قطاروں پر ٹک ہے ان میں سے ' + bad + ' میں نوعیت (Nature) خالی ہے۔ نوعیت چنیں۔', bad + ' ticked row(s) have no Nature. Please choose it.'), 'warn'); return false; }
+      if(!jobs.length){ toast(bi('کوئی قطار منتخب نہیں', 'No row selected'), 'warn'); return false; }
+      jobs.forEach(function(j){
+        var it = j.it, d = j.d;
+        if(it.ex){ if(!Object.keys(d).length) return; d.scanId = it.ex.scanId || it.c.scanId; d.scanKey = it.ex.scanKey || it.c.scanKey; saveRefPatch(it.ex.id, d, 'Reference from Scanning Desk / اسکین ڈیسک سے ریفرنس'); }
+        else { d.inspectionId = UI.ins; d.fromScan = true; d.scanId = it.c.scanId; d.scanKey = it.c.scanKey; if(!d.source) d.source = 'sc'; saveRefPatch(db.collection('inspectionRefs').doc().id, d, 'New reference from Scanning Desk / اسکین ڈیسک سے نیا ریفرنس'); }
+      });
+      toast('✅ ' + bi(jobs.length + ' ریفرنس اسکین ڈیسک سے محفوظ ہوئے', jobs.length + ' reference(s) saved from Scanning Desk'), 'good');
+    }}], true);
+}
+function saveRefPatch(id, d, label){ track(label, 'inspectionRefs', id, function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr); }
+
 /* ---------- Scanning Desk suggestions for Proforma B ---------- */
 var SCANS = [];
 function scNorm(v){ return String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
@@ -1363,7 +1480,7 @@ function regSrc(v){ UI.rSrc = v; renderAll(); }
 function viewReg(){
   var h = '<div class="cl-card"><div class="cl-bar"><div class="cl-field"><label>' + bi('ذریعہ', 'Source') + '</label><select onchange="regSrc(this.value)"><option value="">All / سب</option><option value="sc"' + (UI.rSrc === 'sc' ? ' selected' : '') + '>SC prosecutors (C/D)</option><option value="other"' + (UI.rSrc === 'other' ? ' selected' : '') + '>Other quarters (E/F)</option></select></div>' +
     '<div class="cl-field" style="min-width:220px"><label>' + bi('تلاش', 'Search') + '</label><input id="regQ" value="' + esc(UI.rQ) + '" oninput="regSearch(this.value)" placeholder="Diary / FIR / Petition…"></div><span class="cl-sep"></span>' +
-    (canEdit() ? '<button class="cl-btn gold" onclick="editRef(\'\')">＋ ' + bi('نیا ریفرنس', 'Add reference') + '</button>' : '') + '</div>';
+    (canEdit() ? '<button class="cl-btn gold" onclick="editRef(\'\')">＋ ' + bi('نیا ریفرنس', 'Add reference') + '</button> ' + scanRefBtn() : '') + '</div>';
   h += '<div class="cl-note">' + bi('ہر ریفرنس ایک بار یہاں درج کریں — پرفارما C سے I تک سب خود بن جائیں گے۔ ⚠ کا مطلب ہے کوئی ضروری خانہ باقی ہے (نشان پر ماؤس رکھیں)۔', 'Enter each reference once here — Proformas C to I are generated automatically. ⚠ means a required field is missing (hover to see which).') + '</div>';
   h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>#</th><th>Source</th><th class="l">Diary No &amp; Date</th><th class="l">Nature</th><th class="l">FIR / U/S / PS</th><th>Judgment<br>Submitted</th><th>Opinion</th><th class="l">Filing</th><th></th><th></th></tr></thead><tbody id="regBody">' + regRows() + '</tbody></table></div></div>';
   return h;

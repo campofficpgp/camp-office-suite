@@ -443,6 +443,19 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 .cl-act button.cl-save1{ border-color:#2e7d32; color:#2e7d32; font-weight:700; }
 .cl-act button.cl-save1:hover{ background:#e6f3e7; }
 
+
+.sl-card{ margin-bottom:12px; }
+.sl-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sl-head .t{ font-weight:700; color:var(--text); }
+.sl-list{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.sl-item{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; padding:8px 12px; background:var(--card); }
+.sl-item.cur{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
+.sl-info{ flex:1 1 240px; min-width:0; }
+.sl-info b{ display:block; overflow-wrap:anywhere; }
+.sl-info span{ font-size:12px; color:var(--muted); }
+.sl-empty{ font-size:13px; color:var(--muted); padding:6px 2px; }
+.sl-input{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font:inherit; background:var(--card); color:var(--text); box-sizing:border-box; }
+.sl-chk{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; }
 </style>
 </head><body>
 
@@ -506,6 +519,17 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
     <button class="cl-btn sm ghost" onclick="dropDraft()">حذف کریں / Discard</button>
   </div>
 
+  <div class="cl-card no-print sl-card" id="slCard">
+    <div class="sl-head">
+      <span class="t">📂 محفوظ شدہ فہرستیں / Saved lists</span>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost sm" id="slToggle" onclick="toggleSaved()">دکھائیں / Show (<span id="slCount">0</span>)</button>
+    </div>
+    <div id="slBody" style="display:none">
+      <div class="sl-list" id="slList"></div>
+    </div>
+  </div>
+
   <div class="cl-card no-print" id="uploadCard">
     <div class="cl-drop" id="dropZone" onclick="document.getElementById('pdfFile').click()">
       <b>① Final Cause List کی PDF یہاں ڈالیں یا کلک کر کے منتخب کریں</b>
@@ -530,6 +554,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
     <div class="cl-stats" id="stats"></div>
     <div class="cl-bar" style="margin-top:12px">
       <button class="cl-btn gold" id="btnSave" onclick="startSave()">💾 Save to Daily Case Entry / محفوظ کریں</button>
+      <button class="cl-btn" id="btnSaveList" onclick="saveList()" title="Keep this whole list (all dates, officers, results) so it can be opened again later from Saved lists">📁 Save this list / فہرست محفوظ کریں</button>
       <span class="cl-sep"></span>
       <button class="cl-btn ghost" onclick="doPrint()">🖨 Print / پرنٹ</button>
       <button class="cl-btn ghost" onclick="exportFile('pdf')">⬇ PDF</button>
@@ -1484,7 +1509,7 @@ async function readPdf(file, asSupp){
     var list = CLParser.build(CLParser.toLines(pages));
     var punjab = list.filter(function(e){ return e.pg; }).length;
     if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
-    ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false;
+    ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; SL_CUR = null; renderSaved();
     showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list), 'good');
     dropDraft(); changed();
     window.scrollTo(0, 0);
@@ -1496,7 +1521,7 @@ async function readPdf(file, asSupp){
 function newUpload(){
   if(!ST.rows.length) return;
   confirmBox('New PDF / نئی PDF', bi2('موجودہ فہرست اور یہاں منتخب کیے ہوئے نتیجے اسکرین سے ہٹ جائیں گے (جو محفوظ ہو چکے وہ ڈیٹا بیس میں رہیں گے)۔', 'The current list and any results chosen here will be cleared (anything already saved stays in the database).'), function(){
-    ST.rows = []; ST.meta = null; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; showRead(''); showAct(''); try{ localStorage.removeItem('clDraft_v1'); }catch(e){} changed(); $('pdfFile').value = '';
+    ST.rows = []; ST.meta = null; ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; SL_CUR = null; renderSaved(); showRead(''); showAct(''); try{ localStorage.removeItem('clDraft_v1'); }catch(e){} changed(); $('pdfFile').value = '';
   });
 }
 $('pdfFile').addEventListener('change', function(){ readPdf(this.files[0]); });
@@ -2031,12 +2056,116 @@ function fillOfficers(){
   $('officerSel').innerHTML = '<option value="">— none / کوئی نہیں —</option>' + LISTS.officers.map(function(o){ return '<option' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
 }
 function startLiveData(){
+  startSavedListener();
   db.collection('lookupLists').doc('caseEntry').onSnapshot(function(doc){ if(doc.exists) applyLists(doc.data()); }, function(err){ console.error('lists', err); });
   db.collection('cases').onSnapshot(function(qs){
     var arr = []; qs.forEach(function(d){ var c = d.data(); c.id = d.id; arr.push(c); });
     CASES = arr; render();
     $('authGate').style.display = 'none';
   }, function(err){ gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true); });
+}
+
+/* ---------- Saved lists: keep a whole cause list in Firebase and open it again later (any computer) ---------- */
+var SAVED = [], SL_OPEN = false, SL_CUR = null, SL_UNSUB = null, SL_AUTO = false;
+var SL_MAX_CHARS = 900000;   /* one Firestore document must stay under 1 MB */
+function slFmtTs(ts){ try{ var d = ts && ts.toDate ? ts.toDate() : null; if(!d) return ''; return d.getDate() + '-' + MONN[d.getMonth()] + '-' + d.getFullYear() + ' ' + ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2); }catch(e){ return ''; } }
+function slRange(){
+  var ds = ST.rows.map(function(r){ return r.iso; }).filter(Boolean).sort();
+  return {from: ds[0] || '', to: ds[ds.length-1] || ''};
+}
+function slDefaultName(){
+  var rg = slRange(), kind = (ST.meta && ST.meta.kind) ? ST.meta.kind : 'Final';
+  var a = rg.from ? dmyFromIso(rg.from) : '', b = rg.to ? dmyFromIso(rg.to) : '';
+  return kind + (a ? ' ' + a + (b && b !== a ? ' to ' + b : '') : '') + (ST.fileName ? ' — ' + ST.fileName : '');
+}
+function toggleSaved(force){
+  SL_OPEN = typeof force === 'boolean' ? force : !SL_OPEN;
+  $('slBody').style.display = SL_OPEN ? '' : 'none';
+  $('slToggle').innerHTML = (SL_OPEN ? bi('چھپائیں', 'Hide') : bi('دکھائیں', 'Show')) + ' (<span id="slCount">' + SAVED.length + '</span>)';
+}
+function renderSaved(){
+  var cnt = $('slCount'); if(cnt) cnt.textContent = SAVED.length;
+  var box = $('slList'); if(!box) return;
+  if(!SAVED.length){ box.innerHTML = '<div class="sl-empty">' + bi('ابھی کوئی فہرست محفوظ نہیں۔ فہرست کھول کر «📁 فہرست محفوظ کریں» دبائیں۔', 'No list saved yet. Open a list and press “📁 Save this list”.') + '</div>'; return; }
+  box.innerHTML = SAVED.map(function(x){
+    var rg = (x.dateFrom ? dmyFromIso(x.dateFrom) : '') + (x.dateTo && x.dateTo !== x.dateFrom ? ' → ' + dmyFromIso(x.dateTo) : '');
+    var who = x.updatedBy || x.savedBy || '';
+    var when = slFmtTs(x.updatedAt || x.savedAt);
+    return '<div class="sl-item' + (SL_CUR === x.id ? ' cur' : '') + '">' +
+      '<div class="sl-info"><b dir="auto">' + esc(x.name || '(no name)') + (SL_CUR === x.id ? ' &nbsp;✔' : '') + '</b>' +
+      '<span>' + esc(rg) + (rg ? ' · ' : '') + esc(x.caseCount || 0) + ' ' + bi('کیس', 'cases') + (when ? ' · ' + esc(when) : '') + (who ? ' · ' + esc(who) : '') + '</span></div>' +
+      '<button class="cl-btn sm" onclick="openSaved(\'' + esc(x.id) + '\')">📂 ' + bi('کھولیں', 'Open') + '</button>' +
+      (CTX.canLists ? '<button class="cl-btn ghost sm" onclick="deleteSaved(\'' + esc(x.id) + '\')">🗑 ' + bi('حذف', 'Delete') + '</button>' : '') +
+      '</div>';
+  }).join('');
+}
+function startSavedListener(){
+  if(SL_UNSUB) return;
+  SL_UNSUB = db.collection('causeLists').orderBy('savedAt', 'desc').limit(60).onSnapshot(function(qs){
+    var arr = []; qs.forEach(function(d){ var c = d.data(); arr.push({id:d.id, name:c.name, fileName:c.fileName, kind:c.kind, dateFrom:c.dateFrom, dateTo:c.dateTo, caseCount:c.caseCount, savedBy:c.savedBy, savedAt:c.savedAt, updatedBy:c.updatedBy, updatedAt:c.updatedAt}); });
+    SAVED = arr; renderSaved();
+    if(!SL_AUTO && arr.length && !ST.rows.length){ SL_AUTO = true; toggleSaved(true); }   /* a fresh visit shows the saved lists right away */
+  }, function(err){
+    console.error('causeLists', err);
+    var box = $('slList'); if(box) box.innerHTML = '<div class="sl-empty">' + bi('محفوظ شدہ فہرستیں ابھی کھل نہیں سکیں (ڈیٹا بیس کے قواعد میں اجازت درکار ہو سکتی ہے)۔', 'Saved lists cannot be read yet (the database rules may need the new permission).') + '</div>';
+  });
+}
+function saveList(){
+  if(!ST.rows.length){ return; }
+  if(!CTX.canWrite){ showAct('❌ ' + bi('آپ کو فہرست محفوظ کرنے کی اجازت نہیں۔', 'You are not allowed to save lists.'), 'err'); return; }
+  var curItem = SL_CUR ? SAVED.filter(function(x){ return x.id === SL_CUR; })[0] : null;
+  var body = '<div dir="rtl" style="text-align:right">' + bi('پوری فہرست (سب تاریخیں، منتخب آفیسر اور نتیجے) محفوظ ہو گی تاکہ بعد میں کسی بھی کمپیوٹر سے دوبارہ کھولی جا سکے۔ نام بدل سکتے ہیں:', 'The whole list (all dates, chosen officers and results) will be kept so it can be opened later from any computer. You can change the name:') + '</div>' +
+    '<input class="sl-input" id="slName" dir="auto" maxlength="160" value="' + esc(curItem ? curItem.name : slDefaultName()) + '" style="margin-top:10px">' +
+    (curItem ? '<label class="sl-chk"><input type="checkbox" id="slNew"> ' + bi('نئی کاپی کے طور پر محفوظ کریں (پرانی جوں کی توں رہے)', 'Save as a new copy (keep the old one unchanged)') + '</label>' : '');
+  confirmBox('Save list / فہرست محفوظ کریں', body, function(){
+    var name = ($('slName').value || '').trim() || slDefaultName();
+    var asNew = !curItem || ($('slNew') && $('slNew').checked);
+    doSaveList(name, asNew);
+  }, {yesLabel:'💾 Save / محفوظ کریں'});
+}
+function doSaveList(name, asNew){
+  if(window._slBusy) return;
+  var payload = JSON.stringify({meta:ST.meta, rows:ST.rows, offDay:ST.offDay, offBench:ST.offBench, fileName:ST.fileName, view:{day:VIEW.day, bench:VIEW.bench, supp:VIEW.supp}, rid:RID});
+  if(payload.length > SL_MAX_CHARS){ showAct('❌ ' + bi('فہرست بہت بڑی ہے، محفوظ نہیں ہو سکی۔', 'The list is too large to save.'), 'err'); return; }
+  var rg = slRange(), mine = ST.rows.filter(function(r){ return r.mine; }).length, ts = firebase.firestore.FieldValue.serverTimestamp(), by = CTX.user.email;
+  var meta = {name:name, fileName:ST.fileName || '', kind:(ST.meta && ST.meta.kind) || 'FINAL', dateFrom:rg.from, dateTo:rg.to, caseCount:mine, rowCount:ST.rows.length, payload:payload, version:1};
+  window._slBusy = true; $('btnSaveList').disabled = true;
+  var op;
+  if(!asNew && SL_CUR){ meta.updatedAt = ts; meta.updatedBy = by; op = db.collection('causeLists').doc(SL_CUR).update(meta).then(function(){ return SL_CUR; }); }
+  else { meta.savedAt = ts; meta.savedBy = by; op = db.collection('causeLists').add(meta).then(function(ref){ return ref.id; }); }
+  op.then(function(id){
+    SL_CUR = id; renderSaved();
+    showAct('✅ ' + bi('فہرست محفوظ ہو گئی: ', 'List saved: ') + '<bdi dir="auto">' + esc(name) + '</bdi>', 'good');
+    toggleSaved(true);
+  }).catch(function(err){
+    console.error('saveList', err);
+    showAct('❌ ' + bi('فہرست محفوظ نہیں ہو سکی: ', 'Could not save the list: ') + esc(err.message || err), 'err');
+  }).then(function(){ window._slBusy = false; $('btnSaveList').disabled = false; });
+}
+function openSaved(id){
+  var go = function(){
+    showRead(bi('فہرست کھل رہی ہے…', 'Opening the list…'));
+    db.collection('causeLists').doc(id).get().then(function(doc){
+      if(!doc.exists){ showRead('❌ ' + bi('یہ فہرست اب موجود نہیں۔', 'This list no longer exists.'), 'err'); return; }
+      var c = doc.data(), d = JSON.parse(c.payload);
+      ST.meta = d.meta; ST.rows = d.rows || []; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || '';
+      RID = Math.max(RID, d.rid || 0);
+      VIEW.day = (d.view && d.view.day) || ''; VIEW.bench = (d.view && d.view.bench) || ''; VIEW.supp = !!(d.view && d.view.supp);
+      HIST = []; FUT = []; SL_CUR = id; showAct('');
+      changed(true); renderSaved();
+      showRead('✅ ' + bi('محفوظ شدہ فہرست کھل گئی: ', 'Saved list opened: ') + '<bdi dir="auto">' + esc(c.name || '') + '</bdi> — ' + bi('جو کیس ڈیٹا بیس میں پہلے سے درج ہیں وہ خود نشان زد ہوں گے۔', 'cases already in the database are marked automatically.'), 'good');
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    }).catch(function(err){ showRead('❌ ' + bi('فہرست نہیں کھل سکی: ', 'Could not open the list: ') + esc(err.message || err), 'err'); });
+  };
+  if(ST.rows.length){
+    confirmBox('Open saved list / محفوظ فہرست کھولیں', bi2('اسکرین پر موجود فہرست ہٹ جائے گی۔ اگر وہ محفوظ نہیں کی تو پہلے «📁 فہرست محفوظ کریں» دبا لیں۔', 'The list on screen will be replaced. If you have not saved it, press “📁 Save this list” first.'), go, {yesLabel:'Open / کھولیں'});
+  } else go();
+}
+function deleteSaved(id){
+  var x = SAVED.filter(function(y){ return y.id === id; })[0]; if(!x) return;
+  confirmBox('Delete saved list / حذف', bi2('یہ محفوظ شدہ فہرست ہمیشہ کے لیے حذف ہو جائے گی: ', 'This saved list will be deleted permanently: ') + '<div dir="auto" style="margin-top:8px"><b>' + esc(x.name) + '</b></div><div style="margin-top:8px;font-size:12px">' + bi('Daily Case Entry میں محفوظ ہو چکے کیس متاثر نہیں ہوں گے۔', 'Cases already saved to Daily Case Entry are not affected.') + '</div>', function(){
+    db.collection('causeLists').doc(id).delete().then(function(){ if(SL_CUR === id) SL_CUR = null; }).catch(function(err){ showAct('❌ ' + esc(err.message || err), 'err'); });
+  }, {yesLabel:'🗑 Delete / حذف'});
 }
 auth.onAuthStateChanged(function(user){
   if(!user){

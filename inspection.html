@@ -448,6 +448,11 @@ table.pf-t td.sm div{ line-height:1.35; }
 #printArea .pa-sign b{ color:#1B3F63; font-size:10pt; }
 #printArea .pa-sign span{ color:#666; font-size:8pt; }
 
+.chk-bar{ height:10px; border-radius:6px; background:var(--border); overflow:hidden; }
+.chk-fill{ height:100%; border-radius:6px; } .chk-fill.g{ background:#2e7d4f; } .chk-fill.w{ background:#d9a400; }
+.chk-t td.l{ text-align:start; font-size:12.5px; }
+.chk-t .pf-act{ white-space:nowrap; width:1%; }
+
 </style>
 </head><body>
 
@@ -819,7 +824,7 @@ function dbErr(e){ console.error(e); toast('❌ ' + bi('محفوظ نہیں ہو
 function setIns(id){ UI.ins = id; renderAll(); }
 function setOfficer(o){ UI.officer = o; renderAll(); }
 function setTab(t){ UI.tab = t; renderAll(); window.scrollTo(0, 0); }
-var TABS = [['overview','Overview','جائزہ'],['A','Proforma A','پرفارما A'],['B','Proforma B','پرفارما B'],['reg','AC Register','اپیل کمیٹی رجسٹر'],['C','C','C'],['D','D','D'],['E','E','E'],['F','F','F'],['G','G','G'],['H','H','H'],['I','I','I'],['settings','Settings','ترتیبات']];
+var TABS = [['overview','Overview','جائزہ'],['check','Checklist','جانچ'],['A','Proforma A','پرفارما A'],['B','Proforma B','پرفارما B'],['reg','AC Register','اپیل کمیٹی رجسٹر'],['C','C','C'],['D','D','D'],['E','E','E'],['F','F','F'],['G','G','G'],['H','H','H'],['I','I','I'],['settings','Settings','ترتیبات']];
 
 function missingA(officer){
   var a = buildA(officer), n = 0;
@@ -849,6 +854,7 @@ function renderStats(){
   s.innerHTML = '<span class="cl-chip">📅 <b>' + fmtD(ins.start) + '</b> → <b>' + fmtD(ins.end) + '</b>' + (ins.locked ? ' 🔒' : '') + '</span>' +
     '<span class="cl-chip">⚖️ ' + bi('اس مدت کے کیسز', 'Cases in period') + ': <b>' + nCases + '</b></span>' +
     '<span class="cl-chip">📒 ' + bi('اپیل کمیٹی ریفرنسز', 'AC references') + ': <b>' + refsHere().length + '</b></span>' +
+    (CHK.groups.length ? '<button type="button" class="cl-chip ' + (CHK.failN ? 'warn' : 'ok') + '" style="cursor:pointer" onclick="setTab(\'check\')" title="Open the completeness checklist">' + (CHK.failN ? '⚠ ' + CHK.failN + ' ' + bi('خانے باقی', 'items incomplete') : '✓ ' + bi('سب مکمل', 'all complete')) + '</button>' : '') +
     (CTX.canWrite ? '' : '<span class="cl-chip warn">👁 ' + bi('صرف دیکھنے کی رسائی', 'View-only access') + '</span>');
 }
 function renderTabs(){
@@ -856,7 +862,8 @@ function renderTabs(){
   TABS.forEach(function(t){
     if(t[0] === 'settings' && !CTX.canAdmin) return;
     var b = '';
-    if(t[0] === 'A') b = badge(missingA(UI.officer), 'Rows with decided cases but opinion/fit not filled');
+    if(t[0] === 'check') b = '<i class="' + (CHK.failN ? 'w' : 'g') + '" title="Items still to complete">' + (CHK.failN || '✓') + '</i>';
+    else if(t[0] === 'A') b = badge(missingA(UI.officer), 'Rows with decided cases but opinion/fit not filled');
     else if(t[0] === 'B') b = badge(missingB(UI.officer), 'Rows without judgment-copy date');
     else if(t[0] === 'reg'){ var n = missingRefs(); b = '<i class="' + (n ? 'w' : 'g') + '">' + refsHere().length + '</i>'; }
     h += '<button class="cl-pill' + (UI.tab === t[0] ? ' on' : '') + '" onclick="setTab(\'' + t[0] + '\')">' + (t[1].length === 1 ? 'Proforma ' + t[1] : t[1]) + b + '</button>';
@@ -868,7 +875,7 @@ function renderAll(){
   clearTimeout(RT);
   var ae = document.activeElement;
   if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $('view').contains(ae)){ RT = setTimeout(renderAll, 900); return; }
-  renderSelectors(); renderStats(); renderTabs(); hxButtons();
+  renderSelectors(); CHK = runChecks(); renderStats(); renderTabs(); hxButtons();
   var w = [];
   ['cases', 'inspections', 'inspectionRefs', 'inspectionManual', 'inspectionB', 'inspectionOverrides', 'inspectionConfig'].forEach(function(c){ if(ERRS[c] === 'permission-denied') w.push(c); });
   var dw = $('dbWarn');
@@ -877,7 +884,7 @@ function renderAll(){
 
   var v = $('view');
   if(!INSP.length){ v.innerHTML = noInspection(); return; }
-  var f = {overview:viewOverview, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
+  var f = {overview:viewOverview, check:viewCheck, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
   v.innerHTML = f ? f() : '';
 }
 function noInspection(){
@@ -2131,6 +2138,96 @@ document.addEventListener('keydown', function(e){
 });
 /* field-by-field Undo/Redo inside the pop-up forms (shared form-history.js) */
 window.addEventListener('load', function(){ if(window.__formHistory) window.__formHistory.setup($('mBox')); });
+
+/* ---------- Completeness checklist ("is every column filled?") ---------- */
+var CHK = {groups:[], total:0, failN:0};
+function pct(done, total){ return total ? Math.round(done * 100 / total) : 100; }
+function refChecks(r){
+  var t = 8, f = [], m = refMissing(r);
+  m.forEach(function(x){ f.push(x + ' ' + bi('درج نہیں', 'missing')); });
+  function more(applies, ok, ur, en){ if(applies){ t++; if(!ok) f.push(bi(ur, en)); } }
+  more(r.judgmentDate && r.submitDate, r.submitDate >= r.judgmentDate, 'اے سی کو بھیجنے کی تاریخ فیصلے کی تاریخ سے پہلے ہے', 'Submission date is before the judgment date');
+  more(r.entrustOpDate, !!r.opinionBy, 'رائے کے لیے سپردگی ہے مگر پراسیکیوٹر کا نام نہیں', 'Entrusted for opinion but prosecutor is not chosen');
+  more(r.entrustOpDate, !!r.opinionStatus, 'رائے کے لیے سپردگی ہے مگر "واپس/زیرِ التوا" نہیں چنا', 'Entrusted for opinion but Returned/Pending is not chosen');
+  more(r.opinionStatus === 'returned', !!r.opinionReturnDate, 'واپس لکھا ہے مگر واپسی کی تاریخ نہیں', 'Marked Returned but the date of returning is missing');
+  more(r.entrustOpDate && r.opinionReturnDate, r.opinionReturnDate >= r.entrustOpDate, 'واپسی کی تاریخ سپردگی کی تاریخ سے پہلے ہے', 'Date of returning is before the date of entrustment');
+  more(r.filingStatus === 'filed', !!r.petitionNo, 'فائل شدہ ہے مگر پٹیشن نمبر نہیں', 'Marked Filed but the petition number is missing');
+  more(r.filingStatus === 'filed', !!r.petitionTitle, 'فائل شدہ ہے مگر پٹیشن کا عنوان نہیں', 'Marked Filed but the petition title is missing');
+  more(r.filingStatus === 'filed', !!r.filingDate, 'فائل شدہ ہے مگر فائلنگ کی تاریخ نہیں', 'Marked Filed but the date of filing is missing');
+  more(r.entrustFileDate && r.filingDate, r.filingDate >= r.entrustFileDate, 'فائلنگ کی تاریخ سپردگی کی تاریخ سے پہلے ہے', 'Date of filing is before the date of entrustment for filing');
+  return {t:t, f:f};
+}
+function runChecks(){
+  var res = {groups:[], total:0, failN:0};
+  if(!curIns()) return res;
+  LISTS.officers.forEach(function(o){
+    var rowsB = buildB(o);
+    if(!casesInPeriod(o).length && !rowsB.length) return;
+    var g = {title:shortOff(o), officer:o, tab:'A', total:0, failN:0, fails:[]};
+    function chk(ok, html, tab, admin){ g.total++; if(!ok){ g.failN++; g.fails.push({html:html, tab:tab, officer:o, admin:!!admin}); } }
+    chk(!!clerkFor(o).name, bi('کلرک کا مکمل نام درج نہیں (دستخط کے نیچے چھپتا ہے) — ترتیبات میں', 'Clerk\'s complete name is not entered (printed under the signatures) — in Settings'), 'settings', true);
+    var a = buildA(o);
+    A1.concat(A2).forEach(function(r){
+      if(!a.rows[r.k].total.length) return;
+      var m = MANUAL[manualKey(o, r.k)] || {};
+      chk(!!m.opinion, 'A — <b>' + esc(r.t) + '</b>: ' + bi('"رائے جمع" نہیں چنا', '"Opinion submitted" not chosen'), 'A');
+      chk(!!m.fit, 'A — <b>' + esc(r.t) + '</b>: ' + bi('"قابلِ چیلنج" نہیں چنا', '"Fit for assailing" not chosen'), 'A');
+    });
+    a.uncounted.forEach(function(u){ chk(!!classify(u.c).ov, 'A — ' + bi('کیس', 'Case') + ' <b>' + esc(caseText(u.c)) + '</b>: ' + bi('کسی قطار میں فٹ نہیں، قطار منتخب کریں', 'fits no row — choose a row'), 'A'); });
+    rowsB.forEach(function(r, i){
+      var nm = 'B #' + (i + 1) + ' <b>' + esc(r.appealNo || '—') + '</b>: ';
+      chk(!!(r.submitDate || r.notSubmitted), nm + bi('اے سی کو فیصلے کی کاپی بھیجنے کی تاریخ نہیں (یا "Not submitted" نشان لگائیں)', 'date of submission to AC missing (or tick "Not submitted")'), 'B');
+      if(r.manual){
+        chk(!!r.appealNo, nm + bi('اپیل/پٹیشن نمبر نہیں', 'appeal/petition number missing'), 'B');
+        chk(!!r.judgDate, nm + bi('فیصلے کی تاریخ نہیں', 'date of judgment missing'), 'B');
+        chk(!!r.grounds, nm + bi('وجوہات درج نہیں', 'grounds not entered'), 'B');
+      }
+    });
+    res.groups.push(g);
+  });
+  var refs = refsHere();
+  if(refs.length){
+    var g = {title:'Appeal Committee / اپیل کمیٹی', officer:'', tab:'reg', total:1, failN:0, fails:[]};
+    if(!CFG.ac.name){ g.failN++; g.fails.push({html:bi('اے سی کلرک کا مکمل نام درج نہیں — ترتیبات میں', 'AC clerk\'s complete name is not entered — in Settings'), tab:'settings', officer:'', admin:true}); }
+    refs.forEach(function(r){
+      var c = refChecks(r); g.total += c.t;
+      if(c.f.length){ g.failN += c.f.length; g.fails.push({html:'<b>' + esc(r.diaryNo || '—') + '</b> (' + (r.source === 'sc' ? 'SC' : 'Other') + '): ' + c.f.join(' · '), tab:'reg', officer:'', refId:r.id}); }
+    });
+    res.groups.push(g);
+  }
+  res.groups.forEach(function(g){ res.total += g.total; res.failN += g.failN; });
+  return res;
+}
+function chkGo(gi, fi){
+  var f = CHK.groups[gi].fails[fi];
+  if(f.officer) UI.officer = f.officer;
+  if(f.tab === 'reg' && f.refId){ UI.tab = 'reg'; renderAll(); editRef(f.refId); return; }
+  setTab(f.tab);
+}
+function viewCheck(){
+  var ins = curIns(), p = pct(CHK.total - CHK.failN, CHK.total);
+  var h = '<div class="cl-card"><h3 style="margin:0 0 6px;color:var(--navy)">' + bi('تکمیل کی جانچ', 'Completeness checklist') + ' — ' + esc(ins.title) + '</h3>' +
+    '<div class="cl-note" style="margin:0 0 10px">' + bi('انسپیکشن بھیجنے یا دستخط سے پہلے یہاں دیکھ لیں کہ کوئی خانہ خالی یا تاریخوں کی ترتیب غلط تو نہیں۔ ہر سطر کے ساتھ "درست کریں" بٹن سیدھا اسی جگہ لے جاتا ہے۔', 'Before sending the inspection or signing, check here that no column is empty and that dates are in logical order. The Fix button takes you straight to the place.') + '</div>';
+  if(!CHK.groups.length) return h + '<div class="cl-empty">' + bi('اس مدت میں ابھی کوئی کیس یا ریفرنس درج نہیں۔', 'No cases or references in this period yet.') + '</div></div>';
+  h += '<div class="chk-bar"><div class="chk-fill ' + (CHK.failN ? 'w' : 'g') + '" style="width:' + p + '%"></div></div>' +
+    '<div style="margin:6px 0 2px"><b style="font-size:18px">' + p + '%</b> ' + bi('مکمل', 'complete') + ' &nbsp;·&nbsp; ' +
+    (CHK.failN ? '<span class="warnc"><b>' + CHK.failN + '</b> ' + bi('باقی', 'remaining') + '</span>' : '<span class="ok"><b>✓</b> ' + bi('سب مکمل — دستخط کے لیے تیار', 'all complete — ready for sign-off') + '</span>') + '</div></div>';
+  CHK.groups.forEach(function(g, gi){
+    var gp = pct(g.total - g.failN, g.total);
+    h += '<div class="cl-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h4 style="margin:0;color:var(--navy3)">' + esc(g.title) + '</h4>' +
+      '<span class="' + (g.failN ? 'warnc' : 'ok') + '"><b>' + gp + '%</b> · ' + (g.failN ? g.failN + ' ' + bi('باقی', 'remaining') : '✓') + '</span></div>';
+    if(g.fails.length){
+      h += '<table class="pf-t chk-t"><tbody>';
+      g.fails.forEach(function(f, fi){
+        var can = !f.admin || CTX.canAdmin;
+        h += '<tr><td class="l">⚠ ' + f.html + '</td><td class="pf-act">' + (can ? '<button class="cl-btn sm ghost" onclick="chkGo(' + gi + ',' + fi + ')">' + bi('درست کریں', 'Fix') + '</button>' : '<span class="pf-sub">' + bi('ایڈمن سے کہیں', 'ask an admin') + '</span>') + '</td></tr>';
+      });
+      h += '</tbody></table>';
+    } else h += '<div class="ok" style="margin-top:4px">✓ ' + bi('مکمل', 'Complete') + '</div>';
+    h += '</div>';
+  });
+  return h;
+}
 
 
 /* ---------- sign-in and roles (same pattern as the other Camp Office pages) ---------- */

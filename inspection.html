@@ -453,6 +453,22 @@ table.pf-t td.sm div{ line-height:1.35; }
 .chk-t td.l{ text-align:start; font-size:12.5px; }
 .chk-t .pf-act{ white-space:nowrap; width:1%; }
 
+/* sign-off bar */
+.sg-bar{ border:1px solid var(--border); border-radius:10px; background:var(--card); padding:10px 12px; margin-bottom:12px; }
+.sg-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; color:var(--navy3); }
+.sg-st{ font-size:12.5px; font-weight:700; border-radius:20px; padding:3px 12px; border:1px solid var(--border); }
+.sg-st.ok{ background:#e8f5ec; border-color:#2e7d4f; } .sg-st.warnc{ background:#fff7d6; border-color:#d9a400; }
+.sg-steps{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; }
+.sg-step{ display:flex; gap:8px; align-items:flex-start; border:1px dashed var(--border); border-radius:8px; padding:7px 9px; opacity:.85; }
+.sg-step.done{ border:1px solid #2e7d4f; background:rgba(46,125,79,.08); opacity:1; }
+.sg-step.cur{ border:1px solid #d9a400; opacity:1; }
+.sg-n{ min-width:22px; height:22px; border-radius:50%; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+.sg-step.done .sg-n{ background:#2e7d4f; }
+.sg-b{ display:flex; flex-direction:column; gap:1px; min-width:0; font-size:12.5px; }
+.sg-w{ color:var(--muted); overflow-wrap:anywhere; } .sg-b small{ color:var(--muted); overflow-wrap:anywhere; }
+.sg-act{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+.sg-note{ font-size:12px; color:var(--muted); line-height:1.8; }
+
 </style>
 </head><body>
 
@@ -811,10 +827,11 @@ function openModal(title, html, btns, wide){
   var mb = $('mBox'); if(mb.__fh && mb.__fh.api && mb.__fh.api.rebuild) mb.__fh.api.rebuild();
 }
 function closeModal(){ $('mBg').classList.remove('show'); }
-function canEdit(){ var i = curIns(); return CTX.canWrite && !(i && i.locked); }
+function canEdit(){ var i = curIns(); return CTX.canWrite && !(i && i.locked) && !signLevel(unitOfTab()); }
 function guardEdit(){
   if(!CTX.canWrite){ toast('⛔ ' + bi('آپ کو تبدیلی کی اجازت نہیں (صرف دیکھنے کی رسائی)۔', 'You do not have permission to change data (view-only access).'), 'err'); return false; }
   var i = curIns(); if(i && i.locked){ toast('🔒 ' + bi('یہ انسپیکشن لاک ہے۔ ایڈمن اسے کھول سکتا ہے۔', 'This inspection is locked. An admin can unlock it.'), 'err'); return false; }
+  if(signLevel(unitOfTab())){ toast('🔒 ' + bi('اس حصے پر دستخط ہو چکے ہیں، اس لیے ترمیم بند ہے۔ پہلے اوپر سے "دوبارہ کھولیں" دبائیں۔', 'This part is already signed, so editing is closed. Press Reopen above first.'), 'err'); return false; }
   return true;
 }
 function stamp(o){ o.updatedAt = firebase.firestore.FieldValue.serverTimestamp(); o.updatedBy = CTX.user ? CTX.user.email : ''; return o; }
@@ -824,7 +841,7 @@ function dbErr(e){ console.error(e); toast('❌ ' + bi('محفوظ نہیں ہو
 function setIns(id){ UI.ins = id; renderAll(); }
 function setOfficer(o){ UI.officer = o; renderAll(); }
 function setTab(t){ UI.tab = t; renderAll(); window.scrollTo(0, 0); }
-var TABS = [['overview','Overview','جائزہ'],['check','Checklist','جانچ'],['A','Proforma A','پرفارما A'],['B','Proforma B','پرفارما B'],['reg','AC Register','اپیل کمیٹی رجسٹر'],['C','C','C'],['D','D','D'],['E','E','E'],['F','F','F'],['G','G','G'],['H','H','H'],['I','I','I'],['settings','Settings','ترتیبات']];
+var TABS = [['overview','Overview','جائزہ'],['team','Inspection Team','انسپیکشن ٹیم'],['check','Checklist','جانچ'],['A','Proforma A','پرفارما A'],['B','Proforma B','پرفارما B'],['reg','AC Register','اپیل کمیٹی رجسٹر'],['C','C','C'],['D','D','D'],['E','E','E'],['F','F','F'],['G','G','G'],['H','H','H'],['I','I','I'],['settings','Settings','ترتیبات']];
 
 function missingA(officer){
   var a = buildA(officer), n = 0;
@@ -861,6 +878,7 @@ function renderTabs(){
   var h = '<div class="cl-navrow">';
   TABS.forEach(function(t){
     if(t[0] === 'settings' && !CTX.canAdmin) return;
+    if(t[0] === 'check' && !CTX.canWrite) return;
     var b = '';
     if(t[0] === 'check') b = '<i class="' + (CHK.failN ? 'w' : 'g') + '" title="Items still to complete">' + (CHK.failN || '✓') + '</i>';
     else if(t[0] === 'A') b = badge(missingA(UI.officer), 'Rows with decided cases but opinion/fit not filled');
@@ -870,11 +888,13 @@ function renderTabs(){
   });
   $('tabs').innerHTML = h + '</div>';
 }
-var RT = 0;
+var RT = 0, TEAM_INIT = false;
 function renderAll(){
   clearTimeout(RT);
   var ae = document.activeElement;
   if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $('view').contains(ae)){ RT = setTimeout(renderAll, 900); return; }
+  if(!TEAM_INIT && CTX.user){ TEAM_INIT = true; if(!CTX.canWrite) UI.tab = 'team'; }
+  if(UI.tab === 'check' && !CTX.canWrite) UI.tab = 'team';
   renderSelectors(); CHK = runChecks(); renderStats(); renderTabs(); hxButtons();
   var w = [];
   ['cases', 'inspections', 'inspectionRefs', 'inspectionManual', 'inspectionB', 'inspectionOverrides', 'inspectionConfig'].forEach(function(c){ if(ERRS[c] === 'permission-denied') w.push(c); });
@@ -884,8 +904,8 @@ function renderAll(){
 
   var v = $('view');
   if(!INSP.length){ v.innerHTML = noInspection(); return; }
-  var f = {overview:viewOverview, check:viewCheck, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
-  v.innerHTML = f ? f() : '';
+  var f = {overview:viewOverview, team:viewTeam, check:viewCheck, A:viewA, B:viewB, reg:viewReg, C:function(){ return viewCE('sc'); }, E:function(){ return viewCE('other'); }, D:function(){ return viewDF('sc'); }, F:function(){ return viewDF('other'); }, G:viewG, H:viewH, I:viewI, settings:viewSettings}[UI.tab];
+  var su = unitOfTab(); v.innerHTML = (su ? signBar(su) : '') + (f ? f() : '');
 }
 function noInspection(){
   return '<div class="cl-card"><div class="cl-empty">' + bi('ابھی کوئی انسپیکشن نہیں بنی۔', 'No inspection has been created yet.') +
@@ -920,6 +940,7 @@ function viewOverview(){
     var mA = missingA(o), mB = missingB(o), b = buildB(o).length, c = clerkFor(o);
     h += '<div class="ov-card"><h4>' + esc(shortOff(o)) + '</h4>' +
       '<div class="row"><span>' + bi('کلرک', 'Clerk') + '</span><span>' + esc(c.name || '—') + '</span></div>' +
+      '<div class="row"><span>' + bi('دستخط', 'Sign-off') + '</span><b class="' + signStatus(encId(o)).cls + '">' + signStatus(encId(o)).short + '</b></div>' +
       '<div class="row"><span>A — ' + bi('فیصل شدہ کیسز', 'decided cases') + '</span><b>' + cnt + '</b></div>' +
       '<div class="row"><span>A — ' + bi('رائے/موزونیت باقی', 'opinion/fit missing') + '</span><b class="' + (mA ? 'warnc' : 'ok') + '">' + (mA || '✓') + '</b></div>' +
       '<div class="row"><span>B — ' + bi('بری/تبدیل کیسز', 'acquitted/converted') + '</span><b>' + b + '</b></div>' +
@@ -929,6 +950,7 @@ function viewOverview(){
   var sc = refsHere('sc').length, ot = refsHere('other').length, mr = missingRefs();
   h += '<div class="ov-card"><h4>' + bi('اپیل کمیٹی', 'Appeal Committee') + '</h4>' +
     '<div class="row"><span>' + bi('سیکرٹری/کلرک', 'Secretary/clerk') + '</span><span>' + esc(CFG.ac.name || '—') + '</span></div>' +
+    '<div class="row"><span>' + bi('دستخط', 'Sign-off') + '</span><b class="' + signStatus('AC').cls + '">' + signStatus('AC').short + '</b></div>' +
     '<div class="row"><span>C/D — ' + bi('سپریم کورٹ کے پراسیکیوٹرز سے', 'from SC prosecutors') + '</span><b>' + sc + '</b></div>' +
     '<div class="row"><span>E/F — ' + bi('دیگر ذرائع سے', 'from other quarters') + '</span><b>' + ot + '</b></div>' +
     '<div class="row"><span>' + bi('نامکمل اندراجات', 'incomplete entries') + '</span><b class="' + (mr ? 'warnc' : 'ok') + '">' + (mr || '✓') + '</b></div>' +
@@ -2085,10 +2107,10 @@ function hxClean(d){
 }
 function hxSnap(ref){ return ref.get().then(function(s){ return s.exists ? s.data() : null; }); }
 function track(label, coll, id, doWrite){
-  var ref = db.collection(coll).doc(id), before = null;
+  var ref = db.collection(coll).doc(id), before = null, unit = unitOfTab();
   var p = HX.q.then(function(){ return hxSnap(ref); }).then(function(b){ before = b; return doWrite(ref); }).then(function(){ return hxSnap(ref); }).then(function(after){
     if(hxClean(before) === hxClean(after)) return;
-    HX.undo.push({label:label, coll:coll, id:id, before:before, after:after, ins:UI.ins});
+    HX.undo.push({label:label, coll:coll, id:id, before:before, after:after, ins:UI.ins, unit:unit});
     if(HX.undo.length > HX_MAX) HX.undo.shift();
     HX.redo = [];
     hxButtons();
@@ -2111,6 +2133,7 @@ function hxStep(kind){
     if(!from.length) return;
     var a = from[from.length - 1], ins = INSP.filter(function(x){ return x.id === a.ins; })[0];
     if(ins && ins.locked && a.coll !== 'inspections'){ toast('🔒 ' + bi('یہ انسپیکشن لاک ہے۔ ایڈمن اسے کھول سکتا ہے۔', 'This inspection is locked. An admin can unlock it.'), 'err'); return; }
+    if(a.unit && signLevel(a.unit, a.ins)){ toast('🔒 ' + bi('اس حصے پر دستخط ہو چکے ہیں، اس لیے واپس/دوبارہ نہیں ہو سکتا۔ پہلے "دوبارہ کھولیں" دبائیں۔', 'This part is signed, so Undo/Redo is closed. Press Reopen first.'), 'err'); return; }
     var ref = db.collection(a.coll).doc(a.id), expect = kind === 'undo' ? a.after : a.before, target = kind === 'undo' ? a.before : a.after;
     return hxSnap(ref).then(function(cur){
       if(hxClean(cur) !== hxClean(expect)){
@@ -2215,7 +2238,7 @@ function viewCheck(){
   CHK.groups.forEach(function(g, gi){
     var gp = pct(g.total - g.failN, g.total);
     h += '<div class="cl-card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><h4 style="margin:0;color:var(--navy3)">' + esc(g.title) + '</h4>' +
-      '<span class="' + (g.failN ? 'warnc' : 'ok') + '"><b>' + gp + '%</b> · ' + (g.failN ? g.failN + ' ' + bi('باقی', 'remaining') : '✓') + '</span></div>';
+      '<span class="' + (g.failN ? 'warnc' : 'ok') + '"><b>' + gp + '%</b> · ' + (g.failN ? g.failN + ' ' + bi('باقی', 'remaining') : '✓') + ' &nbsp;|&nbsp; ✍ ' + signStatus(g.tab === 'reg' ? 'AC' : encId(g.officer)).short + '</span></div>';
     if(g.fails.length){
       h += '<table class="pf-t chk-t"><tbody>';
       g.fails.forEach(function(f, fi){
@@ -2226,6 +2249,161 @@ function viewCheck(){
     } else h += '<div class="ok" style="margin-top:4px">✓ ' + bi('مکمل', 'Complete') + '</div>';
     h += '</div>';
   });
+  return h;
+}
+
+/* ---------- Sign-off (clerk -> prosecutor -> in-charge) and the read-only Inspection Team view ----------
+   One sign-off record per "unit" (each prosecutor's A+B, and the Appeal Committee's register C-I).
+   Stored in the existing `inspectionManual` collection under the id  <inspection>__SIGN__<unit>  (no new database permission needed). */
+function unitOfTab(tab){
+  tab = tab || UI.tab;
+  if(tab === 'A' || tab === 'B') return UI.officer ? encId(UI.officer) : null;
+  if(tab === 'reg' || /^[C-I]$/.test(tab)) return 'AC';
+  return null;
+}
+function signId(unit, insId){ return (insId || UI.ins) + '__SIGN__' + unit; }
+function signDoc(unit, insId){ return (unit && MANUAL[signId(unit, insId)]) || {}; }
+function signKeys(unit){ return unit === 'AC' ? ['clerk', 'pros'] : ['clerk', 'pros', 'inch']; }
+function signLevel(unit, insId){
+  if(!unit) return 0;
+  var s = signDoc(unit, insId), ks = signKeys(unit), n = 0;
+  for(var i = 0; i < ks.length; i++){ if(s[ks[i]] && s[ks[i]].at) n = i + 1; else break; }
+  return n;
+}
+function signFinal(unit, insId){ return signLevel(unit, insId) >= signKeys(unit).length; }
+function pad2(n){ return ('0' + n).slice(-2); }
+function fmtAt(iso){ var d = new Date(iso); if(isNaN(d)) return ''; return pad2(d.getDate()) + '-' + pad2(d.getMonth() + 1) + '-' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function signLabels(unit, officer){
+  if(unit === 'AC') return [
+    {ur:'کلرک / سیکرٹری اپیل کمیٹی', en:'Clerk / Secretary AC', who:CFG.ac.name || ''},
+    {ur:'چیئرمین اپیل کمیٹی', en:'Chairman Appeal Committee', who:CFG.chairman || ''}];
+  return [
+    {ur:'کلرک', en:'Clerk', who:clerkFor(officer).name || ''},
+    {ur:'پراسیکیوٹر', en:'Prosecutor', who:shortOff(officer)},
+    {ur:'انچارج', en:'In-Charge', who:CFG.incharge || ''}];
+}
+function signBtnText(unit, k){
+  if(k === 0) return ['✍ کام مکمل — کلرک دستخط کرے', '✍ Work complete — clerk sign-off'];
+  if(unit === 'AC') return ['✍ چیئرمین کی تصدیق', '✍ Chairman countersign'];
+  if(k === 1) return ['✍ پراسیکیوٹر نے جانچ لیا', '✍ Prosecutor has reviewed'];
+  return ['✍ انچارج کی تصدیق', '✍ In-Charge countersign'];
+}
+function signStatus(unit, insId){
+  var lv = signLevel(unit, insId), n = signKeys(unit).length;
+  if(lv >= n) return {cls:'ok', ur:'حتمی — دستخط مکمل', en:'Final — fully signed', short:'✓ ' + bi('حتمی', 'Final')};
+  if(lv === 0) return {cls:'warnc', ur:'مسودہ — ابھی دستخط نہیں', en:'Draft — not signed yet', short:bi('مسودہ', 'Draft')};
+  var next = signLabels(unit, UI.officer)[lv];
+  return {cls:'warnc', ur:next.ur + ' کے دستخط باقی', en:'Awaiting ' + next.en, short:bi(next.ur + ' باقی', 'Awaiting ' + next.en)};
+}
+function unitGroup(unit){
+  return CHK.groups.filter(function(g){ return unit === 'AC' ? g.tab === 'reg' : encId(g.officer) === unit; })[0] || null;
+}
+function officerOfUnit(unit){ return LISTS.officers.filter(function(o){ return encId(o) === unit; })[0] || ''; }
+
+/* the bar shown above a proforma */
+function signBar(unit){
+  var ins = curIns(), s = signDoc(unit), ks = signKeys(unit), lv = signLevel(unit), off = officerOfUnit(unit), L = signLabels(unit, off), st = signStatus(unit);
+  var h = '<div class="sg-bar no-print"><div class="sg-top"><b>✍ ' + bi('دستخط کی حالت', 'Sign-off status') + '</b><span class="sg-st ' + st.cls + '">' + bi(st.ur, st.en) + '</span></div><div class="sg-steps">';
+  ks.forEach(function(k, i){
+    var x = s[k], done = i < lv;
+    h += '<div class="sg-step' + (done ? ' done' : i === lv ? ' cur' : '') + '"><div class="sg-n">' + (done ? '✓' : (i + 1)) + '</div><div class="sg-b"><b>' + bi(L[i].ur, L[i].en) + '</b>' +
+      '<span class="sg-w">' + esc(L[i].who || '—') + '</span>' +
+      '<small>' + (done ? esc(fmtAt(x.at)) + ' · ' + esc(x.by || '') + (i === 0 && x.open ? ' · ⚠ ' + x.open + ' ' + bi('خانے باقی تھے', 'items were open') : '') : bi('باقی', 'pending')) + '</small></div></div>';
+  });
+  h += '</div><div class="sg-act">';
+  if(ins && ins.locked){
+    h += '<span class="sg-note">🔒 ' + bi('پوری انسپیکشن لاک ہے۔', 'The whole inspection is locked.') + '</span>';
+  } else {
+    if(lv < ks.length){
+      var ok = lv === 0 ? CTX.canWrite : CTX.canAdmin, bt = signBtnText(unit, lv);
+      if(ok) h += '<button type="button" class="cl-btn gold" onclick="signAct(\'' + unit + '\',\'' + ks[lv] + '\')">' + bi(bt[0], bt[1]) + '</button>';
+      else if(CTX.canWrite || CTX.canAdmin) h += '<span class="sg-note">' + bi('اگلا دستخط ایڈمن کرے گا۔', 'The next signature is by an admin.') + '</span>';
+      else h += '<span class="sg-note">👁 ' + bi('صرف دیکھنے کی رسائی۔', 'View-only access.') + '</span>';
+    }
+    if(lv > 0){
+      var rok = lv === 1 ? CTX.canWrite : CTX.canAdmin;
+      if(rok) h += ' <button type="button" class="cl-btn ghost" onclick="signAct(\'' + unit + '\',\'reopen\')">↺ ' + bi('دوبارہ کھولیں', 'Reopen') + '</button>';
+      h += '<span class="sg-note">🔒 ' + bi('دستخط کے بعد اس حصے میں ترمیم بند ہے۔ ترمیم کے لیے "دوبارہ کھولیں" دبائیں (اس سے بعد کے دستخط ختم ہو جاتے ہیں)۔', 'After signing, this part cannot be edited. Press Reopen to edit (later signatures are cleared).') + '</span>';
+    }
+  }
+  if((s.hist || []).length) h += ' <button type="button" class="cl-btn sm ghost" onclick="signHist(\'' + unit + '\')">🕘 ' + bi('تاریخچہ', 'History') + '</button>';
+  return h + '</div></div>';
+}
+function signHist(unit){
+  var s = signDoc(unit), h = '<div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">When</th><th class="l">Action</th><th class="l">By</th></tr></thead><tbody>';
+  (s.hist || []).slice().reverse().forEach(function(x){ h += '<tr><td class="sm">' + esc(fmtAt(x.at)) + '</td><td class="sm l">' + esc(x.act) + '</td><td class="sm l">' + esc(x.by || '') + '</td></tr>'; });
+  openModal('Sign-off history / دستخط کی تاریخچہ', h + '</tbody></table></div>', null, false);
+}
+
+/* act: 'clerk' | 'pros' | 'inch' | 'reopen' */
+function signAct(unit, act){
+  var ins = curIns(); if(!ins) return;
+  if(ins.locked){ toast('🔒 ' + bi('یہ انسپیکشن لاک ہے۔ ایڈمن اسے کھول سکتا ہے۔', 'This inspection is locked. An admin can unlock it.'), 'err'); return; }
+  var lv = signLevel(unit), ks = signKeys(unit), off = officerOfUnit(unit), L = signLabels(unit, off);
+  var g = unitGroup(unit), open = g ? g.failN : 0, title, body, btn;
+  if(act === 'reopen'){
+    if(lv < 1 || !(lv === 1 ? CTX.canWrite : CTX.canAdmin)){ toast('⛔ ' + bi('آپ کو دوبارہ کھولنے کی اجازت نہیں۔', 'You are not allowed to reopen.'), 'err'); return; }
+    title = 'Reopen / دوبارہ کھولیں';
+    body = bi('اس حصے کے تمام دستخط ختم ہو جائیں گے اور ترمیم دوبارہ کھل جائے گی۔ دوبارہ دستخط کرنے ہوں گے۔', 'All signatures of this part will be cleared and editing will open again. It will have to be signed again.');
+    btn = 'Reopen / دوبارہ کھولیں';
+  } else {
+    var k = ks.indexOf(act);
+    if(k !== lv){ toast('⚠️ ' + bi('پہلے پچھلا دستخط ہونا ضروری ہے۔', 'The previous signature must come first.'), 'warn'); return; }
+    if(!(k === 0 ? CTX.canWrite : CTX.canAdmin)){ toast('⛔ ' + bi('آپ کو اس دستخط کی اجازت نہیں۔', 'You are not allowed to give this signature.'), 'err'); return; }
+    title = 'Sign-off / دستخط — ' + L[k].en;
+    body = bi('آپ ' + L[k].ur + ' کی حیثیت سے دستخط کر رہے ہیں۔', 'You are signing as ' + L[k].en + '.') + '<br>' +
+      (k === 0 ? bi('دستخط کے بعد اس حصے میں ترمیم بند ہو جائے گی۔', 'After signing, this part cannot be edited.') : '');
+    if(open) body += '<div class="cl-msg warn" style="margin-top:10px">⚠️ ' + bi('ابھی ' + open + ' خانے باقی ہیں (جانچ کا ٹیب دیکھیں)۔ پھر بھی دستخط کرنے سے یہ تعداد ریکارڈ ہو جائے گی۔', open + ' item(s) are still incomplete (see the Checklist tab). Signing anyway will record this number.') + '</div>';
+    else body += '<div class="cl-msg good" style="margin-top:10px">✓ ' + bi('جانچ کے مطابق سب خانے مکمل ہیں۔', 'The checklist shows everything complete.') + '</div>';
+    btn = open ? 'Sign anyway / پھر بھی دستخط کریں' : 'Sign / دستخط کریں';
+  }
+  openModal(title, body, [{label:'Cancel / منسوخ', cls:'ghost'}, {label:btn, cls:open && act !== 'reopen' ? 'red' : 'gold', fn:function(){ signWrite(unit, act, open); }}]);
+}
+function signWrite(unit, act, open){
+  var ref = db.collection('inspectionManual').doc(signId(unit)), now = new Date().toISOString(), by = CTX.user ? CTX.user.email : '';
+  var ks = signKeys(unit), off = officerOfUnit(unit), L = signLabels(unit, off);
+  ref.get().then(function(sn){
+    var cur = sn.exists ? sn.data() : {}, lvNow = signLevel(unit), hist = (cur.hist || []).slice(-39), d;
+    if(act === 'reopen'){
+      hist.push({act:'Reopened (was at step ' + lvNow + ')', by:by, at:now});
+      d = {inspectionId:UI.ins, unit:unit, officer:off, kind:'signoff', hist:hist};
+      return ref.set(stamp(d));
+    }
+    var k = ks.indexOf(act);
+    if(k !== lvNow) throw {message:'The sign-off state changed meanwhile — please look again.'};
+    hist.push({act:'Signed: ' + L[k].en, by:by, at:now});
+    d = Object.assign({}, cur, {inspectionId:UI.ins, unit:unit, officer:off, kind:'signoff', hist:hist});
+    d[act] = {by:by, at:now, open:open || 0};
+    return ref.set(stamp(d));
+  }).then(function(){ toast('✅ ' + bi(act === 'reopen' ? 'دوبارہ کھول دیا گیا' : 'دستخط ریکارڈ ہو گئے', act === 'reopen' ? 'Reopened' : 'Signature recorded'), 'good'); }).catch(dbErr);
+}
+
+/* ---------- Inspection Team view (read-only summary for the inspection team) ---------- */
+function viewTeam(){
+  var ins = curIns(), units = CHK.groups.map(function(g){ return {g:g, unit:g.tab === 'reg' ? 'AC' : encId(g.officer)}; });
+  var fin = units.filter(function(u){ return signFinal(u.unit); }).length;
+  var nA = 0, nB = 0;
+  LISTS.officers.forEach(function(o){ var a = buildA(o); A1.concat(A2).forEach(function(r){ nA += a.rows[r.k].total.length; }); nB += buildB(o).length; });
+  var h = '<div class="cl-card"><h3 style="margin:0 0 6px;color:var(--navy)">' + bi('انسپیکشن ٹیم کا خلاصہ', 'Inspection team summary') + ' — ' + esc(ins.title) + '</h3>' +
+    '<div class="cl-note" style="margin:0 0 10px">' + bi('یہاں سے ہر پراسیکیوٹر اور اپیل کمیٹی کے پرفارمے صرف دیکھے جا سکتے ہیں۔ "حتمی" کا مطلب ہے سب دستخط ہو چکے ہیں؛ "مسودہ" کا مطلب ہے کام ابھی جاری ہے۔ اوپر پرنٹ/PDF/Word/Excel سے تیار فائل لی جا سکتی ہے۔', 'Proformas of every prosecutor and of the Appeal Committee can be viewed here (read-only). "Final" means all signatures are done; "Draft" means work is still in progress. Use Print / PDF / Word / Excel above for a ready file.') + '</div>';
+  if(!units.length) return h + '<div class="cl-empty">' + bi('اس مدت میں ابھی کوئی کیس یا ریفرنس درج نہیں۔', 'No cases or references in this period yet.') + '</div></div>';
+  h += '<div class="chk-bar"><div class="chk-fill ' + (fin === units.length ? 'g' : 'w') + '" style="width:' + pct(fin, units.length) + '%"></div></div>' +
+    '<div style="margin:6px 0 2px"><b style="font-size:18px">' + fin + ' / ' + units.length + '</b> ' + bi('حصے حتمی دستخط شدہ', 'parts fully signed') + ' &nbsp;·&nbsp; ' +
+    '<span class="cl-chip">A ' + bi('فیصل شدہ', 'decided') + ': <b>' + nA + '</b></span> <span class="cl-chip">B ' + bi('قطاریں', 'rows') + ': <b>' + nB + '</b></span> <span class="cl-chip">' + bi('اے سی ریفرنسز', 'AC references') + ': <b>' + refsHere().length + '</b></span></div></div>';
+  h += '<div class="cl-card cl-tw"><table class="pf-t"><thead><tr><th class="l">' + bi('حصہ', 'Part') + '</th><th class="l">' + bi('کلرک', 'Clerk') + '</th><th>' + bi('مکمل', 'Complete') + '</th><th>1</th><th>2</th><th>3</th><th class="l">' + bi('حالت', 'Status') + '</th><th class="pf-act"></th></tr></thead><tbody>';
+  units.forEach(function(u){
+    var g = u.g, st = signStatus(u.unit), s = signDoc(u.unit), ks = signKeys(u.unit), isAC = u.unit === 'AC', who = isAC ? CFG.ac.name : clerkFor(g.officer).name;
+    h += '<tr><td class="l"><b>' + esc(g.title) + '</b><span class="pf-sub">' + (isAC ? 'C – I' : 'A, B') + '</span></td><td class="l sm">' + esc(who || '—') + '</td>' +
+      '<td class="n ' + (g.failN ? 'warnc' : 'ok') + '"><b>' + pct(g.total - g.failN, g.total) + '%</b></td>';
+    for(var i = 0; i < 3; i++){
+      if(i >= ks.length) h += '<td class="n sm">—</td>';
+      else h += '<td class="n sm">' + (s[ks[i]] && s[ks[i]].at ? '<span class="ok">✓</span><br>' + esc(fmtAt(s[ks[i]].at).slice(0, 10)) : '·') + '</td>';
+    }
+    h += '<td class="l ' + st.cls + '"><b>' + bi(st.ur, st.en) + '</b></td><td class="pf-act">' +
+      (isAC ? '<button class="cl-btn sm ghost" onclick="setTab(\'reg\')">' + bi('رجسٹر', 'Register') + '</button>' :
+        '<button class="cl-btn sm ghost" onclick="UI.officer=LISTS.officers[' + LISTS.officers.indexOf(g.officer) + '];setTab(\'A\')">A</button> <button class="cl-btn sm ghost" onclick="UI.officer=LISTS.officers[' + LISTS.officers.indexOf(g.officer) + '];setTab(\'B\')">B</button>') + '</td></tr>';
+  });
+  h += '</tbody></table></div><div class="cl-note">' + bi('1 = کلرک، 2 = پراسیکیوٹر (اے سی کے لیے چیئرمین)، 3 = انچارج۔ ہر عدد پر کلک کرنے سے اس کے پیچھے کے اصل کیس سامنے آ جاتے ہیں۔', '1 = clerk, 2 = prosecutor (chairman for the AC), 3 = in-charge. Click any number inside a proforma to see the cases behind it.') + '</div>';
   return h;
 }
 

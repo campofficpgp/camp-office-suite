@@ -709,7 +709,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 
 /* ===== Cause List parser (reads text positions from pdf.js, no OCR) ===== */
 var CLParser = (function(){
-  var PGRE = /(Prosecutor General,?[^,;]*Punjab|P\.?\s?G\.?\s+Punjab|Addl\.?\s?P\.?\s?G\.?,?\s+Punjab|Additional Prosecutor General,? Punjab|PG Punjab|P G Punjab|Prosecutor General,?\s+Punjab)/i;
+  var PGRE = /(Prosecutor\s+Gen(?:eral|\.)?,?[^,;]*Punjab|P\.?\s?G\.?[,\s]+Punjab|Addl\.?\s?P\.?\s?G\.?,?\s+Punjab|Additional Prosecutor General,? Punjab|PG[,\s]+Punjab|P G[,\s]+Punjab|Prosecutor General,?\s+Punjab)/i;
   var CASERE = /^[A-Za-z][A-Za-z\.]*\.?\d+(?:-[A-Z])?\/\d{0,4}/;
 
   /* items: [{s:'text', x:number, y:number(top from page top), h:fontSize}] for one page */
@@ -1034,6 +1034,7 @@ function uncertainReasons(r){
   var u = [];
   if(!r.type || !r.no || !r.year || !validNo(r.no)) u.push('کیس نمبر واضح نہیں / Case number unclear');
   if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title + ' ' + (r.versus||''))) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
+  /* kept on purpose (user's choice): even when a Punjab P.G. is listed, another province/agency name still gets the "please confirm" mark */
   if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
   if(r.autoOut) u.push('پہلے خود نکالا گیا تھا: ' + r.autoOut);
   if(!r.natText && !r.supp && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
@@ -1233,10 +1234,8 @@ function tidyOldRows(rows){
   (rows || []).forEach(function(r){
     applyAutoOut(r);
     var t = cleanParty(r.title), v = cleanParty(r.versus);
-    if(t !== r.title || v !== r.versus){
-      r.title = t; r.versus = v;
-      if(r.mine && !r.confirmed) r.unc = uncertainReasons(r);
-    }
+    if(t !== r.title || v !== r.versus){ r.title = t; r.versus = v; }
+    if(r.mine && !r.confirmed) r.unc = uncertainReasons(r);   /* the review flags follow the current rules */
   });
   return rows;
 }

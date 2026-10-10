@@ -195,6 +195,12 @@ html,body{overflow-x:hidden;}
   .ai-chip{background:#f5f0fb; border:1px solid #c9b3ea; color:#3d2a5c; font-size:12px; padding:6px 12px; border-radius:20px; cursor:pointer; font-family:inherit;}
   .ai-chip:hover{background:#ece2f9;}
   .ai-warn{margin-top:10px; font-size:12px; line-height:1.8; background:#fff7d6; border:1px solid #d9a400; color:#5c4500; border-radius:8px; padding:8px 12px;}
+  .ai-ico,.ai-h1::before,.ai-pill-ico::before{display:inline-block; vertical-align:-0.18em; background:var(--navy); -webkit-mask:var(--spark) center/contain no-repeat; mask:var(--spark) center/contain no-repeat;}
+  :root{ --spark:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 1.5l2.6 7.1 7.1 2.6-7.1 2.6L12 20.9l-2.6-7.1-7.1-2.6 7.1-2.6z'/><path d='M19.2 15.5l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z'/></svg>"); }
+  .ai-h1::before{content:''; width:1em; height:1em; margin-inline-end:.35em; background:var(--gold-deep);}
+  .ai-pill-ico::before{content:''; width:1.05em; height:1.05em; margin-inline-end:.4em; background:#5c3d99;}
+  .msg .ai-tag .ai-ico{width:1.1em; height:1.1em; margin-inline-end:.35em; background:#7b3fd4;}
+  .msg .cut-note{display:block; margin-top:8px; font-size:12px; color:#8a660a; background:#fff7e0; border:1px solid #e6c866; border-radius:8px; padding:4px 10px;}
   .msg .msg-act{display:block; margin-top:8px;}
   .msg .msg-act button{background:transparent; border:1px solid #c9b3ea; color:#5c3d99; font-size:11px; border-radius:14px; padding:2px 10px; cursor:pointer; font-family:inherit;}
   .msg .msg-act button:hover{background:#ece2f9;}
@@ -256,11 +262,11 @@ html,body{overflow-x:hidden;}
 <div class="wrap">
 
     <div class="ai-header">
-      <h1 data-en="🤖 AI Assistant" data-ur="🤖 AI اسسٹنٹ">🤖 AI Assistant</h1>
+      <h1 class="ai-h1" data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</h1>
       <p data-en="Ask a general question, attach a file (PDF / image / text) with the 📎 button, or paste text directly — draft a letter, get an opinion on a judgment, or any other office-related help." data-ur="کوئی بھی عمومی سوال پوچھیں، 📎 بٹن سے فائل (PDF / تصویر / متن) منسلک کریں، یا براہ راست متن پیسٹ کریں — خط کا مسودہ، کسی judgment پر رائے، یا کوئی اور دفتری مدد۔">Ask a general question, attach a file (PDF / image / text) with the 📎 button, or paste text directly — draft a letter, get an opinion on a judgment, or any other office-related help.</p>
       <div class="ai-badge-row">
         <span class="ai-pill" data-en="🔒 Admin / Super Admin only" data-ur="🔒 صرف ایڈمن/سپر ایڈمن">🔒 Admin / Super Admin only</span>
-        <span class="ai-pill" data-en="🤖 Every answer is an AI draft — verify before use" data-ur="🤖 ہر جواب AI کا مسودہ ہے — استعمال سے پہلے تصدیق کریں">🤖 Every answer is an AI draft — verify before use</span>
+        <span class="ai-pill ai-pill-ico" data-en="Every answer is an AI draft — verify before use" data-ur="ہر جواب AI کا مسودہ ہے — استعمال سے پہلے تصدیق کریں">Every answer is an AI draft — verify before use</span>
         <span class="ai-pill" data-en="📎 Attachments: PDF, image, or text (max 8MB)" data-ur="📎 اٹیچمنٹ: PDF، تصویر، یا متن (زیادہ سے زیادہ 8MB)">📎 Attachments: PDF, image, or text (max 8MB)</span>
       </div>
     </div>
@@ -405,9 +411,9 @@ html,body{overflow-x:hidden;}
   var HIST = [];                 // [{role:'user'|'ai', text:'...'}]
   var HIST_TURNS = 6;            // how many recent messages are re-sent with each question (fewer = faster)
   var HIST_CHARS = 6000;         // total size limit of the re-sent history
-  var STEER_EN = 'You assist a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. Reply in the user\'s language (Urdu or English). Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
+  var STEER_EN = 'You assist a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. If the user writes in Urdu or in Roman Urdu (Urdu typed in English letters), reply in proper Urdu script (اردو), keeping section numbers, court names and legal terms in English where natural; reply in English only when the user writes in English. Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
   var STYLE_FAST = 'Be brief: at most about 120 words, no preamble, unless the user asks for detail or a full draft.';
-  var STYLE_FULL = 'Give a complete, well-organised answer.';
+  var STYLE_FULL = 'Give a complete, well-organised answer. Finish every point; never stop mid-sentence.';
   var SPEED = (function(){ try{ return localStorage.getItem('aiSpeed') === 'fast' ? 'fast' : 'full'; }catch(e){ return 'full'; } })();
   var ANS_CACHE = {};            // answers to identical first questions, this page session only
   var LAST = null;               // last sent {q, file} for Regenerate
@@ -510,7 +516,7 @@ html,body{overflow-x:hidden;}
     var div = document.createElement('div');
     div.className = 'msg ' + role + (opts.pending ? ' pending' : '');
     if(role === 'ai' && !opts.pending){
-      div.innerHTML = '<span class="ai-tag">🤖 ' + (isUrdu ? 'AI ڈرافٹ' : 'AI Draft') + '</span><div class="md" dir="auto">' + mdToHtml(text) + '</div>';
+      div.innerHTML = '<span class="ai-tag"><i class="ai-ico"></i>' + (isUrdu ? 'AI ڈرافٹ' : 'AI Draft') + '</span><div class="md" dir="auto">' + mdToHtml(text) + '</div>';
       var act = document.createElement('span'); act.className = 'msg-act';
       var cb = document.createElement('button'); cb.type = 'button'; cb.textContent = isUrdu ? '📋 کاپی' : '📋 Copy';
       cb.onclick = function(){ copyText(text, cb); };
@@ -518,6 +524,13 @@ html,body{overflow-x:hidden;}
       if(opts.regen){
         var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'regen-btn'; rb.textContent = isUrdu ? '🔁 دوبارہ جواب' : '🔁 Regenerate';
         rb.onclick = regenerate; act.appendChild(rb);
+      }
+      if(opts.cut){
+        var cn = document.createElement('span'); cn.className = 'cut-note'; cn.textContent = isUrdu ? '⚠ جواب لمبائی کی حد پر رک گیا — آگے جاری رکھنے کے لیے بٹن دبائیں۔' : '⚠ The answer stopped at the length limit — press Continue for the rest.';
+        div.appendChild(cn);
+        var kb = document.createElement('button'); kb.type = 'button'; kb.className = 'regen-btn'; kb.textContent = isUrdu ? '▶ جاری رکھیں' : '▶ Continue';
+        kb.onclick = function(){ if(CUR) return; var t = 'Continue exactly from where your last answer stopped. Do not repeat what you already wrote.'; doSend(t, null, isUrdu ? '▶ جاری رکھیں' : '▶ Continue', false); };
+        act.appendChild(kb);
       }
       if(opts.note){ var nt = document.createElement('span'); nt.className = 'msg-tm'; nt.textContent = opts.note; act.appendChild(nt); }
       div.appendChild(act);
@@ -652,7 +665,7 @@ html,body{overflow-x:hidden;}
           return;
         }
         var answer = String(r.data.answer);
-        addMessage('ai', answer, {regen:true, note:(isUrdu ? '⏱ ' + secs + ' سیکنڈ' : '⏱ ' + secs + 's')});
+        addMessage('ai', answer, {regen:true, cut:!!r.data.truncated, note:(isUrdu ? '⏱ ' + secs + ' سیکنڈ' : '⏱ ' + secs + 's')});
         HIST.push({role:'user', text:sentQ}); HIST.push({role:'ai', text:answer});
         if(!filePayload && HIST.length === 2) ANS_CACHE[cacheKey] = answer;
         LAST = {q:q, file:filePayload, display:displayText};

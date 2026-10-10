@@ -489,6 +489,7 @@ table.pf-t td.sm div{ line-height:1.35; }
         <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
         <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label">Lookup</span></a>
         <a class="nav-item" href="cause-list.html"><span class="ico">📥</span><span class="label">Cause List Import</span></a>
+        <a class="nav-item" href="scanning.html"><span class="ico">📠</span><span class="label">Scanning Desk</span></a>
         <a class="nav-item active" href="inspection.html"><span class="ico">📑</span><span class="label">Inspection Desk</span></a>
         <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
         <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
@@ -778,7 +779,7 @@ function buildB(officer){
     if(g !== 'allowed' && g !== 'converted' && g !== 'compromise') return;
     var id = UI.ins + '__' + c.id, x = BROWS[id] || {};
     out.push({id:id, caseId:c.id, c:c, appealNo:caseText(c), judgDate:c.date, submitDate:x.submitDate || '', notSubmitted:!!x.notSubmitted,
-      grounds:(x.grounds != null ? x.grounds : ''), defGrounds:rel + ' — ' + c.result, manual:false});
+      grounds:(x.grounds != null ? x.grounds : ''), defGrounds:rel + ' — ' + c.result, manual:false, scanId:x.scanId || ''});
   });
   Object.keys(BROWS).forEach(function(id){
     var x = BROWS[id];
@@ -1030,6 +1031,63 @@ function saveManual(officer, row, field, val){
   track('Opinion / fit cell', 'inspectionManual', manualKey(o, row), function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr);
 }
 
+/* ---------- Scanning Desk suggestions for Proforma B ---------- */
+var SCANS = [];
+function scNorm(v){ return String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function scKey(t, n, y){ return scNorm(t) + '|' + scNorm(n) + '|' + String(y || '').replace(/\D/g, ''); }
+/* every scan of the same case: matches the SC case number (type/no/year) or the case number written on the scan */
+function scansFor(c){
+  var k = scKey(c.type, c.caseNo, c.year);
+  return SCANS.filter(function(s){ return scKey(s.caseType, s.caseNo, s.caseYear) === k || scKey(s.scType, s.scNo, s.scYear) === k; });
+}
+/* one suggestion per B row: only for cells that are still empty; nothing here writes anything */
+function scanSugB(rows){
+  var out = [];
+  rows.forEach(function(r){
+    if(r.manual || !r.c) return;
+    var list = scansFor(r.c); if(!list.length) return;
+    var pick = function(f){ var a = list.filter(function(s){ return s.docType !== 'Opinion' && s[f]; }).concat(list.filter(function(s){ return s[f]; })); return a.length ? {v:String(a[0][f]).trim(), id:a[0].id} : null; };
+    var ac = pick('acDate'), gr = pick('grounds'), sug = {scanId:'', n:list.length};
+    if(ac && !r.submitDate && !r.notSubmitted){ sug.submitDate = ac.v; sug.scanId = ac.id; }
+    if(gr && !String(r.grounds || '').trim()){ sug.grounds = gr.v; sug.scanId = sug.scanId || gr.id; }
+    if(sug.submitDate || sug.grounds){ sug.row = r; out.push(sug); }
+  });
+  return out;
+}
+function scanSugBtn(rows){
+  var n = scanSugB(rows).length; if(!n) return '';
+  return ' <button class="cl-btn sm" style="background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="openScanSug()">📠 ' + bi('اسکین ڈیسک سے تجاویز', 'Scanning Desk suggestions') + ' (' + n + ')</button>';
+}
+function openScanSug(){
+  if(!guardEdit()) return;
+  var o = UI.officer, items = scanSugB(buildB(o)); if(!items.length){ toast(bi('کوئی نئی تجویز نہیں', 'No new suggestions')); return; }
+  var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('یہ تجاویز اسکین ڈیسک کے ریکارڈ سے ہیں۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔ جو خانہ پہلے سے بھرا ہے اسے بدلا نہیں جائے گا۔ لکھائی بدل سکتے ہیں۔', 'These come from Scanning Desk records. Nothing is saved until you press Send. Cells that are already filled are never changed. You may edit the text.') + '</div>' +
+    '<div class="cl-tw"><table class="pf-t" id="scSugT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th>' + bi('خانہ', 'Field') + '</th><th class="l">' + bi('تجویز (پیلا)', 'Suggestion (yellow)') + '</th></tr></thead><tbody>';
+  items.forEach(function(it, i){
+    var r = it.row, first = true;
+    [['submitDate', 'Date of submission to AC', 'اپیل کمیٹی میں جمع کرانے کی تاریخ'], ['grounds', 'Grounds', 'وجوہات']].forEach(function(f){
+      if(!it[f[0]]) return;
+      var cellH = f[0] === 'submitDate' ? '<input type="date" data-k="submitDate" value="' + esc(it.submitDate) + '" style="background:#fff3b0;color:#28394A">' : '<textarea data-k="grounds" rows="3" style="width:100%;background:#fff3b0;color:#28394A">' + esc(it.grounds) + '</textarea>';
+      h += '<tr data-i="' + i + '"><td><input type="checkbox" checked style="width:auto;min-width:0" data-ck="1" aria-label="select"></td><td>' + (first ? '<b>' + esc(r.appealNo) + '</b><span class="pf-sub">' + esc(r.c.title) + '</span><span class="pf-sub">📠 ' + it.n + ' ' + bi('اسکین', 'scan(s)') + '</span>' : '') + '</td><td>' + bi(f[2], f[1]) + '</td><td>' + cellH + '</td></tr>';
+      first = false;
+    });
+  });
+  h += '</tbody></table></div>';
+  openModal('Scanning Desk suggestions / اسکین ڈیسک سے تجاویز — Check and send / چیک کریں اور بھیجیں', h, [
+    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
+      var patches = {};
+      Array.prototype.forEach.call(document.querySelectorAll('#scSugT tbody tr'), function(tr){
+        if(!tr.querySelector('[data-ck]').checked) return;
+        var it = items[+tr.getAttribute('data-i')], p = patches[it.row.id] = patches[it.row.id] || {scanId:it.scanId};
+        var inp = tr.querySelector('[data-k]'), v = (inp.value || '').trim(); if(!v) return;
+        p[inp.getAttribute('data-k')] = v; if(inp.getAttribute('data-k') === 'submitDate') p.notSubmitted = false;
+      });
+      var n = 0; Object.keys(patches).forEach(function(id){ var p = patches[id]; if(Object.keys(p).length > 1){ saveB(id, p); n++; } });
+      if(n) toast('✅ ' + bi('اسکین ڈیسک سے ' + n + ' قطاریں بھری گئیں', n + ' row(s) filled from Scanning Desk'), 'good');
+    }}], true);
+}
+
 /* ---------- Proforma B ---------- */
 function viewB(){
   var o = UI.officer; if(!o) return needOfficer();
@@ -1043,10 +1101,10 @@ function viewB(){
       '<td class="n">' + (r.manual ? '<input type="date" value="' + esc(r.judgDate) + '" onchange="saveB(\'' + r.id + '\',{judgDate:this.value})">' : fmtD(r.judgDate)) + '</td>' +
       '<td><input type="date" class="' + (miss ? 'miss' : '') + '" value="' + esc(r.submitDate) + '" onchange="saveB(\'' + r.id + '\',{submitDate:this.value,notSubmitted:false})"' + (r.notSubmitted ? ' disabled' : '') + '>' +
       '<label class="pf-sub"><input type="checkbox" style="width:auto;min-width:0" ' + (r.notSubmitted ? 'checked ' : '') + 'onchange="saveB(\'' + r.id + '\',{notSubmitted:this.checked,submitDate:this.checked?\'\':\'' + esc(r.submitDate) + '\'})"> Not submitted</label></td>' +
-      '<td><input value="' + esc(r.grounds) + '" placeholder="' + esc(r.defGrounds || 'Grounds…') + '" onchange="saveB(\'' + r.id + '\',{grounds:this.value})"></td>' +
+      '<td><input value="' + esc(r.grounds) + '" placeholder="' + esc(r.defGrounds || 'Grounds…') + '" onchange="saveB(\'' + r.id + '\',{grounds:this.value})">' + (r.scanId ? '<span class="pf-sub no-print">📠 ' + bi('اسکین ڈیسک سے', 'from Scanning Desk') + '</span>' : '') + '</td>' +
       '<td class="pf-act no-print">' + (r.manual && canEdit() ? '<button onclick="delB(\'' + r.id + '\')">🗑</button>' : '') + '</td></tr>';
   });
-  h += '</tbody></table></div>' + (canEdit() ? '<div class="no-print" style="margin-top:8px"><button class="cl-btn sm" onclick="addB()">＋ ' + bi('ہاتھ سے قطار', 'Add row manually') + '</button></div>' : '') + signProsecutor(o) + '</div>';
+  h += '</tbody></table></div>' + (canEdit() ? '<div class="no-print" style="margin-top:8px"><button class="cl-btn sm" onclick="addB()">＋ ' + bi('ہاتھ سے قطار', 'Add row manually') + '</button>' + scanSugBtn(rows) + '</div>' : '') + signProsecutor(o) + '</div>';
   return h;
 }
 function saveB(id, patch){
@@ -1341,6 +1399,8 @@ function startLiveData(){
   listen('inspectionRefs', function(qs){ REFS = Object.values(mapDocs(qs)); });
   listen('inspectionManual', function(qs){ MANUAL = mapDocs(qs); });
   listen('inspectionB', function(qs){ BROWS = mapDocs(qs); });
+  /* Scanning Desk records: optional. If the collection is not readable yet, the suggestion button simply stays hidden. */
+  db.collection('scans').onSnapshot(function(qs){ var a = []; qs.forEach(function(d){ var x = d.data(); x.id = d.id; a.push(x); }); SCANS = a; renderAll(); }, function(err){ SCANS = []; console.warn('scans (optional)', err && err.code); });
   listen('inspectionOverrides', function(qs){ OVR = mapDocs(qs); });
   db.collection('inspectionConfig').doc('main').onSnapshot(function(doc){
     ERRS.inspectionConfig = '';

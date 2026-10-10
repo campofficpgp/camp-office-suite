@@ -1,0 +1,2542 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scanning Desk — Camp Office PG Punjab</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#2A5A84; --navy2:#3d6f9c; --navy3:#1B3F63;
+    --gold:#B8860B; --gold-light:#d4a839; --gold-deep:#8a660a;
+    --bg:#F6F5F1; --card:#ffffff; --border:#E1DDD3; --text:#28394A; --muted:#647581;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+    --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar), same softened
+     navy/green/teal/ocean/sepia/contrast/night set used across the whole project (Dashboard /
+     Weekly Court Roster / Daily Case Entry / Case Notice). Navy is the default set in :root
+     above; the rest override the same tokens so every existing rule that already reads
+     var(--navy)/var(--gold)/etc. re-colors and re-shapes itself. */
+  body[data-theme="green"]{ /* Green */
+    --navy:#1a6b45; --navy2:#2f8a5c; --navy3:#12492f;
+    --gold:#C9A227; --gold-light:#ddbb52; --gold-deep:#9c7d1e;
+    --bg:#F6F8F6; --card:#ffffff; --border:#DEE6E0; --text:#233229; --muted:#5E6F64;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+    --sidebar-bg:#12492f; --sidebar-bg2:#1a6b45; --sidebar-text:#e8f2ec; --sidebar-muted:#a6c2b2;
+  }
+  body[data-theme="teal"]{ /* Teal */
+    --navy:#128f89; --navy2:#26a89f; --navy3:#0c655f;
+    --gold:#96762a; --gold-light:#b8934a; --gold-deep:#6f5720;
+    --bg:#F4F9F8; --card:#ffffff; --border:#DCEBE9; --text:#22302F; --muted:#5C7071;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:110deg;
+    --sidebar-bg:#0c655f; --sidebar-bg2:#128f89; --sidebar-text:#e6f4f2; --sidebar-muted:#a5cac6;
+  }
+  body[data-theme="ocean"]{ /* Ocean */
+    --navy:#1670a0; --navy2:#2a8cc4; --navy3:#0f4a6e;
+    --gold:#c9852a; --gold-light:#dba24f; --gold-deep:#9c6620;
+    --bg:#F2F8FB; --card:#ffffff; --border:#D8E9F0; --text:#1A3444; --muted:#5A7E8F;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:130deg;
+    --sidebar-bg:#0f4a6e; --sidebar-bg2:#1670a0; --sidebar-text:#e8f4fa; --sidebar-muted:#a8cfe0;
+  }
+  body[data-theme="sepia"]{ /* Sepia */
+    --navy:#6d5330; --navy2:#8a6c40; --navy3:#4a381f;
+    --gold:#a3742a; --gold-light:#c2924a; --gold-deep:#7d591f;
+    --bg:#f6efe0; --card:#fcf7ee; --border:#e5d9bd; --text:#42341f; --muted:#83725a;
+    --radius-lg:8px; --radius-sm:6px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:140deg;
+    --sidebar-bg:#4a381f; --sidebar-bg2:#6d5330; --sidebar-text:#f3e9d8; --sidebar-muted:#d0bd97;
+  }
+  body[data-theme="contrast"]{ /* High Contrast */
+    --navy:#111111; --navy2:#2a2a2a; --navy3:#000000;
+    --gold:#8a4b00; --gold-light:#b3661a; --gold-deep:#663700;
+    --bg:#fafafa; --card:#ffffff; --border:#1a1a1a; --text:#0a0a0a; --muted:#2e2e2e;
+    --radius-lg:6px; --radius-sm:4px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:180deg;
+    --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0;
+  }
+  body[data-theme="night"]{ /* Night */
+    --navy:#5b7bb0; --navy2:#7292c4; --navy3:#3f5580;
+    --gold:#d4a13d; --gold-light:#e0b968; --gold-deep:#a87f2c;
+    --bg:#181c26; --card:#232838; --border:#333a4e; --text:#dcdfe8; --muted:#96a0b8;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#12151f; --sidebar-bg2:#1e2436; --sidebar-text:#dcdfe8; --sidebar-muted:#96a0b8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo{width:30px; height:30px; flex-shrink:0; display:inline-flex;}
+  .brand-logo svg{width:100%; height:100%; display:block;}
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:22px 20px 60px; min-width:0; width:100%;}
+
+  /* ===== AI Draft / suggestion styling (Stage 11 guardrail: always visually distinct,
+     never looks like normal saved data, never blocks the user, never writes by itself) ===== */
+  .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
+  [dir="rtl"] .ai-box{border-left:1px solid #c9b3ea; border-right:4px solid #7b3fd4; border-radius:8px 0 0 8px;}
+  .ai-box.show{display:block;}
+  .relist-note{background:#eaf4ec; border:1px solid #9cc8a6; border-left:4px solid #2e7d4f; border-radius:0 8px 8px 0; padding:9px 14px; font-size:12.5px; color:#1f4a31;}
+  .relist-note.clash{background:#fdf0e6; border-color:#e3b58a; border-left-color:#c46a1c; color:#6b3a10;}
+  [dir="rtl"] .relist-note{border-left:1px solid #9cc8a6; border-right:4px solid #2e7d4f; border-radius:8px 0 0 8px;}
+  [dir="rtl"] .relist-note.clash{border-left-color:#e3b58a; border-right-color:#c46a1c;}
+  .ai-box .ai-tag{display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:11px; color:#7b3fd4; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px;}
+  .ai-box .ai-hint{font-size:11px; color:#6b5c8a; margin-top:6px; font-style:italic;}
+  .ai-box ul{margin:4px 0 0; padding-left:18px;}
+  [dir="rtl"] .ai-box ul{padding-left:0; padding-right:18px;}
+  .ai-box li{margin-bottom:3px;}
+  .ai-box mark{background:#e6d9fa; color:#3d2a5c; padding:0 2px; border-radius:3px; font-weight:600;}
+  .ai-box .ai-dup-actions{margin-top:8px; display:flex; gap:8px;}
+  .ai-box .ai-dup-actions .btn{padding:5px 12px; font-size:11.5px;}
+
+  .tab-switch{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab-switch .btn{padding:10px 20px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+  .field textarea{resize:vertical; min-height:56px;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.gold{background:var(--gold); color:var(--navy3); border-color:var(--gold-deep);}
+  .btn.gold:hover{background:var(--gold-light);}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.case-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:1140px;}
+  table.case-table th{background:var(--navy); color:#fff; text-align:left; padding:10px 10px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.case-table td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; white-space:nowrap;}
+  table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
+  table.case-table tr:last-child td{border-bottom:none;}
+  table.case-table tr:hover td{background:#faf8f2;}
+  .result-pill{display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; white-space:nowrap;}
+  .result-pending{background:#fdf0e0; color:#9c5b0e;}
+  .result-allowed{background:#e6f6ea; color:#2c7a3d;}
+  .result-dismissed{background:#fdecec; color:#a33a3a;}
+  .result-leave{background:#e3ecfb; color:#1c4faa;}
+  .result-compromise{background:#f3e6fa; color:#7a2ea3;}
+  .result-other{background:#f0efe8; color:var(--muted);}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:720px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  /* Monthly Progress Report */
+  table.report-table{width:100%; border-collapse:collapse; background:var(--card); font-size:11.5px; min-width:900px;}
+  table.report-table th{background:var(--navy); color:#fff; text-align:center; padding:8px 8px; font-weight:600; font-size:10.5px;}
+  table.report-table td{padding:7px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:center; white-space:nowrap;}
+  table.report-table td.nature-cell{text-align:left; white-space:normal; min-width:190px; max-width:220px; font-weight:600;}
+  [dir="rtl"] table.report-table td.nature-cell{text-align:right;}
+  table.report-table tr.grand-total-row td{background:#efe9d8; font-weight:700;}
+  table.report-table tr:hover td{background:#faf8f2;}
+  table.report-table td.edited-cell{background:#fdf0d0;}
+  .cell-input{width:42px; text-align:center; border:1px solid var(--border); border-radius:4px; padding:3px 2px; font-size:11.5px; background:#fff;}
+  .cell-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .nature-input{width:150px; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:11.5px; font-weight:600; background:#fff;}
+  .nature-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .row-del{cursor:pointer; color:#a33a3a; font-weight:700; margin-left:6px; font-size:12px;}
+  [dir="rtl"] .row-del{margin-left:0; margin-right:6px;}
+  .report-legend{font-size:11px; color:var(--muted); margin-top:10px; display:flex; align-items:center; gap:6px;}
+  .report-legend .swatch{display:inline-block; width:12px; height:12px; background:#fdf0d0; border:1px solid var(--border); border-radius:3px;}
+  .report-meta{display:flex; flex-wrap:wrap; gap:18px; margin-bottom:14px; font-size:12.5px;}
+  .report-meta b{color:var(--navy);}
+  .saved-report-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:8px; font-size:12.5px; flex-wrap:wrap;}
+
+  .print-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:30px 34px; font-size:13px;}
+  .print-sheet .p-head{font-weight:700; font-size:15px; white-space:pre-line; line-height:1.4;}
+  .print-sheet .p-sub{font-size:12px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* Print letterhead (p-head/p-sub) is editable in place — same ✎ edit / ↺ reset pattern used in
+     the Weekly Court Roster and Case Notice tools, so it always shows the same office address. */
+  .print-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .print-sheet .p-head-row{margin-bottom:16px;}
+  .print-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .print-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .print-sheet .p-sub-row{margin-bottom:16px;}
+  .print-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .print-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .print-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:260px; font-family:inherit; text-align:center;}
+  .print-sheet .p-officer{display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; font-weight:600;}
+  .print-sheet .p-sign{display:flex; justify-content:space-between; align-items:flex-start; margin-top:24px; font-size:12.5px; gap:16px;}
+  /* Sign-off stamps: left = prepared by, right = approved by. Each is a small editable
+     Name/Designation/Office-Address block (✎ edit, ✕ clear). */
+  .print-sheet .p-stamp-block{flex:1; min-width:0;}
+  .print-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  [dir="rtl"] .print-sheet .p-stamp-block[data-side="right"]{text-align:left;}
+  .print-sheet .p-stamp-line{font-size:11.5px; color:var(--navy); line-height:1.5; white-space:pre-line;}
+  .print-sheet .p-stamp-line:first-child{font-weight:700;}
+  .print-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .print-sheet .p-stamp-icons{margin-top:4px;}
+  .print-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
+  .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+
+  [dir="rtl"] table.case-table th, [dir="rtl"] table.case-table td{text-align:right;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #reportPrintArea, #reportPrintArea *{visibility:visible;}
+    #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
+       to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
+       clips a wide report table. Let the body grow to the full width for the capture. */
+    html,body{overflow-x:visible !important;}
+    #reportPrintArea .heading-icon{display:none;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
+       own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
+       otherwise print completely blank with no explanation. Show a plain message instead. */
+    #reportPrintArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please use this page's own \"Print / Preview\" button first, then press Print inside that preview.\A براہ کرم پہلے اس صفحے کا اپنا \"Print / Preview\" بٹن کھولیں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+  #authGate, .userbar-ce{ display:none !important; }
+}
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
+.no-ai .needs-ai{ display:none !important; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+</style>
+<style>
+
+.wrap{max-width:1500px;}
+.cl-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
+.cl-head p{ margin:0; color:var(--muted); font-size:13px; }
+.cl-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:14px; margin-bottom:14px; }
+.cl-drop{ border:2px dashed var(--navy2); border-radius:10px; padding:22px 14px; text-align:center; color:var(--muted); background:rgba(0,0,0,.02); cursor:pointer; }
+.cl-drop.over{ background:rgba(42,90,132,.10); }
+.cl-drop b{ color:var(--navy); font-size:15px; display:block; margin-bottom:4px; }
+.cl-btn{ padding:8px 14px; border-radius:6px; border:1px solid var(--navy); background:var(--navy); color:#fff; cursor:pointer; font-size:13px; font-family:inherit; line-height:1.3; }
+.cl-btn:hover{ filter:brightness(1.08); }
+.cl-btn.ghost{ background:transparent; color:var(--navy); }
+.cl-btn.gold{ background:var(--gold); border-color:var(--gold-deep); color:#fff; }
+.cl-btn.red{ background:#b3261e; border-color:#8c1d18; }
+.cl-btn.sm{ padding:4px 9px; font-size:12px; }
+.cl-btn[disabled]{ opacity:.45; cursor:not-allowed; filter:none; }
+.cl-bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.cl-bar + .cl-bar{ margin-top:10px; }
+.cl-sep{ width:1px; align-self:stretch; background:var(--border); margin:0 4px; }
+.cl-stats{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.cl-chip{ border:1px solid var(--border); border-radius:20px; padding:4px 12px; font-size:12.5px; background:var(--card); color:var(--text); }
+.cl-chip b{ color:var(--navy); }
+.cl-chip.warn{ border-color:#d9a400; background:#fff7d6; color:#5c4500; }
+.cl-chip.bad{ border-color:#d33; background:#fde9e9; color:#8c1d18; }
+.cl-chip.ok{ border-color:#2e7d4f; background:#e8f5ec; color:#1b5e3a; }
+.cl-msg{ margin-top:10px; font-size:13px; padding:9px 12px; border-radius:8px; background:#eef4fa; border:1px solid #c5d6e6; color:#1d3a57; }
+.cl-msg.err{ background:#fde9e9; border-color:#e0a1a1; color:#7a1a16; }
+.cl-msg.good{ background:#e8f5ec; border-color:#9cc8a6; color:#1b5e3a; }
+.cl-field label{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:3px; }
+.cl-field input, .cl-field select, .cl-field textarea{ width:100%; padding:7px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; }
+.cl-sheet{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:16px; }
+.cl-day{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--navy3); color:#fff; padding:9px 14px; font-weight:700; font-size:15px; letter-spacing:.2px; }
+.cl-bench{ background:rgba(184,134,11,.14); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:8px 14px; font-size:13px; color:var(--text); }
+.cl-bench b{ color:var(--navy3); font-size:14px; }
+.cl-bench .jd{ color:var(--muted); }
+.cl-bench .sit{ display:inline-block; margin-inline-start:8px; padding:1px 9px; border-radius:12px; background:var(--navy); color:#fff; font-size:11.5px; }
+.cl-tw{ overflow-x:auto; }
+table.cl-t{ width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; min-width:1100px; }
+table.cl-t td{ overflow-wrap:break-word; }
+select.cl-res{ width:100%; min-width:0; }
+table.cl-t th{ background:var(--navy); color:#fff; padding:7px 8px; text-align:start; white-space:nowrap; font-size:12px; }
+table.cl-t td{ padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+table.cl-t tr.mine td{ background:rgba(255,236,150,.38); }
+table.cl-t tr.other td{ color:var(--muted); }
+table.cl-t tr.off td{ opacity:.45; }
+table.cl-t tr.block-start td{ border-top:2px solid var(--border); }
+.cl-sub{ display:block; color:var(--muted); font-size:11.5px; margin-top:2px; }
+.cl-c{ white-space:nowrap; font-weight:600; }
+.cl-flag{ display:inline-block; margin-top:4px; padding:2px 8px; border-radius:12px; font-size:11.5px; cursor:pointer; border:1px solid; font-family:inherit; }
+.cl-flag.y{ background:#fff3b0; border-color:#d9a400; color:#5c4500; }
+.cl-flag.y.done{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; }
+.cl-flag.r{ background:#fde9e9; border-color:#d33; color:#8c1d18; }
+.cl-flag.r.done{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; }
+.cl-flag.g{ background:#e8f5ec; border-color:#2e7d4f; color:#1b5e3a; cursor:default; }
+.cl-flag.b{ background:#e7f0fb; border-color:#5b8fd0; color:#1d4a85; cursor:default; }
+select.cl-res{ padding:5px 6px; border:1.5px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12.5px; font-family:inherit; }
+select.cl-res.empty{ border-color:#d33; background:#fdecec; }
+.res-print{ display:none; }
+.cl-act{ white-space:nowrap; }
+.cl-act button{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:6px; cursor:pointer; padding:3px 7px; font-size:12px; }
+.cl-act button:hover{ background:rgba(0,0,0,.05); }
+.cl-empty{ padding:30px; text-align:center; color:var(--muted); }
+.cl-modal-bg{ position:fixed; inset:0; background:rgba(10,14,26,.55); z-index:9000; display:none; align-items:flex-start; justify-content:center; padding:20px 12px; overflow-y:auto; }
+.cl-modal-bg.show{ display:flex; }
+.cl-modal{ background:var(--card); color:var(--text); border-radius:12px; width:100%; max-width:640px; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+.cl-modal h3{ margin:0 0 12px; color:var(--navy); font-size:17px; }
+.cl-modal .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+.cl-modal .full{ grid-column:1/-1; }
+.cl-modal .foot{ display:flex; gap:8px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
+.cl-print-title{ display:none; }
+.cl-note{ font-size:12px; color:var(--muted); margin:8px 2px; line-height:1.7; }
+
+@media print{
+  @page{ size:A4 landscape; margin:8mm; }
+  body *{ visibility:visible !important; }
+  html,body{ overflow:visible !important; background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .sidebar, .sidebar-backdrop, .topbar, .userbar-ce, .app-footer, .no-print, .cl-act, .cl-col-act, .cl-col-inc, .cl-flag-btns, #authGate, .cl-modal-bg{ display:none !important; }
+  .app-shell{ display:block; }
+  .main-col{ display:block; }
+  .wrap{ max-width:none !important; padding:0 !important; }
+  .cl-head, .cl-note{ display:none !important; }
+  table.cl-t tr.off{ display:none !important; }
+  select.cl-res{ min-width:0; }
+  .cl-print-title{ display:block; text-align:center; margin:0 0 6px; }
+  .cl-print-title h1{ margin:0; font-size:17px; color:#1B3F63; }
+  .cl-print-title div{ font-size:11px; color:#444; }
+  .cl-sheet{ border:none; border-radius:0; margin:0 0 6px; overflow:visible; }
+  .cl-day{ font-size:13px; padding:5px 8px; break-after:avoid; }
+  .cl-bench{ font-size:11px; padding:4px 8px; break-after:avoid; }
+  table.cl-t{ font-size:10.5px; min-width:0; }
+  table.cl-t thead{ display:table-header-group; }
+  table.cl-t tr{ break-inside:avoid; page-break-inside:avoid; }
+  table.cl-t th{ padding:4px 5px; font-size:10px; }
+  table.cl-t td{ padding:4px 5px; border-bottom:1px solid #bbb; }
+  .cl-tw{ overflow:visible; }
+  select.cl-res{ display:none !important; }
+  .res-print{ display:block; min-height:14px; }
+  .cl-flag{ display:none !important; }
+  .cl-day{ page-break-before:auto; }
+}
+@media(max-width:700px){
+  .cl-modal .grid{ grid-template-columns:1fr; }
+}
+
+.cl-offsel{ font-size:12px; font-weight:400; display:inline-flex; align-items:center; gap:6px; }
+.cl-offsel select{ padding:4px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12px; font-family:inherit; max-width:230px; }
+.cl-day .cl-offsel{ color:#fff; }
+select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:12px; font-family:inherit; }
+.cl-offprint{ display:none; }
+@media print{ .cl-offprint{ display:inline; font-weight:600; } select.cl-off{ display:none !important; } }
+
+.cl-nav{ position:sticky; top:0; z-index:30; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:8px 12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.cl-nav:empty{ display:none; }
+.cl-navrow{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:3px 0; }
+.cl-navlab{ min-width:92px; font-size:12px; font-weight:700; color:var(--navy); }
+.cl-pill{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:20px; padding:5px 13px; font-size:13px; cursor:pointer; font-family:inherit; }
+.cl-pill i{ font-style:normal; font-size:11px; background:rgba(0,0,0,.08); border-radius:10px; padding:0 6px; margin-inline-start:3px; }
+.cl-pill:hover{ border-color:var(--navy); }
+.cl-pill.on{ background:var(--navy); color:#fff; border-color:var(--navy); font-weight:700; }
+.cl-pill.on i{ background:rgba(255,255,255,.25); }
+.cl-navrow select{ padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; min-width:210px; }
+.cl-navnote{ font-size:12px; color:var(--muted); margin-inline-start:auto; }
+.cl-day .cl-offsel select, .cl-bench .cl-offsel select{ font-size:13px; padding:6px 8px; font-weight:600; }
+@media(max-width:700px){ .cl-nav{ position:static; } }
+
+.cl-hist{ margin-top:6px; padding:6px 8px; border:1px dashed var(--border); border-radius:8px; background:rgba(0,0,0,.03); font-size:12px; line-height:1.9; }
+.cl-hist .hi{ display:inline-block; margin:1px 3px 1px 0; padding:1px 9px; border-radius:12px; border:1px solid var(--border); background:var(--card); }
+.cl-hist .hi.same{ border-color:#2e7d4f; background:#e8f5ec; color:#1b5e3a; }
+.cl-hist .hi.after{ border-color:#d33; background:#fde9e9; color:#8c1d18; }
+.cl-hist .hw{ margin-top:3px; padding:3px 8px; border-radius:6px; }
+.cl-hist .hw.r{ background:#fde9e9; color:#8c1d18; border:1px solid #e0a1a1; }
+.cl-hist .hw.y{ background:#fff7d6; color:#5c4500; border:1px solid #d9a400; }
+
+.cl-supp{display:inline-block;margin-top:3px;padding:1px 6px;border-radius:9px;background:#fdebd2;color:#8a4b00;border:1px solid #e3b469;font-size:10px;font-weight:700;letter-spacing:.03em}
+.cl-pill.supp{border-color:#e3b469}
+
+.cl-incl{white-space:nowrap;font-size:11px !important;padding:3px 6px !important;border:1px solid #c5d6e6 !important;background:#eef4fa !important;border-radius:6px;cursor:pointer;width:auto !important}
+
+.cl-act button.cl-save1{ border-color:#2e7d32; color:#2e7d32; font-weight:700; }
+.cl-act button.cl-save1:hover{ background:#e6f3e7; }
+
+
+.sl-card{ margin-bottom:12px; }
+.sl-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sl-head .t{ font-weight:700; color:var(--text); }
+.sl-list{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+.sl-item{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; border:1px solid var(--border); border-radius:10px; padding:8px 12px; background:var(--card); }
+.sl-item.cur{ border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset; }
+.sl-info{ flex:1 1 240px; min-width:0; }
+.sl-info b{ display:block; overflow-wrap:anywhere; }
+.sl-info span{ font-size:12px; color:var(--muted); }
+.sl-empty{ font-size:13px; color:var(--muted); padding:6px 2px; }
+.sl-input{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font:inherit; background:var(--card); color:var(--text); box-sizing:border-box; }
+.sl-chk{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; }
+</style>
+<style>
+.userbar-ce .user-chip-sm{display:flex;align-items:center;gap:6px;color:var(--text);background:transparent;border:0;padding:0;font-size:12.5px}
+.userbar-ce .role-chip{background:var(--bg);border:1px solid var(--border);color:var(--text)}
+.sc-bar2{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+.sc-bar2 .cl-field{flex:1 1 150px;min-width:0}
+.sc-bar2 .cl-field.wide{flex:2 1 260px}
+.sc-count{font-size:12.5px;color:var(--muted);margin-top:8px}
+.sc-tw{overflow-x:auto}
+table.sc-t{width:100%;border-collapse:collapse;font-size:13px}
+table.sc-t th{background:var(--navy);color:#fff;padding:7px 8px;text-align:start;font-size:12px;white-space:nowrap}
+table.sc-t td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;overflow-wrap:anywhere}
+table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
+.sc-badge{display:inline-block;padding:1px 9px;border-radius:12px;font-size:11.5px;background:rgba(184,134,11,.16);border:1px solid var(--gold);color:var(--text);white-space:nowrap}
+.sc-sub{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.sc-snip{display:block;font-size:11.5px;margin-top:3px;padding:2px 6px;border-radius:5px;background:rgba(255,236,150,.45);color:var(--text)}
+.sc-act{white-space:nowrap}
+.sc-op{display:inline-block;padding:1px 9px;border-radius:12px;font-size:11.5px;border:1px solid var(--border);background:rgba(0,0,0,.05);color:var(--text)}
+.sc-op.op-fit{background:#e8f5ec;border-color:#2e7d4f;color:#1b5e3a}
+.sc-op.op-no{background:#eee;border-color:#999;color:#444}
+.sc-op.op-wait{background:#fff3b0;border-color:#d9a400;color:#5c4500}
+.sc-act button,.sc-act a{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:12px;text-decoration:none;display:inline-block;font-family:inherit}
+.sc-act button:hover,.sc-act a:hover{background:rgba(0,0,0,.06)}
+.sc-act .go{border-color:var(--navy);color:var(--navy);font-weight:700}
+.sc-act .del{border-color:#d9a3a3;color:#a33a3a}
+.sc-modal{max-width:760px}
+.sc-sec{margin:14px 0 6px;font-weight:700;color:var(--navy);font-size:13.5px;border-bottom:1px solid var(--border);padding-bottom:3px}
+.sc-parts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.sc-part{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:6px 8px;background:var(--card)}
+.sc-part .th{width:46px;height:58px;flex:0 0 46px;border-radius:4px;border:1px solid var(--border);background:rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:20px}
+.sc-part .th img{max-width:100%;max-height:100%;object-fit:contain}
+.sc-part .nm{flex:1 1 auto;min-width:0;font-size:12.5px;overflow-wrap:anywhere}
+.sc-part .nm span{display:block;color:var(--muted);font-size:11.5px}
+.sc-part .bt{display:flex;gap:4px;flex-wrap:wrap}
+.sc-part .bt button{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;cursor:pointer;padding:3px 7px;font-size:12px}
+.sc-prog{height:10px;border-radius:6px;background:rgba(0,0,0,.12);overflow:hidden;margin-top:8px}
+.sc-prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
+.sc-chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px}
+.sc-cam{position:fixed;inset:0;background:#000;z-index:9500;display:none;flex-direction:column}
+.sc-cam.show{display:flex}
+.sc-cam video{flex:1 1 auto;min-height:0;width:100%;object-fit:contain;background:#000}
+.sc-cam .cb{display:flex;gap:10px;justify-content:center;align-items:center;padding:12px;flex-wrap:wrap;background:#111}
+.sc-cam .cb button{padding:10px 16px;border-radius:24px;border:0;font-size:14px;cursor:pointer;font-family:inherit}
+.sc-cam .shot{background:#fff;color:#000;font-weight:700;min-width:130px}
+.sc-cam .done{background:var(--gold);color:#fff;font-weight:700}
+.sc-cam .oth{background:#333;color:#fff}
+.sc-cam .cnt{color:#fff;font-size:13px}
+.sc-toolbar-hist{display:inline-flex;gap:6px}
+@media screen and (max-width:820px){
+  table.sc-t,table.sc-t tbody,table.sc-t tr,table.sc-t td{display:block;width:100%}
+  table.sc-t thead{display:none}
+  table.sc-t tr{border:1px solid var(--border);border-radius:10px;margin:0 0 10px;padding:6px 4px;background:var(--card)}
+  table.sc-t td{border:0 !important;padding:3px 8px;background:transparent !important}
+  table.sc-t td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:11.5px}
+  .sc-act{white-space:normal}
+}
+@media print{
+  .sc-act,.sc-actcol{display:none !important}
+  table.sc-t{font-size:10.5px}
+  table.sc-t th{background:#2A5A84 !important;color:#fff !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sc-snip{display:none}
+}
+.manage-link{color:var(--gold-deep);font-weight:700;font-size:10.5px;cursor:pointer;margin-inline-start:4px;white-space:nowrap}
+.manage-link:hover,.manage-link:focus{text-decoration:underline}
+.no-lists .manage-link{display:none !important}
+.lm-items{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto}
+.lm-row{display:flex;gap:6px}
+.lm-row input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)}
+.sc-auto{background:#fff6c2 !important;border-color:#d9a400 !important;color:#222 !important}
+.sc-aut-note{display:inline-block;background:#fff6c2;border:1px solid #d9a400;color:#5c4500;border-radius:10px;padding:0 8px;font-size:11.5px}
+.sc-t tr.sc-new,.sc-t tr.sc-new td{background:#e6f6e9 !important}
+.sc-t tr.sc-new td:first-child{box-shadow:inset 4px 0 0 #2e8b57}
+.sc-t tr.sc-new{outline:2px solid #2e8b57;outline-offset:-2px}
+.sc-qban{margin:6px 0 10px;font-weight:600}
+.sc-ai{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sc-ai-lang{font-size:12px;display:inline-flex;gap:6px;align-items:center;color:var(--muted)}
+.sc-ai-note{font-size:11.5px;color:var(--muted);margin-top:4px}
+.sc-ai-out{margin-top:8px;border:1px solid #d9a400;background:#fff6c2;color:#222;border-radius:8px;padding:10px 12px;font-size:13px}
+.sc-ai-out .t{white-space:pre-wrap;margin:6px 0}
+.sc-ai-out .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.sc-ai-chip{display:inline-block;border-radius:10px;padding:1px 9px;font-size:12px;font-weight:700;border:1px solid #888;background:#fff}
+.sc-ai-tag{font-size:11px;color:#8a5b00}
+</style>
+
+</head><body>
+
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
+    <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label">Lookup</span></a>
+        <a class="nav-item" href="cause-list.html"><span class="ico">📥</span><span class="label">Cause List Import</span></a>
+        <a class="nav-item active" href="scanning.html"><span class="ico">📠</span><span class="label">Scanning Desk</span></a>
+        <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html" target="_blank"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label" data-en="Portal" data-ur="پورٹل">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+      <div class="topbar">
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span>Scanning Desk</span></div>
+    <div class="right-controls">
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+    </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div class="user-chip-sm"><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
+  </div>
+<div class="wrap">
+
+  <div class="cl-head no-print">
+    <h2>Scanning Desk — اسکین ڈیسک</h2>
+    <p>Keep scanned judgments, signed documents and other papers safely, linked to the case. Upload a PDF/photo or scan with the camera; find them later by case, officer, FIR, district or words inside the document. &nbsp;|&nbsp; اسکین شدہ فیصلے، دستخط شدہ کاغذات اور دیگر دستاویزات کیس کے ساتھ محفوظ رکھیں؛ بعد میں کیس، آفیسر، FIR، ضلع یا دستاویز کے اندر کے الفاظ سے تلاش کریں۔</p>
+  </div>
+
+  <div class="cl-card no-print">
+    <div class="cl-bar">
+      <button class="cl-btn gold" id="btnAdd" onclick="openAddScan()">＋ New scan / نئی اسکین</button>
+      <button class="cl-btn ghost" id="btnUndo" onclick="histUndo()" title="Undo last saved change / آخری محفوظ تبدیلی واپس">↶ Undo</button>
+      <button class="cl-btn ghost" id="btnRedo" onclick="histRedo()" title="Redo / دوبارہ">↷ Redo</button>
+      <span class="cl-sep"></span>
+      <button class="cl-btn ghost" onclick="doPrint()">🖨 Print / پرنٹ</button>
+      <button class="cl-btn ghost" onclick="exportList('pdf')">⬇ PDF</button>
+      <button class="cl-btn ghost" onclick="exportList('xlsx')">⬇ Excel</button>
+      <button class="cl-btn ghost" onclick="exportList('docx')">⬇ Word</button>
+    </div>
+    <div id="actMsg" class="cl-msg" style="display:none"></div>
+  </div>
+
+  <div class="cl-card no-print">
+    <div class="sc-bar2">
+      <div class="cl-field wide"><label for="qBox">Search / تلاش (case no, title, officer, FIR, notes, text inside document)</label><input id="qBox" type="search" placeholder="e.g. 142, BAA, Lahore, Khan …" oninput="renderList(true)"></div>
+      <div class="cl-field"><label for="flDocType">Document / دستاویز</label><select id="flDocType" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flCaseType">Case type / قسم</label><select id="flCaseType" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flOutcome">Judgment result / فیصلہ</label><select id="flOutcome" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flOpinion">Opinion / رائے</label><select id="flOpinion" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flOfficer">Officer / آفیسر</label><select id="flOfficer" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flDistrict">District / ضلع</label><select id="flDistrict" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flYear">Case year / سال</label><select id="flYear" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flFrom">Date from / تاریخ سے</label><input type="date" id="flFrom" onchange="renderList(true)"></div>
+      <div class="cl-field"><label for="flTo">Date to / تاریخ تک</label><input type="date" id="flTo" onchange="renderList(true)"></div>
+      <div class="cl-field" style="flex:0 0 auto"><button class="cl-btn ghost" onclick="clearFilters()">Clear / صاف</button></div>
+    </div>
+    <div class="cl-stats" id="stats"></div>
+  </div>
+
+  <div class="cl-print-title" id="printTitle"></div>
+  <div class="cl-card sc-tw" id="listBox"><div class="cl-empty">⏳ …</div></div>
+  <div class="no-print" style="text-align:center;margin-bottom:14px"><button class="cl-btn ghost" id="btnMore" style="display:none" onclick="showMore()">Show more / مزید دکھائیں</button></div>
+
+  <div class="cl-note no-print" id="helpNote">
+    <b>طریقہ / How it works:</b> «نئی اسکین» دبائیں ← فائل (PDF/تصویر) منتخب کریں یا کیمرے سے صفحات اتاریں ← تفصیل بھریں ← محفوظ کریں۔ کئی صفحات ایک ہی PDF بن جاتے ہیں۔ دستاویز کے اندر کے الفاظ سے تلاش کے لیے «🔎 OCR» دبائیں (انگریزی بہتر پڑھتا ہے؛ اردو کم درست ہو سکتی ہے)۔<br>
+    Press “New scan” → choose a file or take photos with the camera → fill the details → Save. Several pages become one PDF. Use “OCR” to make the document searchable by its words. Nothing is saved until you press Save. &nbsp;|&nbsp; Save سے پہلے کچھ بھی محفوظ نہیں ہوتا۔
+  </div>
+
+  <!-- Add / Edit dialog -->
+  <div class="cl-modal-bg" id="editBg">
+    <div class="cl-modal sc-modal">
+      <h3 id="editTitle">New scan / نئی اسکین</h3>
+      <div id="qBan" class="cl-msg good sc-qban" style="display:none"></div>
+
+      <div id="fileSec">
+        <div class="sc-sec">① Document file / فائل</div>
+        <div class="cl-bar">
+          <button class="cl-btn" type="button" onclick="document.getElementById('fileIn').click()">📁 File / فائل (PDF, photo)</button>
+          <button class="cl-btn" type="button" onclick="openCamera()">📷 Camera / کیمرہ</button>
+          <button class="cl-btn ghost" type="button" id="btnClearParts" onclick="clearParts()">✕ Clear / ہٹائیں</button>
+        </div>
+        <input type="file" id="fileIn" accept="application/pdf,.pdf,image/*" multiple style="display:none">
+        <input type="file" id="camIn" accept="image/*" capture="environment" style="display:none">
+        <div class="cl-bar" style="margin-top:8px">
+          <button class="cl-btn gold" type="button" id="btnAuto" onclick="autoFill()">🪄 Read &amp; fill the details / پڑھ کر تفصیل خود بھریں</button>
+          <label class="sc-chk" style="margin:0"><input type="checkbox" id="autoRead" checked> <span>Do it automatically when I add a file / فائل شامل کرتے ہی خود کریں</span></label>
+        </div>
+        <div class="cl-sub" id="autoInfo" style="margin-top:6px;font-size:12.5px"></div>
+        <label class="sc-chk"><input type="checkbox" id="bwFilter"> <span>Clean scan look (grey, sharper) / صاف اسکین انداز (سرمئی، گہرا)</span></label>
+        <div class="sc-parts" id="partsBox"></div>
+        <div class="cl-sub" id="partsInfo" style="margin-top:6px;font-size:12px;color:var(--muted)"></div>
+      </div>
+
+      <div class="sc-sec">② Document & case / دستاویز اور کیس</div>
+      <div class="grid">
+        <div class="cl-field"><label for="fDocType">Document type / قسم * <span class="manage-link" role="button" tabindex="0" onclick="openListManage('docType')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fDocType"></select></div>
+        <div class="cl-field" id="otherBox" style="display:none"><label for="fDocOther">Other type (write) / دیگر قسم</label><input id="fDocOther"></div>
+        <div class="cl-field"><label for="fDate">Date of judgment / document / فیصلے کی تاریخ *</label><input type="date" id="fDate"></div>
+        <div class="cl-field"><label for="fOfficer">Officer handling / متعلقہ آفیسر <span class="manage-link" role="button" tabindex="0" onclick="openListManage('officer')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fOfficer"></select></div>
+        <div class="cl-field full"><label for="fCourt">Court that passed it / عدالت <span class="manage-link" role="button" tabindex="0" onclick="openListManage('court')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCourt"></select></div>
+        <div class="cl-field full"><label for="fJudges">Bench / judges / جج صاحبان</label><input id="fJudges" placeholder="Justice … , Justice …"></div>
+        <div class="cl-field full"><label for="fLower">Lower court &amp; judgment challenged / نیچے کی عدالت اور فیصلہ</label><input id="fLower" placeholder="e.g. Lahore High Court, Multan Bench, Cr. Appeal No. 1577/2019 (judgment dated 20-01-2022)"></div>
+        <div class="cl-field"><label for="fCaseType">Case Type / کیس کی قسم (BBA, BAA, J.P. …) <span class="manage-link" role="button" tabindex="0" onclick="openListManage('type')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseType"></select></div>
+        <div class="cl-field"><label for="fCaseNo">Case No / کیس نمبر</label><input id="fCaseNo" placeholder="142 or 950-L"></div>
+        <div class="cl-field"><label for="fCaseYear">Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseYear"></select></div>
+        <div class="cl-field full"><label for="fTitle">Case title / عنوان</label><input id="fTitle" placeholder="e.g. Muhammad Ali v. The State"></div>
+        <div class="cl-field"><label for="fOutcome">Judgment result / فیصلے کا نتیجہ <span class="manage-link" role="button" tabindex="0" onclick="openListManage('outcome')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fOutcome"></select></div>
+        <div class="cl-field"><label for="fSentence">Sentence / nature under challenge / سزا · نوعیت <span class="manage-link" role="button" tabindex="0" onclick="openListManage('sentence')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fSentence"></select></div>
+        <div class="cl-field"><label for="fSections">Offence / sections / دفعات</label><input id="fSections" placeholder="e.g. 302, 34 PPC"></div>
+      </div>
+
+      <div class="sc-sec">③ FIR / police / ایف آئی آر اور مقام</div>
+      <div class="grid">
+        <div class="cl-field"><label for="fFirNo">FIR No / ایف آئی آر نمبر</label><input id="fFirNo"></div>
+        <div class="cl-field"><label for="fFirYear">FIR Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fFirYear"></select></div>
+        <div class="cl-field"><label for="fDistrict">District / ضلع <span class="manage-link" role="button" tabindex="0" onclick="openListManage('district')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fDistrict"></select></div>
+        <div class="cl-field"><label for="fTehsil">Tehsil / تحصیل <span class="manage-link" role="button" tabindex="0" onclick="openListManage('tehsil')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fTehsil"></select></div>
+        <div class="cl-field"><label for="fStation">Police Station / تھانہ <span class="manage-link" role="button" tabindex="0" onclick="openListManage('station')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fStation"></select></div>
+      </div>
+
+      <div class="sc-sec">④ Our opinion on this judgment / اس فیصلے پر ہماری رائے</div>
+      <div class="grid">
+        <div class="cl-field"><label for="fOpStatus">Opinion / رائے <span class="manage-link" role="button" tabindex="0" onclick="openListManage('opinion')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fOpStatus"></select></div>
+        <div class="cl-field"><label for="fOpBy">Opinion by / رائے دینے والا <span class="manage-link" role="button" tabindex="0" onclick="openListManage('officer')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fOpBy"></select></div>
+        <div class="cl-field"><label for="fOpDate">Opinion date / تاریخ</label><input type="date" id="fOpDate"></div>
+        <div class="cl-field"><label for="fAcDate">Sent to Appeal Committee on / اپیل کمیٹی کو بھیجنے کی تاریخ</label><input type="date" id="fAcDate"></div>
+        <div class="cl-field full"><label for="fOpText">Opinion details / رائے کی تفصیل</label><textarea id="fOpText" rows="2" placeholder="Reasons / گراؤنڈز" dir="auto"></textarea><input type="hidden" id="fOpAi"></div>
+        <div class="cl-field full" id="aiRow">
+          <div class="sc-ai">
+            <button type="button" class="cl-btn gold" id="btnAi" onclick="aiDraft()">✨ AI short opinion draft / AI سے مختصر رائے کا مسودہ</button>
+            <label class="sc-ai-lang" for="aiLang">Language / زبان <select id="aiLang"><option value="en">English</option><option value="ur">اردو</option></select></label>
+          </div>
+          <div class="sc-ai-note">Uses the judgment text read above (press “Read &amp; fill the details” or OCR first). It is only a draft for the officer — it does not go anywhere until you press “Use”. / یہ صرف افسر کے لیے مسودہ ہے؛ «استعمال کریں» دبانے تک کہیں نہیں جاتا۔</div>
+          <div id="aiOut" class="sc-ai-out" style="display:none"></div>
+        </div>
+        <div class="cl-field full" id="linkRow" style="display:none"><label for="fLinkTo">Linked to judgment / متعلقہ فیصلہ (the opinion is copied into that judgment record / رائے اس فیصلے کے ریکارڈ میں بھی جائے گی)</label><select id="fLinkTo"></select><div id="linkInfo" class="sc-aut-note" style="display:none"></div></div>
+        <div class="cl-field"><label for="fScType">Filed in Supreme Court as / سپریم کورٹ میں دائر <span class="manage-link" role="button" tabindex="0" onclick="openListManage('type')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fScType"></select></div>
+        <div class="cl-field"><label for="fScNo">SC Case No / نمبر</label><input id="fScNo" placeholder="e.g. 1450-L"></div>
+        <div class="cl-field"><label for="fScYear">SC Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fScYear"></select></div>
+        <div class="cl-field full"><label for="fGrounds">Major grounds of acquittal / conversion / بریت یا تبدیلی کی اہم وجوہات (Inspection Proforma B)</label><textarea id="fGrounds" rows="3" placeholder="One reason per line / ہر وجہ نئی سطر میں"></textarea></div>
+        <div class="cl-field full"><label for="fNotes">Notes / تفصیل</label><textarea id="fNotes" rows="2"></textarea></div>
+      </div>
+
+      <div class="sc-sec">⑤ Search text / تلاش کا متن</div>
+      <div class="cl-bar">
+        <button class="cl-btn" type="button" id="btnOcr" onclick="runOcr()">🔎 OCR — read the document / دستاویز پڑھیں</button>
+        <label class="sc-chk" style="margin:0"><input type="checkbox" id="ocrUrdu"> <span>Urdu too / اردو بھی (slower)</span></label>
+      </div>
+      <div class="sc-prog" id="ocrProg" style="display:none"><i></i></div>
+      <div class="cl-sub" id="ocrInfo" style="margin-top:6px;font-size:12px;color:var(--muted)"></div>
+      <div class="cl-field full" style="margin-top:8px"><textarea id="fOcr" rows="4" placeholder="Words from the document (used for searching) / دستاویز کے الفاظ (تلاش کے لیے)"></textarea></div>
+
+      <div class="sc-prog" id="upProg" style="display:none"><i></i></div>
+      <div id="modalMsg" class="cl-msg" style="display:none"></div>
+      <div class="foot">
+        <span class="sc-toolbar-hist" style="margin-inline-end:auto">
+          <button class="cl-btn ghost" type="button" id="fUndo" onclick="formUndo()" title="Undo typing / واپس">↶ Undo</button>
+          <button class="cl-btn ghost" type="button" id="fRedo" onclick="formRedo()" title="Redo / دوبارہ">↷ Redo</button>
+        </span>
+        <button class="cl-btn ghost" onclick="closeEdit()" id="btnCancel">Cancel / منسوخ</button>
+        <button class="cl-btn gold" onclick="saveScan()" id="btnSave">💾 Save / محفوظ کریں</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera -->
+  <div class="sc-cam" id="camBox">
+    <video id="camVideo" autoplay playsinline muted></video>
+    <div class="cb">
+      <span class="cnt" id="camCnt">0</span>
+      <button class="shot" type="button" onclick="camShot()">📸 Capture / تصویر لیں</button>
+      <button class="oth" type="button" onclick="camFlip()">🔄 Flip / کیمرہ بدلیں</button>
+      <button class="done" type="button" onclick="closeCamera()">✔ Done / مکمل</button>
+    </div>
+  </div>
+
+
+  <!-- Add / Edit list options (admins) -->
+  <div class="cl-modal-bg" id="listBg" style="z-index:9700">
+    <div class="cl-modal" style="max-width:460px">
+      <h3 id="lmTitle"></h3>
+      <div class="sc-sub" id="lmNote" style="margin:-6px 0 10px"></div>
+      <div id="lmItems" class="lm-items"></div>
+      <div style="margin-top:10px"><button type="button" class="cl-btn ghost sm" onclick="addListRow()">+ Add New / نیا شامل کریں</button></div>
+      <div class="cl-msg" id="lmMsg" style="display:none;margin-top:10px"></div>
+      <div class="sc-sub" style="margin-top:10px">Removing an option here does not change documents already saved with that value. / یہاں کوئی آپشن ہٹانے سے پہلے سے محفوظ دستاویزات تبدیل نہیں ہوتیں۔</div>
+      <div class="foot">
+        <button type="button" class="cl-btn ghost" onclick="closeListManage()">Cancel / منسوخ</button>
+        <button type="button" class="cl-btn gold" onclick="saveListManage()">Save / محفوظ کریں</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="cl-modal-bg" id="confBg" style="z-index:9600">
+    <div class="cl-modal">
+      <h3 id="confTitle"></h3>
+      <div id="confBody" style="font-size:13.5px; line-height:1.9"></div>
+      <div class="foot">
+        <button class="cl-btn ghost" id="confNo">Back / واپس</button>
+        <button class="cl-btn gold" id="confYes">Confirm / تصدیق</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+  var isUrdu = false;
+  /* ================= Shared sidebar / mobile-drawer interactivity ================= */
+  (function(){
+    var sidebarEl = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    var mobileBtn = document.getElementById('mobileMenuBtn');
+    if(mobileBtn) mobileBtn.addEventListener('click', function(){
+      sidebarEl.classList.add('mobile-open'); backdrop.classList.add('show');
+    });
+    if(backdrop) backdrop.addEventListener('click', function(){
+      sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show');
+    });
+    document.querySelectorAll('.nav-group-head').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById(btn.dataset.group).classList.toggle('open');
+      });
+    });
+    document.querySelectorAll('.sidebar .nav-item:not(.disabled), .sidebar .nav-subitem').forEach(function(el){
+      el.addEventListener('click', function(){
+        if(window.innerWidth <= 960){ sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show'); }
+      });
+    });
+  })();
+
+  var PUNJAB_EMBLEM_SVG = '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="47" fill="var(--navy)" stroke="var(--gold)" stroke-width="2.2"/><circle cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="0.6" opacity="0.55"/><circle cx="43" cy="27" r="8.5" fill="var(--gold-light)"/><circle cx="46.3" cy="24.3" r="7" fill="var(--navy)"/><g transform="translate(58,22) scale(0.62)"><path d="M0,-8 L2.3,-2.6 L8,-2.5 L3.4,1.2 L5,7 L0,3.6 L-5,7 L-3.4,1.2 L-8,-2.5 L-2.3,-2.6 Z" fill="var(--gold-light)"/></g><path d="M27,42 Q32.5,37.5 38,42 T49,42 T60,42 T71,42 T73,42" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,47 Q32.5,42.5 38,47 T49,47 T60,47 T71,47 T73,47" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,52 Q32.5,47.5 38,52 T49,52 T60,52 T71,52 T73,52" fill="none" stroke="var(--gold-light)" stroke-width="2" stroke-linecap="round" opacity="1"/><path d="M27,57 Q32.5,52.5 38,57 T49,57 T60,57 T71,57 T73,57" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="1"/><path d="M27,62 Q32.5,57.5 38,62 T49,62 T60,62 T71,62 T73,62" fill="none" stroke="var(--gold-light)" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/><path d="M63.16,93.03 Q67.40,84.90 59.23,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M63.98,91.14 Q64.62,90.98 65.43,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.98,91.14 Q63.54,90.64 63.27,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q65.15,88.60 65.85,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.51,88.91 Q63.94,88.47 63.44,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q65.20,86.15 65.75,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.60,86.62 Q63.91,86.27 63.17,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q64.78,83.65 65.13,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M64.24,84.25 Q63.46,84.02 62.48,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q63.89,81.10 64.03,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.42,81.83 Q62.56,81.71 61.39,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q62.53,78.52 62.48,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M62.15,79.35 Q61.23,79.34 59.87,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q75.07,79.88 69.75,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M65.86,89.79 Q66.52,89.85 67.52,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M65.86,89.79 Q65.61,89.17 65.70,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q68.86,86.35 69.89,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M68.15,86.37 Q67.81,85.74 67.78,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q70.58,82.88 71.58,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M69.83,83.02 Q69.38,82.41 69.18,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q71.67,79.45 72.58,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.91,79.73 Q70.33,79.16 69.90,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q72.11,76.04 72.87,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.38,76.49 Q70.66,76.01 69.96,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q71.90,72.68 72.43,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M71.23,73.30 Q70.39,72.94 69.40,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M63.16,93.03 Q80.94,73.74 75.68,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M67.33,88.16 Q67.99,88.24 69.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M67.33,88.16 Q67.10,87.54 67.22,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q71.60,83.21 72.65,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M70.89,83.21 Q70.57,82.57 70.60,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q74.37,78.31 75.42,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M73.61,78.40 Q73.20,77.75 73.09,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q76.31,73.52 77.31,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M75.52,73.73 Q74.99,73.11 74.68,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q77.39,68.84 78.27,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.61,69.20 Q75.95,68.65 75.39,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q77.61,64.27 78.30,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M76.87,64.81 Q76.08,64.35 75.24,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q32.60,84.90 40.77,75.37" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M36.02,91.14 Q36.46,90.64 36.73,89.60" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.02,91.14 Q35.38,90.98 34.57,90.26" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q36.06,88.47 36.56,87.41" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.49,88.91 Q34.85,88.60 34.15,87.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q36.09,86.27 36.83,85.25" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.40,86.62 Q34.80,86.15 34.25,85.02" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q36.54,84.02 37.52,83.08" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M35.76,84.25 Q35.22,83.65 34.87,82.35" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q37.44,81.71 38.61,80.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.58,81.83 Q36.11,81.10 35.97,79.67" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q38.77,79.34 40.13,78.62" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M37.85,79.35 Q37.47,78.52 37.52,76.99" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q24.93,79.88 30.25,68.41" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M34.14,89.79 Q34.39,89.17 34.30,88.09" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M34.14,89.79 Q33.48,89.85 32.48,89.44" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q32.19,85.74 32.22,84.57" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M31.85,86.37 Q31.14,86.35 30.11,85.78" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q30.62,82.41 30.82,81.16" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M30.17,83.02 Q29.42,82.88 28.42,82.11" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q29.67,79.16 30.10,77.88" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.09,79.73 Q28.33,79.45 27.42,78.45" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q29.34,76.01 30.04,74.75" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.62,76.49 Q27.89,76.04 27.13,74.81" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q29.61,72.94 30.60,71.77" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M28.77,73.30 Q28.10,72.68 27.57,71.24" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M36.84,93.03 Q19.06,73.74 24.32,58.34" fill="none" stroke="var(--gold)" stroke-width="1.1"/><path d="M32.67,88.16 Q32.90,87.54 32.78,86.47" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M32.67,88.16 Q32.01,88.24 31.00,87.86" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q29.43,82.57 29.40,81.39" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M29.11,83.21 Q28.40,83.21 27.35,82.69" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q26.80,77.75 26.91,76.50" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M26.39,78.40 Q25.63,78.31 24.58,77.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q25.01,73.11 25.32,71.80" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M24.48,73.73 Q23.69,73.52 22.69,72.61" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q24.05,68.65 24.61,67.31" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.39,69.20 Q22.61,68.84 21.73,67.70" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q23.92,64.35 24.76,63.07" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M23.13,64.81 Q22.39,64.27 21.70,62.90" fill="none" stroke="var(--gold)" stroke-width="0.85" stroke-linecap="round"/><path d="M45,84 Q50,80.5 55,84 Q52,87 50,90.5 Q48,87 45,84 Z" fill="var(--gold)" stroke="var(--gold-deep)" stroke-width="0.5"/><text x="50" y="73" font-size="8.5" fill="var(--gold-light)" text-anchor="middle">حکومتِ پنجاب</text></svg>';
+  var THEMES = [
+    { id:'navy', nameEn:'Navy', nameUr:'نیلا', navy:'#2A5A84', gold:'#B8860B' },
+    { id:'green', nameEn:'Green', nameUr:'سبز', navy:'#1a6b45', gold:'#C9A227' },
+    { id:'teal', nameEn:'Teal', nameUr:'ٹیل', navy:'#128f89', gold:'#96762a' },
+    { id:'ocean', nameEn:'Ocean', nameUr:'سمندری', navy:'#1670a0', gold:'#c9852a' },
+    { id:'sepia', nameEn:'Sepia', nameUr:'بھورا', navy:'#6d5330', gold:'#a3742a' },
+    { id:'contrast', nameEn:'Contrast', nameUr:'کنٹراسٹ', navy:'#111111', gold:'#8a4b00' },
+    { id:'night', nameEn:'Night', nameUr:'تاریک', navy:'#5b7bb0', gold:'#d4a13d' }
+  ];
+  var currentTheme = (function(){ try{ return localStorage.getItem('cmpTheme') || 'navy'; }catch(e){ return 'navy'; } })();
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){
+    document.getElementById('themePicker').classList.toggle('open');
+  }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    try{ localStorage.setItem('cmpTheme', id); }catch(e){}
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project", storageBucket: "camp-office-project.firebasestorage.app" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+/* =====================================================================
+   Scanning Desk — scanned documents (judgments, signed scans, orders …)
+   Files live in Firebase Storage (scans/<id>/<file>.pdf); details + searchable text in Firestore `scans`.
+   ===================================================================== */
+var storage = null;
+try{ storage = firebase.storage(); }catch(e){ console.error('storage', e); }
+
+var CTX = { user:null, canWrite:false, canDelete:false, canLists:false };
+var SCANS = [];
+/* Built-in starter lists — used ONLY when the website's own lists (Firestore) have nothing yet.
+   Real lists come from the same places as the other pages:
+     officers, years  -> lookupLists/caseEntry   (shared with Daily Case Entry)
+     districts, tehsils, police stations -> lookupLists/caseNotice (shared with Case Notices, cascading)
+     court, judgment result -> follow the Shared Dropdown Manager until customised here
+     case type -> built from Daily Case Entry + Case Notice lists until customised here
+     document type, opinion -> lookupLists/scanning (Scanning Desk only)  */
+var BASE_TYPES = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','J.P.','BBA','BAA','Other'];
+var COURTS = ['Supreme Court of Pakistan','Lahore High Court','Federal Shariat Court','Other'];
+var OUTCOMES = ['Allowed','Dismissed','Partly Allowed','Disposed of','Bail Granted','Bail Dismissed','Conviction','Acquittal','Other'];
+var DOC_TYPES = ['Judgment','Signed scan','Order','Notice','Opinion','FIR / police record','Other'];
+var OPINIONS = ['Fit for appeal / petition','Not fit','Under consideration','Not required'];
+var SENTENCES = ['Death sentence','Life imprisonment','Other conviction','Acquittal','Bail matter','Not applicable'];
+var UR = {'Judgment':'فیصلہ','Signed scan':'دستخط شدہ اسکین','Order':'حکم نامہ','Notice':'نوٹس','Opinion':'رائے','FIR / police record':'ایف آئی آر / پولیس ریکارڈ','Other':'دیگر',
+  'Fit for appeal / petition':'اپیل / پٹیشن کے قابل','Not fit':'قابل نہیں','Under consideration':'زیرِ غور','Not required':'ضرورت نہیں',
+  'Death sentence':'سزائے موت','Life imprisonment':'عمر قید','Other conviction':'دیگر سزا','Acquittal':'بریت','Bail matter':'ضمانت','Not applicable':'لاگو نہیں'};
+var SRC = { caseEntry:{}, caseNotice:{}, scanning:{}, shared:{} };   // last data read from Firestore
+var LISTS = { officers: [], types: BASE_TYPES.slice(), courts: COURTS.slice(), outcomes: OUTCOMES.slice(), docTypes: DOC_TYPES.slice(), opinions: OPINIONS.slice(), sentences: SENTENCES.slice() };
+var MAX_BYTES = 25 * 1024 * 1024;
+var OCR_CAP = 30000;               // characters of search text kept per document
+var SHOWN = 100;                   // rows shown before "Show more"
+
+function $(id){ return document.getElementById(id); }
+function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function bi(ur, en){ return '<bdi dir="rtl">' + ur + '</bdi> <span style="opacity:.5">/</span> <bdi dir="ltr">' + en + '</bdi>'; }
+function bi2(ur, en){ return '<div dir="rtl" style="text-align:right">' + ur + '</div><div dir="ltr" style="text-align:left">' + en + '</div>'; }
+function showAct(msg, cls){ var b = $('actMsg'); b.className = 'cl-msg' + (cls ? ' ' + cls : ''); b.innerHTML = msg; b.style.display = msg ? '' : 'none'; }
+function showModal(msg, cls){ var b = $('modalMsg'); b.className = 'cl-msg' + (cls ? ' ' + cls : ''); b.innerHTML = msg; b.style.display = msg ? '' : 'none'; }
+function dmy(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : (iso || ''); }
+function todayIso(){ var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth()+1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function mb(n){ return n >= 1048576 ? (n/1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n/1024)) + ' KB'; }
+function normNo(s){ return String(s || '').replace(/\s+/g,'').toUpperCase(); }
+function confirmBox(title, html, yes, opt){
+  opt = opt || {};
+  $('confTitle').textContent = title; $('confBody').innerHTML = html;
+  $('confYes').style.display = opt.noYes ? 'none' : '';
+  $('confYes').textContent = opt.yesLabel || 'Confirm / تصدیق';
+  $('confNo').textContent = opt.noLabel || 'Back / واپس';
+  $('confBg').classList.add('show');
+  $('confNo').onclick = function(){ $('confBg').classList.remove('show'); };
+  $('confYes').onclick = function(){ $('confBg').classList.remove('show'); if(yes) yes(); };
+}
+
+/* ---------- lists: districts / tehsils / police stations (same data as Case Notices) ---------- */
+  var DISTRICTS = ['Attock','Bahawalnagar','Bahawalpur','Bhakkar','Chakwal','Chiniot','Dera Ghazi Khan','Faisalabad','Gujranwala','Gujrat','Hafizabad','Jhang','Jhelum','Kasur','Khanewal','Khushab','Lahore','Layyah','Lodhran','Mandi Bahauddin','Mianwali','Multan','Muzaffargarh','Narowal','Nankana Sahib','Okara','Pakpattan','Rahim Yar Khan','Rajanpur','Rawalpindi','Sahiwal','Sargodha','Sheikhupura','Sialkot','Toba Tek Singh','Vehari'];
+  var DISTRICT_TEHSILS = {
+    'Attock': ['Attock','Fateh Jang','Hasan Abdal','Hazro','Jand','Pindi Gheb'],
+    'Bahawalnagar': ['Bahawalnagar','Chishtian','Fort Abbas','Haroonabad','Minchinabad'],
+    'Bahawalpur': ['Bahawalpur City','Bahawalpur Saddar','Ahmedpur East','Hasilpur','Khairpur Tamewali','Yazman'],
+    'Bhakkar': ['Bhakkar','Darya Khan','Kaloor Kot','Mankera'],
+    'Chakwal': ['Chakwal','Choa Saidan Shah','Kallar Kahar','Talagang','Lawa'],
+    'Chiniot': ['Chiniot','Bhawana','Lalian'],
+    'Dera Ghazi Khan': ['Dera Ghazi Khan','Taunsa','Kot Chutta'],
+    'Faisalabad': ['Faisalabad City','Faisalabad Saddar','Chak Jhumra','Jaranwala','Samundri','Tandlianwala'],
+    'Gujranwala': ['Gujranwala City','Gujranwala Saddar','Kamoke','Nowshera Virkan','Wazirabad'],
+    'Gujrat': ['Gujrat','Kharian','Sarai Alamgir'],
+    'Hafizabad': ['Hafizabad','Pindi Bhattian'],
+    'Jhang': ['Jhang','Ahmed Pur Sial','Shorkot','18-Hazari'],
+    'Jhelum': ['Jhelum','Pind Dadan Khan','Sohawa','Dina'],
+    'Kasur': ['Kasur','Chunian','Kot Radha Kishan','Pattoki'],
+    'Khanewal': ['Khanewal','Jahanian','Kabirwala','Mian Channu'],
+    'Khushab': ['Khushab','Noorpur Thal','Quaidabad','Naushera'],
+    'Lahore': ['Lahore City','Lahore Cantt','Model Town','Raiwind','Shalimar'],
+    'Layyah': ['Layyah','Chaubara','Karor Lal Esan'],
+    'Lodhran': ['Lodhran','Dunyapur','Kahror Pakka'],
+    'Mandi Bahauddin': ['Mandi Bahauddin','Malakwal','Phalia'],
+    'Mianwali': ['Mianwali','Isakhel','Piplan'],
+    'Multan': ['Multan City','Multan Saddar','Jalalpur Pirwala','Shujabad'],
+    'Muzaffargarh': ['Muzaffargarh','Alipur','Jatoi','Kot Addu'],
+    'Narowal': ['Narowal','Shakargarh','Zafarwal'],
+    'Nankana Sahib': ['Nankana Sahib','Sangla Hill','Shah Kot'],
+    'Okara': ['Okara','Depalpur','Renala Khurd'],
+    'Pakpattan': ['Pakpattan','Arifwala'],
+    'Rahim Yar Khan': ['Rahim Yar Khan','Khanpur','Liaquatpur','Sadiqabad'],
+    'Rajanpur': ['Rajanpur','Jampur','Rojhan'],
+    'Rawalpindi': ['Rawalpindi','Gujar Khan','Kahuta','Kallar Syedan','Murree','Taxila'],
+    'Sahiwal': ['Sahiwal','Chichawatni'],
+    'Sargodha': ['Sargodha','Bhalwal','Kot Momin','Shahpur','Silanwali'],
+    'Sheikhupura': ['Sheikhupura','Ferozewala','Muridke','Sharaqpur'],
+    'Sialkot': ['Sialkot','Daska','Pasrur','Sambrial'],
+    'Toba Tek Singh': ['Toba Tek Singh','Gojra','Kamalia','Pirmahal'],
+    'Vehari': ['Vehari','Burewala','Mailsi']
+  };
+  var DISTRICT_STATIONS = {
+    'Pakpattan': ['City Arifwala','Saddar Pakpattan','City Pakpattan'],
+    'Lahore': ['Model Town Lahore','Civil Lines Lahore']
+  };
+
+function yearList(from){ var y = []; for(var i = new Date().getFullYear(); i >= from; i--) y.push(String(i)); return y; }
+var YEARS = yearList(1990);
+
+function arrOk(a){ return Array.isArray(a) && a.length > 0; }
+function sharedList(key){
+  var ls = Array.isArray(SRC.shared.lists) ? SRC.shared.lists : [];
+  for(var i = 0; i < ls.length; i++) if(ls[i] && ls[i].key === key && arrOk(ls[i].values)) return ls[i].values.slice();
+  return null;
+}
+function uniqKeep(a){ var out = []; a.forEach(function(v){ if(v && out.indexOf(v) === -1) out.push(v); }); return out; }
+function recomputeLists(){
+  var ce = SRC.caseEntry, cn = SRC.caseNotice, sc = SRC.scanning;
+  LISTS.officers = arrOk(ce.officers) ? ce.officers.slice() : (sharedList('officers') || []);
+  if(arrOk(sc.types)) LISTS.types = sc.types.slice();
+  else {
+    var t = uniqKeep([].concat(arrOk(ce.types) ? ce.types : [], arrOk(cn.types) ? cn.types : [], sharedList('caseType_caseNotice') || []));
+    LISTS.types = t.length ? t : BASE_TYPES.slice();
+  }
+  LISTS.courts   = arrOk(sc.courts)   ? sc.courts.slice()   : (sharedList('courtTypes') || COURTS.slice());
+  LISTS.outcomes = arrOk(sc.outcomes) ? sc.outcomes.slice() : (sharedList('resultCategory') || OUTCOMES.slice());
+  LISTS.docTypes = arrOk(sc.docTypes) ? sc.docTypes.slice() : DOC_TYPES.slice();
+  LISTS.opinions = arrOk(sc.opinions) ? sc.opinions.slice() : OPINIONS.slice();
+  LISTS.sentences = arrOk(sc.sentences) ? sc.sentences.slice() : SENTENCES.slice();
+  var yrs = arrOk(ce.years) ? ce.years : yearList(1990);
+  YEARS.length = 0; Array.prototype.push.apply(YEARS, yrs);
+  if(arrOk(cn.districts)){ DISTRICTS.length = 0; Array.prototype.push.apply(DISTRICTS, cn.districts); }
+  if(cn.tehsils && typeof cn.tehsils === 'object') Object.keys(cn.tehsils).forEach(function(k){ DISTRICT_TEHSILS[k] = cn.tehsils[k]; });
+  if(cn.stations && typeof cn.stations === 'object') Object.keys(cn.stations).forEach(function(k){ DISTRICT_STATIONS[k] = cn.stations[k]; });
+}
+function withUr(arr){ return arr.map(function(v){ return UR[v] ? [v, UR[v]] : v; }); }
+function optHtml(arr, blank, cur){
+  return (blank != null ? '<option value="">' + esc(blank) + '</option>' : '') + arr.map(function(o){
+    var v = Array.isArray(o) ? o[0] : o, t = Array.isArray(o) ? o[0] + ' — ' + o[1] : o;
+    return '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(t) + '</option>';
+  }).join('');
+}
+function fillSel(id, arr, blank, keep){
+  var el = $(id), cur = keep === undefined ? el.value : keep;
+  var vals = arr.map(function(o){ return Array.isArray(o) ? o[0] : o; });
+  if(cur && vals.indexOf(cur) === -1) arr = arr.concat([cur]);
+  el.innerHTML = optHtml(arr, blank, cur);
+  if(cur !== undefined) el.value = cur;
+}
+function fillForm(){
+  var keepT = $('fTehsil').value, keepS = $('fStation').value;
+  fillSel('fDocType', withUr(LISTS.docTypes), null);
+  fillSel('fOfficer', LISTS.officers, '— none / کوئی نہیں —');
+  fillSel('fCaseType', LISTS.types, '—');
+  fillSel('fScType', LISTS.types, '—');
+  fillSel('fCourt', LISTS.courts, '—');
+  fillSel('fOutcome', LISTS.outcomes, '—');
+  fillSel('fSentence', withUr(LISTS.sentences), '—');
+  fillSel('fOpStatus', withUr(LISTS.opinions), '—');
+  fillSel('fOpBy', LISTS.officers, '—');
+  fillSel('fScYear', YEARS, '—');
+  fillSel('fCaseYear', YEARS, '—');
+  fillSel('fFirYear', YEARS, '—');
+  fillSel('fDistrict', DISTRICTS, '— ضلع / District —');
+  refreshTehsilStation(keepT, keepS);
+}
+function refreshTehsilStation(keepT, keepS){
+  var d = $('fDistrict').value;
+  if(!d){
+    $('fTehsil').innerHTML = '<option value="">— پہلے ضلع منتخب کریں / select district first —</option>';
+    $('fStation').innerHTML = '<option value="">— پہلے ضلع منتخب کریں / select district first —</option>';
+    return;
+  }
+  fillSel('fTehsil', DISTRICT_TEHSILS[d] || [], '—', keepT || '');
+  fillSel('fStation', DISTRICT_STATIONS[d] || [], '—', keepS || '');
+}
+
+/* ---------- filters ---------- */
+function uniq(arr){ return Array.from(new Set(arr.filter(Boolean))).sort(); }
+function fillFilters(){
+  var ids = ['flDocType','flCaseType','flOutcome','flOpinion','flOfficer','flDistrict','flYear'], keep = {};
+  ids.forEach(function(k){ keep[k] = $(k).value; });
+  function opts(arr){ return '<option value="">All / سب</option>' + arr.map(function(t){ return '<option>' + esc(t) + '</option>'; }).join(''); }
+  $('flDocType').innerHTML = opts(uniq(SCANS.map(docTypeName)));
+  $('flCaseType').innerHTML = opts(uniq(SCANS.map(function(s){ return s.caseType; })));
+  $('flOutcome').innerHTML = opts(uniq(SCANS.map(function(s){ return s.outcome; })));
+  $('flOpinion').innerHTML = opts(uniq(SCANS.map(function(s){ return s.opinionStatus; })));
+  $('flOfficer').innerHTML = opts(uniq(SCANS.map(function(s){ return s.officer; })));
+  $('flDistrict').innerHTML = opts(uniq(SCANS.map(function(s){ return s.district; })));
+  $('flYear').innerHTML = opts(uniq(SCANS.map(function(s){ return s.caseYear; })).reverse());
+  ids.forEach(function(k){ $(k).value = keep[k]; });
+}
+function clearFilters(){
+  ['qBox','flDocType','flCaseType','flOutcome','flOpinion','flOfficer','flDistrict','flYear','flFrom','flTo'].forEach(function(i){ $(i).value = ''; });
+  renderList(true);
+}
+
+/* ---------- list ---------- */
+function docTypeName(s){ return s.docType === 'Other' && s.docTypeOther ? s.docTypeOther : (s.docType || ''); }
+function docTypeUr(s){ return UR[s.docType] || ''; }
+function caseText(s){ return s.caseNo ? ((s.caseType || '') + ' ' + s.caseNo + (s.caseYear ? '/' + s.caseYear : '')).trim() : ''; }
+function scText(s){ return s.scNo ? ('SC ' + (s.scType || '') + ' ' + s.scNo + (s.scYear ? '/' + s.scYear : '')).replace(/\s+/g, ' ').trim() : ''; }
+function firText(s){ return s.firNo ? ('FIR ' + s.firNo + (s.firYear ? '/' + s.firYear : '')) : ''; }
+function hay(s){
+  return [docTypeName(s), docTypeUr(s), s.court, caseText(s), s.caseNo, s.caseYear, s.title, s.outcome, s.sections, s.officer, s.notes, firText(s), s.station, s.district, s.tehsil, s.judges, s.lower, s.sentence, s.grounds, s.opinionStatus, s.opinionBy, s.opinionText, scText(s), s.date, dmy(s.date), s.fileName].join(' ').toLowerCase();
+}
+function filtered(){
+  var q = $('qBox').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
+  var t = $('flDocType').value, o = $('flOfficer').value, d = $('flDistrict').value, y = $('flYear').value, f = $('flFrom').value, to = $('flTo').value;
+  return SCANS.filter(function(s){
+    if(t && docTypeName(s) !== t) return false;
+    if($('flCaseType').value && s.caseType !== $('flCaseType').value) return false;
+    if($('flOutcome').value && s.outcome !== $('flOutcome').value) return false;
+    if($('flOpinion').value && s.opinionStatus !== $('flOpinion').value) return false;
+    if(o && s.officer !== o) return false;
+    if(d && s.district !== d) return false;
+    if(y && String(s.caseYear) !== y) return false;
+    if(f && (s.date || '') < f) return false;
+    if(to && (s.date || '') > to) return false;
+    if(words.length){
+      var h = hay(s), tx = String(s.ocrText || '').toLowerCase();
+      for(var i = 0; i < words.length; i++){ if(h.indexOf(words[i]) === -1 && tx.indexOf(words[i]) === -1) return false; }
+    }
+    return true;
+  }).sort(function(a, b){ return String(b.date || '').localeCompare(String(a.date || '')) || String(b.createdMs || 0).localeCompare(String(a.createdMs || 0)); });
+}
+function snippet(s, q){
+  if(!q || !s.ocrText) return '';
+  var words = q.toLowerCase().split(/\s+/), tx = String(s.ocrText), low = tx.toLowerCase();
+  if(hay(s).indexOf(words[0]) !== -1) return '';
+  var i = low.indexOf(words[0]); if(i < 0) return '';
+  var a = Math.max(0, i - 40), b = Math.min(tx.length, i + 80);
+  return '<span class="sc-snip">🔎 …' + esc(tx.slice(a, b).replace(/\s+/g, ' ')) + '…</span>';
+}
+var LIST_VIEW = [];
+function scanById(id){ return SCANS.filter(function(x){ return x.id === id; })[0]; }
+function linkSub(s){ if(s.docType !== 'Opinion' || !s.linkedTo) return ''; var j = scanById(s.linkedTo); return '<span class="sc-sub">↪ ' + esc(j ? (caseText(j) || 'judgment') : 'judgment (not found)') + '</span>'; }
+function opFileBtn(s, i){ return (s.docType !== 'Opinion' && s.opinionScanId && scanById(s.opinionScanId)) ? '<span class="sc-sub"><button class="go" data-a="openop" data-i="' + i + '" title="Open the opinion file">📎 Opinion file</button></span>' : ''; }
+var NEWIDS = {};
+function scrollToNew(){ setTimeout(function(){ var r = document.querySelector('#listBox tr.sc-new'); if(r && r.scrollIntoView) r.scrollIntoView({block:'center', behavior:'smooth'}); }, 350); }
+function renderList(reset){
+  if(reset) SHOWN = 100;
+  var list = filtered(); LIST_VIEW = list;
+  var q = $('qBox').value.trim();
+  var tot = SCANS.reduce(function(n, s){ return n + (s.fileSize || 0); }, 0);
+  $('stats').innerHTML = '<span class="cl-chip">Total / کل <b>' + SCANS.length + '</b></span><span class="cl-chip ok">Shown / نتائج <b>' + list.length + '</b></span><span class="cl-chip">Stored / ذخیرہ <b>' + mb(tot) + '</b></span>';
+  $('printTitle').innerHTML = '<h1>Scanning Desk — Scanned Documents</h1><div>Camp Office, Prosecutor General Punjab &nbsp;|&nbsp; Documents: ' + list.length + ' &nbsp;|&nbsp; Prepared: ' + dmy(todayIso()) + '</div>';
+  if(!list.length){
+    $('listBox').innerHTML = '<div class="cl-empty">' + (SCANS.length ? bi('کوئی دستاویز نہیں ملی۔ تلاش یا فلٹر بدلیں۔', 'No document matches. Change the search or filters.') : bi('ابھی کوئی اسکین محفوظ نہیں۔ «نئی اسکین» دبائیں۔', 'No scans saved yet. Press “New scan”.')) + '</div>';
+    $('btnMore').style.display = 'none'; return;
+  }
+  var rows = list.slice(0, SHOWN).map(function(s, i){
+    var ur = docTypeUr(s), opc = s.opinionStatus === 'Fit for appeal / petition' ? ' op-fit' : (s.opinionStatus === 'Not fit' ? ' op-no' : (s.opinionStatus === 'Under consideration' ? ' op-wait' : ''));
+    return '<tr' + (NEWIDS[s.id] ? ' class="sc-new"' : '') + '>' +
+      '<td data-l="Date / تاریخ" class="cl-c">' + esc(dmy(s.date)) + '</td>' +
+      '<td data-l="Document / دستاویز"><span class="sc-badge">' + esc(docTypeName(s)) + '</span>' + (ur && s.docType !== 'Other' ? '<span class="sc-sub">' + esc(ur) + '</span>' : '') + (s.court ? '<span class="sc-sub">' + esc(s.court) + '</span>' : '') + '</td>' +
+      '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + snippet(s, q) + '</td>' +
+      '<td data-l="Result / نتیجہ">' + esc(s.outcome || '—') + (s.sentence ? '<span class="sc-sub">' + esc(s.sentence) + (UR[s.sentence] ? ' · ' + esc(UR[s.sentence]) : '') + '</span>' : '') + '</td>' +
+      '<td data-l="FIR · Place / مقام">' + esc([firText(s), s.station, s.tehsil, s.district].filter(Boolean).join(' · ') || '—') + '<span class="sc-sub">' + esc(s.officer || '') + '</span></td>' +
+      '<td data-l="Opinion / رائے">' + (s.opinionStatus ? '<span class="sc-op' + opc + '">' + esc(s.opinionStatus) + '</span>' : '—') + (s.opinionBy ? '<span class="sc-sub">' + esc(s.opinionBy) + (s.opinionDate ? ' · ' + esc(dmy(s.opinionDate)) : '') + '</span>' : '') + (scText(s) ? '<span class="sc-sub">→ ' + esc(scText(s)) + '</span>' : '') + (s.opinionText ? '<span class="sc-sub" dir="auto">' + esc(s.opinionText) + '</span>' : '') + (s.opinionAi ? '<span class="sc-sub">✨ AI draft / AI مسودہ</span>' : '') + opFileBtn(s, i) + '</td>' +
+      '<td data-l="Pages / صفحات" class="cl-c">' + (s.pages ? esc(s.pages) : '—') + '<span class="sc-sub">' + (s.fileSize ? mb(s.fileSize) : '') + '</span></td>' +
+      '<td class="sc-act sc-actcol">' +
+        '<button class="go" data-a="open" data-i="' + i + '" title="Open / کھولیں">👁 Open</button> ' +
+        (CTX.canWrite ? '<button data-a="edit" data-i="' + i + '" title="Edit / ترمیم">✎</button> ' : '') +
+        (CTX.canDelete ? '<button class="del" data-a="del" data-i="' + i + '" title="Delete / حذف">🗑</button>' : '') +
+      '</td></tr>';
+  }).join('');
+  $('listBox').innerHTML = '<table class="sc-t"><thead><tr><th>Date / تاریخ</th><th>Document / دستاویز</th><th>Case / کیس</th><th>Result / نتیجہ</th><th>FIR · Place / مقام</th><th>Opinion / رائے</th><th>Pages / صفحات</th><th class="sc-actcol no-print"></th></tr></thead><tbody>' + rows + '</tbody></table>';
+  $('btnMore').style.display = list.length > SHOWN ? '' : 'none';
+}
+function showMore(){ SHOWN += 100; renderList(false); }
+$('listBox').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-a]'); if(!b) return;
+  var s = LIST_VIEW[+b.dataset.i]; if(!s) return;
+  if(b.dataset.a === 'open') openScan(s);
+  else if(b.dataset.a === 'openop'){ var o = scanById(s.opinionScanId); if(o) openScan(o); }
+  else if(b.dataset.a === 'edit') openEditScan(s);
+  else if(b.dataset.a === 'del') deleteScan(s);
+});
+function openScan(s){
+  if(!storage || !s.filePath){ showAct('❌ ' + bi('فائل کا پتہ نہیں ملا۔', 'File location not found.'), 'err'); return; }
+  var w = window.open('', '_blank');
+  storage.ref(s.filePath).getDownloadURL().then(function(url){
+    if(w) w.location.href = url; else window.location.href = url;
+  }).catch(function(err){
+    if(w) w.close();
+    showAct('❌ ' + bi('فائل نہیں کھل سکی: ', 'Could not open the file: ') + esc(err.code || err.message || err), 'err');
+  });
+}
+function deleteScan(s){
+  if(!CTX.canDelete) return;
+  confirmBox('Delete scan / حذف', bi2('یہ اسکین اور اس کی PDF ہمیشہ کے لیے حذف ہو جائے گی (واپس نہیں آئے گی):', 'This scan and its PDF will be deleted permanently (it cannot be undone):') + '<div dir="auto" style="margin-top:8px"><b>' + esc(docTypeName(s)) + ' — ' + esc(caseText(s) || s.title || s.fileName || '') + ' (' + esc(dmy(s.date)) + ')</b></div>', function(){
+    var p = s.filePath && storage ? storage.ref(s.filePath).delete().catch(function(err){ if(err && err.code === 'storage/object-not-found') return; throw err; }) : Promise.resolve();
+    p.then(function(){ return db.collection('scans').doc(s.id).delete(); })
+     .then(function(){ HIST = HIST.filter(function(h){ return h.id !== s.id; }); FUT = FUT.filter(function(h){ return h.id !== s.id; }); histBtns(); showAct('✅ ' + bi('حذف ہو گئی۔', 'Deleted.'), 'good'); })
+     .catch(function(err){ showAct('❌ ' + bi('حذف نہیں ہو سکی: ', 'Could not delete: ') + esc(err.code || err.message || err), 'err'); });
+  }, {yesLabel:'🗑 Delete / حذف'});
+}
+
+/* ---------- live data + sign-in ---------- */
+function listsChanged(){
+  recomputeLists(); fillForm();
+}
+function startLiveData(){
+  ['caseEntry','caseNotice','scanning'].forEach(function(name){
+    db.collection('lookupLists').doc(name).onSnapshot(function(doc){
+      SRC[name] = doc.exists ? doc.data() : {}; listsChanged();
+    }, function(err){ console.error('lists ' + name, err); });
+  });
+  db.collection('appData_sharedDropdowns').doc('shared').onSnapshot(function(doc){
+    SRC.shared = doc.exists ? doc.data() : {}; listsChanged();
+  }, function(err){ console.error('shared lists', err); });
+  db.collection('scans').onSnapshot(function(qs){
+    var arr = [];
+    qs.forEach(function(d){ var c = d.data(); c.id = d.id; c.createdMs = c.createdAt && c.createdAt.toMillis ? c.createdAt.toMillis() : 0; arr.push(c); });
+    SCANS = arr; fillFilters(); renderList(false);
+    $('authGate').style.display = 'none';
+  }, function(err){ gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true); });
+}
+
+/* ---------- Add / Edit lists (same behaviour as Daily Case Entry & Case Notices; admins only) ---------- */
+var LIST_DEFS = {
+  officer:  { src:'caseEntry',  field:'officers',  get:function(){ return LISTS.officers; }, en:'Manage Officers (APG/DPG)', ur:'آفیسرز (اے پی جی/ڈی پی جی) کا انتظام', note:['Shared with Daily Case Entry.','ڈیلی کیس انٹری کے ساتھ مشترکہ فہرست۔'] },
+  year:     { src:'caseEntry',  field:'years',     get:function(){ return YEARS; },          en:'Manage Years', ur:'سالوں کا انتظام', note:['Shared with Daily Case Entry.','ڈیلی کیس انٹری کے ساتھ مشترکہ فہرست۔'] },
+  district: { src:'caseNotice', field:'districts', get:function(){ return DISTRICTS; },       en:'Manage Districts', ur:'اضلاع کا انتظام', note:['Shared with Case Notices.','کیس نوٹس کے ساتھ مشترکہ فہرست۔'] },
+  tehsil:   { src:'caseNotice', map:'tehsils',  en:'Manage Tehsils', ur:'تحصیلوں کا انتظام', note:['Shared with Case Notices (per district).','کیس نوٹس کے ساتھ مشترکہ (ضلع کے مطابق)۔'] },
+  station:  { src:'caseNotice', map:'stations', en:'Manage Police Stations', ur:'تھانوں کا انتظام', note:['Shared with Case Notices (per district).','کیس نوٹس کے ساتھ مشترکہ (ضلع کے مطابق)۔'] },
+  type:     { src:'scanning',   field:'types',     get:function(){ return LISTS.types; },    en:'Manage Case Types', ur:'کیس کی اقسام کا انتظام', note:['Starts from the Daily Case Entry + Case Notice types; after you save here it is the Scanning Desk list.','ڈیلی کیس انٹری اور کیس نوٹس کی اقسام سے شروع ہوتی ہے؛ یہاں محفوظ کرنے کے بعد اسکین ڈیسک کی اپنی فہرست بن جاتی ہے۔'] },
+  court:    { src:'scanning',   field:'courts',    get:function(){ return LISTS.courts; },   en:'Manage Courts', ur:'عدالتوں کا انتظام', note:['Follows the Shared Dropdown Manager (Court) until you save here.','یہاں محفوظ کرنے تک مشترکہ ڈراپ ڈاؤن مینیجر (عدالت) کی فہرست چلتی ہے۔'] },
+  outcome:  { src:'scanning',   field:'outcomes',  get:function(){ return LISTS.outcomes; }, en:'Manage Judgment Results', ur:'فیصلے کے نتیجے کا انتظام', note:['Follows the Shared Dropdown Manager (Result Category) until you save here.','یہاں محفوظ کرنے تک مشترکہ ڈراپ ڈاؤن مینیجر (نتیجہ کی قسم) کی فہرست چلتی ہے۔'] },
+  docType:  { src:'scanning',   field:'docTypes',  get:function(){ return LISTS.docTypes; }, en:'Manage Document Types', ur:'دستاویز کی اقسام کا انتظام', note:['Scanning Desk list.','صرف اسکین ڈیسک کی فہرست۔'] },
+  sentence: { src:'scanning',   field:'sentences', get:function(){ return LISTS.sentences; }, en:'Manage Sentence / Nature', ur:'سزا / نوعیت کا انتظام', note:['Scanning Desk list (feeds Inspection Proforma A rows).','صرف اسکین ڈیسک کی فہرست (انسپیکشن پروفارما A کی قطاروں کے لیے)۔'] },
+  opinion:  { src:'scanning',   field:'opinions',  get:function(){ return LISTS.opinions; }, en:'Manage Opinion Options', ur:'رائے کے آپشنز کا انتظام', note:['Scanning Desk list.','صرف اسکین ڈیسک کی فہرست۔'] }
+};
+var curList = null, curDistrict = '';
+function listRow(v){
+  var r = document.createElement('div'); r.className = 'lm-row';
+  var i = document.createElement('input'); i.type = 'text'; i.value = v || ''; i.setAttribute('aria-label', 'option');
+  var d = document.createElement('button'); d.type = 'button'; d.className = 'cl-btn red sm'; d.textContent = '✕'; d.title = 'Remove / ہٹائیں';
+  d.onclick = function(){ r.remove(); };
+  r.appendChild(i); r.appendChild(d); return r;
+}
+function openListManage(key){
+  if(!CTX.canLists) return;
+  var def = LIST_DEFS[key], cur;
+  if(def.map){
+    var d = $('fDistrict').value;
+    if(!d){ confirmBox('District first / پہلے ضلع', bi2('پہلے ضلع منتخب کریں، پھر اس ضلع کی فہرست میں ترمیم کریں۔', 'Select a District first, then edit that district\'s list.'), null, {noYes:true, noLabel:'OK'}); return; }
+    curDistrict = d; var m = def.map === 'tehsils' ? DISTRICT_TEHSILS : DISTRICT_STATIONS; cur = (m[d] || []).slice();
+  } else cur = def.get().slice();
+  curList = key;
+  $('lmTitle').textContent = def.en + (def.map ? ' — ' + curDistrict : '') + ' / ' + def.ur;
+  $('lmNote').textContent = def.note[0] + ' / ' + def.note[1];
+  var box = $('lmItems'); box.innerHTML = '';
+  cur.forEach(function(v){ box.appendChild(listRow(v)); });
+  $('lmMsg').style.display = 'none';
+  $('listBg').classList.add('show');
+}
+function addListRow(){ var r = listRow(''); $('lmItems').appendChild(r); r.querySelector('input').focus(); }
+function closeListManage(){ $('listBg').classList.remove('show'); curList = null; }
+function saveListManage(){
+  if(!curList) return;
+  var def = LIST_DEFS[curList], vals = [];
+  document.querySelectorAll('#lmItems input').forEach(function(i){ var v = i.value.trim(); if(v && vals.indexOf(v) === -1) vals.push(v); });
+  if(!vals.length){ var m = $('lmMsg'); m.className = 'cl-msg err'; m.textContent = 'List cannot be empty / فہرست خالی نہیں ہو سکتی'; m.style.display = ''; return; }
+  var src = SRC[def.src] = SRC[def.src] || {}, payload = {}, before;
+  if(def.map){
+    before = JSON.parse(JSON.stringify(src[def.map] || {}));
+    src[def.map] = src[def.map] || {};
+    src[def.map][curDistrict] = vals;
+    var nest = {}; nest[curDistrict] = vals; payload[def.map] = nest;
+  } else {
+    before = src[def.field];
+    src[def.field] = vals; payload[def.field] = vals;
+  }
+  payload.updatedBy = CTX.user.email; payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+  var key = curList, dist = curDistrict;
+  recomputeLists(); fillForm(); closeListManage();
+  db.collection('lookupLists').doc(def.src).set(payload, {merge:true}).then(function(){
+    showAct('✅ ' + bi('فہرست محفوظ ہو گئی۔', 'List saved.'), 'good');
+  }).catch(function(err){
+    if(def.map) src[def.map] = before; else src[def.field] = before;
+    recomputeLists(); fillForm();
+    showAct('❌ ' + bi('فہرست محفوظ نہیں ہو سکی: ', 'Could not save the list: ') + esc(err.code || err.message || err), 'err');
+  });
+}
+document.addEventListener('keydown', function(e){
+  var t = e.target;
+  if(t && t.classList && t.classList.contains('manage-link') && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); t.click(); }
+  if(e.key === 'Escape' && $('listBg').classList.contains('show')) closeListManage();
+});
+/* =====================================================================
+   Reading a judgment / order (OCR text of its pages) and finding the details in it.
+   Pure functions: text in -> fields out. Nothing here touches the page or the database.
+   ===================================================================== */
+var EXTRACT = (function(){
+  var MON = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  function pad(n){ return ('0' + n).slice(-2); }
+  function norm(t){
+    return String(t || '').replace(/\r/g, '').replace(/[“”]/g, '"').replace(/[‘’]/g, "'")
+      .replace(/[–—]/g, '-').replace(/[ \t ]+/g, ' ').replace(/ ?\n ?/g, '\n');
+  }
+  function flat(t){ return norm(t).replace(/\s+/g, ' ').trim(); }
+  function lines(t){ return norm(t).split('\n').map(function(l){ return l.trim(); }); }
+
+  /* ---- dates ---- */
+  function isoDate(s){
+    s = String(s || '');
+    var m = /(\d{1,2})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{4})/.exec(s);
+    if(m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 1 && +m[1] <= 31) return m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);
+    m = /(\d{1,2})\s*(?:st|nd|rd|th)?\s*(?:day\s+)?(?:of\s+)?([A-Za-z]{3,9})\.?,?\s*(\d{4})/.exec(s);
+    if(m){ var mo = MON[m[2].slice(0, 3).toLowerCase()]; if(mo && +m[1] >= 1 && +m[1] <= 31) return m[3] + '-' + pad(mo) + '-' + pad(+m[1]); }
+    return '';
+  }
+  function dmy(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : (iso || ''); }
+
+  /* ---- case type words -> the short form the office uses ---- */
+  function kindOf(label){
+    var l = String(label || '').toLowerCase().replace(/[^a-z. ]+/g, ' ').replace(/\s+/g, ' ');
+    var t = l.replace(/[. ]/g, '');
+    if(/jail ?petition/.test(l) || /^jp$/.test(t)) return 'J.P.';
+    if(/criminal petition for leave|crl ?p ?l ?a/.test(l) || /crlpla/.test(t)) return 'Crl.P.L.A.';
+    if(/civil petition for leave|c ?p ?l ?a/.test(l) || /cpla/.test(t)) return 'C.P.L.A.';
+    if(/criminal appeal|crl ?a\b/.test(l) || t === 'crla') return 'Crl.A.';
+    if(/civil appeal/.test(l) || t === 'ca') return 'C.A.';
+    if(/criminal misc/.test(l) || /crlma/.test(t)) return 'Crl.M.A.';
+    if(/civil misc/.test(l) || t === 'cma') return 'C.M.A.';
+    if(/criminal original/.test(l) || /crlop/.test(t)) return 'Crl.O.P.';
+    if(/criminal review|crl ?r ?p/.test(l)) return 'Crl.R.P.';
+    if(/criminal petition/.test(l) || t === 'crlp') return 'Crl.P.';
+    if(/constitution/.test(l) || t === 'constp') return 'Const.P.';
+    if(/review petition/.test(l)) return 'Review Petition';
+    if(/human rights/.test(l) || t === 'hrc') return 'H.R.C.';
+    if(/civil petition/.test(l) || t === 'cp') return 'C.P.';
+    if(/bail before arrest/.test(l)) return 'BBA';
+    if(/bail after arrest/.test(l)) return 'BAA';
+    return '';
+  }
+  var ID_RE = /\b(?:No|Nos)\s*\.?\s*[:\-]?\s*(\d{1,6})\s*(-\s*[A-Za-z]{1,2})?\s*(?:of|\/)\s*(\d{4})\b/gi;
+function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s\S]*?\)/gi, ' '); }
+  function findIds(text){
+    /* every "<kind of case> No. 123 of 2024" on the given lines, in order */
+    var out = [], seen = {};
+    lines(stripParen(text)).forEach(function(line){
+      if(!/(petition|appeal|application|reference|revision|case|bail|crl|c\.?p\.?l\.?a|j\.?p\.?)/i.test(line)) return;
+      ID_RE.lastIndex = 0; var m;
+      while((m = ID_RE.exec(line))){
+        var label = line.slice(0, m.index);
+        var prevEnd = Math.max(label.lastIndexOf('&'), label.lastIndexOf(';'));
+        if(prevEnd >= 0) label = label.slice(prevEnd + 1);
+        var kind = kindOf(label);
+        if(!kind) continue;
+        var no = m[1] + (m[2] ? m[2].replace(/\s+/g, '').toUpperCase() : ''), key = kind + '|' + no + '|' + m[3];
+        if(!seen[key]){ seen[key] = 1; out.push({kind:kind, no:no, year:m[3]}); }
+      }
+    });
+    return out;
+  }
+  function runningHeader(text){
+    /* page 2, 3 … carry "Jail Petition No. 272/2022" at the very top */
+    var top = lines(text).filter(Boolean).slice(0, 4).join('\n');
+    var ids = findIds(top);
+    return ids.length ? ids : null;
+  }
+  function isFirstPage(text){
+    var t = norm(text), head = t.slice(0, 900);
+    return /PRESENT\s*[:;.]/i.test(head) && /JUSTICE/i.test(head) && /(SUPREME COURT|HIGH COURT|SHARIAT|CONSTITUTIONAL COURT)/i.test(head);
+  }
+  function idKey(i){ return i ? i.kind + '|' + i.no + '|' + i.year : ''; }
+  function readable(text){
+    var w = norm(text).toLowerCase().match(/[a-z]+/g) || [], stops = {the:1,of:1,and:1,to:1,in:1,is:1,was:1,that:1,by:1,for:1,he:1,his:1,this:1,with:1,been:1,has:1,as:1};
+    var n = 0; w.forEach(function(x){ if(stops[x]) n++; });
+    return n >= 8;
+  }
+
+  /* ---- split a bundle of pages into separate judgments ---- */
+  function segment(pages){
+    var starts = [0], curId = '', i, hid, fp;
+    var first = runningHeaderOrFirst(pages[0]); curId = first ? idKey(first[0]) : '';
+    for(i = 1; i < pages.length; i++){
+      fp = isFirstPage(pages[i]);
+      hid = runningHeader(pages[i]); var hk = hid ? idKey(hid[0]) : '';
+      if(fp){
+        /* a first page begins a new judgment, unless the very same case number is simply repeated */
+        var own = findIds(norm(pages[i]).slice(0, 1400)), ok = own.length ? idKey(own[0]) : hk;
+        starts.push(i); curId = ok || ''; continue;
+      }
+      if(hk){
+        if(!curId) curId = hk;
+        else if(hk !== curId){ starts.push(i); curId = hk; }
+      }
+    }
+    var segs = [];
+    starts.forEach(function(s, k){ segs.push({from:s, to:(k + 1 < starts.length ? starts[k + 1] : pages.length) - 1}); });
+    return segs;
+  }
+  function runningHeaderOrFirst(t){
+    var own = isFirstPage(t) ? findIds(norm(t).slice(0, 1400)) : null;
+    return (own && own.length) ? own : runningHeader(t);
+  }
+
+  /* ---- pieces of one judgment ---- */
+  function courtOf(first){
+    var t = flat(first), pi = t.search(/PRESENT/i), h = t.slice(0, pi > 0 ? Math.min(pi, 300) : 200).toUpperCase();
+    if(/FEDERAL CONSTITUTIONAL COURT/.test(h)) return 'Federal Constitutional Court of Pakistan';
+    if(/SUPREME/.test(h)) return 'Supreme Court of Pakistan';
+    if(/SHARIAT/.test(h)) return 'Federal Shariat Court';
+    if(/LAHORE HIGH COURT|HIGH COURT/.test(h)) return 'Lahore High Court';
+    if(/APPELLATE\s+JURISDICTION|ORIGINAL\s+JURISDICTION/.test(t.slice(0, 400).toUpperCase())) return 'Supreme Court of Pakistan';
+    return '';
+  }
+  function docTypeOf(first){
+    var ls = lines(first), i;
+    for(i = 0; i < ls.length; i++){
+      if(/^\W*O\s?R\s?D\s?E\s?R\W*$/i.test(ls[i])) return 'Order';
+      if(/^\W*J\s?U\s?D\s?G\s?M\s?E(?:\s?N(?:\s?T)?)?\W*$/i.test(ls[i])) return 'Judgment';
+    }
+    return '';
+  }
+  function bench(first){
+    var m = /PRESENT\s*[:;.]?\s*\n?([\s\S]{0,260})/i.exec(norm(first)); if(!m) return '';
+    var out = [];
+    m[1].split('\n').forEach(function(l){
+      l = l.trim(); if(!l) return;
+      if(/^(MR\.?\s+)?JUSTICE\b/i.test(l) || /^(DR\.?|MR\.?|MS\.?)\s+JUSTICE/i.test(l)) out.push(l.replace(/^MR\.?\s+/i, ''));
+    });
+    out = out.slice(0, 7).map(function(n){
+      return n.toLowerCase().replace(/\b([a-z])/g, function(c){ return c.toUpperCase(); }).replace(/\bAhmad\b/, 'Ahmad');
+    });
+    return out.join(', ');
+  }
+  function lowerOf(first){
+    var t = flat(first);
+    var m = /\(\s*On\s+(?:appeal|petition)\s+(?:against|from)\s+(?:the\s+)?(judgment|judgement|order)s?\s+dated\s+([\d.\-\/ ]+?)\s+(?:of|passed\s+by)\s+(?:the\s+)?(.+?)\)/i.exec(t);
+    if(!m) return '';
+    var where = m[3].replace(/\s+in\s+(?=(Cr|Crl|Criminal|Civil|C\.|W\.|Appeal|Writ|Const|Review)\b)/i, ', ').replace(/\s+/g, ' ').trim();
+    var kind = /order/i.test(m[1]) ? 'order' : 'judgment';
+    var d = isoDate(m[2]);
+    return where + ' (' + kind + (d ? ' dated ' + dmy(d) : '') + ')';
+  }
+  var TAG = /[\(\{\[]\s*In\s+[^)\]}]*[\)\]}]?/ig;
+  function titleOf(first){
+    var ls = lines(first), v = -1, i;
+    for(i = 0; i < ls.length; i++) if(/^\W*(versus|vs\.?|v\/s|v\.)\W*$/i.test(ls[i])){ v = i; break; }
+    if(v < 0) return '';
+    function partyList(arr){
+      var out = [];
+      arr.forEach(function(l){
+        var tagged = /[\(\{\[]\s*In\s/i.test(l), numbered = /^\s*\d+\s*[.,)]\s*\S/.test(l);
+        var c = l.replace(TAG, '').replace(/\.{2,}.*$/g, '').replace(/[\u00ab\u00bb]+\W*/g, ' ').replace(/\b(Petitioner|Respondent|Appellant|Complainant)s?\s*(\(s\))?\b.*$/i, '')
+          .replace(/^\s*\d+\s*[.,)]\s*/, '').replace(/^[\s.,;:\-_|]+|[\s.,;:\-_|]+$/g, '').replace(/\s+/g, ' ');
+        if(!c || c.length < 3) return;
+        if(!out.length || tagged || numbered) out.push(c); else out[out.length - 1] += ' ' + c;
+      });
+      return out;
+    }
+    /* petitioners: lines above "Versus" back to the closing bracket of the "(On appeal …)" note */
+    var up = [], j = v - 1;
+    while(j >= 0 && up.length < 10){
+      var l = ls[j];
+      if(!l){ j--; continue; }
+      if(/\)\s*$/.test(l) && !/[\(\{\[]\s*In\s/i.test(l)) break;
+      if(/^\(On\b|^PRESENT|^(MR\.?\s+)?JUSTICE\b/i.test(l)) break;
+      if(/\bNo\.?\s*\d+.*(of|\/)\s*\d{4}/i.test(l) && !/[\(\{\[]\s*In\s/i.test(l)) break;
+      up.unshift(l); j--;
+    }
+    var pet = partyList(up), low = [];
+    for(j = v + 1; j < ls.length && j < v + 10; j++){
+      var r = ls[j];
+      if(/^(For the|Date of|ORDER|JUDGMENT)\b/i.test(r)) break;
+      if(!r) continue;
+      low.push(r);
+      if(/Respondent/i.test(r)) break;
+    }
+    var res = partyList(low);
+    if(!pet.length || !res.length) return '';
+    function side(a){
+      var x = a[0];
+      if(a.length > 1 && !/\b(and\s+others?|&\s*(another|others?))\b/i.test(x)) x += ' & ' + (a.length === 2 ? 'another' : 'others');
+      return x.length > 110 ? x.slice(0, 107).replace(/\s+\S*$/, '') + '\u2026' : x;
+    }
+    return side(pet) + ' Vs ' + side(res);
+  }
+  function stateCounsel(first){
+    var m = /For\s+the\s+State\s*[:;]\s*([^\n]+(?:\n(?!\s*(?:Date of|For the|ORDER|JUDGMENT|MALIK|JUSTICE))[^\n]+)?)/i.exec(norm(first));
+    if(!m) return '';
+    var s = m[1].replace(/\s+/g, ' ');
+    s = s.split(/,|\bD\.?P\.?G\b|\bA\.?P\.?G\b|\bDeputy\b|\bAdditional\b|\bAssistant\b|\bProsecutor\b|\bAG\b/i)[0];
+    return s.replace(/^\s*(Mr|Ms|Mrs|Dr|Syed|Hafiz)\.?\s+/i, '').replace(/[^A-Za-z .\-']/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  function hearingDate(first, all){
+    var m = /Date\s+of\s+Hearing\s*[:;]?\s*([^\n]{0,40})/i.exec(norm(first));
+    if(m){ var d = isoDate(m[1]); if(d) return d; }
+    var s = /(?:Islamabad|Lahore)\s*,?\s*the\s*\n?\s*([^\n]{0,40}\n?[^\n]{0,30})/i.exec(norm(all));
+    if(s){ var d2 = isoDate(s[1].replace(/\s+/g, ' ')); if(d2) return d2; }
+    return '';
+  }
+  function firOf(text){
+    var t = flat(text), o = {};
+    var m = /\bFIR\s*(?:No\.?)?\s*(\d{1,6})\s*(?:\/\s*(\d{4}))?\s*,?\s*(?:dated|dt\.?|registered\s+on)\s*([\d.\-\/ ]{6,12})/i.exec(t);
+    if(m){ o.firNo = m[1]; var d = isoDate(m[3]); o.firYear = m[2] || (d ? d.slice(0, 4) : ''); }
+    var after = m ? t.slice(m.index, m.index + 600) : t.slice(0, 3000);
+    var s = /under\s+[Ss]ections?\s+([0-9][0-9A-Za-z()\/,\-\s&]*?)\s*(PPC|P\.P\.C\.?|CNSA|PCA|ATA|Cr\.?P\.?C|Arms Ordinance|PECA)/.exec(after);
+    if(s) o.sections = s[1].replace(/\s*[\/&]\s*/g, ', ').replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '').replace(/\s+/g, ' ').trim() + ' ' + s[2].replace(/P\.P\.C\.?/, 'PPC');
+    var p = /(?:police\s+station|P\.\s?S\.)\s+([A-Za-z][A-Za-z .\-]{1,40}?)\s*,?\s*(?:District|Distt\.?|Dist\.?)\s+([A-Za-z]+(?: [A-Za-z]+)?)/i.exec(after);
+    if(p){ o.station = p[1].replace(/\s+/g, ' ').trim(); o.district = p[2].trim(); }
+    return o;
+  }
+  function sentenceOf(text, kind){
+    var t = flat(text).slice(0, 9000);
+    if(/^(C\.P\.L\.A\.|C\.A\.|C\.P\.|C\.M\.A\.)$/.test(kind || '')) return 'Not applicable';
+    if(/sentenced[^.]{0,140}\b(to\s+death|death)\b|death\s+sentence|capital\s+punishment|murder\s+reference/i.test(t)) return 'Death sentence';
+    if(/imprisonment\s+for\s+life|life\s+imprisonment|imprisonment\s+for\s+the\s+rest\s+of/i.test(t)) return 'Life imprisonment';
+    if(/\b(convicted|sentenced)\b/i.test(t)) return 'Other conviction';
+    return '';
+  }
+  function decisive(text){
+    var t = flat(text).toLowerCase();
+    var checks = [
+      ['Partly Allowed', /partly\s+(allowed|dismissed)|allowed\s+in\s+part|partially\s+allowed/],
+      ['Allowed', /(converted\s+into\s+(an\s+)?appeal[^.]{0,80}(is|are)\s+(hereby\s+)?allowed|(appeal|petition)\s+is\s+(hereby\s+)?allowed|(is|are)\s+(hereby\s+)?acquitted|stand(s)?\s+acquitted|acquitted\s+of\s+(all\s+)?the\s+charges?)/],
+      ['Leave granted', /leave\s+(to\s+appeal\s+)?(is\s+)?(hereby\s+)?granted/],
+      ['Disposed of', /disposed\s+of/],
+      ['Withdrawn', /(dismissed|disposed\s+of)\s+as\s+withdrawn|(petition|appeal)\s+(is\s+)?(hereby\s+)?withdrawn|permission\s+to\s+withdraw/],
+      ['Dismissed', /leave\s+(to\s+appeal\s+)?(is\s+)?(hereby\s+)?(refused|declined)|(petition|appeal)\s+(is\s+)?(hereby\s+)?dismissed|dismissed/]
+    ], i;
+    var tail = t.slice(-2600);
+    for(i = 0; i < checks.length; i++) if(checks[i][1].test(tail)) return checks[i][0];
+    return '';
+  }
+  function groundsOf(text, outcome){
+    if(!/allowed|acquit/i.test(outcome || '')) return '';
+    var t = flat(text), out = [];
+    var rules = [
+      [/(conflict|contradict)[^.]{0,60}(ocular|medical)|(ocular|medical)[^.]{0,80}(conflict|contradict|not\s+support)/i, 'Ocular account in conflict with medical evidence'],
+      [/recovery[^.]{0,160}(inconsequential|doubt|not\s+(been\s+)?(proved|reliable|established))|no\s+report\s+of\s+(the\s+)?(forensic|FSL)|FSL[^.]{0,80}(not|no\s+report)/i, 'Recovery inconsequential / no forensic report'],
+      [/(presence|residence)[^.]{0,160}(doubtful|could\s+not\s+be\s+established|not\s+(be\s+)?established)|chance\s+witness/i, 'Presence of eye-witnesses at the place of occurrence doubtful'],
+      [/motive[^.]{0,120}(not\s+(been\s+)?(proved|established)|failed)|failed\s+to\s+prove\s+the\s+motive/i, 'Motive not proved'],
+      [/(no|not\s+any)\s+specific\s+role|role[^.]{0,50}(not|no)[^.]{0,40}(assigned|attributed)/i, 'No specific role attributed to the accused'],
+      [/single\s+circumstance[^.]{0,120}doubt|benefit\s+of\s+(the\s+)?doubt/i, 'Benefit of doubt — case not proved beyond reasonable doubt'],
+      [/compromise/i, 'Compromise']
+    ];
+    rules.forEach(function(r){ if(r[0].test(t)) out.push(r[1]); });
+    return out.join('\n');
+  }
+
+  /* ---- one record (pages from..to) ---- */
+  function extractRecord(pages, from, to){
+    var segPages = pages.slice(from, to + 1), first = segPages[0] || '', all = segPages.join('\n\n');
+    var f = {}, notes = [], ids = findIds(norm(first).slice(0, 1600));
+    if(!ids.length){
+      for(var k = 1; k < segPages.length && !ids.length; k++){ var rh = runningHeader(segPages[k]); if(rh) ids = rh; }
+    }
+    if(ids.length){ f.caseType = ids[0].kind; f.caseNo = ids[0].no; f.caseYear = ids[0].year; }
+    if(ids.length){ ids = ids.filter(function(x, n){ return n === 0 || !(x.no === ids[0].no && x.year === ids[0].year); }); }
+    if(ids.length > 1) notes.push('Also decided together: ' + ids.slice(1).map(function(i){ return i.kind + ' ' + i.no + '/' + i.year; }).join(', '));
+    f.court = courtOf(first);
+    f.docType = docTypeOf(first);
+    f.judges = bench(first);
+    f.lower = lowerOf(first);
+    f.title = titleOf(first);
+    f.counsel = stateCounsel(first);
+    f.date = hearingDate(first, all);
+    var fir = firOf(segPages.slice(0, 3).join(' '));
+    Object.keys(fir).forEach(function(k){ f[k] = fir[k]; });
+    f.sentence = sentenceOf(segPages.slice(0, 3).join(' '), f.caseType);
+    /* outcome: the operative part is at the end; with two connected cases the first one's part comes first */
+    var bodyHeads = [], re = /^[^a-z\n]*(?:JAIL|CRIMINAL|CIVIL)\s+(?:PETITION|APPEAL)[^a-z\n]{0,40}NO\.?\s*\d+[^a-z\n]*$/gm, m, lastText = segPages.slice(1).join('\n\n') || all;
+    var cut = [];
+    while((m = re.exec(lastText))) cut.push({at:m.index, head:m[0].trim()});
+    var firstPart = lastText;
+    if(cut.length > 1 || (cut.length === 1 && cut[0].at > 400)){
+      var idx = cut.length > 1 ? cut[1].at : cut[0].at; firstPart = lastText.slice(0, idx);
+      var rest = lastText.slice(idx), o2 = decisive(rest), hh = (cut.length > 1 ? cut[1] : cut[0]).head.replace(/\s+/g, ' ');
+      if(o2) notes.push('Connected case (' + hh + '): ' + o2);
+    }
+    f.outcome = decisive(firstPart) || decisive(all);
+    if(f.outcome === 'Allowed' || f.outcome === 'Partly Allowed'){ f.grounds = groundsOf(all, f.outcome); }
+    f.notes = notes.join('\n');
+    return f;
+  }
+
+
+  /* ---- OUR OPINION (written by the officer after reading a judgment) ---- */
+  var DATE_RE = /\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{4}|\d{1,2}\s*(?:st|nd|rd|th)?\s*(?:day\s+)?(?:of\s+)?[A-Za-z]{3,9}\.?,?\s*\d{4}/g;
+  var SHORT_ID_RE = /\b(J\.?\s?P\.?|Crl\.?\s?P\.?\s?L\.?\s?A\.?|C\.?\s?P\.?\s?L\.?\s?A\.?|Crl\.?\s?A\.?|Crl\.?\s?P\.?|Crl\.?\s?M\.?\s?A\.?|C\.?\s?A\.?|BBA|BAA)\s*(?:No\.?|Nos\.?)?\s*(\d{1,6}(?:\s?-\s?[A-Za-z]{1,2})?)\s*(?:\/|of)\s*(\d{4})\b/gi;
+  function idsOf(text){
+    var out = findIds(norm(text).replace(/\(\s*(?:On|Against|Arising)\b/gi, '(')), seen = {}, m, firs = {}, fm, fre = /\bFIR\s*(?:No\.?|Nos\.?)?\s*(\d{1,6})\s*(?:\/|of)\s*(\d{4})/gi;
+    while((fm = fre.exec(norm(text)))) firs[fm[1] + '|' + fm[2]] = 1;
+    out = out.filter(function(i){ return !firs[i.no + '|' + i.year]; });
+    out.forEach(function(i){ seen[idKey(i)] = 1; });
+    SHORT_ID_RE.lastIndex = 0;
+    var t = norm(text);
+    while((m = SHORT_ID_RE.exec(t))){
+      var kind = kindOf(m[1].replace(/\s/g, '')); if(!kind) continue;
+      var no = m[2].replace(/\s+/g, '').toUpperCase(), k = kind + '|' + no + '|' + m[3];
+      if(!seen[k] && !firs[no + '|' + m[3]]){ seen[k] = 1; out.push({kind:kind, no:no, year:m[3]}); }
+    }
+    return out;
+  }
+  function isOpinion(pages){
+    if(!pages.length) return false;
+    if(pages.some(isFirstPage)) return false;
+    var head = lines(pages[0]).filter(Boolean).slice(0, 14).join('\n');
+    if(/^\W*O\s?P\s?I\s?N\s?I\s?O\s?N\b.*$/im.test(head)) return true;
+    return /\bopinion\b/i.test(head) && /(\bfit\b|not\s+fit|appeal\s+committee|leave\s+to\s+appeal)/i.test(flat(pages.join(' ')));
+  }
+  function opinionStatusOf(t){
+    var tail = t.slice(-2400), re = /\b(not\s+(?:a\s+)?fit|unfit|fit)\b/gi, m, last = '';
+    while((m = re.exec(tail))) last = m[1];
+    if(!last){ re.lastIndex = 0; while((m = re.exec(t))) last = m[1]; }
+    if(last) return /not|unfit/i.test(last) ? 'Not fit' : 'Fit for appeal / petition';
+    if(/no\s+ground[s]?\s+(?:to|for)\s+(?:file|assail|challenge|interfere)|not\s+(?:be\s+)?(?:assailed|challenged)|not\s+recommended/i.test(t)) return 'Not fit';
+    if(/recommended\s+(?:for\s+)?(?:filing|to\s+be\s+(?:assailed|challenged))|may\s+be\s+(?:assailed|challenged)/i.test(t)) return 'Fit for appeal / petition';
+    return '';
+  }
+  function sentencesOf(t){ t = t.replace(/(\d)\.(?=\d)/g, '$1\u0001'); return (t.match(/[^.!?]+[.!?]+/g) || []).map(function(x){ return x.replace(/\u0001/g, '.').trim(); }); }
+  function extractOpinion(pages){
+    var all = pages.join('\n\n'), t = flat(all), f = {docType:'Opinion'};
+    var ids = idsOf(all.slice(0, 5000));
+    if(ids.length){ f.caseType = ids[0].kind; f.caseNo = ids[0].no; f.caseYear = ids[0].year; }
+    f.linkIds = ids;
+    var tm = /\b([A-Z][A-Za-z.@&' \-]{2,50}?)\s+(?:Vs\.?|V\/S|versus|v\.)\s+((?:The\s+)?State|[A-Z][A-Za-z.@&' \-]{2,50})/.exec(t.slice(0, 2500));
+    if(tm) f.title = (tm[1].replace(/^(?:Title|Re|Case)\s*[:\-]?\s*/i, '').trim() + ' Vs ' + tm[2].trim()).slice(0, 120);
+    f.opinionStatus = opinionStatusOf(t);
+    var tailDates = t.slice(-700).match(DATE_RE) || [], d = '';
+    for(var i = tailDates.length - 1; i >= 0 && !d; i--) d = isoDate(tailDates[i]);
+    f.opinionDate = d; f.date = d;
+    var ac = /appeal\s+committee[^.\n]{0,100}?(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{4})/i.exec(t);
+    if(ac) f.acDate = isoDate(ac[1]);
+    f.signer = t.slice(-500);
+    var ss = sentencesOf(t.slice(-1800)).filter(function(x){ return /(fit|opinion|recommend|ground|assail|petition|appeal|acquit|convict)/i.test(x) && x.length > 25; });
+    if(ss.length) f.opinionText = ss.slice(-2).join(' ').slice(0, 420);
+    var fir = firOf(t.slice(0, 4000)); Object.keys(fir).forEach(function(k){ f[k] = fir[k]; });
+    return f;
+  }
+  /* ---- everything: pages in, records out ---- */
+  function run(pages){
+    pages = pages.map(function(p){ return norm(p); });
+    var bad = [];
+    pages.forEach(function(p, i){ if(!readable(p)) bad.push(i + 1); });
+    if(isOpinion(pages.filter(function(p, i){ return bad.indexOf(i + 1) < 0; }))){
+      return {records:[{from:0, to:pages.length - 1, kind:'opinion', fields:extractOpinion(pages.filter(function(p, i){ return bad.indexOf(i + 1) < 0; }))}], unreadable:bad};
+    }
+    var segs = segment(pages), recs = segs.map(function(s){
+      var r = extractRecord(pages, s.from, s.to);
+      return {from:s.from, to:s.to, fields:r};
+    });
+    return {records:recs, unreadable:bad};
+  }
+
+  /* ---- matching to the website's own lists (case-insensitive, ignoring dots and spaces) ---- */
+  function key(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  function pick(list, value){
+    if(!value) return '';
+    var k = key(value), i;
+    for(i = 0; i < list.length; i++) if(key(list[i]) === k) return list[i];
+    return '';
+  }
+  function matchOfficer(list, counsel){
+    if(!counsel) return '';
+    var tok = function(s){ return String(s).toLowerCase().replace(/\s+[—\-]+\s+.*$/, '').replace(/[^a-z ]+/g, ' ').split(/\s+/).filter(function(x){ return x.length > 1 && !/^(mr|ms|mrs|dr|mirza|syed)$/.test(x) || x === 'mirza'; }); };
+    var want = tok(counsel), best = '', bestScore = 0;
+    list.forEach(function(o){
+      var have = tok(o), common = have.filter(function(x){ return want.indexOf(x) >= 0; }).length;
+      var score = common / Math.max(1, Math.min(have.length, want.length));
+      if(common >= 2 && score > bestScore){ best = o; bestScore = score; }
+    });
+    return bestScore >= 0.66 ? best : '';
+  }
+  function matchDistrict(list, name){
+    if(!name) return '';
+    var k = key(name), i;
+    for(i = 0; i < list.length; i++) if(key(list[i]) === k) return list[i];
+    for(i = 0; i < list.length; i++) if(k.indexOf(key(list[i])) === 0 || key(list[i]).indexOf(k) === 0) return list[i];
+    return name;
+  }
+
+  return { run:run, isoDate:isoDate, dmy:dmy, kindOf:kindOf, findIds:findIds, segment:segment, extractRecord:extractRecord, pick:pick, matchOfficer:matchOfficer, matchDistrict:matchDistrict, readable:readable, norm:norm, isOpinion:isOpinion, extractOpinion:extractOpinion, idsOf:idsOf };
+})();
+
+
+
+/* newer pdf.js needs these small JavaScript features; older phones/browsers lack them, so add them if missing */
+(function(){
+  [Map, WeakMap].forEach(function(C){
+    var p = C.prototype;
+    if(!p.getOrInsert) p.getOrInsert = function(k, v){ if(!this.has(k)) this.set(k, v); return this.get(k); };
+    if(!p.getOrInsertComputed) p.getOrInsertComputed = function(k, f){ if(!this.has(k)) this.set(k, f(k)); return this.get(k); };
+  });
+  if(!Promise.withResolvers) Promise.withResolvers = function(){ var r = {}; r.promise = new Promise(function(a, b){ r.resolve = a; r.reject = b; }); return r; };
+})();
+
+/* ---------- loading libraries only when needed ---------- */
+var LIBS = {
+  pdflib:['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'],
+  jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js'],
+  docx:['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js','https://unpkg.com/docx@9.7.1/dist/index.iife.js'],
+  tess:['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js']
+};
+var LIBCHK = {pdflib:function(){ return window.PDFLib; }, jszip:function(){ return window.JSZip; }, docx:function(){ return window.docx; }, tess:function(){ return window.Tesseract; }};
+function addScript(src){ return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('load ' + src)); }; document.head.appendChild(s); }); }
+async function loadLib(name){
+  if(LIBCHK[name]()) return;
+  var err = null;
+  for(var i = 0; i < LIBS[name].length; i++){
+    try{ await addScript(LIBS[name][i]); if(LIBCHK[name]()) return; }catch(e){ err = e; }
+  }
+  throw err || new Error('library ' + name);
+}
+var PDFJS_BASES = ['https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/','https://unpkg.com/pdfjs-dist@6.2.108/build/'];
+async function loadPdfjs(){
+  if(window.__pdfjsMod) return window.__pdfjsMod;
+  var err = null;
+  for(var i = 0; i < PDFJS_BASES.length; i++){
+    try{
+      var mod = await import(PDFJS_BASES[i] + 'pdf.min.mjs');
+      var txt = await (await fetch(PDFJS_BASES[i] + 'pdf.worker.min.mjs')).text();
+      mod.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([txt], {type:'text/javascript'}));
+      window.__pdfjsMod = mod; return mod;
+    }catch(e){ err = e; }
+  }
+  throw err || new Error('pdf.js');
+}
+function downloadBlob(blob, name){
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+
+/* ---------- the add / edit dialog ---------- */
+var SC = { mode:'add', editId:null, busy:false, builtPdf:null };
+var PARTS = [], PID = 0;
+var FIELDS = ['docType','docTypeOther','date','officer','court','caseType','caseNo','caseYear','title','outcome','sections','firNo','firYear','district','tehsil','station','opinionStatus','opinionBy','opinionDate','opinionText','scType','scNo','scYear','notes','ocrText','judges','lower','sentence','acDate','grounds','linkedTo','opinionAi'];
+var FMAP = { docType:'fDocType', docTypeOther:'fDocOther', date:'fDate', officer:'fOfficer', court:'fCourt', caseType:'fCaseType', caseNo:'fCaseNo', caseYear:'fCaseYear', title:'fTitle', outcome:'fOutcome', sections:'fSections', firNo:'fFirNo', firYear:'fFirYear', district:'fDistrict', tehsil:'fTehsil', station:'fStation', opinionStatus:'fOpStatus', opinionBy:'fOpBy', opinionDate:'fOpDate', opinionText:'fOpText', scType:'fScType', scNo:'fScNo', scYear:'fScYear', notes:'fNotes', ocrText:'fOcr', judges:'fJudges', lower:'fLower', sentence:'fSentence', acDate:'fAcDate', grounds:'fGrounds', linkedTo:'fLinkTo', opinionAi:'fOpAi' };
+
+function getForm(){
+  var d = {};
+  FIELDS.forEach(function(k){ d[k] = ($(FMAP[k]).value || '').trim(); });
+  d.caseNo = normNo(d.caseNo); d.scNo = normNo(d.scNo);
+  if(d.docType !== 'Other') d.docTypeOther = '';
+  if(d.docType !== 'Opinion') d.linkedTo = '';
+  return d;
+}
+function setForm(d){
+  d = d || {};
+  fillLinkOptions(d.linkedTo || '');
+  $('aiOut').style.display = 'none';
+  $('fDistrict').value = d.district || '';
+  refreshTehsilStation(d.tehsil || '', d.station || '');
+  FIELDS.forEach(function(k){
+    if(k === 'district' || k === 'tehsil' || k === 'station') return;
+    var el = $(FMAP[k]), v = d[k] == null ? '' : d[k];
+    if(el.tagName === 'SELECT' && v && !Array.prototype.some.call(el.options, function(o){ return o.value === v; })) el.innerHTML += '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+    el.value = v;
+  });
+  $('otherBox').style.display = $('fDocType').value === 'Other' ? '' : 'none';
+  showLinkRow();
+}
+function openAddScan(){
+  if(!CTX.canWrite){ showAct('❌ ' + bi('آپ کو نئی اسکین محفوظ کرنے کی اجازت نہیں (صرف ڈیٹا انٹری/ایڈمن)۔', 'You are not allowed to add scans (Data Entry / Admin only).'), 'err'); return; }
+  SC.mode = 'add'; SC.editId = null; SC.builtPdf = null; SC.queue = null; SC.qi = 0; SC.src = null; SC.savedN = 0; NEWIDS = {}; qBanner('');
+  clearParts(true);
+  fillForm();
+  setForm({ docType:'Judgment', date:todayIso() });
+  resetAuto();
+  $('editTitle').textContent = 'New scan / نئی اسکین';
+  $('fileSec').style.display = '';
+  $('btnOcr').style.display = '';
+  $('ocrInfo').textContent = ''; $('ocrProg').style.display = 'none'; $('upProg').style.display = 'none';
+  showModal('');
+  $('editBg').classList.add('show');
+  formHistReset();
+}
+function openEditScan(s){
+  if(!CTX.canWrite) return;
+  SC.mode = 'edit'; SC.editId = s.id; SC.builtPdf = null; SC.queue = null; SC.qi = 0; SC.src = null;
+  clearParts(true);
+  fillForm();
+  setForm(s);
+  $('editTitle').textContent = 'Edit scan / ترمیم';
+  $('fileSec').style.display = 'none';
+  $('btnOcr').style.display = 'none';
+  $('ocrInfo').textContent = ''; $('ocrProg').style.display = 'none'; $('upProg').style.display = 'none';
+  showModal('<span style="font-size:12px">' + bi('فائل: ', 'File: ') + esc(s.fileName || '') + ' (' + (s.pages || '?') + ' ' + bi('صفحات', 'pages') + ', ' + mb(s.fileSize || 0) + '). ' + bi('فائل بدلنے کے لیے پرانی حذف کر کے نئی اسکین کریں۔', 'To change the file, delete this one and scan again.') + '</span>');
+  $('editBg').classList.add('show');
+  formHistReset();
+}
+function closeEdit(){
+  if(SC.busy) return;
+  if(CAM.stream) closeCamera();
+  $('editBg').classList.remove('show');
+  SC.queue = null; SC.qi = 0; SC.src = null;
+  clearParts(true);
+}
+$('fDocType').addEventListener('change', function(){ $('otherBox').style.display = this.value === 'Other' ? '' : 'none'; showLinkRow(); if(this.value === 'Opinion') suggestLink(); });
+['fCaseType','fCaseNo','fCaseYear'].forEach(function(id){ $(id).addEventListener('change', function(){ if($('fDocType').value === 'Opinion') suggestLink(); }); });
+$('fOpText').addEventListener('input', function(e){ if(e.isTrusted) $('fOpAi').value = ''; });
+$('fDistrict').addEventListener('change', function(){ refreshTehsilStation(); });
+
+/* ---------- field-level Undo / Redo inside the dialog ---------- */
+var FH = { stack:[], idx:-1, timer:null, busy:false };
+function formSnap(){ var d = {}; FIELDS.forEach(function(k){ d[k] = $(FMAP[k]).value; }); return d; }
+function formHistReset(){ FH.stack = [formSnap()]; FH.idx = 0; formHistBtns(); }
+function formHistPush(){
+  if(FH.busy) return; clearTimeout(FH.timer);
+  FH.timer = setTimeout(function(){
+    var s = formSnap(), last = FH.stack[FH.idx];
+    if(last && JSON.stringify(last) === JSON.stringify(s)) return;
+    FH.stack = FH.stack.slice(0, FH.idx + 1); FH.stack.push(s); FH.idx = FH.stack.length - 1; formHistBtns();
+  }, 450);
+}
+function formHistBtns(){ $('fUndo').disabled = FH.idx <= 0; $('fRedo').disabled = FH.idx >= FH.stack.length - 1; }
+function formApply(s){ FH.busy = true; setForm(s); FH.busy = false; formHistBtns(); }
+function formUndo(){ clearTimeout(FH.timer); var cur = formSnap(); if(JSON.stringify(cur) !== JSON.stringify(FH.stack[FH.idx])){ FH.stack = FH.stack.slice(0, FH.idx + 1); FH.stack.push(cur); FH.idx = FH.stack.length - 1; } if(FH.idx > 0){ FH.idx--; formApply(FH.stack[FH.idx]); } }
+function formRedo(){ if(FH.idx < FH.stack.length - 1){ FH.idx++; formApply(FH.stack[FH.idx]); } }
+Array.prototype.forEach.call(document.querySelectorAll('#editBg input:not([type=file]):not([type=checkbox]), #editBg select, #editBg textarea'), function(el){
+  el.addEventListener('input', formHistPush); el.addEventListener('change', formHistPush);
+});
+document.addEventListener('keydown', function(e){
+  if(!$('editBg').classList.contains('show')) return;
+  var tag = (e.target && e.target.tagName) || '';
+  if((e.ctrlKey || e.metaKey) && !/INPUT|TEXTAREA/.test(tag)){
+    if(e.key === 'z' || e.key === 'Z'){ e.preventDefault(); formUndo(); }
+    else if(e.key === 'y' || e.key === 'Y'){ e.preventDefault(); formRedo(); }
+  }
+});
+
+/* ---------- parts (PDF files and photos that will become ONE pdf) ---------- */
+function clearParts(silent){
+  PARTS.forEach(function(p){ if(p.url) URL.revokeObjectURL(p.url); });
+  PARTS = []; SC.builtPdf = null; renderParts();
+  if(!silent) $('ocrInfo').textContent = '';
+}
+function mkPart(o){ o.id = ++PID; return o; }
+async function addFiles(files){
+  var msgs = [];
+  for(var i = 0; i < files.length; i++){
+    var f = files[i], isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name), isImg = /^image\//.test(f.type);
+    if(f.size > MAX_BYTES * 2){ msgs.push(f.name + ': ' + 'too large'); continue; }
+    if(isPdf){
+      try{
+        await loadLib('pdflib');
+        var buf = await f.arrayBuffer();
+        var d = await PDFLib.PDFDocument.load(buf, {ignoreEncryption:true});
+        PARTS.push(mkPart({kind:'pdf', name:f.name, buf:buf, pages:d.getPageCount(), size:f.size}));
+      }catch(e){ console.error(e); msgs.push(f.name + ': ' + 'PDF could not be read'); }
+    } else if(isImg){
+      PARTS.push(mkPart({kind:'img', name:f.name || 'photo', blob:f, url:URL.createObjectURL(f), rot:0, size:f.size}));
+    } else msgs.push(f.name + ': ' + 'only PDF or photo');
+  }
+  SC.builtPdf = null; renderParts();
+  if(msgs.length) showModal('⚠ ' + esc(msgs.join(' · ')), 'err'); else showModal('');
+  autoTextLayer();
+  if(SC.mode === 'add' && PARTS.length && $('autoRead').checked && !AUTO.busy) autoFill();
+}
+function renderParts(){
+  $('partsBox').innerHTML = PARTS.map(function(p, i){
+    var th = p.kind === 'img' ? '<img alt="" src="' + p.url + '" style="transform:rotate(' + p.rot + 'deg)">' : '📄';
+    var info = p.kind === 'pdf' ? ('PDF · ' + p.pages + ' ' + 'pg · ' + mb(p.size)) : ('Photo / تصویر · ' + mb(p.size));
+    return '<div class="sc-part"><div class="th">' + th + '</div><div class="nm"><b>' + (i + 1) + '.</b> <bdi dir="auto">' + esc(p.name) + '</bdi><span>' + info + '</span></div><div class="bt">' +
+      '<button type="button" data-pa="up" data-i="' + i + '" title="Up / اوپر"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+      '<button type="button" data-pa="dn" data-i="' + i + '" title="Down / نیچے"' + (i === PARTS.length - 1 ? ' disabled' : '') + '>↓</button>' +
+      (p.kind === 'img' ? '<button type="button" data-pa="rot" data-i="' + i + '" title="Rotate / گھمائیں">⟳</button>' : '') +
+      '<button type="button" data-pa="del" data-i="' + i + '" title="Remove / ہٹائیں">✕</button></div></div>';
+  }).join('');
+  var pg = PARTS.reduce(function(n, p){ return n + (p.kind === 'pdf' ? p.pages : 1); }, 0);
+  $('partsInfo').textContent = PARTS.length ? (pg + ' page(s) → 1 PDF / ' + pg + ' صفحات ایک PDF میں') : '';
+  $('btnClearParts').style.display = PARTS.length ? '' : 'none';
+}
+$('partsBox').addEventListener('click', function(e){
+  var b = e.target.closest('button[data-pa]'); if(!b) return;
+  var i = +b.dataset.i, a = b.dataset.pa;
+  if(a === 'up' && i > 0){ var t = PARTS[i-1]; PARTS[i-1] = PARTS[i]; PARTS[i] = t; }
+  else if(a === 'dn' && i < PARTS.length - 1){ var t2 = PARTS[i+1]; PARTS[i+1] = PARTS[i]; PARTS[i] = t2; }
+  else if(a === 'rot'){ PARTS[i].rot = (PARTS[i].rot + 90) % 360; }
+  else if(a === 'del'){ if(PARTS[i].url) URL.revokeObjectURL(PARTS[i].url); PARTS.splice(i, 1); }
+  SC.builtPdf = null; renderParts();
+});
+$('fileIn').addEventListener('change', function(){ var f = Array.prototype.slice.call(this.files); this.value = ''; if(f.length) addFiles(f); });
+$('camIn').addEventListener('change', function(){ var f = Array.prototype.slice.call(this.files); this.value = ''; if(f.length) addFiles(f); });
+
+/* ---------- camera (several pages in a row) ---------- */
+var CAM = { stream:null, facing:'environment', shots:0 };
+async function startStream(){
+  if(CAM.stream) CAM.stream.getTracks().forEach(function(t){ t.stop(); });
+  CAM.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:CAM.facing }, width:{ ideal:2560 }, height:{ ideal:1440 } }, audio:false });
+  $('camVideo').srcObject = CAM.stream;
+}
+async function openCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ $('camIn').click(); return; }
+  try{
+    await startStream();
+    CAM.shots = 0; $('camCnt').textContent = '0';
+    $('camBox').classList.add('show');
+  }catch(e){
+    console.error(e);
+    showModal('⚠ ' + bi('کیمرہ نہیں کھل سکا؛ فون کا کیمرہ ایپ کھل رہا ہے۔', 'Camera could not open; using the phone camera app instead.'));
+    $('camIn').click();
+  }
+}
+function camFlip(){ CAM.facing = CAM.facing === 'environment' ? 'user' : 'environment'; startStream().catch(function(e){ console.error(e); }); }
+function camShot(){
+  var v = $('camVideo'); if(!v.videoWidth) return;
+  var c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0);
+  c.toBlob(function(b){
+    if(!b) return;
+    CAM.shots++; $('camCnt').textContent = String(CAM.shots);
+    PARTS.push(mkPart({kind:'img', name:'Camera page ' + (PARTS.length + 1) + '.jpg', blob:b, url:URL.createObjectURL(b), rot:0, size:b.size}));
+    SC.builtPdf = null; renderParts();
+    var box = $('camBox'); box.style.outline = '6px solid #fff'; setTimeout(function(){ box.style.outline = ''; }, 120);
+  }, 'image/jpeg', 0.92);
+}
+function closeCamera(){
+  if(CAM.stream){ CAM.stream.getTracks().forEach(function(t){ t.stop(); }); CAM.stream = null; }
+  $('camVideo').srcObject = null;
+  $('camBox').classList.remove('show');
+}
+
+/* ---------- build ONE pdf ---------- */
+async function imageToJpeg(p){
+  var bmp;
+  try{ bmp = await createImageBitmap(p.blob); }
+  catch(e){
+    bmp = await new Promise(function(res, rej){ var im = new Image(); im.onload = function(){ res(im); }; im.onerror = function(){ rej(new Error('image')); }; im.src = p.url; });
+  }
+  var w = bmp.width || bmp.naturalWidth, h = bmp.height || bmp.naturalHeight;
+  var k = Math.min(1, 2400 / Math.max(w, h)), sw = Math.round(w * k), sh = Math.round(h * k);
+  var turn = p.rot === 90 || p.rot === 270;
+  var c = document.createElement('canvas'); c.width = turn ? sh : sw; c.height = turn ? sw : sh;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+  ctx.translate(c.width / 2, c.height / 2); ctx.rotate(p.rot * Math.PI / 180);
+  if($('bwFilter').checked && 'filter' in ctx) ctx.filter = 'grayscale(1) contrast(1.4) brightness(1.06)';
+  ctx.drawImage(bmp, -sw / 2, -sh / 2, sw, sh);
+  var blob = await new Promise(function(res){ c.toBlob(res, 'image/jpeg', 0.85); });
+  if(bmp.close) bmp.close();
+  return { bytes: new Uint8Array(await blob.arrayBuffer()), w: c.width, h: c.height };
+}
+async function buildPdf(){
+  if(SC.builtPdf) return SC.builtPdf;
+  if(!PARTS.length) throw new Error('no file');
+  await loadLib('pdflib');
+  if(PARTS.length === 1 && PARTS[0].kind === 'pdf'){
+    SC.builtPdf = { bytes:new Uint8Array(PARTS[0].buf), pages:PARTS[0].pages };
+    return SC.builtPdf;
+  }
+  var out = await PDFLib.PDFDocument.create(), n = 0;
+  for(var i = 0; i < PARTS.length; i++){
+    var p = PARTS[i];
+    if(p.kind === 'pdf'){
+      var src = await PDFLib.PDFDocument.load(p.buf, {ignoreEncryption:true});
+      var cp = await out.copyPages(src, src.getPageIndices());
+      cp.forEach(function(pg){ out.addPage(pg); n++; });
+    } else {
+      var im = await imageToJpeg(p), img = await out.embedJpg(im.bytes);
+      var s = Math.min(1, 842 / Math.max(im.w, im.h)) * 0.75 * (im.w >= im.h ? 1 : 1);
+      var pw = Math.round(im.w * 842 / Math.max(im.w, im.h)), ph = Math.round(im.h * 842 / Math.max(im.w, im.h));
+      var page = out.addPage([pw, ph]); page.drawImage(img, {x:0, y:0, width:pw, height:ph}); n++;
+    }
+  }
+  out.setTitle('Scanned document'); out.setProducer('Camp Office — Scanning Desk');
+  SC.builtPdf = { bytes: await out.save(), pages:n };
+  return SC.builtPdf;
+}
+
+/* ---------- search text: PDF text layer first, OCR for scanned pages ---------- */
+function setOcrText(t){
+  t = String(t || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+  if(t.length > OCR_CAP) t = t.slice(0, OCR_CAP);
+  $('fOcr').value = t; formHistPush();
+}
+async function textLayer(bytes, maxPages){
+  var pdfjs = await loadPdfjs();
+  var doc = await pdfjs.getDocument({data:bytes.slice(0)}).promise, txt = '', n = Math.min(doc.numPages, maxPages);
+  for(var i = 1; i <= n; i++){
+    var pg = await doc.getPage(i), tc = await pg.getTextContent();
+    txt += tc.items.map(function(it){ return it.str; }).join(' ') + '\n\n';
+  }
+  return { text:txt, doc:doc, pages:doc.numPages };
+}
+async function autoTextLayer(){
+  /* silent: if the PDF is a "digital" one (has real text) the words are filled in at once, no OCR needed */
+  if(!PARTS.length || PARTS.some(function(p){ return p.kind !== 'pdf'; }) || PARTS.length !== 1) return;
+  if($('fOcr').value.trim()) return;
+  try{
+    var r = await textLayer(new Uint8Array(PARTS[0].buf), 30);
+    if(r.text.replace(/\s+/g, '').length > 80){ setOcrText(r.text); $('ocrInfo').textContent = '✔ ' + 'Text found inside the PDF — no OCR needed. / PDF میں پہلے سے متن موجود ہے، OCR کی ضرورت نہیں۔'; }
+  }catch(e){ console.warn('textLayer', e); }
+}
+var OCR_BUSY = false;
+/* text of every page (max maxP): the PDF's own text where it has some, OCR for scanned pages */
+async function readPages(maxP){
+  var prog = $('ocrProg'), bar = prog.firstElementChild; prog.style.display = ''; bar.style.width = '2%';
+  $('ocrInfo').textContent = '⏳ ' + 'Preparing… / تیاری…';
+  var built = await buildPdf(), total = Math.min(built.pages, maxP), out = [];
+  var tl = null; try{ tl = await textLayer(built.bytes, maxP); }catch(e){ console.warn(e); }
+  var pdfjs = await loadPdfjs();
+  var doc = tl ? tl.doc : await pdfjs.getDocument({data:built.bytes.slice(0)}).promise;
+  var worker = null, lang = $('ocrUrdu').checked ? 'eng+urd' : 'eng', texts = (tl ? tl.text : '').split('\n\n');
+  try{
+    for(var i = 1; i <= total; i++){
+      var have = (texts[i-1] || '').replace(/\s+/g, '');
+      if(have.length > 40){ out.push(texts[i-1]); }
+      else {
+        if(!worker){
+          await loadLib('tess');
+          $('ocrInfo').textContent = '⏳ ' + 'Loading OCR engine (first time takes a minute)… / OCR انجن لوڈ ہو رہا ہے (پہلی بار ایک منٹ لگتا ہے)…';
+          worker = await Tesseract.createWorker(lang, 1, {});
+        }
+        var pg = await doc.getPage(i), vp = pg.getViewport({scale:2.4}), c = document.createElement('canvas');
+        c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        await pg.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
+        var r = await worker.recognize(c);
+        out.push(r && r.data && r.data.text || '');
+      }
+      bar.style.width = Math.round(i / total * 100) + '%';
+      $('ocrInfo').textContent = '⏳ ' + 'Reading page ' + i + ' of ' + total + ' / صفحہ ' + i + ' از ' + total;
+    }
+  } finally { if(worker){ try{ await worker.terminate(); }catch(e){} } }
+  return { pages:out, built:built, truncated:built.pages > maxP };
+}
+async function runOcr(){
+  if(OCR_BUSY) return;
+  if(!PARTS.length){ showModal('⚠ ' + bi('پہلے فائل یا تصویریں شامل کریں۔', 'Add a file or photos first.'), 'err'); return; }
+  OCR_BUSY = true; $('btnOcr').disabled = true; $('btnAuto').disabled = true; showModal('');
+  try{
+    var maxP = 15, r = await readPages(maxP);
+    setOcrText(r.pages.join('\n\n'));
+    var ok = $('fOcr').value.length;
+    $('ocrInfo').textContent = (ok ? '✔ ' : '⚠ ') + ok + ' characters / حروف' + (r.truncated ? ' — first ' + maxP + ' pages only / پہلے ' + maxP + ' صفحات' : '') + '. ' + 'Please check; OCR can make mistakes. / براہ کرم دیکھ لیں، OCR میں غلطی ممکن ہے۔';
+  }catch(e){
+    console.error(e);
+    $('ocrInfo').textContent = '';
+    showModal('❌ ' + bi('OCR نہیں ہو سکا (انٹرنیٹ چیک کریں)۔ آپ پھر بھی محفوظ کر سکتے ہیں۔', 'OCR failed (check internet). You can still save.') + ' <span style="font-size:11px">' + esc(e && e.message || e) + '</span>', 'err');
+  }finally{
+    OCR_BUSY = false; $('btnOcr').disabled = false; $('btnAuto').disabled = false; setTimeout(function(){ $('ocrProg').style.display = 'none'; }, 800);
+  }
+}
+
+/* ---------- read the judgment and fill the details by itself ---------- */
+var AUTO = { busy:false };
+function resetAuto(){
+  Array.prototype.forEach.call(document.querySelectorAll('#editBg [data-touched]'), function(el){ delete el.dataset.touched; });
+  clearAutoMarks(); $('autoInfo').innerHTML = '';
+}
+function clearAutoMarks(){ Array.prototype.forEach.call(document.querySelectorAll('#editBg .sc-auto'), function(el){ el.classList.remove('sc-auto'); }); }
+/* a field the person typed or chose is never overwritten; touching a yellow field makes it normal */
+$('editBg').addEventListener('input', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto'); } });
+$('editBg').addEventListener('change', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto'); } });
+function putAuto(key, value, marks){
+  if(value == null || value === '') return false;
+  var el = $(FMAP[key]); if(!el || el.dataset.touched) return false;
+  if(el.tagName === 'SELECT' && !Array.prototype.some.call(el.options, function(o){ return o.value === value; })) el.innerHTML += '<option value="' + esc(value) + '">' + esc(value) + '</option>';
+  el.value = value; if(marks !== false) el.classList.add('sc-auto');
+  return true;
+}
+function applyRecord(rec, pagesText){
+  var f = rec.fields, n = 0, E = EXTRACT;
+  function put(k, v, m){ if(putAuto(k, v, m)) n++; }
+  if(rec.kind === 'opinion') return applyOpinion(rec, pagesText);
+  put('docType', E.pick(LISTS.docTypes, f.docType) || '');
+  $('otherBox').style.display = $('fDocType').value === 'Other' ? '' : 'none';
+  put('date', f.date);
+  put('court', E.pick(LISTS.courts, f.court) || f.court);
+  put('caseType', E.pick(LISTS.types, f.caseType) || f.caseType);
+  put('caseNo', f.caseNo); put('caseYear', E.pick(YEARS, f.caseYear) || f.caseYear);
+  put('title', f.title); put('judges', f.judges); put('lower', f.lower);
+  put('outcome', E.pick(LISTS.outcomes, f.outcome) || f.outcome);
+  put('sentence', E.pick(LISTS.sentences, f.sentence) || f.sentence);
+  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear);
+  var dist = E.matchDistrict(DISTRICTS, f.district);
+  if(dist && !$('fDistrict').dataset.touched){ putAuto('district', dist); n++; refreshTehsilStation('', f.station || ''); if(f.station) $('fStation').classList.add('sc-auto'); }
+  var off = E.matchOfficer(LISTS.officers, f.counsel); put('officer', off);
+  var notes = [f.notes, (f.counsel && !off) ? 'State counsel: ' + f.counsel : ''].filter(Boolean).join('\n');
+  put('notes', notes); put('grounds', f.grounds);
+  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = t.slice(0, OCR_CAP); }
+  formHistPush();
+  return n;
+}
+
+/* ---------- an OPINION scan: read it, then link it to the judgment it is about ---------- */
+function applyOpinion(rec, pagesText){
+  var f = rec.fields, n = 0, E = EXTRACT;
+  function put(k, v){ if(putAuto(k, v)) n++; }
+  put('docType', E.pick(LISTS.docTypes, 'Opinion') || 'Opinion'); showLinkRow();
+  put('date', f.date); put('caseType', E.pick(LISTS.types, f.caseType) || f.caseType); put('caseNo', f.caseNo); put('caseYear', E.pick(YEARS, f.caseYear) || f.caseYear);
+  put('title', f.title);
+  put('opinionStatus', E.pick(LISTS.opinions, f.opinionStatus) || (f.opinionStatus === 'Not fit' ? E.pick(LISTS.opinions, 'Not fit') : '') || f.opinionStatus);
+  var by = E.matchOfficer(LISTS.officers, f.signer); put('opinionBy', by); put('officer', by);
+  put('opinionDate', f.opinionDate); put('acDate', f.acDate); put('opinionText', f.opinionText);
+  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear);
+  var dist = E.matchDistrict(DISTRICTS, f.district);
+  if(dist && !$('fDistrict').dataset.touched){ putAuto('district', dist); n++; refreshTehsilStation('', f.station || ''); if(f.station) $('fStation').classList.add('sc-auto'); }
+  var c = candidatesFor(f), pick = (c.length === 1 || (c.length > 1 && c[0].exact && !c[1].exact)) ? c[0].s.id : '';
+  fillLinkOptions(pick, c);
+  if(pick){ $('fLinkTo').classList.add('sc-auto'); n++; }
+  linkInfoShow(pick, c.length);
+  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = t.slice(0, OCR_CAP); }
+  formHistPush();
+  return n;
+}
+function recText(s){ return (caseText(s) || '—') + (s.title ? ' — ' + s.title : '') + (s.date ? ' (' + dmy(s.date) + ')' : ''); }
+function judgmentList(){ return SCANS.filter(function(s){ return s.docType !== 'Opinion'; }); }
+function kk(x){ return String(x == null ? '' : x).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+function candidatesFor(f){
+  var ids = (f.linkIds && f.linkIds.length) ? f.linkIds : (f.caseNo ? [{kind:f.caseType, no:f.caseNo, year:f.caseYear}] : []), out = [];
+  judgmentList().forEach(function(s){
+    var exact = false, near = false;
+    ids.forEach(function(i){
+      if(kk(s.caseType) === kk(i.kind) && kk(s.caseNo) === kk(i.no) && String(s.caseYear) === String(i.year)) exact = true;
+      else {
+        var num = String(i.no).replace(/\D.*$/, '');
+        if(num && new RegExp('\\b' + num + '\\s*(?:/|of)\\s*' + i.year + '\\b', 'i').test((s.lower || '') + ' ' + (s.notes || ''))) near = true;
+      }
+    });
+    if(exact || near) out.push({s:s, exact:exact});
+  });
+  out.sort(function(a, b){ return (b.exact ? 1 : 0) - (a.exact ? 1 : 0); });
+  return out;
+}
+function fillLinkOptions(sel, cands){
+  var el = $('fLinkTo'), list = judgmentList().slice().sort(function(a, b){ return String(b.date || '').localeCompare(String(a.date || '')); });
+  var first = (cands || []).map(function(c){ return c.s.id; });
+  var html = '<option value="">— not linked / جڑا نہیں —</option>';
+  function opt(s, star){ return '<option value="' + esc(s.id) + '">' + (star ? '★ ' : '') + esc(recText(s).slice(0, 110)) + '</option>'; }
+  (cands || []).forEach(function(c){ html += opt(c.s, true); });
+  list.forEach(function(s){ if(first.indexOf(s.id) < 0) html += opt(s, false); });
+  if(sel && !list.some(function(s){ return s.id === sel; })) html += '<option value="' + esc(sel) + '">(record not found / ریکارڈ نہیں ملا)</option>';
+  el.innerHTML = html; el.value = sel || ''; el.classList.remove('sc-auto'); $('linkInfo').style.display = 'none';
+}
+function showLinkRow(){ $('linkRow').style.display = $('fDocType').value === 'Opinion' ? '' : 'none'; }
+function linkInfoShow(pick, n){
+  var b = $('linkInfo'); b.style.display = '';
+  if(pick){ var s = SCANS.filter(function(x){ return x.id === pick; })[0]; b.innerHTML = '✔ ' + bi('اس کیس کا فیصلہ مل گیا اور جوڑ دیا: ', 'Found and linked the judgment: ') + esc(s ? recText(s) : ''); }
+  else if(n > 1) b.innerHTML = '⚠ ' + bi('کئی ممکنہ فیصلے ملے؛ فہرست سے درست والا چنیں۔', 'Several possible judgments; choose the right one from the list.');
+  else b.innerHTML = '⚠ ' + bi('اس کیس کا فیصلہ ابھی محفوظ نہیں ملا۔ پہلے فیصلہ اسکین کریں، یا فہرست سے چنیں، یا بغیر جوڑے محفوظ کریں۔', 'No saved judgment found for this case. Scan the judgment first, or choose it from the list, or save without a link.');
+}
+function suggestLink(){
+  var el = $('fLinkTo'); if(el.dataset.touched || el.value) return;
+  var f = { caseType:$('fCaseType').value, caseNo:$('fCaseNo').value.trim(), caseYear:$('fCaseYear').value };
+  if(!f.caseNo) return;
+  var c = candidatesFor(f), pick = (c.length === 1 || (c.length > 1 && c[0].exact && !c[1].exact)) ? c[0].s.id : '';
+  fillLinkOptions(pick, c); if(pick) el.classList.add('sc-auto');
+  linkInfoShow(pick, c.length);
+}
+/* copies the opinion into the judgment record it is linked to (this is what the Inspection proformas will read) */
+async function syncOpinion(d, opId){
+  if(d.docType !== 'Opinion' || !d.linkedTo) return '';
+  var j = SCANS.filter(function(s){ return s.id === d.linkedTo; })[0];
+  if(!j) return '⚠ ' + bi('جڑا ہوا فیصلہ نہیں ملا؛ رائے الگ محفوظ ہوئی۔', 'The linked judgment was not found; the opinion was saved on its own.');
+  var keys = ['opinionStatus','opinionBy','opinionDate','opinionText','acDate','scType','scNo','scYear'], patch = {}, before = {}, clash = [];
+  keys.forEach(function(k){
+    if(d[k] && (j[k] || '') !== d[k]){ patch[k] = d[k]; before[k] = j[k] == null ? '' : j[k]; if(j[k] && (k !== 'opinionStatus' || /^(fit|not fit)/i.test(j[k]))) clash.push(k); }
+  });
+  if(d.opinionAi !== (j.opinionAi || '')){ patch.opinionAi = d.opinionAi || ''; before.opinionAi = j.opinionAi || ''; }
+  if((j.opinionScanId || '') !== opId){ patch.opinionScanId = opId; before.opinionScanId = j.opinionScanId || ''; }
+  if(!Object.keys(patch).length) return '✔ ' + bi('جڑے ہوئے فیصلے میں یہی رائے پہلے سے ہے۔', 'The linked judgment already has this opinion.');
+  if(clash.length){
+    var yes = await new Promise(function(done){
+      confirmBox('Replace the opinion on the judgment? / فیصلے کی رائے بدلیں؟', bi2('اس فیصلے کے ریکارڈ میں پہلے سے رائے لکھی ہوئی ہے۔ نئی رائے اس کی جگہ لکھ دوں؟', 'That judgment record already has an opinion. Replace it with the new one?') + '<div dir="ltr" style="text-align:left;margin-top:8px"><b>' + esc(recText(j)) + '</b><br>Now: ' + esc(j.opinionStatus || '—') + ' &nbsp; → New: ' + esc(d.opinionStatus || '—') + '</div>', function(){ done(true); }, {yesLabel:'Replace / بدل دیں', noLabel:'Keep the old one / پرانی رکھیں'});
+      $('confNo').onclick = function(){ $('confBg').classList.remove('show'); done(false); };
+    });
+    if(!yes){ delete patch.opinionStatus; delete patch.opinionBy; delete patch.opinionDate; delete patch.opinionText; delete patch.acDate; delete patch.scType; delete patch.scNo; delete patch.scYear; delete patch.opinionAi; Object.keys(before).forEach(function(k){ if(!(k in patch)) delete before[k]; }); }
+    if(!Object.keys(patch).length) return '⚠ ' + bi('جڑے ہوئے فیصلے کی پرانی رائے برقرار رکھی۔', 'Kept the old opinion on the linked judgment.');
+  }
+  try{
+    await db.collection('scans').doc(j.id).update(Object.assign({}, patch, { updatedBy: CTX.user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+    HIST.push({id:j.id, before:before, after:patch}); FUT = []; histBtns();
+    return '✔ ' + bi('رائے جڑے ہوئے فیصلے کے ریکارڈ میں بھی شامل ہو گئی: ', 'Opinion also added to the linked judgment: ') + esc(caseText(j) || recText(j));
+  }catch(err){
+    return '⚠ ' + bi('رائے محفوظ ہو گئی مگر فیصلے کے ریکارڈ میں شامل نہیں ہو سکی: ', 'Opinion saved but could not be added to the judgment: ') + esc(err.code || err.message || err);
+  }
+}
+
+/* ---------- AI: a short opinion draft (officer decides; nothing is saved until "Use") ---------- */
+var AI_URL = 'https://askassistant-ocr2hbwqvq-uc.a.run.app', AI = { consent:false, busy:false };
+async function aiCall(question){
+  var tok = await auth.currentUser.getIdToken();
+  var r = await fetch(AI_URL, {method:'POST', headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + tok}, body:JSON.stringify({question:question})});
+  var j = {}; try{ j = await r.json(); }catch(e){}
+  if(!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j.answer || '';
+}
+function aiPrompt(text, lang){
+  if(text.length > 24000) text = text.slice(0, 8000) + '\n[...]\n' + text.slice(-16000);
+  return 'You are helping an officer of the Prosecutor General Punjab camp office (Supreme Court of Pakistan) prepare an internal note. Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes).\n' +
+    'From the State\'s (prosecution\'s) point of view, write a very short opinion on whether this judgment is a FIT case for the State to assail (petition for leave to appeal / review) or NOT FIT, with the main reason.\n' +
+    'Rules: use only facts that are in the text; never invent names, section numbers, dates or citations; if the text is too unclear, answer UNSURE.\n' +
+    'Answer in exactly this format and nothing else:\nOPINION: <one or two sentences, at most 45 words>\nRECOMMENDATION: <FIT or NOT FIT or UNSURE>\nREASONS: <up to three short reasons separated by semicolons>\n' +
+    'Write the OPINION and REASONS in ' + (lang === 'ur' ? 'Urdu script' : 'English') + '.\n\nJUDGMENT TEXT:\n"""\n' + text + '\n"""';
+}
+function aiParse(ans){
+  var o = /OPINION\s*:\s*([\s\S]*?)(?:\n\s*RECOMMENDATION\s*:|$)/i.exec(ans), r = /RECOMMENDATION\s*:\s*(NOT\s+FIT|FIT|UNSURE)/i.exec(ans), w = /REASONS?\s*:\s*([\s\S]*)$/i.exec(ans);
+  return { opinion:(o ? o[1] : ans).trim(), rec:r ? r[1].toUpperCase().replace(/\s+/g, ' ') : 'UNSURE', reasons:w ? w[1].trim() : '' };
+}
+function aiShow(res){
+  var box = $('aiOut'), chip = res.rec === 'FIT' ? 'Fit / فٹ' : (res.rec === 'NOT FIT' ? 'Not fit / ناٹ فٹ' : 'Unsure / یقین نہیں');
+  box.innerHTML = '<b>✨ ' + bi('AI کا مسودہ', 'AI draft') + '</b> <span class="sc-ai-tag">' + bi('صرف مسودہ — فیصلہ افسر کا', 'draft only — the officer decides') + '</span>' +
+    '<div class="t" dir="auto">' + esc(res.opinion) + '</div>' +
+    '<div>' + bi('AI کی تجویز: ', 'AI suggests: ') + '<span class="sc-ai-chip">' + chip + '</span></div>' +
+    (res.reasons ? '<div class="t" dir="auto">' + esc(res.reasons) + '</div>' : '') +
+    '<div class="row"><button type="button" class="cl-btn gold" id="aiUse">' + bi('متن استعمال کریں', 'Use the text') + '</button>' +
+    (res.rec !== 'UNSURE' ? '<button type="button" class="cl-btn" id="aiSet">' + bi('رائے کا خانہ بھی بھریں: ', 'Also set the Opinion box: ') + (res.rec === 'FIT' ? 'Fit' : 'Not fit') + '</button>' : '') +
+    '<button type="button" class="cl-btn" id="aiClose">' + bi('بند کریں', 'Close') + '</button></div>';
+  box.style.display = '';
+  function useText(){
+    var el = $('fOpText'); el.value = res.opinion + (res.reasons ? '\nReasons / وجوہات: ' + res.reasons : ''); el.classList.add('sc-auto'); delete el.dataset.touched; $('fOpAi').value = '1'; formHistPush();
+  }
+  $('aiUse').onclick = function(){
+    var el = $('fOpText');
+    if(el.value.trim() && $('fOpAi').value !== '1') confirmBox('Replace the text? / متن بدلیں؟', bi2('رائے کی تفصیل میں پہلے سے لکھا ہوا ہے۔ اسے AI کے مسودے سے بدل دوں؟', 'The opinion box already has text. Replace it with the AI draft?'), useText, {yesLabel:'Replace / بدل دیں', noLabel:'Cancel / منسوخ'});
+    else useText();
+  };
+  if($('aiSet')) $('aiSet').onclick = function(){
+    var want = res.rec === 'FIT' ? /^fit/i : /^not fit/i, hit = LISTS.opinions.filter(function(x){ return want.test(x); })[0];
+    if(hit){ var el = $('fOpStatus'); el.value = hit; el.classList.add('sc-auto'); delete el.dataset.touched; formHistPush(); }
+  };
+  $('aiClose').onclick = function(){ box.style.display = 'none'; };
+}
+async function aiDraft(){
+  if(AI.busy) return;
+  var text = $('fOcr').value.trim();
+  if(text.length < 300){ showModal('⚠ ' + bi('پہلے «پڑھ کر خود تفصیل بھریں» یا OCR دبائیں تاکہ فیصلے کا متن موجود ہو۔', 'First press “Read & fill the details” or OCR so the judgment text is available.'), 'err'); return; }
+  if(!AI.consent){
+    confirmBox('Send to the AI? / AI کو بھیجیں؟', bi2('فیصلے کا متن گوگل کی مفت AI سروس کو بھیجا جائے گا (گوگل مفت سروس کا متن اپنی مصنوعات بہتر بنانے میں استعمال کر سکتا ہے)۔ اندرونی نوٹس اور افسر کے نام نہیں بھیجے جاتے۔ جاری رکھیں؟', 'The judgment text will be sent to Google\'s free AI service (Google may use free-service text to improve its products). Internal notes and officer names are not sent. Continue?'), function(){ AI.consent = true; aiDraft(); }, {yesLabel:'Yes, make the draft / ہاں مسودہ بنائیں', noLabel:'Cancel / منسوخ'});
+    return;
+  }
+  AI.busy = true; $('btnAi').disabled = true; showModal(''); var box = $('aiOut'); box.style.display = ''; box.innerHTML = '⏳ ' + bi('AI مسودہ بنا رہا ہے… (چند سیکنڈ)', 'AI is drafting… (a few seconds)');
+  try{
+    var ans = await aiCall(aiPrompt(text, $('aiLang').value));
+    aiShow(aiParse(ans));
+  }catch(e){
+    box.style.display = 'none';
+    showModal('❌ ' + bi('AI مسودہ نہیں بن سکا: ', 'The AI draft could not be made: ') + esc(e && e.message || e) + ' ' + bi('(کچھ دیر بعد دوبارہ کوشش کریں؛ آپ خود رائے لکھ سکتے ہیں۔)', '(try again in a minute; you can write the opinion yourself)'), 'err');
+  }finally{ AI.busy = false; $('btnAi').disabled = false; }
+}
+async function sliceRecord(rec){
+  /* a separate PDF made of just this judgment's pages */
+  if(!SC.src) return;
+  await loadLib('pdflib');
+  var src = await PDFLib.PDFDocument.load(SC.src.bytes, {ignoreEncryption:true}), out = await PDFLib.PDFDocument.create();
+  var last = Math.min(rec.to, src.getPageCount() - 1), idx = [], i;
+  for(i = rec.from; i <= last; i++) idx.push(i);
+  if(!idx.length) return;
+  var cp = await out.copyPages(src, idx); cp.forEach(function(p){ out.addPage(p); });
+  out.setProducer('Camp Office — Scanning Desk');
+  var bytes = await out.save();
+  clearParts(true);
+  PARTS.push(mkPart({kind:'pdf', name:'Judgment ' + (SC.qi + 1) + ' (pages ' + (rec.from + 1) + '–' + (rec.to + 1) + ').pdf', buf:bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), pages:idx.length, size:bytes.length}));
+  SC.builtPdf = null; renderParts();
+}
+function recLabel(rec){ var f = rec.fields; return (f.caseType ? f.caseType + ' ' + (f.caseNo || '?') + (f.caseYear ? '/' + f.caseYear : '') : 'Case number not found / کیس نمبر نہیں ملا') + ' — ' + (rec.from === rec.to ? 'page ' + (rec.from + 1) : 'pages ' + (rec.from + 1) + '–' + (rec.to + 1)); }
+function autoInfoShow(n, rec, res, queued){
+  var parts = ['✔ ' + bi('خود بھرے گئے خانے: ', 'Fields filled automatically: ') + '<b>' + n + '</b>'];
+  parts.push('<span class="sc-aut-note">' + bi('پیلے خانے چیک کریں', 'check the yellow fields') + '</span>');
+  if(rec && rec.kind === 'opinion') parts.push('📝 ' + bi('یہ رائے کی دستاویز لگتی ہے۔', 'This looks like an opinion document.'));
+  if(queued) parts.push(bi('فیصلہ ', 'Judgment ') + (SC.qi + 1) + bi(' از ', ' of ') + SC.queue.length);
+  if(res.unreadable && res.unreadable.length) parts.push('⚠ ' + bi('صفحہ ' + res.unreadable.join('، ') + ' الٹے یا دھندلے ہیں؛ ان میں سے تفصیل نہیں پڑھی گئی۔', 'Page(s) ' + res.unreadable.join(', ') + ' look upside-down or blurred; nothing was read from them.'));
+  if(rec && !rec.fields.caseNo) parts.push('⚠ ' + bi('کیس نمبر خود نہیں ملا، خود لکھیں۔', 'Case number not found; please type it.'));
+  $('autoInfo').innerHTML = parts.join(' · ');
+}
+function qBanner(h){ var b = $('qBan'); b.innerHTML = h || ''; b.style.display = h ? '' : 'none'; }
+async function loadQueued(){
+  var rec = SC.queue[SC.qi];
+  resetAuto(); setForm({ docType:'Judgment', date:todayIso() });
+  await sliceRecord(rec);
+  var n = applyRecord(rec, SC.pagesText.slice(rec.from, rec.to + 1).join('\n\n'));
+  autoInfoShow(n, rec, SC.res, true);
+  $('editTitle').textContent = 'New scan / نئی اسکین — \u2066' + (SC.qi + 1) + ' of ' + SC.queue.length + '\u2069';
+  $('editBg').scrollTop = 0;
+}
+async function autoFill(){
+  if(AUTO.busy || OCR_BUSY || SC.mode !== 'add') return;
+  if(!PARTS.length){ showModal('⚠ ' + bi('پہلے فائل یا تصویریں شامل کریں۔', 'Add a file or photos first.'), 'err'); return; }
+  AUTO.busy = OCR_BUSY = true; $('btnAuto').disabled = true; $('btnOcr').disabled = true; showModal(''); $('autoInfo').innerHTML = '';
+  try{
+    var r = await readPages(30);
+    SC.src = r.built; SC.pagesText = r.pages;
+    var res = EXTRACT.run(r.pages); SC.res = res;
+    var total = r.pages.join('\n\n').length;
+    $('ocrInfo').textContent = '✔ ' + total + ' characters / حروف';
+    if(r.truncated) showModal('⚠ ' + bi('صرف پہلے 30 صفحات پڑھے گئے۔', 'Only the first 30 pages were read.'));
+    var recs = res.records;
+    if(!total || !recs.length){ $('autoInfo').innerHTML = '⚠ ' + bi('اس فائل سے کوئی متن نہیں پڑھا جا سکا (صاف PDF یا سیدھی تصویر لیں)۔ تفصیل خود لکھیں۔', 'No text could be read from this file (use a clear PDF or a straight photo). Please fill the details yourself.'); return; }
+    if(recs.length > 1){
+      var list = recs.map(function(x, i){ return '<div dir="ltr" style="text-align:left"><b>' + (i + 1) + '.</b> ' + esc(recLabel(x)) + '</div>'; }).join('');
+      await new Promise(function(done){
+        confirmBox('Several judgments found / کئی فیصلے ملے', bi2('اس فائل میں ' + recs.length + ' الگ فیصلے لگتے ہیں۔ ہر ایک کا الگ ریکارڈ بنا دوں؟', 'This file seems to hold ' + recs.length + ' separate judgments. Make a separate record for each?') + '<div style="margin-top:8px">' + list + '</div>', function(){
+          SC.queue = recs; SC.qi = 0; done('split');
+        }, {yesLabel:'Separate records / الگ الگ ریکارڈ', noLabel:'Keep as one / ایک ہی رکھیں'});
+        $('confNo').onclick = function(){ $('confBg').classList.remove('show'); SC.queue = null; done('one'); };
+      });
+    } else SC.queue = null;
+    if(SC.queue){ await loadQueued(); }
+    else {
+      var rec = recs[0], one = recs.length === 1 ? rec : rec;
+      var n = applyRecord(one, r.pages.join('\n\n'));
+      autoInfoShow(n, one, res, false);
+    }
+  }catch(e){
+    console.error(e);
+    $('ocrInfo').textContent = '';
+    showModal('❌ ' + bi('پڑھنے میں خرابی (انٹرنیٹ چیک کریں)۔ آپ خود تفصیل لکھ سکتے ہیں۔', 'Reading failed (check internet). You can fill the details yourself.') + ' <span style="font-size:11px">' + esc(e && e.message || e) + '</span>', 'err');
+  }finally{
+    AUTO.busy = OCR_BUSY = false; $('btnAuto').disabled = false; $('btnOcr').disabled = false; setTimeout(function(){ $('ocrProg').style.display = 'none'; }, 800);
+  }
+}
+
+/* ---------- save ---------- */
+function safeName(d){
+  var base = [d.docType === 'Other' && d.docTypeOther ? d.docTypeOther : d.docType, d.caseNo ? (d.caseType + '-' + d.caseNo + '-' + d.caseYear) : '', d.date].filter(Boolean).join('_');
+  base = base.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  return (base || 'scan') + '.pdf';
+}
+function validate(d){
+  var bad = [];
+  if(!d.docType) bad.push(bi('دستاویز کی قسم', 'Document type'));
+  if(d.docType === 'Other' && !d.docTypeOther) bad.push(bi('دیگر قسم لکھیں', 'Write the other type'));
+  if(!d.date) bad.push(bi('تاریخ', 'Date'));
+  if(d.caseNo){
+    if(!/^\d{1,8}(-[A-Z]{1,2})?$/.test(d.caseNo)) bad.push(bi('کیس نمبر درست شکل میں (مثلاً 142 یا 950-L)', 'Case No in the right shape (e.g. 142 or 950-L)'));
+    if(!d.caseType) bad.push(bi('کیس کی قسم', 'Case Type'));
+    if(!d.caseYear) bad.push(bi('کیس کا سال', 'Case Year'));
+  }
+  if(d.scNo){
+    if(!/^\d{1,8}(-[A-Z]{1,2})?$/.test(d.scNo)) bad.push(bi('سپریم کورٹ کیس نمبر درست شکل میں', 'Supreme Court Case No in the right shape'));
+    if(!d.scType) bad.push(bi('سپریم کورٹ کیس کی قسم', 'Supreme Court Case Type'));
+    if(!d.scYear) bad.push(bi('سپریم کورٹ کیس کا سال', 'Supreme Court Case Year'));
+  }
+  return bad;
+}
+function dupNote(d){
+  if(!d.caseNo) return '';
+  var same = SCANS.filter(function(s){ return s.id !== SC.editId && s.caseNo === d.caseNo && s.caseType === d.caseType && s.caseYear === d.caseYear && s.docType === d.docType && s.date === d.date; });
+  return same.length ? bi('اسی کیس کی اسی قسم کی دستاویز اسی تاریخ کی پہلے سے موجود ہے۔', 'A document of the same type for this case and date already exists.') : '';
+}
+function saveScan(){
+  if(SC.busy) return;
+  if(!CTX.canWrite){ showModal('❌ ' + bi('اجازت نہیں۔', 'Not allowed.'), 'err'); return; }
+  var d = getForm(), bad = validate(d);
+  if(SC.mode === 'add' && !PARTS.length) bad.unshift(bi('فائل یا تصویریں', 'File or photos'));
+  if(bad.length){ showModal('⚠ ' + bi('یہ درست کریں: ', 'Please fix: ') + bad.join(' · '), 'err'); return; }
+  var dup = dupNote(d) || (d.docType === 'Opinion' && !d.linkedTo ? bi('یہ رائے کسی فیصلے سے جڑی نہیں ہے، اس لیے پروفارما میں خود شامل نہیں ہو گی۔', 'This opinion is not linked to a judgment, so it will not reach the proformas by itself.') : '');
+  var go = SC.mode === 'add' ? doAdd : doEdit;
+  if(dup) confirmBox('Please confirm / تصدیق کریں', dup + '<div style="margin-top:8px">' + bi('پھر بھی محفوظ کریں؟', 'Save anyway?') + '</div>', function(){ go(d); }, {yesLabel:'Save anyway / پھر بھی محفوظ'});
+  else go(d);
+}
+function setBusy(b){ SC.busy = b; $('btnSave').disabled = b; $('btnCancel').disabled = b; $('btnOcr').disabled = b || OCR_BUSY; }
+function bar(el, pct){ el.style.display = ''; el.firstElementChild.style.width = Math.max(2, Math.min(100, pct)) + '%'; }
+async function doAdd(d){
+  setBusy(true); showModal('⏳ ' + bi('PDF بن رہی ہے…', 'Building the PDF…'));
+  var ref = null;
+  try{
+    var built = await buildPdf();
+    if(built.bytes.length > MAX_BYTES) throw new Error(bi('PDF ' + mb(built.bytes.length) + ' ہے؛ حد ' + mb(MAX_BYTES) + ' ہے۔ تصویریں کم کریں یا چھوٹی PDF لیں۔', 'PDF is ' + mb(built.bytes.length) + '; the limit is ' + mb(MAX_BYTES) + '. Use fewer photos or a smaller PDF.'));
+    if(!storage) throw new Error('Firebase Storage is not available');
+    var id = db.collection('scans').doc().id, name = safeName(d), path = 'scans/' + id + '/' + name;
+    ref = storage.ref(path);
+    showModal('⏳ ' + bi('اپ لوڈ ہو رہی ہے…', 'Uploading…'));
+    await new Promise(function(res, rej){
+      var task = ref.put(new Blob([built.bytes], {type:'application/pdf'}), {contentType:'application/pdf', customMetadata:{ uploadedBy: CTX.user.email }});
+      task.on('state_changed', function(sn){ bar($('upProg'), sn.bytesTransferred / sn.totalBytes * 100); }, rej, res);
+    });
+    var doc = {};
+    FIELDS.forEach(function(k){ doc[k] = d[k]; });
+    doc.ocrText = (d.ocrText || '').slice(0, OCR_CAP);
+    doc.fileName = name; doc.filePath = path; doc.fileSize = built.bytes.length; doc.pages = built.pages; doc.contentType = 'application/pdf';
+    doc.createdBy = CTX.user.email; doc.createdByUid = CTX.user.uid; doc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    try{ await db.collection('scans').doc(id).set(doc); }
+    catch(e){ try{ await ref.delete(); }catch(x){} throw e; }
+    setBusy(false);
+    NEWIDS[id] = true; SC.savedN = (SC.savedN || 0) + 1;
+    var linkMsg = await syncOpinion(d, id);
+    if(SC.queue && SC.qi + 1 < SC.queue.length){
+      SC.qi++;
+      showAct('✅ ' + bi('فیصلہ ' + SC.qi + ' محفوظ ہو گیا؛ اب اگلا فیصلہ چیک کر کے محفوظ کریں۔', 'Judgment ' + SC.qi + ' saved; now check and save the next one.') + (linkMsg ? '<br>' + linkMsg : ''), 'good');
+      await loadQueued();
+      qBanner('✅ ' + bi('فیصلہ ' + SC.qi + ' محفوظ ہو گیا — یہ فیصلہ ' + (SC.qi + 1) + ' از ' + SC.queue.length + ' ہے۔ پیلے خانے چیک کر کے محفوظ کریں۔', 'Judgment ' + SC.qi + ' saved — this is judgment ' + (SC.qi + 1) + ' of ' + SC.queue.length + '. Check the yellow fields and save.'));
+      formHistReset();
+      return;
+    }
+    SC.queue = null; SC.src = null;
+    $('editBg').classList.remove('show'); clearParts(true);
+    var nSaved = SC.savedN || 1; SC.savedN = 0;
+    showAct('✅ ' + (nSaved > 1 ? bi(nSaved + ' اسکینز محفوظ ہو گئیں — نیچے فہرست میں سبز رنگ سے نمایاں ہیں۔', nSaved + ' scans saved — highlighted in green in the list below.') : bi('اسکین محفوظ ہو گئی — نیچے فہرست میں سبز رنگ سے نمایاں ہے۔', 'Scan saved — highlighted in green in the list below.')) + (linkMsg ? '<br>' + linkMsg : ''), 'good');
+    clearFilters(); scrollToNew();
+  }catch(err){
+    console.error(err); setBusy(false);
+    var em = err && err.code ? err.code + (err.message ? ' — ' + err.message : '') : (err && err.message || err);
+    showModal('❌ ' + bi('محفوظ نہیں ہو سکی: ', 'Could not save: ') + (/<bdi/.test(String(em)) ? em : esc(em)), 'err');
+  }
+}
+async function doEdit(d){
+  setBusy(true); showModal('⏳ …');
+  try{
+    var old = SCANS.filter(function(s){ return s.id === SC.editId; })[0] || {};
+    var patch = {}, before = {};
+    FIELDS.forEach(function(k){ var nv = k === 'ocrText' ? (d[k] || '').slice(0, OCR_CAP) : d[k]; if((old[k] || '') !== nv){ patch[k] = nv; before[k] = old[k] == null ? '' : old[k]; } });
+    if(!Object.keys(patch).length){ setBusy(false); $('editBg').classList.remove('show'); showAct(bi('کوئی تبدیلی نہیں تھی۔', 'No changes.')); return; }
+    var full = Object.assign({}, patch, { updatedBy: CTX.user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('scans').doc(SC.editId).update(full);
+    HIST.push({id:SC.editId, before:before, after:patch}); FUT = []; histBtns();
+    setBusy(false); $('editBg').classList.remove('show');
+    var linkMsg = await syncOpinion(Object.assign({}, old, d), SC.editId);
+    showAct('✅ ' + bi('تبدیلی محفوظ ہو گئی۔ غلطی ہو تو اوپر «↶ Undo» دبائیں۔', 'Change saved. If it was a mistake press “↶ Undo” above.') + (linkMsg ? '<br>' + linkMsg : ''), 'good');
+  }catch(err){
+    console.error(err); setBusy(false);
+    showModal('❌ ' + bi('محفوظ نہیں ہو سکی: ', 'Could not save: ') + esc(err.code || err.message || err), 'err');
+  }
+}
+
+/* ---------- Undo / Redo of saved edits (this session) ---------- */
+var HIST = [], FUT = [];
+function histBtns(){ $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length; }
+function applyHist(h, vals, label){
+  var full = Object.assign({}, vals, { updatedBy: CTX.user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+  return db.collection('scans').doc(h.id).update(full).then(function(){ showAct('✅ ' + label, 'good'); }).catch(function(err){ showAct('❌ ' + esc(err.code || err.message || err), 'err'); });
+}
+function histUndo(){ var h = HIST.pop(); if(!h) return; FUT.push(h); histBtns(); applyHist(h, h.before, bi('تبدیلی واپس کر دی گئی۔', 'Change undone.')); }
+function histRedo(){ var h = FUT.pop(); if(!h) return; HIST.push(h); histBtns(); applyHist(h, h.after, bi('تبدیلی دوبارہ لگا دی گئی۔', 'Change re-applied.')); }
+
+/* ---------- Print / PDF / Word / Excel of the list on screen ---------- */
+function doPrint(){
+  if(!LIST_VIEW.length){ showAct('❌ ' + bi('پرنٹ کے لیے کوئی دستاویز نہیں۔', 'Nothing to print.'), 'err'); return; }
+  window.print();
+}
+var EX_HEAD = ['Sr','Date','Document','Court','Case','Case title','Result','Officer','FIR','Police Station','District','Opinion','SC case','Pages'];
+function exModel(){
+  return LIST_VIEW.map(function(s, i){
+    var op = [s.opinionStatus, s.opinionBy, s.opinionText].filter(Boolean).join(' - ');
+    return [String(i + 1), dmy(s.date), docTypeName(s), s.court || '', caseText(s), [s.title, s.sections].filter(Boolean).join(' | '), [s.outcome, s.sentence ? '(' + s.sentence + ')' : ''].filter(Boolean).join(' '), s.officer || '', firText(s).replace(/^FIR /, ''), s.station || '', s.district || '', op, scText(s).replace(/^SC /, ''), s.pages ? String(s.pages) : ''];
+  });
+}
+function exBase(){ return 'Scanning_Desk_List_' + todayIso(); }
+async function exportList(kind){
+  if(!LIST_VIEW.length){ showAct('❌ ' + bi('ڈاؤن لوڈ کے لیے کوئی دستاویز نہیں۔', 'Nothing to download.'), 'err'); return; }
+  showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
+  try{
+    var rows = exModel();
+    if(kind === 'pdf'){ await loadLib('pdflib'); downloadBlob(new Blob([await buildListPdf(rows)], {type:'application/pdf'}), exBase() + '.pdf'); }
+    else if(kind === 'xlsx'){ await loadLib('jszip'); downloadBlob(await buildListXlsx(rows), exBase() + '.xlsx'); }
+    else { await loadLib('docx'); downloadBlob(await buildListDocx(rows), exBase() + '.docx'); }
+    showAct('✅ ' + bi('فائل تیار ہو گئی — ڈاؤن لوڈ فولڈر دیکھیں۔', 'File ready — check your Downloads folder.'), 'good');
+  }catch(err){
+    console.error(err);
+    showAct('❌ ' + bi('فائل نہیں بن سکی', 'Could not build the file') + ': ' + esc(err && err.message ? err.message : err), 'err');
+  }
+}
+function san(s){
+  return String(s == null ? '' : s).replace(/[‘’‛]/g,"'").replace(/[“”]/g,'"').replace(/[–—−]/g,'-')
+    .replace(/ /g,' ').replace(/[​-‏‪-‮]/g,'').replace(/[^\x20-\x7E¡-ÿ]/g,'?');
+}
+/* PDF (pdf-lib) — landscape A4, navy header band, repeated column heads */
+async function buildListPdf(rows){
+  var P = PDFLib, doc = await P.PDFDocument.create();
+  var font = await doc.embedFont(P.StandardFonts.Helvetica), bold = await doc.embedFont(P.StandardFonts.HelveticaBold);
+  var W = 842, H = 595, M = 28, widths = [22,46,48,68,62,126,56,70,44,66,46,60,48,24], FS = 7.5, LH = 9.5;
+  var navy = P.rgb(0.165,0.353,0.518), navy3 = P.rgb(0.106,0.247,0.388), grey = P.rgb(0.4,0.4,0.4);
+  var page, y, pageNo = 0;
+  function wrap(text, w, f){
+    var words = san(text).split(/\s+/), lines = [], cur = '';
+    words.forEach(function(wd){
+      while(f.widthOfTextAtSize(wd, FS) > w - 6){ var cut = wd.length; while(cut > 1 && f.widthOfTextAtSize(wd.slice(0, cut), FS) > w - 6) cut--; if(cur){ lines.push(cur); cur = ''; } lines.push(wd.slice(0, cut)); wd = wd.slice(cut); }
+      var t = cur ? cur + ' ' + wd : wd;
+      if(f.widthOfTextAtSize(t, FS) > w - 6 && cur){ lines.push(cur); cur = wd; } else cur = t;
+    });
+    if(cur) lines.push(cur);
+    return lines.length ? lines : [''];
+  }
+  function newPage(){
+    page = doc.addPage([W, H]); pageNo++; y = H - M;
+    if(pageNo === 1){
+      page.drawRectangle({x:0, y:H-52, width:W, height:52, color:navy3});
+      page.drawText('Scanning Desk - Scanned Documents', {x:M, y:H-26, size:15, font:bold, color:P.rgb(1,1,1)});
+      page.drawText(san('Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso())), {x:M, y:H-42, size:8.5, font:font, color:P.rgb(0.9,0.93,0.97)});
+      y = H - 52 - 14;
+    }
+    var x = M;
+    page.drawRectangle({x:M, y:y-14, width:widths.reduce(function(a,b){return a+b;},0), height:14, color:navy});
+    EX_HEAD.forEach(function(h, i){ page.drawText(h, {x:x+3, y:y-10, size:7.8, font:bold, color:P.rgb(1,1,1)}); x += widths[i]; });
+    y -= 14;
+  }
+  newPage();
+  rows.forEach(function(r, ri){
+    var cells = r.map(function(c, i){ return wrap(c, widths[i], font); });
+    var h = Math.max.apply(null, cells.map(function(l){ return l.length; })) * LH + 5;
+    if(y - h < M + 14) newPage();
+    if(ri % 2) page.drawRectangle({x:M, y:y-h, width:widths.reduce(function(a,b){return a+b;},0), height:h, color:P.rgb(0.96,0.96,0.95)});
+    var x = M;
+    cells.forEach(function(lines, i){ lines.forEach(function(ln, li){ page.drawText(ln, {x:x+3, y:y-9-li*LH, size:FS, font:font, color:P.rgb(0.1,0.12,0.15)}); }); x += widths[i]; });
+    page.drawLine({start:{x:M,y:y-h}, end:{x:M+widths.reduce(function(a,b){return a+b;},0), y:y-h}, thickness:0.4, color:P.rgb(0.8,0.8,0.78)});
+    y -= h;
+  });
+  var pages = doc.getPages();
+  pages.forEach(function(p, i){ p.drawText('Page ' + (i+1) + ' of ' + pages.length, {x:W-M-60, y:14, size:7.5, font:font, color:grey}); p.drawText('(c) Iftikhar Ahmed - Camp Office, PG Punjab', {x:M, y:14, size:7.5, font:font, color:grey}); });
+  return await doc.save();
+}
+/* Word (docx) */
+async function buildListDocx(rows){
+  var D = window.docx, F = 'Calibri';
+  function cell(t, o){ o = o || {}; return new D.TableCell({ shading: o.head ? {type:D.ShadingType.CLEAR, fill:'2A5A84', color:'auto'} : undefined, margins:{top:40,bottom:40,left:60,right:60}, width:{size:o.w, type:D.WidthType.DXA}, children:[ new D.Paragraph({ children:[ new D.TextRun({ text:String(t == null ? '' : t), bold:!!o.head, color:o.head ? 'FFFFFF' : '1c2733', size:o.head ? 17 : 16, font:F }) ] }) ] }); }
+  var w = [420,880,900,1250,1150,2300,1050,1300,800,1200,850,1100,900,450];
+  var table = new D.Table({ width:{size:w.reduce(function(a,b){return a+b;},0), type:D.WidthType.DXA}, columnWidths:w, rows:[
+    new D.TableRow({ tableHeader:true, children:EX_HEAD.map(function(h, i){ return cell(h, {head:true, w:w[i]}); }) })
+  ].concat(rows.map(function(r){ return new D.TableRow({ cantSplit:true, children:r.map(function(c, i){ return cell(c, {w:w[i]}); }) }); })) });
+  var docu = new D.Document({ sections:[{ properties:{ page:{ size:{ width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE }, margin:{top:700,bottom:700,left:600,right:600} } },
+    children:[
+      new D.Paragraph({ children:[ new D.TextRun({ text:'Scanning Desk - Scanned Documents', bold:true, size:32, color:'1B3F63', font:F }) ] }),
+      new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:'Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), size:18, color:'666666', font:F }) ] }),
+      table
+    ] }] });
+  return await D.Packer.toBlob(docu);
+}
+/* Excel (.xlsx written directly with JSZip) */
+function xe(s){ return String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function colLetter(i){ return String.fromCharCode(65 + i); }
+async function buildListXlsx(rows){
+  var Z = new JSZip(), widths = [5,11,13,22,14,30,16,18,10,20,12,28,14,6];
+  function c(ref, v, st){ return '<c r="' + ref + '" t="inlineStr" s="' + st + '"><is><t xml:space="preserve">' + xe(v) + '</t></is></c>'; }
+  var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' +
+    widths.map(function(w, i){ return '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>' +
+    '<row r="1" ht="24" customHeight="1">' + c('A1', 'Scanning Desk - Scanned Documents', 1) + '</row>' +
+    '<row r="2">' + c('A2', 'Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), 2) + '</row>' +
+    '<row r="3">' + EX_HEAD.map(function(h, i){ return c(colLetter(i) + '3', h, 3); }).join('') + '</row>' +
+    rows.map(function(r, ri){ var n = ri + 4; return '<row r="' + n + '">' + r.map(function(v, i){ return c(colLetter(i) + n, v, 4); }).join('') + '</row>'; }).join('') +
+    '</sheetData><autoFilter ref="A3:' + colLetter(EX_HEAD.length - 1) + (rows.length + 3) + '"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+  var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="4"><font><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="15"/><color rgb="FF1B3F63"/><name val="Calibri"/></font><font><sz val="10"/><color rgb="FF666666"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBBBBBB"/></left><right style="thin"><color rgb="FFBBBBBB"/></right><top style="thin"><color rgb="FFBBBBBB"/></top><bottom style="thin"><color rgb="FFBBBBBB"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyNumberFormat="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs></styleSheet>';
+  Z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+  Z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  Z.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Scans" sheetId="1" r:id="rId1"/></sheets></workbook>');
+  Z.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  Z.file('xl/styles.xml', styles); Z.file('xl/worksheets/sheet1.xml', sheet);
+  return await Z.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ---------- start ---------- */
+auth.onAuthStateChanged(function(user){
+  if(!user){
+    gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+    return;
+  }
+  db.collection('users').doc(user.uid).get().then(function(doc){
+    var u = doc.exists ? doc.data() : {};
+    var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+    var legacyAdmin = u.role === 'admin';
+    if(!approved && !legacyAdmin){
+      gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+      return;
+    }
+    var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+    var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+    CTX.user = {uid:user.uid, email:user.email, role:r2};
+    CTX.canWrite = isAdm || r2 === 'data_entry';
+    CTX.canDelete = isAdm;
+    CTX.canLists = isAdm;
+    document.body.classList.toggle('no-lists', !CTX.canLists);
+    $('ceUserEmail').textContent = user.email;
+    var rn = ROLE_NAMES[r2] || [r2, r2];
+    $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+    if(!CTX.canWrite) $('btnAdd').title = 'Viewer: adding is not allowed';
+    startLiveData();
+  }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+});
+$('brandLogo').innerHTML = PUNJAB_EMBLEM_SVG;
+document.body.setAttribute('data-theme', currentTheme);
+renderThemePicker();
+fillForm(); fillFilters(); renderList(true); histBtns();
+
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+</body>
+</html>
+

@@ -185,6 +185,19 @@ html,body{overflow-x:hidden;}
   .theme-swatch:hover{ transform:scale(1.08); }
   .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
 
+
+  .ai-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 10px;}
+  .ai-tools .tl-btn{background:#fff; border:1px solid var(--border); color:var(--navy); font-size:12px; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; font-family:inherit;}
+  .ai-tools .tl-btn:hover{background:var(--bg);}
+  .ai-tools .tl-btn:disabled{opacity:.5; cursor:not-allowed;}
+  .ai-tools .tl-info{font-size:11.5px; color:var(--muted);}
+  .ai-chips{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px;}
+  .ai-chip{background:#f5f0fb; border:1px solid #c9b3ea; color:#3d2a5c; font-size:12px; padding:6px 12px; border-radius:20px; cursor:pointer; font-family:inherit;}
+  .ai-chip:hover{background:#ece2f9;}
+  .ai-warn{margin-top:10px; font-size:12px; line-height:1.8; background:#fff7d6; border:1px solid #d9a400; color:#5c4500; border-radius:8px; padding:8px 12px;}
+  .msg .msg-act{display:block; margin-top:8px;}
+  .msg .msg-act button{background:transparent; border:1px solid #c9b3ea; color:#5c3d99; font-size:11px; border-radius:14px; padding:2px 10px; cursor:pointer; font-family:inherit;}
+  .msg .msg-act button:hover{background:#ece2f9;}
 </style>
 </head>
 <body>
@@ -247,8 +260,16 @@ html,body{overflow-x:hidden;}
       </div>
     </div>
 
-    <div class="chat-window" id="chatWindow">
-      <div class="chat-empty" id="chatEmpty" data-en="Ask anything below to get started." data-ur="شروع کرنے کے لیے نیچے کچھ بھی پوچھیں۔">Ask anything below to get started.</div>
+    <div class="ai-warn" role="note" data-en="⚠️ Do not type or attach CNIC numbers, bank / account numbers, passwords, or the names of victims, witnesses or minors. The assistant may be wrong — its advice is a draft, not a legal or financial ruling." data-ur="⚠️ شناختی کارڈ نمبر، بینک/اکاؤنٹ نمبر، پاس ورڈ، یا مظلوم، گواہان اور بچوں کے نام نہ لکھیں اور نہ منسلک کریں۔ اسسٹنٹ غلط بھی ہو سکتا ہے — اس کا مشورہ مسودہ ہے، قانونی یا مالی فیصلہ نہیں۔">⚠️ Do not type or attach CNIC numbers, bank / account numbers, passwords, or the names of victims, witnesses or minors. The assistant may be wrong — its advice is a draft, not a legal or financial ruling.</div>
+    <div class="ai-tools no-print" style="margin-top:12px">
+      <button type="button" class="tl-btn" id="newChatBtn" onclick="newChat()" data-en="🗒 New chat" data-ur="🗒 نئی گفتگو">🗒 New chat</button>
+      <button type="button" class="tl-btn" id="saveChatBtn" onclick="saveChatText()" data-en="⬇ Save chat as text" data-ur="⬇ گفتگو متن میں محفوظ کریں">⬇ Save chat as text</button>
+      <span class="tl-info" id="memInfo" aria-live="polite"></span>
+      <span class="tl-info" id="usageInfo"></span>
+    </div>
+    <div class="chat-window" id="chatWindow" aria-live="polite">
+      <div class="chat-empty" id="chatEmpty"><span id="chatEmptyTxt" data-en="Ask anything below to get started — or tap an idea:" data-ur="شروع کرنے کے لیے نیچے کچھ بھی پوچھیں — یا کوئی خیال چن لیں:">Ask anything below to get started — or tap an idea:</span>
+        <div class="ai-chips" id="aiChips"></div></div>
     </div>
 
     <div class="attach-chip" id="attachChip">
@@ -348,6 +369,7 @@ html,body{overflow-x:hidden;}
       el.setAttribute('placeholder', isUrdu ? el.dataset.urPh : el.dataset.enPh);
     });
     document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    renderIdeas(); updateMemInfo(); updateUsage();
     document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
     renderThemePicker();
   }
@@ -368,6 +390,80 @@ html,body{overflow-x:hidden;}
     });
   }
 
+  /* ---------- conversation memory (kept only in this page; cleared by "New chat" or when the page is closed) ---------- */
+  var HIST = [];                 // [{role:'user'|'ai', text:'...'}]
+  var HIST_TURNS = 8;            // how many recent messages are re-sent with each question
+  var HIST_CHARS = 9000;         // total size limit of the re-sent history
+  var STEER_EN = 'You are a helpful, careful assistant for a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). You may answer general questions as well as office, legal and drafting questions, and give practical advice with short reasons. Say clearly when you are unsure or when something needs a lawyer or an official source. Reply in the language of the user (Urdu or English). Never invent case numbers, section numbers or citations. Do not ask for or repeat CNIC, bank or account numbers.';
+  var IDEAS = [
+    ['✉️ Draft an official letter', '✉️ سرکاری خط کا مسودہ', 'Draft a short official letter in English for a government office on this subject: '],
+    ['📄 Summarise a judgment', '📄 فیصلے کا خلاصہ', 'Summarise the main points of the judgment text I paste below in simple language:\n'],
+    ['💡 Ask for advice', '💡 مشورہ لیں', 'I need practical advice on this matter. Please give options with pros and cons: '],
+    ['🗣 Explain simply', '🗣 آسان زبان میں سمجھائیں', 'Please explain this in simple Urdu, step by step: ']
+  ];
+  function renderIdeas(){
+    var box = document.getElementById('aiChips'); if(!box) return;
+    box.innerHTML = '';
+    IDEAS.forEach(function(it){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'ai-chip';
+      b.textContent = isUrdu ? it[1] : it[0];
+      b.onclick = function(){ var inp = document.getElementById('chatInput'); inp.value = it[2]; inp.focus(); };
+      box.appendChild(b);
+    });
+  }
+  function updateMemInfo(){
+    var n = HIST.length, el = document.getElementById('memInfo'); if(!el) return;
+    el.textContent = n ? (isUrdu ? ('یاد رکھ رہا ہے: ' + n + ' پیغام') : ('Remembering this chat: ' + n + ' messages')) : (isUrdu ? 'گفتگو نئی ہے' : 'New conversation');
+    var sv = document.getElementById('saveChatBtn'); if(sv) sv.disabled = !n;
+  }
+  function todayKey(){ var d = new Date(); return 'aiUse_' + d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate(); }
+  function usageToday(){ try{ return parseInt(localStorage.getItem(todayKey()) || '0', 10) || 0; }catch(e){ return 0; } }
+  function bumpUsage(){ try{ localStorage.setItem(todayKey(), String(usageToday() + 1)); }catch(e){} updateUsage(); }
+  function updateUsage(){
+    var el = document.getElementById('usageInfo'); if(!el) return;
+    var n = usageToday();
+    el.textContent = (isUrdu ? 'آج اس براؤزر سے سوال: ' : 'Questions today from this browser: ') + n;
+  }
+  function historyText(){
+    var parts = [], total = 0, i = HIST.length - 1;
+    for(; i >= 0 && parts.length < HIST_TURNS; i--){
+      var t = (HIST[i].role === 'user' ? 'User: ' : 'Assistant: ') + HIST[i].text;
+      if(t.length > 3000) t = t.slice(0, 3000) + ' …';
+      if(total + t.length > HIST_CHARS) break;
+      parts.unshift(t); total += t.length;
+    }
+    return parts.join('\n\n');
+  }
+  function buildQuestion(q){
+    var h = historyText();
+    return STEER_EN + '\n\n' + (h ? ('Conversation so far:\n' + h + '\n\n') : '') + 'New message from the user:\n' + q;
+  }
+  function newChat(){
+    if(HIST.length && !confirm(isUrdu ? 'موجودہ گفتگو صاف ہو جائے گی اور اسسٹنٹ اسے بھول جائے گا۔ جاری رکھیں؟' : 'This clears the current chat and the assistant will forget it. Continue?')) return;
+    HIST = [];
+    var win = document.getElementById('chatWindow');
+    win.innerHTML = '<div class="chat-empty" id="chatEmpty"><span id="chatEmptyTxt">' + (isUrdu ? 'شروع کرنے کے لیے نیچے کچھ بھی پوچھیں — یا کوئی خیال چن لیں:' : 'Ask anything below to get started — or tap an idea:') + '</span><div class="ai-chips" id="aiChips"></div></div>';
+    renderIdeas(); updateMemInfo(); clearAttachment();
+  }
+  function saveChatText(){
+    if(!HIST.length) return;
+    var lines = HIST.map(function(m){ return (m.role === 'user' ? 'You: ' : 'AI draft: ') + m.text; }).join('\n\n----\n\n');
+    var blob = new Blob(['\ufeff' + lines], {type:'text/plain;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var d = new Date(); a.download = 'AI-chat-' + d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2) + '.txt';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function copyText(text, btn){
+    function done(){ var o = btn.textContent; btn.textContent = isUrdu ? '✓ کاپی ہو گیا' : '✓ Copied'; setTimeout(function(){ btn.textContent = o; }, 1500); }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); }); }
+    else { fallbackCopy(text); done(); }
+  }
+  function fallbackCopy(text){ var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} ta.remove(); }
+  /* looks like a CNIC (13 digits, with or without dashes) or an account / card number (10+ digits in a row) */
+  function sensitiveHit(t){
+    return /\b\d{5}-?\d{7}-?\d\b/.test(t) || /\b\d{12,}\b/.test(t) || /\b(?:\d{4}[ -]){3}\d{1,4}\b/.test(t);
+  }
+
   function addMessage(role, text, opts){
     opts = opts || {};
     var empty = document.getElementById('chatEmpty');
@@ -377,6 +473,10 @@ html,body{overflow-x:hidden;}
     div.className = 'msg ' + role + (opts.pending ? ' pending' : '');
     if(role === 'ai' && !opts.pending){
       div.innerHTML = '<span class="ai-tag">🤖 ' + (isUrdu ? 'AI ڈرافٹ' : 'AI Draft') + '</span>' + escapeHtml(text);
+      var act = document.createElement('span'); act.className = 'msg-act';
+      var cb = document.createElement('button'); cb.type = 'button'; cb.textContent = isUrdu ? '📋 کاپی' : '📋 Copy';
+      cb.onclick = function(){ copyText(text, cb); };
+      act.appendChild(cb); div.appendChild(act);
     } else {
       div.textContent = text;
     }
@@ -428,6 +528,7 @@ html,body{overflow-x:hidden;}
     if(!IS_ADMIN) return;
     if(!auth.currentUser) return;
 
+    if(sensitiveHit(question) && !confirm(isUrdu ? 'آپ کے متن میں شناختی کارڈ یا اکاؤنٹ/کارڈ نمبر جیسا عدد نظر آ رہا ہے۔ ایسا ڈیٹا بھیجنا مناسب نہیں۔ پھر بھی بھیجیں؟' : 'Your text seems to contain a CNIC or an account / card-like number. Sending such data is not advisable. Send anyway?')) return;
     var btn = document.getElementById('sendBtn');
     var displayText = pendingFile ? ('📎 ' + pendingFile.name + (question ? ('\n' + question) : '')) : question;
     addMessage('user', displayText);
@@ -439,7 +540,8 @@ html,body{overflow-x:hidden;}
     btn.disabled = true;
     var pendingEl = addMessage('ai', isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…', {pending:true});
 
-    var body = { mode: 'chat', question: effectiveQuestion };
+    var body = { mode: 'chat', question: buildQuestion(effectiveQuestion) };
+    var sentQ = (filePayload ? ('[Attached file: ' + filePayload.name + '] ') : '') + effectiveQuestion;
     if(filePayload) body.file = filePayload;
 
     /* The AI backend occasionally reports the underlying model as
@@ -480,6 +582,8 @@ html,body{overflow-x:hidden;}
           return;
         }
         addMessage('ai', r.data.answer);
+        HIST.push({role:'user', text:sentQ}); HIST.push({role:'ai', text:String(r.data.answer)});
+        bumpUsage(); updateMemInfo();
       }).catch(function(err){
         pendingEl.remove();
         btn.disabled = false;
@@ -497,6 +601,7 @@ html,body{overflow-x:hidden;}
   });
 
   /* ================= Firebase: login gate (same project/config as the rest of the suite) ============== */
+  renderIdeas(); updateMemInfo(); updateUsage();
   var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();

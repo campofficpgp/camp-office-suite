@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Assistant — Camp Office PG Punjab</title>
+<title>Iftikhar Personal AI Assistant — Camp Office PG Punjab</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -190,6 +190,8 @@ html,body{overflow-x:hidden;}
   .ai-tools .tl-btn{background:#fff; border:1px solid var(--border); color:var(--navy); font-size:12px; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; font-family:inherit;}
   .ai-tools .tl-btn:hover{background:var(--bg);}
   .ai-tools .tl-btn:disabled{opacity:.5; cursor:not-allowed;}
+  .web-wrap{display:inline-flex; align-items:center; gap:6px; max-width:100%;} .web-lbl{cursor:pointer;} #webSel{width:16px; height:16px; accent-color:var(--navy); cursor:pointer;}
+  .msg .srcs{display:block; margin-top:8px; font-size:12px;} .msg .srcs b{display:block; margin-bottom:2px;} .msg .srcs a{display:inline-block; margin:2px 8px 2px 0; color:var(--navy); text-decoration:underline; overflow-wrap:anywhere;}
   .ai-tools .tl-info{font-size:11.5px; color:var(--muted);}
   .ai-chips{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px;}
   .ai-chip{background:#f5f0fb; border:1px solid #c9b3ea; color:#3d2a5c; font-size:12px; padding:6px 12px; border-radius:20px; cursor:pointer; font-family:inherit;}
@@ -244,7 +246,7 @@ html,body{overflow-x:hidden;}
     </aside>
     <div class="main-col">
       <div class="topbar">
-    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></div>
+    <div class="brand"><span class="brand-logo" id="brandLogo"></span> <span data-en="Iftikhar Personal AI Assistant" data-ur="افتخار پرسنل AI اسسٹنٹ">Iftikhar Personal AI Assistant</span></div>
     <div class="right-controls">
       <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
       <div class="theme-switch-wrap">
@@ -262,7 +264,7 @@ html,body{overflow-x:hidden;}
 <div class="wrap">
 
     <div class="ai-header">
-      <h1 class="ai-h1" data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</h1>
+      <h1 class="ai-h1" data-en="Iftikhar Personal AI Assistant" data-ur="افتخار پرسنل AI اسسٹنٹ">Iftikhar Personal AI Assistant</h1>
       <p data-en="Ask a general question, attach a file (PDF / image / text) with the 📎 button, or paste text directly — draft a letter, get an opinion on a judgment, or any other office-related help." data-ur="کوئی بھی عمومی سوال پوچھیں، 📎 بٹن سے فائل (PDF / تصویر / متن) منسلک کریں، یا براہ راست متن پیسٹ کریں — خط کا مسودہ، کسی judgment پر رائے، یا کوئی اور دفتری مدد۔">Ask a general question, attach a file (PDF / image / text) with the 📎 button, or paste text directly — draft a letter, get an opinion on a judgment, or any other office-related help.</p>
       <div class="ai-badge-row">
         <span class="ai-pill" data-en="🔒 Admin / Super Admin only" data-ur="🔒 صرف ایڈمن/سپر ایڈمن">🔒 Admin / Super Admin only</span>
@@ -418,6 +420,7 @@ html,body{overflow-x:hidden;}
   var ANS_CACHE = {};            // answers to identical first questions, this page session only
   var LAST = null;               // last sent {q, file} for Regenerate
   var CUR = null;                // running request {ctrl, timer, tick, aborted}
+  var WEB = false;
   function setSpeed(v){ SPEED = v === 'full' ? 'full' : 'fast'; try{ localStorage.setItem('aiSpeed', SPEED); }catch(e){} }
   var IDEAS = [
     ['✉️ Draft an official letter', '✉️ سرکاری خط کا مسودہ', 'Draft a short official letter in English for a government office on this subject: '],
@@ -525,6 +528,12 @@ html,body{overflow-x:hidden;}
         var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'regen-btn'; rb.textContent = isUrdu ? '🔁 دوبارہ جواب' : '🔁 Regenerate';
         rb.onclick = regenerate; act.appendChild(rb);
       }
+      if(opts.sources && opts.sources.length){
+        var sd = document.createElement('span'); sd.className = 'srcs';
+        var sb = document.createElement('b'); sb.textContent = isUrdu ? '🌐 ذرائع:' : '🌐 Sources:'; sd.appendChild(sb);
+        opts.sources.forEach(function(x){ if(!x || !/^https:\/\//.test(x.url)) return; var a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.textContent = x.title || x.url; sd.appendChild(a); });
+        div.appendChild(sd);
+      }
       if(opts.cut){
         var cn = document.createElement('span'); cn.className = 'cut-note'; cn.textContent = isUrdu ? '⚠ جواب لمبائی کی حد پر رک گیا — آگے جاری رکھنے کے لیے بٹن دبائیں۔' : '⚠ The answer stopped at the length limit — press Continue for the rest.';
         div.appendChild(cn);
@@ -612,7 +621,7 @@ html,body{overflow-x:hidden;}
   function doSend(q, filePayload, displayText, isRegen){
     document.querySelectorAll('.regen-btn').forEach(function(b){ b.remove(); });   // only the newest answer offers Regenerate
     addMessage('user', displayText);
-    var cacheKey = SPEED + '|' + q;
+    var cacheKey = (WEB ? 'web|' : '') + SPEED + '|' + q;
     if(!isRegen && !filePayload && !HIST.length && ANS_CACHE[cacheKey]){
       var ans = ANS_CACHE[cacheKey];
       addMessage('ai', ans, {regen:true, note:isUrdu ? '⚡ اسی سیشن کا محفوظ جواب' : '⚡ saved answer from this session'});
@@ -621,7 +630,7 @@ html,body{overflow-x:hidden;}
       return;
     }
     var t0 = Date.now();
-    var base = isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…';
+    var base = WEB ? (isUrdu ? 'انٹرنیٹ پر تلاش اور سوچ…' : 'Searching the web and thinking…') : (isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…');
     var pendingEl = addMessage('ai', base, {pending:true});
     var ctrl = new AbortController();
     CUR = {ctrl:ctrl, timer:0, tick:0, aborted:false};
@@ -630,6 +639,7 @@ html,body{overflow-x:hidden;}
     CUR.tick = setInterval(function(){ pendingEl.textContent = status + ' ' + Math.round((Date.now() - t0) / 1000) + (isUrdu ? ' سیکنڈ' : 's'); }, 1000);
 
     var body = { mode: 'chat', question: buildQuestion(q) };
+    if(WEB) body.search = true;
     var sentQ = (filePayload ? ('[Attached file: ' + filePayload.name + '] ') : '') + q;
     if(filePayload) body.file = filePayload;
 
@@ -665,7 +675,7 @@ html,body{overflow-x:hidden;}
           return;
         }
         var answer = String(r.data.answer);
-        addMessage('ai', answer, {regen:true, cut:!!r.data.truncated, note:(isUrdu ? '⏱ ' + secs + ' سیکنڈ' : '⏱ ' + secs + 's')});
+        addMessage('ai', answer, {regen:true, cut:!!r.data.truncated, sources:r.data.sources, note:(isUrdu ? '⏱ ' + secs + ' سیکنڈ' : '⏱ ' + secs + 's')});
         HIST.push({role:'user', text:sentQ}); HIST.push({role:'ai', text:answer});
         if(!filePayload && HIST.length === 2) ANS_CACHE[cacheKey] = answer;
         LAST = {q:q, file:filePayload, display:displayText};

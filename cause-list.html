@@ -949,9 +949,21 @@ function mapJudge(raw){
   });
   return best || judgeNice(raw);
 }
+/* The PDF puts a "Notice" tag (or "R - Notice" / "P - Notice") after the parties and, in a few rows, a lawyer's name too.
+   These are not part of the case title, so they are cut off before the title/versus are stored. */
+function cleanParty(s){
+  s = String(s||'').replace(/\s+/g, ' ').trim();
+  if(/Enrl#/.test(s)){ var e = s.match(/^(.*?\betc\.?)(?=\s|$)/i); if(e) s = e[1]; }
+  var prev;
+  do {
+    prev = s;
+    s = s.replace(/\s*(?:\b[A-Za-z]\s*-\s*)?\bNotice\b(?:\s+to\s+(?:Complainant|Respondents?|A\.G\.[A-Za-z\s\.\(\)]*))?\s*$/i, '').trim();
+  } while(s !== prev);
+  return s;
+}
 function splitTitle(t){
   var m = String(t||'').match(/^(.*?)\s+(?:v\.|vs\.?|v\/s)\s+(.*)$/i);
-  return m ? {title:m[1].trim(), versus:m[2].trim()} : {title:String(t||'').trim(), versus:''};
+  return m ? {title:cleanParty(m[1]), versus:cleanParty(m[2])} : {title:cleanParty(t), versus:''};
 }
 function joinTitle(title, versus){ return String(title||'').trim() + (versus && versus !== '—' ? ' v. ' + String(versus).trim() : ''); }
 function mapRelief(nt){
@@ -992,7 +1004,7 @@ function newRow(o){
 function uncertainReasons(r){
   var u = [];
   if(!r.type || !r.no || !r.year || !validNo(r.no)) u.push('کیس نمبر واضح نہیں / Case number unclear');
-  if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title)) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
+  if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title + ' ' + (r.versus||''))) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
   if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
   if(!r.natText && !r.supp && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
   return u;
@@ -1185,10 +1197,21 @@ function checkDraft(){
     }
   }catch(e){}
 }
+/* Lists saved before the "Notice" fix still carry the PDF's "Notice" tags in title/versus — tidy them when such a list is opened */
+function tidyOldRows(rows){
+  (rows || []).forEach(function(r){
+    var t = cleanParty(r.title), v = cleanParty(r.versus);
+    if(t !== r.title || v !== r.versus){
+      r.title = t; r.versus = v;
+      if(r.mine && !r.confirmed) r.unc = uncertainReasons(r);
+    }
+  });
+  return rows;
+}
 function restoreDraft(auto){
   try{
     var d = JSON.parse(localStorage.getItem('clDraft_v1'));
-    ST.meta = d.meta; ST.rows = d.rows; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || ''; RID = Math.max(RID, d.rid || 0);
+    ST.meta = d.meta; ST.rows = tidyOldRows(d.rows);ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || ''; RID = Math.max(RID, d.rid || 0);
     if(d.view){ VIEW.day = d.view.day || ''; VIEW.bench = d.view.bench || ''; VIEW.supp = !!d.view.supp; }
     HIST = []; FUT = []; $('draftBanner').style.display = 'none'; changed(true);
   }catch(e){ showAct(bi('مسودہ بحال نہیں ہو سکا', 'Could not restore the draft'), 'err'); }
@@ -2148,7 +2171,7 @@ function openSaved(id){
     db.collection('causeLists').doc(id).get().then(function(doc){
       if(!doc.exists){ showRead('❌ ' + bi('یہ فہرست اب موجود نہیں۔', 'This list no longer exists.'), 'err'); return; }
       var c = doc.data(), d = JSON.parse(c.payload);
-      ST.meta = d.meta; ST.rows = d.rows || []; ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || '';
+      ST.meta = d.meta; ST.rows = tidyOldRows(d.rows || []); ST.offDay = d.offDay || {}; ST.offBench = d.offBench || {}; ST.fileName = d.fileName || '';
       RID = Math.max(RID, d.rid || 0);
       VIEW.day = (d.view && d.view.day) || ''; VIEW.bench = (d.view && d.view.bench) || ''; VIEW.supp = !!(d.view && d.view.supp);
       HIST = []; FUT = []; SL_CUR = id; showAct('');

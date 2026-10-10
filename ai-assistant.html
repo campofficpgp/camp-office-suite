@@ -198,6 +198,11 @@ html,body{overflow-x:hidden;}
   .msg .msg-act{display:block; margin-top:8px;}
   .msg .msg-act button{background:transparent; border:1px solid #c9b3ea; color:#5c3d99; font-size:11px; border-radius:14px; padding:2px 10px; cursor:pointer; font-family:inherit;}
   .msg .msg-act button:hover{background:#ece2f9;}
+  .ai-tools select{font-size:12px; padding:5px 8px; border:1px solid var(--border); border-radius:20px; background:#fff; color:var(--navy); font-family:inherit; font-weight:700;}
+  .stop-btn{display:none; background:#fff; color:#8c1d18; border:1px solid #d33; padding:12px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .msg .md{white-space:normal;} .msg .md p{margin:0 0 8px;} .msg .md p:last-child{margin-bottom:0;} .msg .md ul,.msg .md ol{margin:4px 0 8px; padding-inline-start:22px;} .msg .md li{margin:2px 0;} .msg .md h4{margin:6px 0 4px; font-size:14px;} .msg .md code{background:rgba(0,0,0,.07); padding:0 4px; border-radius:4px; font-size:12.5px;}
+  .msg .msg-act{display:flex; gap:6px; flex-wrap:wrap;}
+  .msg .msg-tm{font-size:10.5px; color:#7b6aa3; align-self:center;}
 </style>
 </head>
 <body>
@@ -264,6 +269,11 @@ html,body{overflow-x:hidden;}
     <div class="ai-tools no-print" style="margin-top:12px">
       <button type="button" class="tl-btn" id="newChatBtn" onclick="newChat()" data-en="🗒 New chat" data-ur="🗒 نئی گفتگو">🗒 New chat</button>
       <button type="button" class="tl-btn" id="saveChatBtn" onclick="saveChatText()" data-en="⬇ Save chat as text" data-ur="⬇ گفتگو متن میں محفوظ کریں">⬇ Save chat as text</button>
+      <label class="tl-info" for="speedSel" data-en="Answer style:" data-ur="جواب کا انداز:">Answer style:</label>
+      <select id="speedSel" onchange="setSpeed(this.value)" aria-label="Answer style">
+        <option value="fast" data-en="⚡ Fast (brief)" data-ur="⚡ تیز (مختصر)">⚡ Fast (brief)</option>
+        <option value="full" data-en="📖 Detailed" data-ur="📖 تفصیلی">📖 Detailed</option>
+      </select>
       <span class="tl-info" id="memInfo" aria-live="polite"></span>
       <span class="tl-info" id="usageInfo"></span>
     </div>
@@ -280,6 +290,7 @@ html,body{overflow-x:hidden;}
       <button class="attach-btn" id="attachBtn" type="button" onclick="document.getElementById('fileInput').click()" title="Attach a file">📎</button>
       <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain" style="display:none">
       <textarea id="chatInput" data-en-ph="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)" data-ur-ph="اپنا سوال لکھیں… (مثلاً X کو خط کا مسودہ، یا کوئی judgment پیسٹ/منسلک کر کے رائے پوچھیں)" placeholder="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)"></textarea>
+      <button class="stop-btn" id="stopBtn" type="button" onclick="stopChat()" data-en="⏹ Stop" data-ur="⏹ روکیں">⏹ Stop</button>
       <button class="send-btn" id="sendBtn" onclick="sendChat()" data-en="Send" data-ur="بھیجیں">Send</button>
     </div>
     <div class="ai-hint" data-en="This is an AI Draft — always verify before relying on it for official work. Nothing here is saved to any case record automatically." data-ur="یہ AI کا مسودہ ہے — سرکاری کام میں استعمال سے پہلے ہمیشہ خود تصدیق کریں۔ یہاں سے کچھ بھی خودکار طور پر کسی کیس ریکارڈ میں محفوظ نہیں ہوتا۔">This is an AI Draft — always verify before relying on it for official work. Nothing here is saved to any case record automatically.</div>
@@ -392,9 +403,16 @@ html,body{overflow-x:hidden;}
 
   /* ---------- conversation memory (kept only in this page; cleared by "New chat" or when the page is closed) ---------- */
   var HIST = [];                 // [{role:'user'|'ai', text:'...'}]
-  var HIST_TURNS = 8;            // how many recent messages are re-sent with each question
-  var HIST_CHARS = 9000;         // total size limit of the re-sent history
-  var STEER_EN = 'You are a helpful, careful assistant for a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). You may answer general questions as well as office, legal and drafting questions, and give practical advice with short reasons. Say clearly when you are unsure or when something needs a lawyer or an official source. Reply in the language of the user (Urdu or English). Never invent case numbers, section numbers or citations. Do not ask for or repeat CNIC, bank or account numbers.';
+  var HIST_TURNS = 6;            // how many recent messages are re-sent with each question (fewer = faster)
+  var HIST_CHARS = 6000;         // total size limit of the re-sent history
+  var STEER_EN = 'You assist a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. Reply in the user\'s language (Urdu or English). Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
+  var STYLE_FAST = 'Be brief: at most about 120 words, no preamble, unless the user asks for detail or a full draft.';
+  var STYLE_FULL = 'Give a complete, well-organised answer.';
+  var SPEED = (function(){ try{ return localStorage.getItem('aiSpeed') === 'full' ? 'full' : 'fast'; }catch(e){ return 'fast'; } })();
+  var ANS_CACHE = {};            // answers to identical first questions, this page session only
+  var LAST = null;               // last sent {q, file} for Regenerate
+  var CUR = null;                // running request {ctrl, timer, tick, aborted}
+  function setSpeed(v){ SPEED = v === 'full' ? 'full' : 'fast'; try{ localStorage.setItem('aiSpeed', SPEED); }catch(e){} }
   var IDEAS = [
     ['✉️ Draft an official letter', '✉️ سرکاری خط کا مسودہ', 'Draft a short official letter in English for a government office on this subject: '],
     ['📄 Summarise a judgment', '📄 فیصلے کا خلاصہ', 'Summarise the main points of the judgment text I paste below in simple language:\n'],
@@ -428,7 +446,8 @@ html,body{overflow-x:hidden;}
     var parts = [], total = 0, i = HIST.length - 1;
     for(; i >= 0 && parts.length < HIST_TURNS; i--){
       var t = (HIST[i].role === 'user' ? 'User: ' : 'Assistant: ') + HIST[i].text;
-      if(t.length > 3000) t = t.slice(0, 3000) + ' …';
+      var cap = HIST[i].role === 'user' ? 1500 : 1200;
+      if(t.length > cap) t = t.slice(0, cap) + ' …';
       if(total + t.length > HIST_CHARS) break;
       parts.unshift(t); total += t.length;
     }
@@ -436,9 +455,10 @@ html,body{overflow-x:hidden;}
   }
   function buildQuestion(q){
     var h = historyText();
-    return STEER_EN + '\n\n' + (h ? ('Conversation so far:\n' + h + '\n\n') : '') + 'New message from the user:\n' + q;
+    return STEER_EN + ' ' + (SPEED === 'full' ? STYLE_FULL : STYLE_FAST) + '\n\n' + (h ? ('Conversation so far:\n' + h + '\n\n') : '') + 'New message from the user:\n' + q;
   }
   function newChat(){
+    if(CUR) return;
     if(HIST.length && !confirm(isUrdu ? 'موجودہ گفتگو صاف ہو جائے گی اور اسسٹنٹ اسے بھول جائے گا۔ جاری رکھیں؟' : 'This clears the current chat and the assistant will forget it. Continue?')) return;
     HIST = [];
     var win = document.getElementById('chatWindow');
@@ -464,6 +484,24 @@ html,body{overflow-x:hidden;}
     return /\b\d{5}-?\d{7}-?\d\b/.test(t) || /\b\d{12,}\b/.test(t) || /\b(?:\d{4}[ -]){3}\d{1,4}\b/.test(t);
   }
 
+  /* safe, minimal Markdown: **bold**, `code`, # headings, - / * / 1. lists. Text is escaped first. */
+  function inlineMd(t){ return t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/`([^`\n]+)`/g, '<code>$1</code>'); }
+  function mdToHtml(text){
+    var lines = String(text).replace(/\r/g, '').split('\n'), out = [], list = null, para = [];
+    function flushPara(){ if(para.length){ out.push('<p>' + inlineMd(escapeHtml(para.join('\n'))).replace(/\n/g, '<br>') + '</p>'); para = []; } }
+    function flushList(){ if(list){ out.push('</' + list + '>'); list = null; } }
+    lines.forEach(function(line){
+      var m;
+      if((m = /^\s*(?:[-*•])\s+(.*)$/.exec(line))){ flushPara(); if(list !== 'ul'){ flushList(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inlineMd(escapeHtml(m[1])) + '</li>'); }
+      else if((m = /^\s*\d+[.)]\s+(.*)$/.exec(line))){ flushPara(); if(list !== 'ol'){ flushList(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inlineMd(escapeHtml(m[1])) + '</li>'); }
+      else if((m = /^\s{0,3}#{1,4}\s+(.*)$/.exec(line))){ flushPara(); flushList(); out.push('<h4>' + inlineMd(escapeHtml(m[1])) + '</h4>'); }
+      else if(/^\s*$/.test(line)){ flushPara(); flushList(); }
+      else { flushList(); para.push(line); }
+    });
+    flushPara(); flushList();
+    return out.join('');
+  }
+
   function addMessage(role, text, opts){
     opts = opts || {};
     var empty = document.getElementById('chatEmpty');
@@ -472,11 +510,17 @@ html,body{overflow-x:hidden;}
     var div = document.createElement('div');
     div.className = 'msg ' + role + (opts.pending ? ' pending' : '');
     if(role === 'ai' && !opts.pending){
-      div.innerHTML = '<span class="ai-tag">🤖 ' + (isUrdu ? 'AI ڈرافٹ' : 'AI Draft') + '</span>' + escapeHtml(text);
+      div.innerHTML = '<span class="ai-tag">🤖 ' + (isUrdu ? 'AI ڈرافٹ' : 'AI Draft') + '</span><div class="md" dir="auto">' + mdToHtml(text) + '</div>';
       var act = document.createElement('span'); act.className = 'msg-act';
       var cb = document.createElement('button'); cb.type = 'button'; cb.textContent = isUrdu ? '📋 کاپی' : '📋 Copy';
       cb.onclick = function(){ copyText(text, cb); };
-      act.appendChild(cb); div.appendChild(act);
+      act.appendChild(cb);
+      if(opts.regen){
+        var rb = document.createElement('button'); rb.type = 'button'; rb.className = 'regen-btn'; rb.textContent = isUrdu ? '🔁 دوبارہ جواب' : '🔁 Regenerate';
+        rb.onclick = regenerate; act.appendChild(rb);
+      }
+      if(opts.note){ var nt = document.createElement('span'); nt.className = 'msg-tm'; nt.textContent = opts.note; act.appendChild(nt); }
+      div.appendChild(act);
     } else {
       div.textContent = text;
     }
@@ -525,42 +569,70 @@ html,body{overflow-x:hidden;}
     var input = document.getElementById('chatInput');
     var question = input.value.trim();
     if(!question && !pendingFile) return;
-    if(!IS_ADMIN) return;
-    if(!auth.currentUser) return;
-
+    if(!IS_ADMIN || !auth.currentUser || CUR) return;
     if(sensitiveHit(question) && !confirm(isUrdu ? 'آپ کے متن میں شناختی کارڈ یا اکاؤنٹ/کارڈ نمبر جیسا عدد نظر آ رہا ہے۔ ایسا ڈیٹا بھیجنا مناسب نہیں۔ پھر بھی بھیجیں؟' : 'Your text seems to contain a CNIC or an account / card-like number. Sending such data is not advisable. Send anyway?')) return;
-    var btn = document.getElementById('sendBtn');
-    var displayText = pendingFile ? ('📎 ' + pendingFile.name + (question ? ('\n' + question) : '')) : question;
+    var file = pendingFile;
+    var q = question || (isUrdu ? 'اس منسلک فائل کا جائزہ لے کر رائے دیں۔' : 'Please review the attached file and give your opinion.');
+    var displayText = file ? ('📎 ' + file.name + (question ? ('\n' + question) : '')) : question;
+    input.value = ''; clearAttachment();
+    doSend(q, file, displayText, false);
+  }
+
+  function setBusy(on){
+    document.getElementById('sendBtn').disabled = on;
+    document.getElementById('stopBtn').style.display = on ? 'inline-block' : 'none';
+    document.querySelectorAll('.regen-btn').forEach(function(b){ b.disabled = on; });
+  }
+  function stopChat(){
+    if(!CUR) return;
+    CUR.aborted = true; clearTimeout(CUR.timer); clearInterval(CUR.tick);
+    try{ CUR.ctrl.abort(); }catch(e){}
+  }
+  function regenerate(){
+    if(CUR || !LAST || HIST.length < 2) return;
+    var win = document.getElementById('chatWindow'), msgs = win.querySelectorAll('.msg');
+    if(msgs.length >= 2){ msgs[msgs.length - 1].remove(); msgs[msgs.length - 2].remove(); }
+    HIST.pop(); HIST.pop(); updateMemInfo();
+    doSend(LAST.q, LAST.file, LAST.display, true);
+  }
+
+  function doSend(q, filePayload, displayText, isRegen){
+    document.querySelectorAll('.regen-btn').forEach(function(b){ b.remove(); });   // only the newest answer offers Regenerate
     addMessage('user', displayText);
+    var cacheKey = SPEED + '|' + q;
+    if(!isRegen && !filePayload && !HIST.length && ANS_CACHE[cacheKey]){
+      var ans = ANS_CACHE[cacheKey];
+      addMessage('ai', ans, {regen:true, note:isUrdu ? '⚡ اسی سیشن کا محفوظ جواب' : '⚡ saved answer from this session'});
+      HIST.push({role:'user', text:q}); HIST.push({role:'ai', text:ans});
+      LAST = {q:q, file:null, display:displayText}; updateMemInfo();
+      return;
+    }
+    var t0 = Date.now();
+    var base = isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…';
+    var pendingEl = addMessage('ai', base, {pending:true});
+    var ctrl = new AbortController();
+    CUR = {ctrl:ctrl, timer:0, tick:0, aborted:false};
+    setBusy(true);
+    var status = base;
+    CUR.tick = setInterval(function(){ pendingEl.textContent = status + ' ' + Math.round((Date.now() - t0) / 1000) + (isUrdu ? ' سیکنڈ' : 's'); }, 1000);
 
-    var filePayload = pendingFile;
-    var effectiveQuestion = question || (isUrdu ? 'اس منسلک فائل کا جائزہ لے کر رائے دیں۔' : 'Please review the attached file and give your opinion.');
-    input.value = '';
-    clearAttachment();
-    btn.disabled = true;
-    var pendingEl = addMessage('ai', isUrdu ? 'سوچ رہا ہوں…' : 'Thinking…', {pending:true});
-
-    var body = { mode: 'chat', question: buildQuestion(effectiveQuestion) };
-    var sentQ = (filePayload ? ('[Attached file: ' + filePayload.name + '] ') : '') + effectiveQuestion;
+    var body = { mode: 'chat', question: buildQuestion(q) };
+    var sentQ = (filePayload ? ('[Attached file: ' + filePayload.name + '] ') : '') + q;
     if(filePayload) body.file = filePayload;
 
-    /* The AI backend occasionally reports the underlying model as
-       overloaded/high-demand — this is a transient condition on the AI
-       provider's side, not something wrong with this page or your data.
-       Retry a couple of times with a short, increasing delay before
-       giving up and showing an error, so a brief spike doesn't dead-end
-       the user's question. */
+    function finish(){ clearTimeout(CUR && CUR.timer); clearInterval(CUR && CUR.tick); CUR = null; pendingEl.remove(); setBusy(false); }
+    /* The AI backend occasionally reports the model as overloaded — a transient condition on the provider's side.
+       Retry a couple of times with a short delay before giving up. */
     function isRetryableOverload(message){
       var m = (message || '').toLowerCase();
       return m.indexOf('high demand') !== -1 || m.indexOf('overloaded') !== -1 || m.indexOf('temporarily unavailable') !== -1;
     }
-    var MAX_RETRIES = 2;
-    var RETRY_DELAYS_MS = [3000, 6000];
+    var MAX_RETRIES = 2, RETRY_DELAYS_MS = [2000, 4000];
 
     function attemptSend(attempt){
       auth.currentUser.getIdToken().then(function(token){
         return fetch(AI_URL, {
-          method: 'POST',
+          method: 'POST', signal: ctrl.signal,
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
           body: JSON.stringify(body)
         }).then(function(res){
@@ -569,24 +641,26 @@ html,body{overflow-x:hidden;}
       }).then(function(r){
         var errMsg = (r.data && r.data.error) || '';
         if((!r.ok || !r.data || !r.data.answer) && isRetryableOverload(errMsg) && attempt < MAX_RETRIES){
-          pendingEl.textContent = isUrdu
-            ? ('AI سرور مصروف ہے — دوبارہ کوشش کر رہا ہوں… (' + (attempt+1) + '/' + MAX_RETRIES + ')')
-            : ('AI server is busy — retrying… (' + (attempt+1) + '/' + MAX_RETRIES + ')');
-          setTimeout(function(){ attemptSend(attempt+1); }, RETRY_DELAYS_MS[attempt]);
+          status = isUrdu ? ('AI سرور مصروف ہے — دوبارہ کوشش (' + (attempt+1) + '/' + MAX_RETRIES + ')') : ('AI server is busy — retrying (' + (attempt+1) + '/' + MAX_RETRIES + ')');
+          CUR.timer = setTimeout(function(){ attemptSend(attempt+1); }, RETRY_DELAYS_MS[attempt]);
           return;
         }
-        pendingEl.remove();
-        btn.disabled = false;
+        var secs = Math.round((Date.now() - t0) / 100) / 10;
+        finish();
         if(!r.ok || !r.data || !r.data.answer){
           addMessage('error', errMsg || (isUrdu ? 'خرابی پیش آئی — دوبارہ کوشش کریں۔' : 'Something went wrong — please try again.'));
           return;
         }
-        addMessage('ai', r.data.answer);
-        HIST.push({role:'user', text:sentQ}); HIST.push({role:'ai', text:String(r.data.answer)});
+        var answer = String(r.data.answer);
+        addMessage('ai', answer, {regen:true, note:(isUrdu ? '⏱ ' + secs + ' سیکنڈ' : '⏱ ' + secs + 's')});
+        HIST.push({role:'user', text:sentQ}); HIST.push({role:'ai', text:answer});
+        if(!filePayload && HIST.length === 2) ANS_CACHE[cacheKey] = answer;
+        LAST = {q:q, file:filePayload, display:displayText};
         bumpUsage(); updateMemInfo();
       }).catch(function(err){
-        pendingEl.remove();
-        btn.disabled = false;
+        var wasStopped = CUR && CUR.aborted;
+        finish();
+        if(wasStopped){ addMessage('error', isUrdu ? '⏹ آپ نے روک دیا۔' : '⏹ Stopped.'); LAST = {q:q, file:filePayload, display:displayText}; return; }
         addMessage('error', (isUrdu ? 'رابطہ نہیں ہو سکا: ' : 'Could not connect: ') + err.message);
       });
     }
@@ -601,7 +675,7 @@ html,body{overflow-x:hidden;}
   });
 
   /* ================= Firebase: login gate (same project/config as the rest of the suite) ============== */
-  renderIdeas(); updateMemInfo(); updateUsage();
+  renderIdeas(); updateMemInfo(); updateUsage(); document.getElementById('speedSel').value = SPEED;
   var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();

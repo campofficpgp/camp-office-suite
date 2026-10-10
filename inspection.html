@@ -963,6 +963,68 @@ function viewOverview(){
   return h;
 }
 
+/* ---------- Scanning Desk suggestions for Proforma A: "Opinion submitted" and "Fit / Not fit" cells ---------- */
+var OPFIT = {'Fit for appeal / petition':'fit', 'Not fit':'notfit', 'Under consideration':'pend', 'Not required':'na'};
+function caseOpinion(c){
+  var best = null;
+  scansFor(c).forEach(function(s){
+    var st = OPFIT[s.opinionStatus]; if(!st) return;
+    if(!best || String(s.opinionDate || '') >= String(best.d)) best = {st:st, d:s.opinionDate || '', id:s.id};
+  });
+  return best;
+}
+/* one suggestion per row: only when every case of the row agrees; mixed rows are shown with counts and left to the clerk */
+function scanOpA(officer, a){
+  var out = [];
+  A1.concat(A2).forEach(function(r){
+    var list = a.rows[r.k].total; if(!list.length) return;
+    var m = MANUAL[manualKey(officer, r.k)] || {}, cnt = {fit:0, notfit:0, pend:0, na:0, none:0};
+    list.forEach(function(c){ var o = caseOpinion(c); cnt[o ? o.st : 'none']++; });
+    if(cnt.none === list.length) return;
+    var n = list.length, sug = {};
+    if(!m.opinion){
+      if(cnt.fit + cnt.notfit === n) sug.opinion = 'Yes'; else if(cnt.na === n) sug.opinion = 'N.A.';
+    }
+    if(!m.fit){
+      if(cnt.fit === n) sug.fit = 'Fit'; else if(cnt.notfit === n) sug.fit = 'Not fit'; else if(cnt.na === n) sug.fit = 'N.A.';
+    }
+    if(m.opinion && m.fit) return;
+    out.push({row:r, cnt:cnt, n:n, sug:sug, have:m, any:!!(sug.opinion || sug.fit)});
+  });
+  return out;
+}
+function scanOpBtn(officer, a){
+  if(!canEdit()) return '';
+  var n = scanOpA(officer, a).filter(function(x){ return x.any; }).length; if(!n) return '';
+  return '<button class="cl-btn sm" style="background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="openScanOp()">📠 ' + bi('اسکین ڈیسک سے رائے اور فٹ کی تجاویز', 'Opinion / fit suggestions from Scanning Desk') + ' (' + n + ')</button>';
+}
+function openScanOp(){
+  if(!guardEdit()) return;
+  var o = UI.officer, items = scanOpA(o, buildA(o)); if(!items.length){ toast(bi('کوئی نئی تجویز نہیں', 'No new suggestions')); return; }
+  var Y = 'style="background:#fff3b0;color:#28394A"';
+  function sel(k, opts, v){ var h = '<select data-k="' + k + '" ' + Y + '><option value="">—</option>'; opts.forEach(function(x){ h += '<option' + (x === v ? ' selected' : '') + '>' + x + '</option>'; }); return h + '</select>'; }
+  var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('ہر قطار کے تمام کیسز کی رائے اسکین ڈیسک سے دیکھی گئی۔ تجویز تبھی دی گئی جب سب کیسز کی رائے ایک جیسی ہو۔ ملی جلی رائے والی قطار میں خانہ خالی ہے، آپ خود چنیں۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔ پہلے سے بھرا خانہ بدلا نہیں جائے گا۔', 'Opinions of every case in each row were read from Scanning Desk. A value is suggested only when all cases agree. Rows with mixed opinions are left blank for you to choose. Nothing is saved until you press Send. Cells that are already filled are not changed.') + '</div>' +
+    '<div class="cl-tw"><table class="pf-t" id="scOpT"><thead><tr><th></th><th class="l">' + bi('قطار', 'Row') + '</th><th class="l">' + bi('اسکین کی رائے', 'Opinions found') + '</th><th>' + bi('رائے جمع ہوئی', 'Opinion submitted') + '</th><th>' + bi('فٹ / ناٹ فٹ', 'Fit / Not fit') + '</th></tr></thead><tbody>';
+  items.forEach(function(it, i){
+    var c = it.cnt, txt = [c.fit ? c.fit + ' fit' : '', c.notfit ? c.notfit + ' not fit' : '', c.pend ? c.pend + ' under consideration' : '', c.na ? c.na + ' not required' : '', c.none ? c.none + ' no scan' : ''].filter(Boolean).join(', ');
+    h += '<tr data-i="' + i + '"><td><input type="checkbox" ' + (it.any ? 'checked ' : '') + 'style="width:auto;min-width:0" data-ck="1" aria-label="select"></td><td><b>' + esc(it.row.t) + '</b><span class="pf-sub">' + it.n + ' ' + bi('کیسز', 'cases') + '</span></td><td class="sm">' + esc(txt) + '</td>' +
+      '<td>' + (it.have.opinion ? esc(it.have.opinion) : sel('opinion', ['Yes', 'Not', 'N.A.'], it.sug.opinion)) + '</td>' +
+      '<td>' + (it.have.fit ? esc(it.have.fit) : sel('fit', ['Fit', 'Not fit', 'N.A.'], it.sug.fit)) + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  openModal('Opinion / fit from Scanning Desk / اسکین ڈیسک سے رائے — Check and send / چیک کریں اور بھیجیں', h, [
+    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
+      var n = 0;
+      Array.prototype.forEach.call(document.querySelectorAll('#scOpT tbody tr'), function(tr){
+        if(!tr.querySelector('[data-ck]').checked) return;
+        var it = items[+tr.getAttribute('data-i')];
+        Array.prototype.forEach.call(tr.querySelectorAll('select[data-k]'), function(el){ if(el.value){ saveManual(o, it.row.k, el.getAttribute('data-k'), el.value); n++; } });
+      });
+      if(n) toast('✅ ' + bi(n + ' خانے اسکین ڈیسک سے بھرے گئے', n + ' cell(s) filled from Scanning Desk'), 'good');
+    }}], true);
+}
+
 /* ---------- Proforma A ---------- */
 function numCell(n, part, row, col){ return n ? '<td class="n"><button onclick="showCell(\'' + part + '\',\'' + row + '\',\'' + col + '\')">' + n + '</button></td>' : '<td class="n z">0</td>'; }
 function selCell(officer, row, field, opts, hasRows){
@@ -995,7 +1057,7 @@ function viewA(){
   h += '<div class="pf-title pf-p2" style="margin-top:16px"><span>Proforma A — Part-II</span><small>Period of Inspection: ' + esc(periodTxt()) + '</small></div>';
   h += tableA(o, a, 'II', A2, COLS2);
   h += signProsecutor(o) + '</div>';
-  var notes = '';
+  var notes = scanOpBtn(o, a) ? '<div style="margin-bottom:8px">' + scanOpBtn(o, a) + '</div>' : '';
   if(a.pendingN) notes += '<div class="cl-chip">⏳ ' + bi('زیرِ سماعت/ملتوی پیشیاں (شمار نہیں ہوئیں)', 'Adjourned / pending hearings (not counted)') + ': <b>' + a.pendingN + '</b></div> ';
   if(a.uncounted.length){
     notes += '<div class="cl-msg warn" style="margin-top:8px">⚠️ ' + bi('یہ فیصل شدہ کیسز پرفارما کی کسی قطار میں فٹ نہیں ہوئے — دیکھ کر قطار منتخب کر دیں:', 'These decided cases did not fit any row of the proforma — please pick a row for each:') + '</div>';

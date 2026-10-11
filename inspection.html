@@ -1112,7 +1112,7 @@ function scanRefCands(){
   var groups = {}, order = [];
   function put(k, s){ if(!groups[k]){ groups[k] = []; order.push(k); } groups[k].push(s); }
   SCANS.forEach(function(s){
-    if(['Judgment', 'Opinion', 'Signed scan'].indexOf(s.docType) < 0) return;
+    if(['Judgment', 'Order', 'Opinion', 'Signed scan'].indexOf(s.docType) < 0) return;
     var j = s.docType === 'Opinion' && s.linkedTo ? SCANS.filter(function(x){ return x.id === s.linkedTo; })[0] : null;
     var key = j ? scKey(j.caseType, j.caseNo, j.caseYear) : scKey(s.caseType, s.caseNo, s.caseYear);
     if(key === '||') key = 'id:' + s.id;
@@ -1120,10 +1120,10 @@ function scanRefCands(){
   });
   var out = [];
   order.forEach(function(k){
-    var list = groups[k], jud = list.filter(function(s){ return s.docType === 'Judgment'; })[0] || null;
+    var list = groups[k], jud = list.filter(function(s){ return s.docType === 'Judgment'; })[0] || list.filter(function(s){ return s.docType === 'Order'; })[0] || null;
     var ops = list.filter(function(s){ return OPFIT[s.opinionStatus]; }).sort(function(a, b){ return String(b.opinionDate || '').localeCompare(String(a.opinionDate || '')); });
     var op = ops.filter(function(s){ return s.opinionStatus === 'Fit for appeal / petition' || s.opinionStatus === 'Not fit'; })[0] || null;
-    var ac = ''; list.forEach(function(s){ if(s.acDate && (!ac || s.docType === 'Judgment')) ac = s.acDate; });
+    var ac = ''; list.forEach(function(s){ if(s.acDate && (!ac || s.docType === 'Judgment' || s.docType === 'Order')) ac = s.acDate; });
     if(!ac && !op) return;                      /* not sent to the AC yet, no fit / not fit opinion: not a reference */
     var base = jud || list[0], jdate = jud ? jud.date : '';
     var rel = ac || (op && op.opinionDate) || jdate;
@@ -1276,7 +1276,7 @@ function scanNewB(rows){
   var have = {}; rows.forEach(function(r){ if(r.c) have[scKey(r.c.type, r.c.caseNo, r.c.year)] = 1; if(r.scanId) have['id:' + r.scanId] = 1; });
   Object.keys(BROWS).forEach(function(id){ var x = BROWS[id]; if(x.inspectionId === UI.ins && x.scanId) have['id:' + x.scanId] = 1; });
   return SCANS.filter(function(s){
-    if(s.docType !== 'Judgment' || s.officer !== o || !s.date || s.date < ins.start || s.date > ins.end) return false;
+    if(['Judgment', 'Order'].indexOf(s.docType) < 0 || s.officer !== o || !s.date || s.date < ins.start || s.date > ins.end) return false;
     if(['Death sentence', 'Life imprisonment'].indexOf(s.sentence) < 0) return false;
     if(['Allowed', 'Partly Allowed', 'Acquittal'].indexOf(s.outcome) < 0) return false;
     return !have['id:' + s.id] && !have[scKey(s.caseType, s.caseNo, s.caseYear)];

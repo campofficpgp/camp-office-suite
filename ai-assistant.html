@@ -131,7 +131,7 @@ html,body{overflow-x:hidden;}
   .mic-btn.on{background:#c62828; border-color:#8e1b1b; color:#fff;}
   @media (prefers-reduced-motion:no-preference){ .mic-btn.on{animation:micPulse 1.3s ease-in-out infinite;} }
   @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.45);}50%{box-shadow:0 0 0 7px rgba(198,40,40,0);}}
-  .mic-lang{height:44px; flex-shrink:0; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--navy); font-size:12.5px; padding:0 4px; font-family:inherit; cursor:pointer;}
+  .mic-lang{height:44px; max-width:128px; flex-shrink:0; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--navy); font-size:12.5px; padding:0 4px; font-family:inherit; cursor:pointer;}
   .mic-status{min-height:18px; margin-top:6px; font-size:12.5px; color:var(--muted); text-align:center;}
   .mic-status.on{color:#8e1b1b; font-weight:700;}
   .mic-status.err{color:#8c1d18;}
@@ -309,7 +309,7 @@ html,body{overflow-x:hidden;}
       <button class="attach-btn" id="attachBtn" type="button" onclick="document.getElementById('fileInput').click()" title="Attach a file">📎</button>
       <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain" style="display:none">
       <button class="mic-btn" id="micBtn" type="button" onclick="micToggle()" aria-pressed="false" title="Speak your question (microphone)" aria-label="Speak your question (microphone)">🎙</button>
-      <select class="mic-lang" id="micLang" onchange="micLangChanged()" title="Speaking language" aria-label="Speaking language"><option value="ur-PK">اردو</option><option value="en-US">English</option></select>
+      <select class="mic-lang" id="micLang" onchange="micLangChanged()" title="Speaking language" aria-label="Speaking language"><option value="ai">✨ AI — بہتر</option><option value="ur-PK">اردو (براؤزر)</option><option value="en-US">English (براؤزر)</option></select>
       <textarea id="chatInput" dir="auto" data-en-ph="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)" data-ur-ph="اپنا سوال لکھیں… (مثلاً X کو خط کا مسودہ، یا کوئی judgment پیسٹ/منسلک کر کے رائے پوچھیں)" placeholder="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)"></textarea>
       <button class="stop-btn" id="stopBtn" type="button" onclick="stopChat()" data-en="⏹ Stop" data-ur="⏹ روکیں">⏹ Stop</button>
       <button class="send-btn" id="sendBtn" onclick="sendChat()" data-en="Send" data-ur="بھیجیں">Send</button>
@@ -618,7 +618,7 @@ html,body{overflow-x:hidden;}
 
   function setBusy(on){
     if(on) micStop(true);
-    var mb = document.getElementById('micBtn'); if(mb) mb.disabled = on;
+    var mb = document.getElementById('micBtn'); if(mb) mb.disabled = on || MIC.busy;
     document.getElementById('sendBtn').disabled = on;
     document.getElementById('stopBtn').style.display = on ? 'inline-block' : 'none';
     document.querySelectorAll('.regen-btn').forEach(function(b){ b.disabled = on; });
@@ -710,22 +710,27 @@ html,body{overflow-x:hidden;}
 
 
   /* ================= Microphone: speak the question, it is typed into the box; nothing is sent until you press Send ================= */
-  var MIC = {rec:null, on:false, base:'', empty:0, gotText:false, fatal:false};
+  var MIC = {rec:null, on:false, base:'', empty:0, gotText:false, fatal:false, ai:null, busy:false, job:0, ctrl:null};
+  var MIC_MAX_SEC = 90;
   function micSR(){ return window.SpeechRecognition || window.webkitSpeechRecognition || null; }
   function micMsg(kind, ur, en){ var el = document.getElementById('micStatus'); if(!el) return; el.className = 'mic-status' + (kind ? ' ' + kind : ''); el.textContent = ur || en ? (isUrdu ? ur : en) : ''; }
+  function micMode(){ var l = document.getElementById('micLang'); return l ? l.value : 'ur-PK'; }
+  function micAiOk(){ return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder && (window.AudioContext || window.webkitAudioContext) && (window.OfflineAudioContext || window.webkitOfflineAudioContext)); }
   function micRefresh(){
     var b = document.getElementById('micBtn'); if(!b) return;
-    var t = MIC.on ? (isUrdu ? 'سننا بند کریں' : 'Stop listening') : (isUrdu ? 'بول کر لکھوائیں (مائیک)' : 'Speak your question (microphone)');
+    var t = MIC.on ? (isUrdu ? 'ریکارڈنگ ختم کریں' : 'Stop recording') : (isUrdu ? 'بول کر لکھوائیں (مائیک)' : 'Speak your question (microphone)');
     b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-pressed', MIC.on ? 'true' : 'false'); b.classList.toggle('on', MIC.on);
-    var l = document.getElementById('micLang'); if(l){ l.title = isUrdu ? 'بولنے کی زبان' : 'Speaking language'; l.setAttribute('aria-label', l.title); }
-    if(MIC.on) micMsg('on', '🎙 سن رہا ہوں… بولیں۔ ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Listening… speak now. Press the microphone again to stop.');
+    var l = document.getElementById('micLang'); if(l){ l.title = isUrdu ? 'بولنے کی زبان / طریقہ' : 'Speaking language / method'; l.setAttribute('aria-label', l.title); }
+    if(MIC.on && MIC.ai) micMsg('on', '🎙 ریکارڈ ہو رہا ہے… بولیں، پھر ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Recording… speak, then press the microphone again to finish.');
+    else if(MIC.on) micMsg('on', '🎙 سن رہا ہوں… بولیں۔ ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Listening… speak now. Press the microphone again to stop.');
   }
   function micLangChanged(){
-    try{ localStorage.setItem('aiMicLang', document.getElementById('micLang').value); }catch(e){}
-    if(MIC.on){ micStop(true); micStart(); }
+    try{ localStorage.setItem('aiMicLang2', document.getElementById('micLang').value); }catch(e){}
+    if(MIC.on || MIC.busy){ micStop(true); micStart(); }
   }
-  function micToggle(){ if(MIC.on) micStop(false); else micStart(); }
+  function micToggle(){ if(MIC.busy) return; if(MIC.on) micStop(false); else micStart(); }
   function micStart(){
+    if(micMode() === 'ai'){ micAiStart(); return; }
     var SR = micSR();
     if(!SR){ micMsg('err', '⚠️ اس براؤزر میں آواز سے لکھنے کی سہولت نہیں۔ براہ کرم Google Chrome یا Microsoft Edge استعمال کریں۔', '⚠️ This browser cannot turn speech into text. Please use Google Chrome or Microsoft Edge.'); return; }
     if(typeof CUR !== 'undefined' && CUR) return;
@@ -768,13 +773,126 @@ html,body{overflow-x:hidden;}
     try{ r.start(); }catch(err){ MIC.fatal = true; micStop(true, true); micMsg('err', '⚠️ مائیک شروع نہیں ہو سکا، دوبارہ کوشش کریں۔', '⚠️ The microphone could not start. Please try again.'); }
   }
   function micStop(silent, keepMsg){
+    if(MIC.ai || MIC.busy){ micAiStop(silent, keepMsg); return; }
     var wasOn = MIC.on; MIC.on = false;
     var r = MIC.rec; MIC.rec = null;
     if(r){ try{ r.abort(); }catch(e){} }
     micRefresh();
     if(!keepMsg){ if(wasOn && !silent && MIC.gotText) micMsg('', '✔ لکھا گیا۔ متن دیکھ لیں، ٹھیک کریں، پھر "بھیجیں" دبائیں۔', '✔ Done. Check the text, edit it if needed, then press Send.'); else if(wasOn || silent) micMsg('', '', ''); }
   }
-  (function(){ try{ var v = localStorage.getItem('aiMicLang'); if(v === 'en-US' || v === 'ur-PK') document.getElementById('micLang').value = v; }catch(e){} micRefresh(); })();
+
+  /* ---- AI voice typing: record the microphone, make a small WAV, let Gemini write down what was said (Urdu + English words) ---- */
+  function micAiStart(){
+    if(!micAiOk()){ micMsg('err', '⚠️ اس براؤزر میں ریکارڈنگ کی سہولت نہیں۔ "اردو — براؤزر" والا طریقہ چنیں یا Chrome / Edge استعمال کریں۔', '⚠️ This browser cannot record audio. Choose the "browser" method or use Chrome / Edge.'); return; }
+    if(typeof CUR !== 'undefined' && CUR) return;
+    if(!auth.currentUser){ micMsg('err', '⚠️ پہلے سائن اِن کریں۔', '⚠️ Please sign in first.'); return; }
+    var inp = document.getElementById('chatInput');
+    MIC.base = inp.value && !/\s$/.test(inp.value) ? inp.value + ' ' : inp.value;
+    var job = ++MIC.job;
+    navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}}).then(function(stream){
+      if(job !== MIC.job){ stream.getTracks().forEach(function(t){ t.stop(); }); return; }   // cancelled while the permission box was open
+      var mr; try{ mr = new MediaRecorder(stream); }catch(e){ stream.getTracks().forEach(function(t){ t.stop(); }); micMsg('err', '⚠️ ریکارڈنگ شروع نہیں ہو سکی۔', '⚠️ Recording could not start.'); return; }
+      var a = {stream:stream, mr:mr, chunks:[], t0:Date.now(), timer:0, send:false, job:job};
+      mr.ondataavailable = function(e){ if(e.data && e.data.size) a.chunks.push(e.data); };
+      mr.onstop = function(){ stream.getTracks().forEach(function(t){ t.stop(); }); clearTimeout(a.timer); if(a.send && job === MIC.job) micAiTranscribe(a, job); };
+      MIC.ai = a; MIC.on = true; MIC.fatal = false; MIC.gotText = false;
+      a.timer = setTimeout(function(){ if(MIC.ai === a) micStop(false); }, MIC_MAX_SEC * 1000);
+      try{ mr.start(); }catch(e){ MIC.ai = null; MIC.on = false; stream.getTracks().forEach(function(t){ t.stop(); }); micRefresh(); micMsg('err', '⚠️ ریکارڈنگ شروع نہیں ہو سکی۔', '⚠️ Recording could not start.'); return; }
+      micRefresh();
+    }).catch(function(err){
+      if(job !== MIC.job) return;
+      var n = err && err.name;
+      if(n === 'NotAllowedError' || n === 'SecurityError') micMsg('err', '⚠️ مائیک کی اجازت نہیں ملی۔ ایڈریس بار کے تالے/مائیک کے نشان سے اس سائٹ کو مائیک کی اجازت دیں، پھر دوبارہ کوشش کریں۔', '⚠️ Microphone permission was not given. Allow the microphone for this site (lock icon in the address bar), then try again.');
+      else if(n === 'NotFoundError' || n === 'OverconstrainedError') micMsg('err', '⚠️ کوئی مائیک نہیں ملا۔ مائیک لگا ہوا اور چالو ہونا چاہیے۔', '⚠️ No microphone was found. Please connect or enable one.');
+      else micMsg('err', '⚠️ مائیک شروع نہیں ہو سکا (' + (n || '') + ')۔', '⚠️ The microphone could not start (' + (n || '') + ').');
+    });
+  }
+  /* finish (silent=false → transcribe) or cancel (silent=true → throw the recording away) */
+  function micAiStop(silent, keepMsg){
+    var a = MIC.ai;
+    if(MIC.busy && silent){ MIC.job++; try{ MIC.ctrl && MIC.ctrl.abort(); }catch(e){} MIC.ctrl = null; MIC.busy = false; micBusyUi(false); if(!keepMsg) micMsg('', '', ''); return; }
+    if(!a){ if(silent){ MIC.job++; } return; }
+    MIC.ai = null; MIC.on = false;
+    if(silent){ MIC.job++; a.send = false; }
+    else a.send = true;
+    try{ if(a.mr.state !== 'inactive') a.mr.stop(); else a.stream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){}
+    micRefresh();
+    if(silent && !keepMsg) micMsg('', '', '');
+  }
+  function micBusyUi(on){ var mb = document.getElementById('micBtn'); if(mb) mb.disabled = on || (typeof CUR !== 'undefined' && !!CUR); }
+  function micErr(ur, en){ MIC.busy = false; micBusyUi(false); micMsg('err', '⚠️ ' + ur, '⚠️ ' + en); }
+  function micAiTranscribe(a, job){
+    var secs = (Date.now() - a.t0) / 1000;
+    if(secs < 0.6 || !a.chunks.length){ micMsg('', 'ریکارڈنگ بہت چھوٹی تھی۔ مائیک دبا کر کچھ دیر بولیں۔', 'The recording was too short. Press the microphone and speak a little longer.'); return; }
+    MIC.busy = true; micBusyUi(true);
+    micMsg('on', '✍️ آواز کو لکھ رہا ہوں… ذرا انتظار کریں۔', '✍️ Writing down what you said… please wait.');
+    var blob = new Blob(a.chunks, {type: a.mr.mimeType || 'audio/webm'});
+    micToWav(blob).then(function(wav){
+      if(job !== MIC.job) return null;
+      if(wav.peak < 0.012){ micErr('کوئی آواز نہیں آئی۔ مائیک کے قریب بولیں اور دوبارہ کوشش کریں۔', 'No sound was picked up. Speak closer to the microphone and try again.'); return null; }
+      return auth.currentUser.getIdToken().then(function(token){
+        if(job !== MIC.job) return null;
+        var ctrl = new AbortController(); MIC.ctrl = ctrl;
+        return fetch(AI_URL, {
+          method:'POST', signal:ctrl.signal,
+          headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + token},
+          body: JSON.stringify({mode:'transcribe', transcribe:true, question:'Transcribe this recording.', file:{name:'speech.wav', mimeType:'audio/wav', data:wav.b64}})
+        }).then(function(res){ return res.json().catch(function(){ return {}; }).then(function(d){ return {ok:res.ok, data:d}; }); });
+      });
+    }).then(function(r){
+      if(!r || job !== MIC.job) return;
+      MIC.ctrl = null;
+      if(!r.ok || !r.data || typeof r.data.answer !== 'string'){
+        var em = (r.data && r.data.error) || '';
+        if(/Unsupported file type/i.test(em)) micErr('AI سے آواز لکھنے کی سروس ابھی چالو نہیں ہوئی۔ فی الحال "اردو — براؤزر" والا طریقہ چنیں۔', 'The AI voice service is not switched on yet. For now choose the "browser" method.');
+        else micErr(em || 'آواز لکھی نہیں جا سکی، دوبارہ کوشش کریں۔', em || 'Could not write down the speech, please try again.');
+        return;
+      }
+      var text = r.data.answer.trim();
+      MIC.busy = false; micBusyUi(false);
+      if(!text){ micMsg('', 'کوئی بات سمجھ نہیں آئی۔ صاف اور مائیک کے قریب بول کر دوبارہ کوشش کریں۔', 'Nothing could be understood. Speak clearly, close to the microphone, and try again.'); return; }
+      var inp = document.getElementById('chatInput');
+      var cur = inp.value; var base = (cur.slice(0, MIC.base.length) === MIC.base) ? cur : (cur && !/\s$/.test(cur) ? cur + ' ' : cur);
+      inp.value = base + text; MIC.gotText = true;
+      try{ inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }catch(e){}
+      micMsg('', '✔ لکھا گیا۔ متن دیکھ لیں، ٹھیک کریں، پھر "بھیجیں" دبائیں۔', '✔ Done. Check the text, edit it if needed, then press Send.');
+    }).catch(function(err){
+      if(job !== MIC.job) return;
+      MIC.ctrl = null;
+      micErr('آواز لکھنے کے لیے رابطہ نہیں ہو سکا۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', 'Could not reach the voice service. Check the internet and try again.');
+    });
+  }
+  /* any recording -> 16 kHz mono 16-bit WAV (small, and accepted by Gemini) */
+  function micToWav(blob){
+    return blob.arrayBuffer().then(function(buf){
+      var AC = window.AudioContext || window.webkitAudioContext, OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      var ctx = new AC();
+      return new Promise(function(res, rej){ var p = ctx.decodeAudioData(buf, res, rej); if(p && p.then) p.then(res, rej); }).then(function(ab){
+        try{ ctx.close(); }catch(e){}
+        var RATE = 16000, n = Math.max(1, Math.ceil(ab.duration * RATE));
+        var off = new OAC(1, n, RATE), src = off.createBufferSource();
+        src.buffer = ab; src.connect(off.destination); src.start(0);
+        return off.startRendering();
+      });
+    }).then(function(out){
+      var f = out.getChannelData(0), len = f.length, peak = 0, i;
+      var dv = new DataView(new ArrayBuffer(44 + len * 2));
+      function w(o, t){ for(var k = 0; k < t.length; k++) dv.setUint8(o + k, t.charCodeAt(k)); }
+      w(0, 'RIFF'); dv.setUint32(4, 36 + len * 2, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+      dv.setUint32(24, 16000, true); dv.setUint32(28, 32000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, len * 2, true);
+      for(i = 0; i < len; i++){ var v = Math.max(-1, Math.min(1, f[i])); var av = v < 0 ? -v : v; if(av > peak) peak = av; dv.setInt16(44 + i * 2, v < 0 ? v * 0x8000 : v * 0x7FFF, true); }
+      var bytes = new Uint8Array(dv.buffer), bin = '';
+      for(i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return {b64: btoa(bin), peak: peak, seconds: len / 16000};
+    });
+  }
+  (function(){
+    var sel = document.getElementById('micLang'), v = '';
+    try{ v = localStorage.getItem('aiMicLang2') || ''; }catch(e){}
+    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = 'ai';
+    if(v === 'ai' && !micAiOk()) v = micSR() ? 'ur-PK' : 'ai';
+    sel.value = v; micRefresh();
+  })();
 
   document.getElementById('chatInput').addEventListener('keydown', function(e){
     if(e.key === 'Enter' && !e.shiftKey){

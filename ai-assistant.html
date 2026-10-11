@@ -725,7 +725,7 @@ html,body{overflow-x:hidden;}
     else if(MIC.on) micMsg('on', '🎙 سن رہا ہوں… بولیں۔ ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Listening… speak now. Press the microphone again to stop.');
   }
   function micLangChanged(){
-    try{ localStorage.setItem('aiMicLang3', document.getElementById('micLang').value); }catch(e){}
+    try{ localStorage.setItem('aiMicLang4', document.getElementById('micLang').value); }catch(e){}
     if(MIC.on || MIC.busy){ micStop(true); micStart(); }
   }
   function micToggle(){ if(MIC.busy) return; if(MIC.on) micStop(false); else micStart(); }
@@ -895,9 +895,9 @@ html,body{overflow-x:hidden;}
   }
   (function(){
     var sel = document.getElementById('micLang'), v = '';
-    try{ v = localStorage.getItem('aiMicLang3') || ''; }catch(e){}
+    try{ v = localStorage.getItem('aiMicLang4') || ''; }catch(e){}
     try{ localStorage.removeItem('aiMicAiDown'); }catch(e){}
-    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = 'ai';
+    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = micSR() ? 'ur-PK' : 'ai';
     if(v === 'ai' && !micAiOk()) v = micSR() ? 'ur-PK' : 'ai';
     sel.value = v; micRefresh();
   })();

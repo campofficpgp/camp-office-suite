@@ -676,6 +676,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
         <div class="cl-field"><label for="fCaseType">Case Type / کیس کی قسم (BBA, BAA, J.P. …) <span class="manage-link" role="button" tabindex="0" onclick="openListManage('type')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseType"></select></div>
         <div class="cl-field"><label for="fCaseNo">Case No / کیس نمبر</label><input id="fCaseNo" placeholder="142 or 950-L"></div>
         <div class="cl-field"><label for="fCaseYear">Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseYear"></select></div>
+        <div class="cl-field full" id="caseMatch" style="display:none" role="status" aria-live="polite"></div>
         <div class="cl-field full"><label for="fTitle">Case title / عنوان</label><input id="fTitle" placeholder="e.g. Muhammad Ali v. The State"></div>
         <div class="cl-field"><label for="fOutcome">Judgment result / فیصلے کا نتیجہ <span class="manage-link" role="button" tabindex="0" onclick="openListManage('outcome')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fOutcome"></select></div>
         <div class="cl-field"><label for="fSentence">Sentence / nature under challenge / سزا · نوعیت <span class="manage-link" role="button" tabindex="0" onclick="openListManage('sentence')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fSentence"></select></div>
@@ -1728,6 +1729,7 @@ function openAddScan(){
   showModal('');
   $('editBg').classList.add('show');
   formHistReset();
+  caseMatchHide(); caseMatchShow();
 }
 function openEditScan(s){
   if(!CTX.canWrite) return;
@@ -1742,6 +1744,7 @@ function openEditScan(s){
   showModal('<span style="font-size:12px">' + bi('فائل: ', 'File: ') + esc(s.fileName || '') + ' (' + (s.pages || '?') + ' ' + bi('صفحات', 'pages') + ', ' + mb(s.fileSize || 0) + '). ' + bi('فائل بدلنے کے لیے پرانی حذف کر کے نئی اسکین کریں۔', 'To change the file, delete this one and scan again.') + '</span>');
   $('editBg').classList.add('show');
   formHistReset();
+  caseMatchHide(); caseMatchShow();
 }
 function closeEdit(){
   if(SC.busy) return;
@@ -2011,6 +2014,7 @@ function putAuto(key, value, marks){
   var el = $(FMAP[key]); if(!el || el.dataset.touched) return false;
   if(el.tagName === 'SELECT' && !Array.prototype.some.call(el.options, function(o){ return o.value === value; })) el.innerHTML += '<option value="' + esc(value) + '">' + esc(value) + '</option>';
   el.value = value; if(marks !== false) el.classList.add('sc-auto');
+  if(key === 'caseType' || key === 'caseNo' || key === 'caseYear') caseMatchShow();
   return true;
 }
 function applyRecord(rec, pagesText){
@@ -2094,6 +2098,40 @@ function linkInfoShow(pick, n){
   else if(n > 1) b.innerHTML = '⚠ ' + bi('کئی ممکنہ فیصلے ملے؛ فہرست سے درست والا چنیں۔', 'Several possible judgments; choose the right one from the list.');
   else b.innerHTML = '⚠ ' + bi('اس کیس کا فیصلہ ابھی محفوظ نہیں ملا۔ پہلے فیصلہ اسکین کریں، یا فہرست سے چنیں، یا بغیر جوڑے محفوظ کریں۔', 'No saved judgment found for this case. Scan the judgment first, or choose it from the list, or save without a link.');
 }
+
+/* ---------- Match with Daily Case Entry (advice only; nothing is written or blocked) ---------- */
+var CM_T = 0, CM_N = 0;
+function caseMatchShow(){ clearTimeout(CM_T); CM_T = setTimeout(caseMatchRun, 350); }
+function caseMatchHide(){ var b = $('caseMatch'); if(b) b.style.display = 'none'; }
+async function caseMatchRun(){
+  var box = $('caseMatch'); if(!box) return;
+  var raw = $('fCaseNo').value.trim(), no = normNo(raw), t = $('fCaseType').value, yr = String($('fCaseYear').value || '').replace(/\D/g, '');
+  if(!no || !$('editBg').classList.contains('show')){ caseMatchHide(); return; }
+  var my = ++CM_N, snap, vars = [no, raw, raw.toUpperCase(), no.replace(/-/g, ''), no.replace(/^(\d+)-?([A-Z]{1,2})$/, '$1-$2'), no.toLowerCase()].filter(function(v, i, a){ return v && a.indexOf(v) === i; });
+  try{ snap = await db.collection('cases').where('caseNo', 'in', vars).get(); }catch(e){ if(my === CM_N) caseMatchHide(); return; }
+  if(my !== CM_N) return;
+  var all = []; snap.forEach(function(d){ var c = d.data(); c.id = d.id; all.push(c); });
+  var exact = all.filter(function(c){ return kk(c.type) === kk(t) && String(c.year || '').replace(/\D/g, '') === yr; });
+  var near = all.filter(function(c){ return exact.indexOf(c) < 0 && String(c.year || '').replace(/\D/g, '') === yr; });
+  var off = $('fOfficer').value, h, st;
+  function show(c){ return esc(((c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || '')).trim()); }
+  if(exact.length){
+    st = 'ok';
+    var dates = exact.map(function(c){ return c.date ? dmy(c.date) : ''; }).filter(Boolean).sort().slice(0, 4).join(', ');
+    h = '✔ ' + bi('روزانہ کیس انٹری میں یہ کیس ملا', 'Found in Daily Case Entry') + (dates ? ' — ' + esc(dates) : '') + (exact.length > 1 ? ' (' + exact.length + ' ' + bi('پیشیاں', 'hearings') + ')' : '');
+    if(off && exact.every(function(c){ return c.officer && c.officer !== off; })) h += '<br>⚠ ' + bi('وہاں آفیسر مختلف ہے: ', 'The officer there is different: ') + esc(exact[0].officer);
+  } else if(near.length){
+    st = 'warn';
+    h = '⚠ ' + bi('اسی نمبر اور سال کا کیس دوسری قسم کے ساتھ ملا: ', 'Same number and year found with a different case type: ') + near.slice(0, 2).map(show).join(', ') + '. ' + bi('اسکین کی قسم دیکھ لیں۔', 'Check the case type on the scan.');
+  } else {
+    st = 'warn';
+    h = '⚠ ' + bi('روزانہ کیس انٹری میں یہ کیس نہیں ملا۔ نمبر درست ہو تو پہلے کیس انٹری کریں، ورنہ نمبر ٹھیک کریں۔ (اسکین پھر بھی محفوظ ہو سکتا ہے۔)', 'This case was not found in Daily Case Entry. If the number is right, make the entry first; otherwise correct the number. (The scan can still be saved.)');
+  }
+  box.style.display = '';
+  box.innerHTML = '<div class="sc-aut-note" style="display:block;border-radius:10px;padding:4px 10px;' + (st === 'ok' ? 'background:#e6f4ea;border-color:#2e7d32;color:#1b4d20' : '') + '">' + h + '</div>';
+}
+['fCaseType', 'fCaseNo', 'fCaseYear'].forEach(function(id){ $(id).addEventListener('change', caseMatchShow); });
+$('fCaseNo').addEventListener('input', caseMatchShow);
 function suggestLink(){
   var el = $('fLinkTo'); if(el.dataset.touched || el.value) return;
   var f = { caseType:$('fCaseType').value, caseNo:$('fCaseNo').value.trim(), caseYear:$('fCaseYear').value };

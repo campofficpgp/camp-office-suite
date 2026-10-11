@@ -725,7 +725,7 @@ html,body{overflow-x:hidden;}
     else if(MIC.on) micMsg('on', '🎙 سن رہا ہوں… بولیں۔ ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Listening… speak now. Press the microphone again to stop.');
   }
   function micLangChanged(){
-    try{ localStorage.setItem('aiMicLang2', document.getElementById('micLang').value); }catch(e){}
+    try{ localStorage.setItem('aiMicLang3', document.getElementById('micLang').value); }catch(e){}
     if(MIC.on || MIC.busy){ micStop(true); micStart(); }
   }
   function micToggle(){ if(MIC.busy) return; if(MIC.on) micStop(false); else micStart(); }
@@ -846,7 +846,6 @@ html,body{overflow-x:hidden;}
         var em = (r.data && r.data.error) || '';
         if(/Unsupported file type/i.test(em)){
           /* the AI voice service is not switched on on the server yet: use the browser method instead (and remember for a while) */
-          try{ localStorage.setItem('aiMicAiDown', String(Date.now())); }catch(e){}
           var sel = document.getElementById('micLang'); if(sel) sel.value = 'ur-PK';
           micErr('AI سے آواز لکھنے کی سروس ابھی چالو نہیں ہوئی، اس لیے براؤزر والے اردو طریقے پر آ گیا ہوں۔ مائیک دوبارہ دبا کر بولیں۔', 'The AI voice service is not switched on yet, so I switched to the browser (Urdu) method. Press the microphone again and speak.');
         }
@@ -894,9 +893,9 @@ html,body{overflow-x:hidden;}
   }
   (function(){
     var sel = document.getElementById('micLang'), v = '';
-    try{ v = localStorage.getItem('aiMicLang2') || ''; }catch(e){}
-    var down = 0; try{ down = Number(localStorage.getItem('aiMicAiDown')) || 0; }catch(e){}
-    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = (down && Date.now() - down < 12 * 3600 * 1000 && micSR()) ? 'ur-PK' : 'ai';
+    try{ v = localStorage.getItem('aiMicLang3') || ''; }catch(e){}
+    try{ localStorage.removeItem('aiMicAiDown'); }catch(e){}
+    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = 'ai';
     if(v === 'ai' && !micAiOk()) v = micSR() ? 'ur-PK' : 'ai';
     sel.value = v; micRefresh();
   })();

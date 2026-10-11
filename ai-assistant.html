@@ -125,9 +125,20 @@ html,body{overflow-x:hidden;}
   .chat-input-row{margin-top:12px; display:flex; gap:10px; align-items:flex-end;}
   .attach-btn{background:#fff; border:1px solid var(--border); color:var(--navy); width:44px; height:44px; flex-shrink:0; border-radius:8px; font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
   .attach-btn:hover{background:var(--bg);}
+  .mic-btn{background:#fff; border:1px solid var(--border); color:var(--navy); width:44px; height:44px; flex-shrink:0; border-radius:8px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .mic-btn:hover{background:var(--bg);}
+  .mic-btn:disabled{opacity:.5; cursor:not-allowed;}
+  .mic-btn.on{background:#c62828; border-color:#8e1b1b; color:#fff;}
+  @media (prefers-reduced-motion:no-preference){ .mic-btn.on{animation:micPulse 1.3s ease-in-out infinite;} }
+  @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(198,40,40,.45);}50%{box-shadow:0 0 0 7px rgba(198,40,40,0);}}
+  .mic-lang{height:44px; flex-shrink:0; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--navy); font-size:12.5px; padding:0 4px; font-family:inherit; cursor:pointer;}
+  .mic-status{min-height:18px; margin-top:6px; font-size:12.5px; color:var(--muted); text-align:center;}
+  .mic-status.on{color:#8e1b1b; font-weight:700;}
+  .mic-status.err{color:#8c1d18;}
   #chatInput{flex:1; min-height:52px; max-height:160px; resize:vertical; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:13.5px; font-family:inherit; background:#fff; color:var(--text);}
   #chatInput:focus{outline:2px solid var(--gold-light);}
   .send-btn{background:var(--navy); color:#fff; border:none; padding:12px 22px; border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap;}
+  @media (max-width:560px){ .chat-input-row{flex-wrap:wrap;} #chatInput{order:-1; flex:1 1 100%;} .send-btn{flex:1;} }
   .send-btn:hover{background:var(--navy2);}
   .send-btn:disabled{opacity:.5; cursor:not-allowed;}
 
@@ -297,10 +308,13 @@ html,body{overflow-x:hidden;}
     <div class="chat-input-row">
       <button class="attach-btn" id="attachBtn" type="button" onclick="document.getElementById('fileInput').click()" title="Attach a file">📎</button>
       <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,application/pdf,image/jpeg,image/png,image/webp,text/plain" style="display:none">
-      <textarea id="chatInput" data-en-ph="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)" data-ur-ph="اپنا سوال لکھیں… (مثلاً X کو خط کا مسودہ، یا کوئی judgment پیسٹ/منسلک کر کے رائے پوچھیں)" placeholder="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)"></textarea>
+      <button class="mic-btn" id="micBtn" type="button" onclick="micToggle()" aria-pressed="false" title="Speak your question (microphone)" aria-label="Speak your question (microphone)">🎙</button>
+      <select class="mic-lang" id="micLang" onchange="micLangChanged()" title="Speaking language" aria-label="Speaking language"><option value="ur-PK">اردو</option><option value="en-US">English</option></select>
+      <textarea id="chatInput" dir="auto" data-en-ph="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)" data-ur-ph="اپنا سوال لکھیں… (مثلاً X کو خط کا مسودہ، یا کوئی judgment پیسٹ/منسلک کر کے رائے پوچھیں)" placeholder="Type your question… (e.g. draft a letter to X, or paste/attach a judgment and ask for your opinion)"></textarea>
       <button class="stop-btn" id="stopBtn" type="button" onclick="stopChat()" data-en="⏹ Stop" data-ur="⏹ روکیں">⏹ Stop</button>
       <button class="send-btn" id="sendBtn" onclick="sendChat()" data-en="Send" data-ur="بھیجیں">Send</button>
     </div>
+    <div class="mic-status" id="micStatus" aria-live="polite"></div>
     <div class="ai-hint" data-en="This is an AI Draft — always verify before relying on it for official work. Nothing here is saved to any case record automatically." data-ur="یہ AI کا مسودہ ہے — سرکاری کام میں استعمال سے پہلے ہمیشہ خود تصدیق کریں۔ یہاں سے کچھ بھی خودکار طور پر کسی کیس ریکارڈ میں محفوظ نہیں ہوتا۔">This is an AI Draft — always verify before relying on it for official work. Nothing here is saved to any case record automatically.</div>
 
   </div>
@@ -389,6 +403,7 @@ html,body{overflow-x:hidden;}
     });
     document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
     renderIdeas(); updateMemInfo(); updateUsage();
+    try{ micRefresh(); }catch(e){}
     document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
     renderThemePicker();
   }
@@ -588,6 +603,7 @@ html,body{overflow-x:hidden;}
   }
 
   function sendChat(){
+    micStop(true);
     var input = document.getElementById('chatInput');
     var question = input.value.trim();
     if(!question && !pendingFile) return;
@@ -601,6 +617,8 @@ html,body{overflow-x:hidden;}
   }
 
   function setBusy(on){
+    if(on) micStop(true);
+    var mb = document.getElementById('micBtn'); if(mb) mb.disabled = on;
     document.getElementById('sendBtn').disabled = on;
     document.getElementById('stopBtn').style.display = on ? 'inline-block' : 'none';
     document.querySelectorAll('.regen-btn').forEach(function(b){ b.disabled = on; });
@@ -689,6 +707,74 @@ html,body{overflow-x:hidden;}
     }
     attemptSend(0);
   }
+
+
+  /* ================= Microphone: speak the question, it is typed into the box; nothing is sent until you press Send ================= */
+  var MIC = {rec:null, on:false, base:'', empty:0, gotText:false, fatal:false};
+  function micSR(){ return window.SpeechRecognition || window.webkitSpeechRecognition || null; }
+  function micMsg(kind, ur, en){ var el = document.getElementById('micStatus'); if(!el) return; el.className = 'mic-status' + (kind ? ' ' + kind : ''); el.textContent = ur || en ? (isUrdu ? ur : en) : ''; }
+  function micRefresh(){
+    var b = document.getElementById('micBtn'); if(!b) return;
+    var t = MIC.on ? (isUrdu ? 'سننا بند کریں' : 'Stop listening') : (isUrdu ? 'بول کر لکھوائیں (مائیک)' : 'Speak your question (microphone)');
+    b.title = t; b.setAttribute('aria-label', t); b.setAttribute('aria-pressed', MIC.on ? 'true' : 'false'); b.classList.toggle('on', MIC.on);
+    var l = document.getElementById('micLang'); if(l){ l.title = isUrdu ? 'بولنے کی زبان' : 'Speaking language'; l.setAttribute('aria-label', l.title); }
+    if(MIC.on) micMsg('on', '🎙 سن رہا ہوں… بولیں۔ ختم کرنے کے لیے مائیک دوبارہ دبائیں۔', '🎙 Listening… speak now. Press the microphone again to stop.');
+  }
+  function micLangChanged(){
+    try{ localStorage.setItem('aiMicLang', document.getElementById('micLang').value); }catch(e){}
+    if(MIC.on){ micStop(true); micStart(); }
+  }
+  function micToggle(){ if(MIC.on) micStop(false); else micStart(); }
+  function micStart(){
+    var SR = micSR();
+    if(!SR){ micMsg('err', '⚠️ اس براؤزر میں آواز سے لکھنے کی سہولت نہیں۔ براہ کرم Google Chrome یا Microsoft Edge استعمال کریں۔', '⚠️ This browser cannot turn speech into text. Please use Google Chrome or Microsoft Edge.'); return; }
+    if(typeof CUR !== 'undefined' && CUR) return;
+    var inp = document.getElementById('chatInput');
+    MIC.base = inp.value && !/\s$/.test(inp.value) ? inp.value + ' ' : inp.value;
+    MIC.on = true; MIC.empty = 0; MIC.fatal = false; MIC.gotText = false;
+    micRefresh(); micRun();
+  }
+  function micRun(){
+    var SR = micSR(), inp = document.getElementById('chatInput');
+    var r = new SR(); MIC.rec = r;
+    r.lang = document.getElementById('micLang').value || 'ur-PK';
+    r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
+    var got = false;
+    r.onresult = function(e){
+      var fin = '', inter = '';
+      for(var i = 0; i < e.results.length; i++){ var t = e.results[i][0].transcript; if(e.results[i].isFinal) fin += t; else inter += t; }
+      if(fin || inter){ got = true; MIC.gotText = true; }
+      inp.value = MIC.base + fin + inter;
+      inp.scrollTop = inp.scrollHeight;
+    };
+    r.onerror = function(e){
+      var c = e && e.error;
+      if(c === 'no-speech' || c === 'aborted') return;
+      MIC.fatal = true;
+      if(c === 'not-allowed' || c === 'service-not-allowed') micMsg('err', '⚠️ مائیک کی اجازت نہیں ملی۔ ایڈریس بار کے تالے/مائیک کے نشان سے اس سائٹ کو مائیک کی اجازت دیں، پھر دوبارہ کوشش کریں۔', '⚠️ Microphone permission was not given. Allow the microphone for this site (lock icon in the address bar), then try again.');
+      else if(c === 'audio-capture') micMsg('err', '⚠️ کوئی مائیک نہیں ملا۔ مائیک لگا ہوا اور چالو ہونا چاہیے۔', '⚠️ No microphone was found. Please connect or enable one.');
+      else if(c === 'network') micMsg('err', '⚠️ آواز پہچاننے کی سروس سے رابطہ نہیں ہو سکا۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', '⚠️ Could not reach the speech service. Check the internet and try again.');
+      else if(c === 'language-not-supported') micMsg('err', '⚠️ یہ زبان اس براؤزر میں نہیں چل رہی۔ دوسری زبان چنیں۔', '⚠️ This language is not supported in this browser. Choose another.');
+      else micMsg('err', '⚠️ آواز سے لکھنے میں مسئلہ آیا (' + (c || '') + ')۔', '⚠️ Speech input problem (' + (c || '') + ').');
+    };
+    r.onend = function(){
+      if(MIC.rec !== r) return;
+      MIC.base = inp.value && !/\s$/.test(inp.value) ? inp.value + ' ' : inp.value;
+      if(!MIC.on || MIC.fatal){ micStop(true, true); return; }
+      MIC.empty = got ? 0 : MIC.empty + 1;
+      if(MIC.empty >= 3){ micStop(true, true); micMsg('', 'کوئی آواز نہیں آئی، مائیک بند کر دیا گیا۔ دوبارہ بولنے کے لیے مائیک دبائیں۔', 'No speech heard, the microphone was turned off. Press it again to speak.'); return; }
+      setTimeout(function(){ if(MIC.on && MIC.rec === r) micRun(); }, 150);
+    };
+    try{ r.start(); }catch(err){ MIC.fatal = true; micStop(true, true); micMsg('err', '⚠️ مائیک شروع نہیں ہو سکا، دوبارہ کوشش کریں۔', '⚠️ The microphone could not start. Please try again.'); }
+  }
+  function micStop(silent, keepMsg){
+    var wasOn = MIC.on; MIC.on = false;
+    var r = MIC.rec; MIC.rec = null;
+    if(r){ try{ r.abort(); }catch(e){} }
+    micRefresh();
+    if(!keepMsg){ if(wasOn && !silent && MIC.gotText) micMsg('', '✔ لکھا گیا۔ متن دیکھ لیں، ٹھیک کریں، پھر "بھیجیں" دبائیں۔', '✔ Done. Check the text, edit it if needed, then press Send.'); else if(wasOn || silent) micMsg('', '', ''); }
+  }
+  (function(){ try{ var v = localStorage.getItem('aiMicLang'); if(v === 'en-US' || v === 'ur-PK') document.getElementById('micLang').value = v; }catch(e){} micRefresh(); })();
 
   document.getElementById('chatInput').addEventListener('keydown', function(e){
     if(e.key === 'Enter' && !e.shiftKey){

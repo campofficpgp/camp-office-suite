@@ -844,10 +844,16 @@ html,body{overflow-x:hidden;}
       MIC.ctrl = null;
       if(!r.ok || !r.data || typeof r.data.answer !== 'string'){
         var em = (r.data && r.data.error) || '';
-        if(/Unsupported file type/i.test(em)) micErr('AI سے آواز لکھنے کی سروس ابھی چالو نہیں ہوئی۔ فی الحال "اردو — براؤزر" والا طریقہ چنیں۔', 'The AI voice service is not switched on yet. For now choose the "browser" method.');
+        if(/Unsupported file type/i.test(em)){
+          /* the AI voice service is not switched on on the server yet: use the browser method instead (and remember for a while) */
+          try{ localStorage.setItem('aiMicAiDown', String(Date.now())); }catch(e){}
+          var sel = document.getElementById('micLang'); if(sel) sel.value = 'ur-PK';
+          micErr('AI سے آواز لکھنے کی سروس ابھی چالو نہیں ہوئی، اس لیے براؤزر والے اردو طریقے پر آ گیا ہوں۔ مائیک دوبارہ دبا کر بولیں۔', 'The AI voice service is not switched on yet, so I switched to the browser (Urdu) method. Press the microphone again and speak.');
+        }
         else micErr(em || 'آواز لکھی نہیں جا سکی، دوبارہ کوشش کریں۔', em || 'Could not write down the speech, please try again.');
         return;
       }
+      try{ localStorage.removeItem('aiMicAiDown'); }catch(e){}
       var text = r.data.answer.trim();
       MIC.busy = false; micBusyUi(false);
       if(!text){ micMsg('', 'کوئی بات سمجھ نہیں آئی۔ صاف اور مائیک کے قریب بول کر دوبارہ کوشش کریں۔', 'Nothing could be understood. Speak clearly, close to the microphone, and try again.'); return; }
@@ -889,7 +895,8 @@ html,body{overflow-x:hidden;}
   (function(){
     var sel = document.getElementById('micLang'), v = '';
     try{ v = localStorage.getItem('aiMicLang2') || ''; }catch(e){}
-    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = 'ai';
+    var down = 0; try{ down = Number(localStorage.getItem('aiMicAiDown')) || 0; }catch(e){}
+    if(v !== 'ai' && v !== 'ur-PK' && v !== 'en-US') v = (down && Date.now() - down < 12 * 3600 * 1000 && micSR()) ? 'ur-PK' : 'ai';
     if(v === 'ai' && !micAiOk()) v = micSR() ? 'ur-PK' : 'ai';
     sel.value = v; micRefresh();
   })();

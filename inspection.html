@@ -830,7 +830,8 @@ function openModal(title, html, btns, wide){
   $('mBg').classList.add('show');
   var mb = $('mBox'); if(mb.__fh && mb.__fh.api && mb.__fh.api.rebuild) mb.__fh.api.rebuild();
 }
-function closeModal(){ $('mBg').classList.remove('show'); }
+var SCHUB = false;
+function closeModal(){ SCHUB = false; $('mBg').classList.remove('show'); }
 function canEdit(){ var i = curIns(); return CTX.canWrite && !(i && i.locked) && !signLevel(unitOfTab()); }
 function guardEdit(){
   if(!CTX.canWrite){ toast('⛔ ' + bi('آپ کو تبدیلی کی اجازت نہیں (صرف دیکھنے کی رسائی)۔', 'You do not have permission to change data (view-only access).'), 'err'); return false; }
@@ -875,6 +876,7 @@ function renderStats(){
   s.innerHTML = '<span class="cl-chip">📅 <b>' + fmtD(ins.start) + '</b> → <b>' + fmtD(ins.end) + '</b>' + (ins.locked ? ' 🔒' : '') + '</span>' +
     '<span class="cl-chip">⚖️ ' + bi('اس مدت کے کیسز', 'Cases in period') + ': <b>' + nCases + '</b></span>' +
     '<span class="cl-chip">📒 ' + bi('اپیل کمیٹی ریفرنسز', 'AC references') + ': <b>' + refsHere().length + '</b></span>' +
+    scHubChip() +
     (CHK.groups.length ? '<button type="button" class="cl-chip ' + (CHK.failN ? 'warn' : 'ok') + '" style="cursor:pointer" onclick="setTab(\'check\')" title="Open the completeness checklist">' + (CHK.failN ? '⚠ ' + CHK.failN + ' ' + bi('خانے باقی', 'items incomplete') : '✓ ' + bi('سب مکمل', 'all complete')) + '</button>' : '') +
     (CTX.canWrite ? '' : '<span class="cl-chip warn">👁 ' + bi('صرف دیکھنے کی رسائی', 'View-only access') + '</span>');
 }
@@ -963,6 +965,83 @@ function viewOverview(){
   return h;
 }
 
+/* ---------- Scanning Desk hub: every suggestion for Proformas A, B, C, D in one place + case-match status ---------- */
+/* Nothing here writes anything: the four existing yellow "check and send" screens are opened from here, one after another. */
+function scMatchInfo(s){
+  var b = (s.docType === 'Opinion' && s.linkedTo) ? (SCANS.filter(function(x){ return x.id === s.linkedTo; })[0] || s) : s;
+  var k = scKey(b.caseType, b.caseNo, b.caseYear), k2 = scKey(b.scType, b.scNo, b.scYear);
+  if(k === '||' && k2 === '||') return {st:'nonum', b:b};
+  var hits = CASES.filter(function(c){ var ck = scKey(c.type, c.caseNo, c.year); return ck !== '||' && (ck === k || ck === k2); });
+  if(hits.length) return {st:'found', cases:hits, b:b};
+  var no = scNorm(b.caseNo || b.scNo), yr = String(b.caseYear || b.scYear || '').replace(/\D/g, '');
+  var sim = no ? CASES.filter(function(c){ return scNorm(c.caseNo) === no && String(c.year || '').replace(/\D/g, '') === yr; }) : [];
+  return sim.length ? {st:'similar', cases:sim, b:b} : {st:'none', b:b};
+}
+function scMatchList(){
+  var out = {found:0, similar:[], none:[], nonum:[]};
+  SCANS.forEach(function(s){
+    if(['Judgment', 'Order', 'Opinion', 'Signed scan'].indexOf(s.docType) < 0) return;
+    var m = scMatchInfo(s);
+    if(m.st === 'found') out.found++; else out[m.st].push({s:s, m:m});
+  });
+  return out;
+}
+function scHubCounts(){
+  var o = UI.officer, r = {A:0, Bfill:0, Bnew:0, ref:0, match:0, needOff:!o};
+  if(!canEdit()) return r;
+  if(o){
+    r.A = scanOpA(o, buildA(o)).filter(function(x){ return x.any; }).length;
+    var rows = buildB(o); r.Bfill = scanSugB(rows).length; r.Bnew = scanNewB(rows).length;
+  }
+  r.ref = scanRefSug().length;
+  var m = scMatchList(); r.match = m.similar.length + m.none.length + m.nonum.length;
+  return r;
+}
+function scHubTotal(c){ return c.A + c.Bfill + c.Bnew + c.ref; }
+function scHubChip(){
+  if(!canEdit() || !SCANS.length) return '';
+  var c = scHubCounts(), n = scHubTotal(c); if(!n && !c.match) return '';
+  return '<button type="button" class="cl-chip" style="cursor:pointer;background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="openScanHub()" title="Scanning Desk suggestions for A, B, C, D">📠 ' + bi('اسکین ڈیسک سے تجاویز', 'Scanning Desk suggestions') + ': <b>' + n + '</b></button>';
+}
+function scHubGo(w){ SCHUB = true; ({A:openScanOp, Bfill:openScanSug, Bnew:openScanNew, ref:openScanRef})[w](); }
+function scHubBack(){ var back = SCHUB; SCHUB = false; if(back) setTimeout(function(){ if(!$('mBg').classList.contains('show')) openScanHub(); }, 450); }
+function openScanHub(){
+  if(!guardEdit()) return;
+  var c = scHubCounts(), o = UI.officer;
+  var rows = [
+    ['A', 'Proforma A', bi('رائے جمع ہوئی / فٹ یا ناٹ فٹ کے خانے', 'Opinion submitted / Fit or Not fit cells'), c.A, 'A', true],
+    ['B', 'Proforma B', bi('اپیل کمیٹی کو جمع کرانے کی تاریخ اور وجوہات (موجود قطاروں میں)', 'Date of submission to AC and grounds (existing rows)'), c.Bfill, 'Bfill', true],
+    ['B', 'Proforma B', bi('نئی قطاریں (جو کیس انٹری میں نہیں)', 'New rows (not in Daily Case Entry)'), c.Bnew, 'Bnew', true],
+    ['C · D', 'Proforma C, D', bi('اپیل کمیٹی کے ریفرنس (FIR، دفعات، تھانہ، تاریخیں، رائے)', 'Appeal Committee references (FIR, sections, police station, dates, opinion)'), c.ref, 'ref', false]
+  ];
+  var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('اسکین ڈیسک اور روزانہ کیس انٹری سے ملنے والی تمام تجاویز یہاں ایک جگہ ہیں۔ ہر "دیکھیں" پر پیلی چیک اسکرین کھلتی ہے؛ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوتا، اور پہلے سے بھرا خانہ کبھی نہیں بدلتا۔ پروفارما کی شکل اور کالم وہی رہتے ہیں۔', 'All suggestions coming from Scanning Desk and Daily Case Entry are here in one place. Each "Review" opens the yellow check screen; nothing is saved until you press Send, and a cell that is already filled is never changed. The layout and columns of the proformas stay exactly the same.') + '</div>';
+  if(c.needOff) h += '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('Proforma A اور B کی تجاویز دیکھنے کے لیے پہلے اوپر سے پراسیکیوٹر منتخب کریں۔', 'To see the Proforma A and B suggestions, choose a prosecutor above first.') + '</div>';
+  else h += '<div class="pf-sub" style="margin:4px 0 8px">' + bi('پراسیکیوٹر', 'Prosecutor') + ': <b>' + esc(shortOff(o)) + '</b></div>';
+  h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">' + bi('پروفارما', 'Proforma') + '</th><th class="l">' + bi('کیا بھرا جائے گا', 'What would be filled') + '</th><th>' + bi('تجاویز', 'Suggestions') + '</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var dis = (r[5] && c.needOff) || !r[3];
+    h += '<tr><td><b>' + r[0] + '</b></td><td>' + r[2] + '</td><td class="n">' + (r[5] && c.needOff ? '—' : (r[3] || '0')) + '</td><td>' + (dis ? '<span class="pf-sub">' + (r[5] && c.needOff ? '' : '✓') + '</span>' : '<button class="cl-btn sm" style="background:#fff3b0;color:#28394A;border-color:#d9b800" onclick="scHubGo(\'' + r[4] + '\')">' + bi('دیکھیں', 'Review') + '</button>') + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  /* case-match status: which scans have / do not have a Daily Case Entry record */
+  var m = scMatchList(), bad = m.similar.length + m.none.length + m.nonum.length;
+  h += '<h4 style="margin:14px 0 6px;color:var(--navy)">' + bi('اسکین اور روزانہ کیس انٹری کا ملاپ', 'Scan ↔ Daily Case Entry match') + '</h4>' +
+    '<div class="pf-sub" style="margin-bottom:6px">✓ ' + bi('ملے ہوئے', 'matched') + ': <b>' + m.found + '</b> · ' + bi('مماثل نمبر', 'similar number') + ': <b>' + m.similar.length + '</b> · ' + bi('انٹری نہیں ملی', 'no entry found') + ': <b>' + m.none.length + '</b> · ' + bi('کیس نمبر پڑھا نہیں گیا', 'case number not read') + ': <b>' + m.nonum.length + '</b></div>';
+  if(!bad) h += '<div class="cl-note">' + bi('ہر اسکین کی روزانہ کیس انٹری میں موجودگی ملاپ کر چکی ہے۔', 'Every scan matches a Daily Case Entry record.') + '</div>';
+  else {
+    h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th class="l">' + bi('اسکین', 'Scan') + '</th><th>' + bi('حالت', 'Status') + '</th><th class="l">' + bi('مشورہ', 'Advice') + '</th></tr></thead><tbody>';
+    var one = function(x, label, adv){
+      var b = x.m.b, no = [b.caseType || b.scType, ((b.caseNo || b.scNo) || '') + ((b.caseYear || b.scYear) ? '/' + (b.caseYear || b.scYear) : '')].filter(Boolean).join(' ');
+      h += '<tr><td><b>' + esc(no || '—') + '</b><span class="pf-sub">' + esc(x.s.docType || '') + (b.title ? ' · ' + esc(b.title) : '') + '</span></td><td class="sm" style="background:#fff3b0;color:#28394A">' + label + '</td><td class="sm">' + adv + '</td></tr>';
+    };
+    m.similar.forEach(function(x){ one(x, bi('مماثل نمبر', 'Similar number'), bi('اسی نمبر اور سال کا کیس ایک اور قسم کے ساتھ ملا: ', 'Same number and year found with a different case type: ') + esc(x.m.cases.slice(0, 2).map(function(c){ return (c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || ''); }).join(', ')) + '. ' + bi('اسکین کی قسم/نمبر دیکھ لیں۔', 'Check the case type / number on the scan.')); });
+    m.none.forEach(function(x){ one(x, bi('انٹری نہیں ملی', 'No entry'), bi('روزانہ کیس انٹری میں اس کیس کی انٹری نہیں۔ نمبر درست ہو تو انٹری بنا لیں؛ ورنہ اسکین کا نمبر ٹھیک کریں۔', 'There is no Daily Case Entry record for this case. If the number is right, make the entry; otherwise correct the number on the scan.')); });
+    m.nonum.forEach(function(x){ one(x, bi('نمبر نہیں', 'No number'), bi('اسکین ڈیسک میں کیس نمبر بھر دیں تاکہ ملاپ ہو سکے۔', 'Enter the case number in Scanning Desk so it can be matched.')); });
+    h += '</tbody></table></div>';
+  }
+  openModal('Scanning Desk suggestions for A, B, C, D / اسکین ڈیسک سے تجاویز', h, [{label:'Close / بند کریں', cls:'ghost'}], true);
+}
+
 /* ---------- Scanning Desk suggestions for Proforma A: "Opinion submitted" and "Fit / Not fit" cells ---------- */
 var OPFIT = {'Fit for appeal / petition':'fit', 'Not fit':'notfit', 'Under consideration':'pend', 'Not required':'na'};
 function caseOpinion(c){
@@ -1013,7 +1092,7 @@ function openScanOp(){
   });
   h += '</tbody></table></div>';
   openModal('Opinion / fit from Scanning Desk / اسکین ڈیسک سے رائے — Check and send / چیک کریں اور بھیجیں', h, [
-    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Cancel / منسوخ', cls:'ghost', fn:scHubBack},
     {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
       var n = 0;
       Array.prototype.forEach.call(document.querySelectorAll('#scOpT tbody tr'), function(tr){
@@ -1022,6 +1101,7 @@ function openScanOp(){
         Array.prototype.forEach.call(tr.querySelectorAll('select[data-k]'), function(el){ if(el.value){ saveManual(o, it.row.k, el.getAttribute('data-k'), el.value); n++; } });
       });
       if(n) toast('✅ ' + bi(n + ' خانے اسکین ڈیسک سے بھرے گئے', n + ' cell(s) filled from Scanning Desk'), 'good');
+      scHubBack();
     }}], true);
 }
 
@@ -1191,7 +1271,7 @@ function openScanRef(){
   });
   h += '</tbody></table></div><div class="cl-note">' + bi('نیا ریفرنس: ' + nNew + ' · موجود میں اضافہ: ' + (items.length - nNew) + '۔ جس قطار میں "Nature" خالی ہو وہ پہلے سے ٹک نہیں، نوعیت چن کر ٹک کریں۔', 'New: ' + nNew + ' · additions to existing: ' + (items.length - nNew) + '. A row whose Nature is empty is not ticked: choose the nature, then tick it.') + '</div>';
   openModal('Reference suggestions / ریفرنس کی تجاویز — Check and send / چیک کریں اور بھیجیں', h, [
-    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Cancel / منسوخ', cls:'ghost', fn:scHubBack},
     {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
       var jobs = [], bad = 0;
       Array.prototype.forEach.call(document.querySelectorAll('#scRefT tbody tr'), function(tr){
@@ -1209,6 +1289,7 @@ function openScanRef(){
         else { d.inspectionId = UI.ins; d.fromScan = true; d.scanId = it.c.scanId; d.scanKey = it.c.scanKey; if(!d.source) d.source = 'sc'; saveRefPatch(db.collection('inspectionRefs').doc().id, d, 'New reference from Scanning Desk / اسکین ڈیسک سے نیا ریفرنس'); }
       });
       toast('✅ ' + bi(jobs.length + ' ریفرنس اسکین ڈیسک سے محفوظ ہوئے', jobs.length + ' reference(s) saved from Scanning Desk'), 'good');
+      scHubBack();
     }}], true);
 }
 function saveRefPatch(id, d, label){ track(label, 'inspectionRefs', id, function(r){ return r.set(stamp(d), {merge:true}); }).catch(dbErr); }
@@ -1256,7 +1337,7 @@ function openScanSug(){
   });
   h += '</tbody></table></div>';
   openModal('Scanning Desk suggestions / اسکین ڈیسک سے تجاویز — Check and send / چیک کریں اور بھیجیں', h, [
-    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Cancel / منسوخ', cls:'ghost', fn:scHubBack},
     {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
       var patches = {};
       Array.prototype.forEach.call(document.querySelectorAll('#scSugT tbody tr'), function(tr){
@@ -1267,6 +1348,7 @@ function openScanSug(){
       });
       var n = 0; Object.keys(patches).forEach(function(id){ var p = patches[id]; if(Object.keys(p).length > 1){ saveB(id, p); n++; } });
       if(n) toast('✅ ' + bi('اسکین ڈیسک سے ' + n + ' قطاریں بھری گئیں', n + ' row(s) filled from Scanning Desk'), 'good');
+      scHubBack();
     }}], true);
 }
 
@@ -1302,7 +1384,7 @@ function openScanNew(){
   });
   h += '</tbody></table></div>';
   openModal('Add rows from Scanning Desk / اسکین ڈیسک سے قطاریں — Check and send / چیک کریں اور بھیجیں', h, [
-    {label:'Cancel / منسوخ', cls:'ghost'},
+    {label:'Cancel / منسوخ', cls:'ghost', fn:scHubBack},
     {label:'Send selected / منتخب بھیجیں', cls:'gold', fh:true, fn:function(){
       var n = 0;
       Array.prototype.forEach.call(document.querySelectorAll('#scNewT tbody tr'), function(tr){
@@ -1313,6 +1395,7 @@ function openScanNew(){
         saveB(UI.ins + '__s' + s.id, p); n++;
       });
       if(n) toast('✅ ' + bi(n + ' نئی قطاریں اسکین ڈیسک سے شامل ہوئیں', n + ' row(s) added from Scanning Desk'), 'good');
+      scHubBack();
     }}], true);
 }
 

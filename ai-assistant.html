@@ -711,7 +711,7 @@ html,body{overflow-x:hidden;}
 
   /* ================= Microphone: speak the question, it is typed into the box; nothing is sent until you press Send ================= */
   var MIC = {rec:null, on:false, base:'', empty:0, gotText:false, fatal:false, ai:null, busy:false, job:0, ctrl:null};
-  var MIC_MAX_SEC = 90;
+  var MIC_MAX_SEC = 90, MIC_WAIT_MS = 90000;
   function micSR(){ return window.SpeechRecognition || window.webkitSpeechRecognition || null; }
   function micMsg(kind, ur, en){ var el = document.getElementById('micStatus'); if(!el) return; el.className = 'mic-status' + (kind ? ' ' + kind : ''); el.textContent = ur || en ? (isUrdu ? ur : en) : ''; }
   function micMode(){ var l = document.getElementById('micLang'); return l ? l.value : 'ur-PK'; }
@@ -833,11 +833,12 @@ html,body{overflow-x:hidden;}
       return auth.currentUser.getIdToken().then(function(token){
         if(job !== MIC.job) return null;
         var ctrl = new AbortController(); MIC.ctrl = ctrl;
+        var tmo = setTimeout(function(){ if(job === MIC.job){ MIC.timedOut = true; try{ ctrl.abort(); }catch(e){} } }, MIC_WAIT_MS);
         return fetch(AI_URL, {
           method:'POST', signal:ctrl.signal,
           headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + token},
           body: JSON.stringify({mode:'transcribe', transcribe:true, question:'Transcribe this recording.', file:{name:'speech.wav', mimeType:'audio/wav', data:wav.b64}})
-        }).then(function(res){ return res.json().catch(function(){ return {}; }).then(function(d){ return {ok:res.ok, data:d}; }); });
+        }).then(function(res){ clearTimeout(tmo); return res.json().catch(function(){ return {}; }).then(function(d){ return {ok:res.ok, data:d}; }); }, function(e){ clearTimeout(tmo); throw e; });
       });
     }).then(function(r){
       if(!r || job !== MIC.job) return;
@@ -864,6 +865,7 @@ html,body{overflow-x:hidden;}
     }).catch(function(err){
       if(job !== MIC.job) return;
       MIC.ctrl = null;
+      if(MIC.timedOut){ MIC.timedOut = false; micErr('آواز لکھنے میں بہت دیر لگ گئی۔ دوبارہ کوشش کریں، یا چھوٹی بات بول کر دیکھیں۔', 'Writing down the speech took too long. Please try again, perhaps with a shorter recording.'); return; }
       micErr('آواز لکھنے کے لیے رابطہ نہیں ہو سکا۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', 'Could not reach the voice service. Check the internet and try again.');
     });
   }

@@ -13,9 +13,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <!-- Sends the super-admin security code by email (see "Super Admin Email OTP Gate" below) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -233,12 +232,83 @@ html,body{overflow-x:hidden;}
   .topbar2 .user-chip .btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; border-radius:20px; }
   .topbar2 .user-chip .btn:hover{ background:rgba(255,255,255,.24); }
   .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); flex:none; }
+
+  /* ================= NEW SECURE LOGIN DESIGN (12 Oct 2026) ================= */
+  .auth-wrap{ padding:32px 16px 56px; }
+  .auth-shell{ max-width:940px; margin:0 auto; display:grid; grid-template-columns:minmax(0,5fr) minmax(0,6fr); background:var(--surface); border:1px solid var(--border); border-radius:18px; box-shadow:0 18px 50px rgba(21,58,91,.16); overflow:hidden; min-height:540px; }
+  .auth-brand{ position:relative; background:linear-gradient(165deg,var(--navy) 0%,var(--navy-dark) 100%); color:#fff; padding:36px 32px; display:flex; flex-direction:column; gap:18px; overflow:hidden; }
+  .auth-brand::before{ content:""; position:absolute; inset-inline-end:-90px; top:-90px; width:260px; height:260px; border-radius:50%; background:rgba(255,255,255,.07); }
+  .auth-brand::after{ content:""; position:absolute; inset-inline-start:-70px; bottom:-70px; width:210px; height:210px; border-radius:50%; background:rgba(255,255,255,.05); }
+  .auth-brand > *{ position:relative; z-index:1; }
+  .auth-brand-top{ display:flex; align-items:center; gap:14px; }
+  .auth-seal{ width:64px; height:64px; padding:6px; border-radius:50%; background:#fff; object-fit:contain; flex:none; box-shadow:0 2px 8px rgba(0,0,0,.25); }
+  .auth-org{ font-size:15px; font-weight:700; line-height:1.9; font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  .auth-org-en{ font-size:12px; opacity:.85; letter-spacing:.2px; }
+  .auth-brand .auth-brand-title{ color:#fff; font-size:26px; line-height:1.25; margin-top:6px; }
+  .auth-tagline{ margin:0; font-size:14px; opacity:.9; line-height:1.7; }
+  .auth-points{ list-style:none; margin:6px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
+  .auth-points li{ display:flex; gap:12px; align-items:flex-start; font-size:13.5px; line-height:1.6; }
+  .auth-points .ap-ic{ flex:none; width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; }
+  .auth-points svg{ width:18px; height:18px; stroke:#fff; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .auth-brand-foot{ margin-top:auto; font-size:12px; opacity:.75; }
+  .auth-main{ padding:40px 38px; display:flex; flex-direction:column; justify-content:center; min-width:0; }
+  .auth-card h1{ font-size:26px; margin:0 0 4px; }
+  .auth-sub{ margin:0 0 6px; color:var(--muted); font-size:14px; }
+  .auth-card label{ margin-top:16px; }
+  .auth-card input[type=email],.auth-card input[type=password],.auth-card input[type=text]{ padding:12px 14px; font-size:15px; direction:ltr; text-align:left; border-radius:8px; }
+  .auth-card .pw-wrap{ direction:ltr; }
+  .auth-card .pw-wrap input{ padding-right:46px; padding-inline-end:46px; }
+  .auth-card .pw-toggle{ right:6px; left:auto; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:8px; }
+  .auth-card .pw-toggle svg{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .auth-card .pw-toggle:hover{ background:var(--navy-tint); }
+  .auth-card .btn.block{ padding:13px 16px; font-size:15px; border-radius:8px; margin-top:20px; }
+  .auth-card .btn .spinner{ margin-inline-end:6px; }
+  .link-btn{ background:none; border:none; padding:6px 0; color:var(--navy); font-weight:700; font-size:13px; cursor:pointer; text-decoration:underline; font-family:inherit; }
+  .link-btn:disabled{ opacity:.55; cursor:not-allowed; text-decoration:none; }
+  .auth-links{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+  .auth-foot-note{ margin-top:22px; padding-top:16px; border-top:1px dashed var(--border-strong); font-size:12.5px; color:var(--muted); line-height:1.7; }
+  .field-hint.warn{ color:var(--warn); font-weight:700; }
+  .msg-box{ border-radius:8px; padding:10px 12px; font-size:13px; margin-top:14px; border:1px solid; line-height:1.7; }
+  .msg-box.error{ background:var(--danger-tint); color:var(--danger); border-color:var(--danger); }
+  .msg-box.ok{ background:var(--success-tint); color:var(--success); border-color:var(--success); }
+  .msg-box.info{ background:var(--navy-tint); color:var(--navy-dark); border-color:var(--navy); }
+  [data-theme="night"] .msg-box.info,[data-theme="night"] .msg-box.error,[data-theme="night"] .msg-box.ok{ color:var(--text); }
+  .msg-box .m-ur{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; font-size:14px; line-height:2; text-align:right; }
+  .msg-box .m-en{ font-size:12px; opacity:.92; text-align:left; }
+  body.lang-ur .auth-card{ direction:rtl; text-align:right; }
+  body.lang-ur .auth-points li{ direction:rtl; }
+  .create-box{ border:1px solid var(--border); background:var(--navy-tint); border-radius:10px; padding:16px; margin:12px 0 18px; }
+  .create-box h3{ font-size:16px; margin:0 0 2px; }
+  .req-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 14px; }
+  .req-grid .req-wide{ grid-column:1 / -1; }
+  .req-grid label{ margin-top:12px; }
+  .auth-card textarea,.create-box textarea{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; font-size:14px; font-family:inherit; background:var(--surface); color:var(--text); resize:vertical; direction:ltr; }
+  .create-box input[type=text],.create-box input[type=email],.create-box select{ padding:10px 12px; }
+  .req-hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+  .req-item{ border:1px solid var(--border); background:var(--surface); border-radius:10px; padding:12px 14px; margin-top:10px; }
+  .req-item.done{ opacity:.7; }
+  .req-item dl{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px 14px; margin:0 0 10px; }
+  .req-item dt{ font-size:11.5px; color:var(--muted); margin:0; }
+  .req-item dd{ margin:0; font-size:13.5px; overflow-wrap:anywhere; }
+  .req-item .req-actions{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .req-item .req-actions select{ width:auto; min-width:130px; padding:6px 10px; }
+  @media (max-width:760px){
+    .auth-wrap{ padding:14px 12px 40px; }
+    .auth-shell{ grid-template-columns:minmax(0,1fr); min-height:0; border-radius:14px; }
+    .auth-brand{ padding:22px 20px; gap:10px; }
+    .auth-points,.auth-brand-foot{ display:none; }
+    .auth-brand .auth-brand-title{ font-size:21px; }
+    .auth-main{ padding:26px 20px 28px; }
+    .req-grid{ grid-template-columns:minmax(0,1fr); }
+    .req-item dl{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
 <script src="/pwa.js" defer></script>
+<script src="/auth-guard.js" defer></script>
 </head>
 <body>
 
@@ -265,63 +335,91 @@ html,body{overflow-x:hidden;}
   </div>
 </div>
 
-<!-- ===================== AUTH SCREENS ===================== -->
-<div id="authScreen" class="center-wrap">
-  <div class="card" id="loginCard">
-    <h2 data-i18n="signInTitle">Sign In</h2>
-    <p class="field-hint" data-i18n="signInSub">Camp Office Digital Portal</p>
-    <label data-i18n="lblEmail">Email</label>
-    <input type="email" id="li_email" autocomplete="off">
-    <label data-i18n="lblPassword">Password</label>
-    <div class="pw-wrap">
-      <input type="password" id="li_password" autocomplete="off">
-      <button type="button" class="pw-toggle" id="li_pwToggle" aria-label="Show/Hide Password">👁</button>
-    </div>
-    <div class="toggle-row" style="margin-top:-6px;">
-      <a id="forgotPasswordLink" data-i18n="forgotPassword" style="cursor:pointer;">Forgot password?</a>
-    </div>
-    <div id="li_error" class="error-box hidden"></div>
-    <button class="btn primary block" id="li_submit"><span data-i18n="btnSignIn">Sign In</span></button>
-    <div class="toggle-row">
-      <span data-i18n="noAccount">Don't have an account?</span>
-      <a id="showSignup" data-i18n="createOne">Create one</a>
-    </div>
-  </div>
+<!-- ===================== AUTH SCREENS (new secure design, 12 Oct 2026) ===================== -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-shell">
+    <aside class="auth-brand">
+      <div class="auth-brand-top">
+        <img class="auth-seal" src="logo-punjab-govt.png" alt="Government of Punjab">
+        <div>
+          <div class="auth-org" lang="ur">دفتر پراسیکیوٹر جنرل پنجاب</div>
+          <div class="auth-org-en">Camp Office · Prosecutor General Punjab</div>
+        </div>
+      </div>
+      <h2 class="auth-brand-title" data-i18n="brandTitle">Camp Office Digital Portal</h2>
+      <p class="auth-tagline" data-i18n="authTagline">Secure access for authorised office staff only.</p>
+      <ul class="auth-points">
+        <li><span class="ap-ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span data-i18n="authPt1">Only approved accounts can open the system.</span></li>
+        <li><span class="ap-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span data-i18n="authPt2">Automatic sign-out after 30 minutes of inactivity.</span></li>
+        <li><span class="ap-ic"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span data-i18n="authPt3">Accounts are created only by the office administrator.</span></li>
+      </ul>
+      <div class="auth-brand-foot">Supreme Court of Pakistan, Islamabad</div>
+    </aside>
 
-  <div class="card hidden" id="signupCard">
-    <h2 data-i18n="signUpTitle">Create Account</h2>
-    <p class="field-hint" data-i18n="signUpSub">New accounts start as Viewer and wait for administrator approval before they can access anything.</p>
-    <label data-i18n="lblEmail">Email</label>
-    <input type="email" id="su_email" autocomplete="username">
-    <label data-i18n="lblPassword">Password</label>
-    <input type="password" id="su_password" autocomplete="new-password">
-    <div class="field-hint" data-i18n="pwHint">At least 8 characters, including a letter and a number.</div>
-    <label data-i18n="lblPassword2">Confirm Password</label>
-    <input type="password" id="su_password2" autocomplete="new-password">
-    <div id="su_error" class="error-box hidden"></div>
-    <button class="btn primary block" id="su_submit"><span data-i18n="btnSignUp">Create Account</span></button>
-    <div class="toggle-row">
-      <span data-i18n="haveAccount">Already have an account?</span>
-      <a id="showLogin" data-i18n="signInLink">Sign in</a>
-    </div>
-  </div>
+    <section class="auth-main">
+      <div class="auth-card" id="loginCard">
+        <h1 data-i18n="signInTitle">Sign In</h1>
+        <p class="auth-sub" data-i18n="signInSub2">Enter the email and password given to you.</p>
+        <div id="li_notice" class="msg-box hidden" role="status"></div>
+        <form id="loginForm" novalidate>
+          <label for="li_email" data-i18n="lblEmail">Email</label>
+          <input type="email" id="li_email" autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+          <label for="li_password" data-i18n="lblPassword">Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="li_password" autocomplete="current-password">
+            <button type="button" class="pw-toggle" id="li_pwToggle" aria-label="Show password" aria-pressed="false"></button>
+          </div>
+          <div id="li_caps" class="field-hint warn hidden" data-i18n="capsOn">Caps Lock is on.</div>
+          <div id="li_error" class="msg-box hidden" role="alert"></div>
+          <button class="btn primary block" id="li_submit" type="submit"><span class="spinner hidden" id="li_spin"></span><span id="li_submitText" data-i18n="btnSignIn">Sign In</span></button>
+        </form>
+        <div class="auth-links">
+          <button type="button" class="link-btn" id="forgotPasswordLink" data-i18n="forgotPassword">Forgot password?</button>
+        </div>
+        <div class="auth-foot-note">
+          <span data-i18n="noSignupNote">Don't have an account? Request one below. It is created only after the Super Admin approves.</span>
+          <button type="button" class="link-btn" id="openRequestBtn" data-i18n="openRequest">Request an account</button>
+        </div>
+      </div>
 
-  <div class="card hidden" id="authLoadErrorCard">
-    <div class="icon">⚠️</div>
-    <h2 data-i18n="authLoadErrorTitle">Could Not Load Your Profile</h2>
-    <p data-i18n="authLoadErrorBody">You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.</p>
-    <p class="field-hint" id="authLoadErrorDetail"></p>
-    <button class="btn primary block" id="authLoadRetryBtn"><span data-i18n="btnRetry">Retry</span></button>
-    <button class="btn block" id="authLoadSignOutBtn"><span data-i18n="btnSignOut">Sign Out</span></button>
+      <div class="auth-card hidden" id="requestCard">
+        <h1>اکاؤنٹ کی درخواست / Account Request</h1>
+        <p class="auth-sub">اپنی تفصیل بھریں۔ سپر ایڈمن منظور کرے گا تو اکاؤنٹ بنے گا اور آپ کو ای میل ملے گی۔ <span dir="ltr">Fill in your details. Your account is created only after the Super Admin approves.</span></p>
+        <form id="requestForm" novalidate autocomplete="off">
+          <div class="req-grid">
+            <div><label for="rq_name">نام / Full name *</label><input type="text" id="rq_name" maxlength="80" autocomplete="off"></div>
+            <div><label for="rq_father">ولدیت / Son of *</label><input type="text" id="rq_father" maxlength="80" autocomplete="off"></div>
+            <div><label for="rq_designation">عہدہ / Designation *</label><input type="text" id="rq_designation" maxlength="80" autocomplete="off"></div>
+            <div><label for="rq_age">عمر / Age *</label><input type="text" id="rq_age" inputmode="numeric" maxlength="2" autocomplete="off"></div>
+            <div><label for="rq_email">ای میل / Email *</label><input type="email" id="rq_email" maxlength="120" inputmode="email" autocapitalize="none" spellcheck="false" autocomplete="off"></div>
+            <div><label for="rq_mobile">رابطہ نمبر / Contact no. *</label><input type="text" id="rq_mobile" inputmode="tel" maxlength="16" placeholder="03XX-XXXXXXX" autocomplete="off"></div>
+            <div class="req-wide"><label for="rq_section">شعبہ / Section</label><input type="text" id="rq_section" maxlength="80" autocomplete="off"></div>
+            <div class="req-wide"><label for="rq_remarks">مزید معلومات / Remarks</label><textarea id="rq_remarks" maxlength="300" rows="3"></textarea></div>
+          </div>
+          <div class="req-hp" aria-hidden="true"><label for="rq_website">Website</label><input type="text" id="rq_website" tabindex="-1" autocomplete="off"></div>
+          <div id="rq_msg" class="msg-box hidden" role="alert"></div>
+          <button class="btn primary block" id="rq_submit" type="submit"><span class="spinner hidden" id="rq_spin"></span><span id="rq_submitText">درخواست بھیجیں / Send request</span></button>
+        </form>
+        <div class="auth-links"><button type="button" class="link-btn" id="backToLoginBtn2">← لاگ اِن پر واپس / Back to sign in</button></div>
+      </div>
+
+      <div class="auth-card hidden" id="authLoadErrorCard">
+        <h1 data-i18n="authLoadErrorTitle">Could Not Load Your Profile</h1>
+        <p class="auth-sub" data-i18n="authLoadErrorBody">You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.</p>
+        <p class="field-hint" id="authLoadErrorDetail"></p>
+        <button class="btn primary block" id="authLoadRetryBtn"><span data-i18n="btnRetry">Retry</span></button>
+        <button class="btn block" id="authLoadSignOutBtn"><span data-i18n="btnSignOut">Sign Out</span></button>
+      </div>
+    </section>
   </div>
 </div>
 
-<!-- ===================== PENDING APPROVAL SCREEN ===================== -->
+<!-- ===================== STATUS SCREENS ===================== -->
 <div id="pendingScreen" class="center-wrap hidden">
   <div class="card pending-screen">
     <div class="icon">⏳</div>
     <h2 data-i18n="pendingTitle">Waiting for Approval</h2>
-    <p data-i18n="pendingBody">Your account has been created but an Administrator has not approved it yet. Please contact your office Administrator, or check back later.</p>
+    <p data-i18n="pendingBody">Your account is waiting for approval by an administrator. Please contact your office administrator.</p>
     <p class="field-hint" id="pendingEmailLine"></p>
     <button class="btn block" id="pendingSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
   </div>
@@ -333,6 +431,16 @@ html,body{overflow-x:hidden;}
     <h2 data-i18n="rejectedTitle">Access Not Approved</h2>
     <p data-i18n="rejectedBody">An Administrator has not approved this account for access. Please contact your office Administrator.</p>
     <button class="btn block" id="rejectedSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+</div>
+
+<div id="noProfileScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🪪</div>
+    <h2 data-i18n="noProfileTitle">Account Not Set Up</h2>
+    <p data-i18n="noProfileBody">You are signed in, but this account has no profile in the office records, so nothing can be opened. Please contact your office administrator.</p>
+    <p class="field-hint" id="noProfileEmailLine"></p>
+    <button class="btn block" id="noProfileSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
   </div>
 </div>
 
@@ -496,7 +604,29 @@ html,body{overflow-x:hidden;}
             <h2 data-i18n="adminControls">Admin Controls — Users &amp; Approvals</h2>
             <span class="count-chip" id="userCountChip"></span>
           </div>
-          <p class="field-hint" data-i18n="adminHint">Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.</p>
+          <p class="field-hint" data-i18n="adminHint">Approve accounts, change roles, suspend or reset passwords here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.</p>
+          <div id="adminStatusMsg" class="msg-box hidden" role="status"></div>
+          <div class="create-box hidden" id="requestsBox">
+            <div class="userbar"><h3>اکاؤنٹ کی درخواستیں / Account requests</h3><span class="count-chip" id="reqCountChip"></span></div>
+            <p class="field-hint">منظور کرنے سے پہلے کردار چنیں۔ منظوری پر اکاؤنٹ بنتا ہے اور شخص کو پاس ورڈ بنانے کا لنک ای میل ہوتا ہے۔ <span dir="ltr">Pick a role, then approve: the account is created and the person gets an email to set a password.</span></p>
+            <div id="requestsList"></div>
+          </div>
+          <div class="create-box hidden" id="createUserBox">
+            <h3 data-i18n="createUserTitle">Create a new account</h3>
+            <p class="field-hint" data-i18n="createUserHint">Only the Super Admin can do this. The person receives an email to set their own password. You never see or type their password.</p>
+            <div class="req-grid">
+              <div><label for="cu_name">نام / Full name *</label><input type="text" id="cu_name" maxlength="80" autocomplete="off"></div>
+              <div><label for="cu_father">ولدیت / Son of *</label><input type="text" id="cu_father" maxlength="80" autocomplete="off"></div>
+              <div><label for="cu_designation">عہدہ / Designation *</label><input type="text" id="cu_designation" maxlength="80" autocomplete="off"></div>
+              <div><label for="cu_age">عمر / Age *</label><input type="text" id="cu_age" inputmode="numeric" maxlength="2" autocomplete="off"></div>
+              <div><label for="cu_email" data-i18n="lblEmail">Email</label><input type="email" id="cu_email" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+              <div><label for="cu_mobile">رابطہ نمبر / Contact no. *</label><input type="text" id="cu_mobile" inputmode="tel" maxlength="16" placeholder="03XX-XXXXXXX" autocomplete="off"></div>
+              <div><label for="cu_section">شعبہ / Section</label><input type="text" id="cu_section" maxlength="80" autocomplete="off"></div>
+              <div><label for="cu_role" data-i18n="thRole">Role</label><select id="cu_role"></select></div>
+            </div>
+            <div style="margin-top:14px"><button type="button" class="btn primary" id="cu_submit"><span id="cu_submitText" data-i18n="btnCreateUser">Create account</span></button></div>
+            <div id="cu_msg" class="msg-box hidden" role="status"></div>
+          </div>
           <table>
             <thead><tr>
               <th data-i18n="thEmail">Email</th>
@@ -532,21 +662,7 @@ var db = firebase.firestore();
 /* ---------- Security: auto-clear LOCAL when browser/tab closes ---------- */
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-/* ---------- Security: auto sign-out after inactivity (shared office computer) ---------- */
-(function(){
-  var IDLE_LIMIT_MS = 10 * 60 * 1000; // 10 منٹ — چاہیں تو یہ نمبر بدل سکتے ہیں
-  var idleTimer = null;
-  function resetIdleTimer(){
-    if(idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(function(){
-      if(auth.currentUser){ auth.signOut(); }
-    }, IDLE_LIMIT_MS);
-  }
-  ["mousemove","mousedown","keydown","touchstart","scroll","click"].forEach(function(evt){
-    document.addEventListener(evt, resetIdleTimer, true);
-  });
-  resetIdleTimer();
-})();
+/* Auto sign-out after 30 minutes of inactivity is handled by /auth-guard.js (shared by every page). */
 
 var I18N = {
   en: {
@@ -612,6 +728,41 @@ var I18N = {
     notifTitle:"اطلاعات", notifMarkRead:"سب پڑھ لیا"
   }
 };
+/* ---- New secure-login texts (12 Oct 2026) ---- */
+Object.assign(I18N.en, {
+  signInSub2:"Enter the email and password given to you.",
+  authTagline:"Secure access for authorised office staff only.",
+  authPt1:"Only approved accounts can open the system.",
+  authPt2:"Automatic sign-out after 30 minutes of inactivity.",
+  authPt3:"Accounts are created only after Super Admin approval.",
+  noSignupNote:"Don't have an account? Send a request. The account is created only after the Super Admin approves.", openRequest:"Request an account",
+  capsOn:"Caps Lock is on.",
+  btnSigningIn:"Signing in…",
+  pendingBody:"Your account is waiting for approval by an administrator. Please contact your office administrator.",
+  noProfileTitle:"Account Not Set Up",
+  noProfileBody:"You are signed in, but this account has no profile in the office records, so nothing can be opened. Please contact your office administrator.",
+  adminHint:"Change roles, suspend or reset passwords here. Only Admin and Super Admin can see this panel. Only the Super Admin approves account requests or creates accounts.",
+  createUserTitle:"Create a new account",
+  createUserHint:"Only the Super Admin can do this. The person gets an email to set their own password; you never see or type it.",
+  btnCreateUser:"Create account", btnCreating:"Creating…"
+});
+Object.assign(I18N.ur, {
+  signInSub2:"آپ کو دیا گیا ای میل اور پاس ورڈ درج کریں۔",
+  authTagline:"صرف مجاز دفتری عملے کے لیے محفوظ رسائی۔",
+  authPt1:"صرف منظور شدہ اکاؤنٹ ہی سسٹم کھول سکتے ہیں۔",
+  authPt2:"30 منٹ تک کوئی کام نہ ہو تو خود بخود لاگ آؤٹ۔",
+  authPt3:"اکاؤنٹ صرف سپر ایڈمن کی منظوری سے بنتا ہے۔",
+  noSignupNote:"اکاؤنٹ نہیں ہے؟ درخواست بھیجیں۔ سپر ایڈمن منظور کرے گا تو ہی اکاؤنٹ بنے گا۔", openRequest:"اکاؤنٹ کی درخواست دیں",
+  capsOn:"Caps Lock آن ہے۔",
+  btnSigningIn:"لاگ اِن ہو رہا ہے…",
+  pendingBody:"آپ کا اکاؤنٹ ایڈمن کی منظوری کا منتظر ہے۔ براہ کرم اپنے دفتر کے ایڈمن سے رابطہ کریں۔",
+  noProfileTitle:"اکاؤنٹ تیار نہیں",
+  noProfileBody:"آپ لاگ اِن ہیں مگر اس اکاؤنٹ کا دفتری ریکارڈ میں پروفائل موجود نہیں، اس لیے کچھ نہیں کھل سکتا۔ براہ کرم اپنے دفتر کے ایڈمن سے رابطہ کریں۔",
+  adminHint:"یہاں کردار بدلیں، اکاؤنٹ معطل کریں یا پاس ورڈ ری سیٹ بھیجیں۔ Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ اکاؤنٹ کی درخواست منظور کرنا یا اکاؤنٹ بنانا صرف Super Admin کا کام ہے۔",
+  createUserTitle:"نیا اکاؤنٹ بنائیں",
+  createUserHint:"یہ صرف سپر ایڈمن کر سکتا ہے۔ شخص کو ای میل آئے گی جس سے وہ اپنا پاس ورڈ خود بنائے گا؛ آپ پاس ورڈ نہ دیکھتے ہیں نہ لکھتے ہیں۔",
+  btnCreateUser:"اکاؤنٹ بنائیں", btnCreating:"بن رہا ہے…"
+});
 var ROLE_LABELS = {
   en:{ super_admin:"Super Admin", admin:"Admin", data_entry:"Data Entry", viewer:"Viewer" },
   ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن", data_entry:"ڈیٹا انٹری", viewer:"ناظر" }
@@ -674,94 +825,141 @@ function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ 
 
 /* ---------- Screen switching ---------- */
 function showOnly(id){
-  ["authScreen","pendingScreen","rejectedScreen","mainApp"].forEach(function(s){
+  ["authScreen","pendingScreen","rejectedScreen","noProfileScreen","mainApp"].forEach(function(s){
     document.getElementById(s).classList.toggle("hidden", s!==id);
   });
   document.body.classList.toggle("in-app", id==="mainApp");
 }
 
-/* ---------- Login / Signup form toggle ---------- */
-document.getElementById("showSignup").addEventListener("click", function(){
-  document.getElementById("loginCard").classList.add("hidden");
-  document.getElementById("signupCard").classList.remove("hidden");
-});
-document.getElementById("showLogin").addEventListener("click", function(){
-  document.getElementById("signupCard").classList.add("hidden");
-  document.getElementById("loginCard").classList.remove("hidden");
-});
+/* ---------- Bilingual message boxes (Urdu + English together) ---------- */
+function showMsg(el, ur, en, kind){
+  el.className = "msg-box " + (kind || "error");
+  el.innerHTML = '<div class="m-ur" lang="ur" dir="rtl">' + esc(ur) + '</div><div class="m-en" lang="en" dir="ltr">' + esc(en) + '</div>';
+}
+function hideMsg(el){ el.className = "msg-box hidden"; el.innerHTML = ""; }
+var WRONG_CRED = ["ای میل یا پاس ورڈ درست نہیں۔ دوبارہ کوشش کریں۔", "Email or password is incorrect. Please try again."];
+var AUTH_MSG = {
+  "auth/invalid-credential": WRONG_CRED,
+  "auth/invalid-login-credentials": WRONG_CRED,
+  "auth/wrong-password": WRONG_CRED,
+  "auth/user-not-found": WRONG_CRED,
+  "auth/invalid-email": ["ای میل کا پتہ درست شکل میں لکھیں۔", "Please enter a valid email address."],
+  "auth/user-disabled": ["یہ اکاؤنٹ بند کر دیا گیا ہے۔ اپنے ایڈمن سے رابطہ کریں۔", "This account has been disabled. Please contact your administrator."],
+  "auth/too-many-requests": ["بہت زیادہ کوششیں ہو گئیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "Too many attempts. Please wait a while and try again."],
+  "auth/network-request-failed": ["انٹرنیٹ کنکشن میں مسئلہ ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔", "Network problem. Check your internet connection and try again."],
+  "auth/email-already-in-use": ["یہ ای میل پہلے سے رجسٹرڈ ہے۔ فہرست میں تلاش کریں، یا اگر اس کا پروفائل حذف ہو چکا ہے تو Super Admin سے رابطہ کریں۔", "This email is already registered. Look for it in the list, or contact the Super Admin if its profile was deleted."],
+  "permission-denied": ["آپ کو یہ کام کرنے کی اجازت نہیں۔", "You do not have permission to do this."]
+};
+function authMsg(err){
+  var c = err && err.code;
+  return AUTH_MSG[c] || ["کچھ خرابی ہو گئی۔ دوبارہ کوشش کریں۔", "Something went wrong. Please try again."];
+}
 
 /* ---------- Show/Hide Password ---------- */
-document.getElementById("li_pwToggle").addEventListener("click", function(){
-  var pwInput = document.getElementById("li_password");
-  var showing = pwInput.type === "text";
-  pwInput.type = showing ? "password" : "text";
-  this.textContent = showing ? "👁" : "🙈";
-});
+var EYE_ON  = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYE_OFF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A16.6 16.6 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+(function(){
+  var btn = document.getElementById("li_pwToggle");
+  var pw = document.getElementById("li_password");
+  btn.innerHTML = EYE_ON;
+  btn.addEventListener("click", function(){
+    var showing = pw.type === "text";
+    pw.type = showing ? "password" : "text";
+    btn.innerHTML = showing ? EYE_ON : EYE_OFF;
+    btn.setAttribute("aria-pressed", showing ? "false" : "true");
+    btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+  });
+  var caps = document.getElementById("li_caps");
+  function capsCheck(ev){
+    var on = false;
+    try{ on = !!(ev.getModifierState && ev.getModifierState("CapsLock")); }catch(e){}
+    caps.classList.toggle("hidden", !on);
+  }
+  pw.addEventListener("keydown", capsCheck);
+  pw.addEventListener("keyup", capsCheck);
+  pw.addEventListener("blur", function(){ caps.classList.add("hidden"); });
+})();
 
-/* ---------- Sign In ---------- */
-document.getElementById("li_submit").addEventListener("click", function(){
+/* ---------- Sign In (with a short pause after 5 wrong tries) ---------- */
+var LOGIN_BUSY = false;
+var LOCK_KEY = "campLoginLock", LOCK_MAX_FAILS = 5, LOCK_SECS = 60;
+var lockTimer = null;
+function readLock(){ try{ return JSON.parse(localStorage.getItem(LOCK_KEY) || "{}") || {}; }catch(e){ return {}; } }
+function writeLock(o){ try{ localStorage.setItem(LOCK_KEY, JSON.stringify(o)); }catch(e){} }
+function lockLeft(){ var l = readLock(); return l.until ? Math.ceil((l.until - Date.now())/1000) : 0; }
+function registerFail(){
+  var l = readLock(); l.n = (l.n || 0) + 1;
+  if(l.n >= LOCK_MAX_FAILS){ l.until = Date.now() + LOCK_SECS*1000; l.n = 0; }
+  writeLock(l);
+}
+function clearFails(){ try{ localStorage.removeItem(LOCK_KEY); }catch(e){} }
+function setBusy(b){
+  LOGIN_BUSY = b;
+  var btn = document.getElementById("li_submit");
+  btn.disabled = b || lockLeft() > 0;
+  document.getElementById("li_spin").classList.toggle("hidden", !b);
+  var t = document.getElementById("li_submitText");
+  t.textContent = (I18N[currentLang] || I18N.en)[b ? "btnSigningIn" : "btnSignIn"];
+  t.setAttribute("data-i18n", b ? "btnSigningIn" : "btnSignIn");
+}
+function tickLock(){
+  var left = lockLeft();
+  var errEl = document.getElementById("li_error");
+  if(left > 0){
+    document.getElementById("li_submit").disabled = true;
+    showMsg(errEl, "بہت زیادہ غلط کوششیں۔ " + left + " سیکنڈ بعد دوبارہ کوشش کریں۔", "Too many wrong attempts. Try again in " + left + " seconds.");
+    if(!lockTimer){ lockTimer = setInterval(tickLock, 1000); }
+  } else {
+    if(lockTimer){ clearInterval(lockTimer); lockTimer = null; hideMsg(errEl); }
+    document.getElementById("li_submit").disabled = LOGIN_BUSY;
+  }
+}
+document.getElementById("loginForm").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  if(LOGIN_BUSY || lockLeft() > 0) return;
   var email = document.getElementById("li_email").value.trim();
   var pw = document.getElementById("li_password").value;
   var errEl = document.getElementById("li_error");
-  errEl.classList.add("hidden");
-  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
-  auth.signInWithEmailAndPassword(email, pw).catch(function(err){
-    errEl.textContent = err.message; errEl.classList.remove("hidden");
+  hideMsg(errEl);
+  hideMsg(document.getElementById("li_notice"));
+  if(!email || !pw){ showMsg(errEl, "ای میل اور پاس ورڈ دونوں لکھیں۔", "Please enter both your email and password."); return; }
+  setBusy(true);
+  auth.signInWithEmailAndPassword(email, pw).then(function(){
+    clearFails();
+    document.getElementById("li_password").value = "";
+  }).catch(function(err){
+    setBusy(false);
+    var wrong = err && /invalid-credential|invalid-login|wrong-password|user-not-found/.test(err.code || "");
+    if(wrong){ registerFail(); }
+    if(lockLeft() > 0){ tickLock(); return; }
+    var m = authMsg(err);
+    showMsg(errEl, m[0], m[1]);
   });
 });
+tickLock();
 
-/* ---------- Forgot password ---------- */
+/* ---------- Forgot password (same answer whether or not the email exists) ---------- */
+var resetCooldownUntil = 0;
 document.getElementById("forgotPasswordLink").addEventListener("click", function(){
   var email = document.getElementById("li_email").value.trim();
   var errEl = document.getElementById("li_error");
-  var t = I18N[currentLang] || I18N.en;
-  if(!email){
-    errEl.style.cssText = "";
-    errEl.textContent = t.resetNeedsEmail;
-    errEl.classList.remove("hidden");
-    return;
-  }
-  auth.sendPasswordResetEmail(email).then(function(){
-    errEl.style.cssText = "background:#e6f4ea; color:#1a7a1a; border-color:#1a7a1a;";
-    errEl.textContent = t.resetSentPrefix + email + t.resetSentSuffix;
-    errEl.classList.remove("hidden");
-  }).catch(function(err){
-    errEl.style.cssText = "";
-    errEl.textContent = err.message;
-    errEl.classList.remove("hidden");
-  });
-});
-
-/* ---------- Sign Up ---------- */
-document.getElementById("su_submit").addEventListener("click", function(){
-  var email = document.getElementById("su_email").value.trim();
-  var pw = document.getElementById("su_password").value;
-  var pw2 = document.getElementById("su_password2").value;
-  var errEl = document.getElementById("su_error");
-  errEl.classList.add("hidden");
-  if(!email || !pw){ errEl.textContent = "Please enter email and password."; errEl.classList.remove("hidden"); return; }
-  if(pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)){
-    errEl.textContent = "Password should be at least 8 characters and include both a letter and a number.";
-    errEl.classList.remove("hidden"); return;
-  }
-  if(pw !== pw2){ errEl.textContent = "Passwords do not match."; errEl.classList.remove("hidden"); return; }
-  auth.createUserWithEmailAndPassword(email, pw).then(function(cred){
-    return db.collection("users").doc(cred.user.uid).set({
-      email: email,
-      role: "guest",
-      roleV2: "viewer",
-      approvalStatus: "pending",
-      isActive: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      createdVia: "login-rbac-prototype"
-    }, { merge: true });
-  }).catch(function(err){
-    errEl.textContent = err.message; errEl.classList.remove("hidden");
+  var noteEl = document.getElementById("li_notice");
+  hideMsg(errEl); hideMsg(noteEl);
+  if(!email){ showMsg(errEl, "پہلے اوپر اپنا ای میل لکھیں، پھر \"پاس ورڈ بھول گئے؟\" دبائیں۔", "Please enter your email above first, then click \"Forgot password?\" again."); return; }
+  if(Date.now() < resetCooldownUntil){ showMsg(noteEl, "لنک ابھی بھیجا جا چکا ہے۔ کچھ دیر انتظار کریں۔", "A link was just sent. Please wait a little.", "info"); return; }
+  var done = function(){
+    resetCooldownUntil = Date.now() + 30000;
+    showMsg(noteEl, "اگر یہ ای میل ہمارے ریکارڈ میں ہے تو پاس ورڈ بدلنے کا لنک بھیج دیا گیا ہے۔ ان باکس اور اسپیم فولڈر دیکھیں۔", "If this email is registered, a password-reset link has been sent. Check your inbox and spam folder.", "ok");
+  };
+  auth.sendPasswordResetEmail(email).then(done).catch(function(err){
+    if(err && err.code === "auth/user-not-found"){ done(); return; }
+    var m = authMsg(err);
+    showMsg(errEl, m[0], m[1]);
   });
 });
 
 /* ---------- Sign out ---------- */
-["pendingSignOut","rejectedSignOut","mainSignOut"].forEach(function(id){
+["pendingSignOut","rejectedSignOut","noProfileSignOut","mainSignOut"].forEach(function(id){
   var el = document.getElementById(id);
   if(el) el.addEventListener("click", function(){ auth.signOut(); });
 });
@@ -770,162 +968,87 @@ document.getElementById("su_submit").addEventListener("click", function(){
 var CURRENT_DOC = null;
 var CURRENT_UID = null;
 var NOTIF_POLL_TIMER = null;
+var PROFILE_UNSUB = null;
 
-/* ===== Super Admin Email OTP Gate =====
-   Extra check specifically for the super_admin role: after the normal
-   Firebase sign-in (even one from a saved/autofilled password), a
-   super_admin must also enter a one-time code that this page emails to
-   their own registered address -- the same idea as a "forgot password"
-   email, used here as a second login factor. Sent via EmailJS
-   (https://www.emailjs.com) since this static site has no server of its
-   own. The code itself is never stored -- only its SHA-256 hash (salted
-   with the uid) is written to Firestore, and it expires in 10 minutes. */
-var SPIN_EMAILJS_SERVICE_ID  = "service_mw99li8";
-var SPIN_EMAILJS_TEMPLATE_ID = "template_8bijngj";
-var SPIN_EMAILJS_PUBLIC_KEY  = "HplyUka2cF879lLkA";
-var SPIN_OTP_TTL_MS = 10*60*1000;
-var SPIN_RESEND_COOLDOWN_MS = 60*1000;
-function spinHash(uid, code){
-  var bytes = new TextEncoder().encode("campoffice-otp-v1:" + uid + ":" + code);
-  return crypto.subtle.digest("SHA-256", bytes).then(function(buf){
-    return Array.prototype.map.call(new Uint8Array(buf), function(b){ return b.toString(16).padStart(2,"0"); }).join("");
-  });
-}
-function spinVerifiedKey(uid){ return "spinVerified_" + uid; }
-/* Verification persists in localStorage (shared across every tab/system on this origin,
-   and across browser restarts) instead of sessionStorage (which was scoped to a single
-   tab and made every other open system/tab ask for a fresh OTP even right after a
-   successful one). It is cleared explicitly on sign-out below, so signing out and back
-   in still asks for a fresh code. (3 Oct 2026, per user request) Verification ALSO now
-   expires on its own after SPIN_VERIFIED_TTL_MS (4 hours), even while staying signed in
-   -- previously it lasted forever until sign-out, however many days that took. Now a
-   super_admin is asked for one fresh email code every 4 hours, not just once per
-   "stay signed in" session. */
-var SPIN_VERIFIED_TTL_MS = 4*60*60*1000;
-function spinIsVerified(uid){
-  try{
-    var raw = localStorage.getItem(spinVerifiedKey(uid));
-    if(!raw) return false;
-    var ts = parseInt(raw, 10);
-    if(!ts || isNaN(ts)) return false;
-    return (Date.now() - ts) < SPIN_VERIFIED_TTL_MS;
-  }catch(e){ return false; }
-}
-function spinMarkVerified(uid){ try{ localStorage.setItem(spinVerifiedKey(uid), String(Date.now())); }catch(e){} }
-function spinClearVerified(uid){ try{ if(uid) localStorage.removeItem(spinVerifiedKey(uid)); }catch(e){} }
-function spinGenerateCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
-function spinSendCode(uid, email){
-  var code = spinGenerateCode();
-  return spinHash(uid, code).then(function(hash){
-    return db.collection("users").doc(uid).update({ otpHash: hash, otpExpiresAt: Date.now() + SPIN_OTP_TTL_MS });
-  }).then(function(){
-    return emailjs.send(SPIN_EMAILJS_SERVICE_ID, SPIN_EMAILJS_TEMPLATE_ID, { to_email: email, passcode: code, time: "10" }, SPIN_EMAILJS_PUBLIC_KEY);
-  });
-}
-var SPIN_GATE_OPEN_FOR = null;
-function spinGate(uid, data, proceedFn){
-  proceedFn(); return;
-  if(!data || data.roleV2 !== "super_admin"){ proceedFn(); return; }
-  if(spinIsVerified(uid)){ proceedFn(); return; }
-  if(SPIN_GATE_OPEN_FOR === uid){ return; } /* already open for this uid -- ignore re-entrant snapshot fires */
-  var ov = document.getElementById("spinGateOverlay");
-  if(!ov || typeof emailjs === "undefined"){
-    alert(currentLang === "ur"
-      ? "سیکیورٹی چیک اس وقت دستیاب نہیں۔ آپ کی حفاظت کے لیے رسائی روک دی گئی ہے — براہ کرم سسٹم ایڈمن سے رابطہ کریں یا بعد میں دوبارہ کوشش کریں۔"
-      : "Security check unavailable right now. For your protection, access has been blocked -- please contact your system administrator or try again later.");
-    auth.signOut();
+/* Message shown on the login screen after an automatic sign-out */
+function showLoginNotice(){
+  var el = document.getElementById("li_notice");
+  if(window.__loginNotice){
+    var n = window.__loginNotice; window.__loginNotice = null;
+    showMsg(el, n.ur, n.en, "info");
     return;
-  } /* gate/EmailJS missing -- fail CLOSED (block access) instead of failing open */
-  SPIN_GATE_OPEN_FOR = uid;
-  var input1 = document.getElementById("spinGateInput1");
-  var err = document.getElementById("spinGateError");
-  var btn = document.getElementById("spinGateBtn");
-  var resendBtn = document.getElementById("spinGateResend");
-  var signOutLink = document.getElementById("spinGateSignOut");
-  var email = data.email || "";
-  var masked = email.replace(/^(.{2}).+(@.+)$/, "$1***$2");
-  err.textContent = ""; input1.value = "";
-  document.getElementById("spinGateTitle").textContent = "سیکورٹی کوڈ درج کریں";
-  document.getElementById("spinGateSub").textContent = "ایک 6 ہندسوں کا کوڈ آپ کی ای میل (" + (masked || email) + ") پر بھیجا جا رہا ہے۔ وہ کوڈ یہاں درج کریں۔";
-  ov.style.display = "flex";
-  var cooldownTimer = null;
-  function startResendCooldown(){
-    var resendAt = Date.now() + SPIN_RESEND_COOLDOWN_MS;
-    resendBtn.disabled = true;
-    if(cooldownTimer) clearInterval(cooldownTimer);
-    cooldownTimer = setInterval(function(){
-      var left = Math.ceil((resendAt - Date.now())/1000);
-      if(left <= 0){ resendBtn.textContent = "کوڈ دوبارہ بھیجیں"; resendBtn.disabled = false; clearInterval(cooldownTimer); }
-      else{ resendBtn.textContent = "دوبارہ بھیجیں (" + left + ")"; }
-    }, 500);
   }
-  function sendNow(){
-    btn.disabled = true; err.textContent = "";
-    spinSendCode(uid, email).then(function(){
-      btn.disabled = false;
-      startResendCooldown();
-    }).catch(function(e){
-      btn.disabled = false;
-      err.textContent = "کوڈ بھیجنے میں خرابی: " + (e && e.message ? e.message : e);
-    });
+  var t = 0;
+  try{ t = parseInt(localStorage.getItem("campIdleLogout"), 10) || 0; localStorage.removeItem("campIdleLogout"); }catch(e){}
+  if(t && Date.now() - t < 24*3600*1000){
+    showMsg(el, "کافی دیر کوئی کام نہ ہونے کی وجہ سے حفاظت کے لیے آپ کو خود بخود لاگ آؤٹ کر دیا گیا۔ دوبارہ لاگ اِن کریں۔", "You were signed out automatically after a period of inactivity. Please sign in again.", "info");
+  } else {
+    hideMsg(el);
   }
-  sendNow();
-  input1.focus();
-  function finish(){ SPIN_GATE_OPEN_FOR = null; if(cooldownTimer) clearInterval(cooldownTimer); spinMarkVerified(uid); ov.style.display = "none"; proceedFn(); }
-  function submit(){
-    var code = input1.value.trim();
-    err.textContent = "";
-    if(!/^[0-9]{6}$/.test(code)){ err.textContent = "کوڈ 6 ہندسوں پر مشتمل ہونا چاہیے۔"; return; }
-    btn.disabled = true;
-    db.collection("users").doc(uid).get().then(function(snap){
-      var d = snap.exists ? snap.data() : {};
-      if(!d.otpHash || !d.otpExpiresAt || Date.now() > d.otpExpiresAt){ return "EXPIRED"; }
-      return spinHash(uid, code).then(function(hash){ return hash === d.otpHash ? "OK" : "WRONG"; });
-    }).then(function(result){
-      btn.disabled = false;
-      if(result === "OK"){ finish(); }
-      else if(result === "EXPIRED"){ err.textContent = "کوڈ کی مدت ختم ہو گئی — نیا کوڈ منگوائیں۔"; }
-      else{ err.textContent = "غلط کوڈ، دوبارہ کوشش کریں۔"; input1.value = ""; input1.focus(); }
-    }).catch(function(e){ btn.disabled = false; err.textContent = "تصدیق میں خرابی: " + e.message; });
-  }
-  btn.onclick = submit;
-  input1.onkeydown = function(ev){ if(ev.key === "Enter") submit(); };
-  resendBtn.onclick = function(ev){ ev.preventDefault(); sendNow(); };
-  signOutLink.onclick = function(ev){ ev.preventDefault(); SPIN_GATE_OPEN_FOR = null; if(cooldownTimer) clearInterval(cooldownTimer); ov.style.display = "none"; auth.signOut(); };
+}
+
+/* If an administrator suspends / rejects / deletes this account while it is open, sign it out at once */
+function watchProfile(uid){
+  if(PROFILE_UNSUB){ try{ PROFILE_UNSUB(); }catch(e){} PROFILE_UNSUB = null; }
+  PROFILE_UNSUB = db.collection("users").doc(uid).onSnapshot(function(s){
+    if(!s.exists && s.metadata && s.metadata.fromCache) return;
+    var d = s.exists ? s.data() : null;
+    var ok = d && d.approvalStatus === "approved" && d.isActive !== false;
+    if(!ok){
+      window.__loginNotice = { ur:"آپ کا اکاؤنٹ اب فعال نہیں رہا۔ براہ کرم اپنے ایڈمن سے رابطہ کریں۔", en:"Your account is no longer active. Please contact your administrator." };
+      auth.signOut();
+    }
+  }, function(){ /* ignore listener errors (offline etc.) */ });
 }
 
 function showAuthLoadError(err){
   console.error(err);
   showOnly("authScreen");
   document.getElementById("loginCard").classList.add("hidden");
-  document.getElementById("signupCard").classList.add("hidden");
   document.getElementById("authLoadErrorCard").classList.remove("hidden");
   var detailEl = document.getElementById("authLoadErrorDetail");
   var code = (err && err.code) ? err.code : (err === "timeout" ? "timeout" : "unknown");
-  var msg = (err && err.message) ? err.message : "";
-  detailEl.textContent = "(" + code + (msg ? " — " + msg : "") + ")";
+  detailEl.textContent = "(" + code + ")";
+}
+
+function enterApp(user, data){
+  showOnly("mainApp");
+  document.getElementById("curEmail2").textContent = user.email;
+  document.getElementById("welcomeName").textContent = user.email.split("@")[0];
+  document.getElementById("userAvatar").textContent = user.email.charAt(0).toUpperCase();
+  var roleBadge = document.getElementById("curRoleBadge2");
+  var role = data.roleV2 || "viewer";
+  roleBadge.textContent = (ROLE_LABELS[currentLang][role] || role);
+  roleBadge.className = "badge " + role;
+  var isAdminUp = (role === "admin" || role === "super_admin");
+  document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
+  if(isAdminUp){ renderAdminPanel(); }
+  loadDashboardData();
+  loadNotifications();
+  if(NOTIF_POLL_TIMER) clearInterval(NOTIF_POLL_TIMER);
+  NOTIF_POLL_TIMER = setInterval(loadNotifications, 120000);
+  startClock();
+  watchProfile(user.uid);
 }
 
 function loadUserProfileAndRoute(user){
   document.getElementById("authLoadErrorCard").classList.add("hidden");
   document.getElementById("loginCard").classList.remove("hidden");
   CURRENT_UID = user.uid;
+  try{ localStorage.removeItem("campIdleLogout"); }catch(e){}
   var settled = false;
   var watchdog = setTimeout(function(){
     if(!settled){ settled = true; showAuthLoadError("timeout"); }
   }, 15000);
   db.collection("users").doc(user.uid).get().then(function(doc){
-    if(!doc.exists){
-      return db.collection("users").doc(user.uid).set({
-        email: user.email, role: "guest", roleV2: "viewer", approvalStatus: "pending", isActive: true,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdVia: "login-rbac-prototype-autocreate"
-      }, { merge: true }).then(function(){
-        return db.collection("users").doc(user.uid).get();
-      });
-    }
-    return doc;
-  }).then(function(doc){
     if(settled) return; settled = true; clearTimeout(watchdog);
+    if(!doc.exists){
+      /* No profile = not a person the office created. Nothing is opened and nothing is auto-created. */
+      CURRENT_DOC = null;
+      document.getElementById("noProfileEmailLine").textContent = user.email;
+      showOnly("noProfileScreen");
+      return;
+    }
     var data = doc.data() || {};
     CURRENT_DOC = data;
     if(data.isActive === false || data.approvalStatus === "rejected"){
@@ -934,24 +1057,7 @@ function loadUserProfileAndRoute(user){
       document.getElementById("pendingEmailLine").textContent = user.email;
       showOnly("pendingScreen");
     } else {
-      spinGate(user.uid, data, function(){
-        showOnly("mainApp");
-        document.getElementById("curEmail2").textContent = user.email;
-        document.getElementById("welcomeName").textContent = user.email.split("@")[0];
-        document.getElementById("userAvatar").textContent = user.email.charAt(0).toUpperCase();
-        var roleBadge = document.getElementById("curRoleBadge2");
-        var role = data.roleV2 || "viewer";
-        roleBadge.textContent = (ROLE_LABELS[currentLang][role] || role);
-        roleBadge.className = "badge " + role;
-        var isAdminUp = (role === "admin" || role === "super_admin");
-        document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
-        if(isAdminUp){ renderAdminPanel(); }
-        loadDashboardData();
-        loadNotifications();
-        if(NOTIF_POLL_TIMER) clearInterval(NOTIF_POLL_TIMER);
-        NOTIF_POLL_TIMER = setInterval(loadNotifications, 120000);
-        startClock();
-      });
+      enterApp(user, data);
     }
   }).catch(function(err){
     if(settled) return; settled = true; clearTimeout(watchdog);
@@ -961,22 +1067,235 @@ function loadUserProfileAndRoute(user){
 
 document.getElementById("authLoadRetryBtn").addEventListener("click", function(){
   if(auth.currentUser){ loadUserProfileAndRoute(auth.currentUser); }
-  else { showOnly("authScreen"); document.getElementById("authLoadErrorCard").classList.add("hidden"); }
+  else { showOnly("authScreen"); document.getElementById("authLoadErrorCard").classList.add("hidden"); document.getElementById("loginCard").classList.remove("hidden"); }
 });
 document.getElementById("authLoadSignOutBtn").addEventListener("click", function(){ auth.signOut(); });
 
 auth.onAuthStateChanged(function(user){
   if(!user){
-    spinClearVerified(CURRENT_UID);
+    if(PROFILE_UNSUB){ try{ PROFILE_UNSUB(); }catch(e){} PROFILE_UNSUB = null; }
     CURRENT_DOC = null; CURRENT_UID = null;
     if(NOTIF_POLL_TIMER){ clearInterval(NOTIF_POLL_TIMER); NOTIF_POLL_TIMER = null; }
     document.getElementById("authLoadErrorCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
+    document.getElementById("li_password").value = "";
+    setBusy(false);
+    showLoginNotice();
     showOnly("authScreen");
     return;
   }
   loadUserProfileAndRoute(user);
 });
+
+/* ============================================================================
+   ACCOUNTS: request form (anyone) + approval and direct creation (Super Admin only)
+   ----------------------------------------------------------------------------
+   A request is only a record in "accountRequests" (named by the email, so one per email).
+   No login is made until the Super Admin approves. No password is ever shown or typed:
+   a random one is set and the person gets a "set your password" email.
+   ============================================================================ */
+function randomPassword(){
+  var chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  var a = new Uint32Array(24);
+  crypto.getRandomValues(a);
+  var s = "";
+  for(var i = 0; i < a.length; i++){ s += chars.charAt(a[i] % chars.length); }
+  return s + "aA1!";
+}
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/* Reads + checks the person fields from a form; prefix is "rq_" or "cu_". Returns {p} or {err:[ur,en]} */
+function readPerson(prefix){
+  function v(id){ var el = document.getElementById(prefix + id); return el ? el.value.replace(/\s+/g, " ").trim() : ""; }
+  var p = { name:v("name"), fatherName:v("father"), designation:v("designation"), email:v("email").toLowerCase(), section:v("section") };
+  var rem = document.getElementById(prefix + "remarks"); p.remarks = rem ? rem.value.trim() : "";
+  if(p.name.length < 2 || p.fatherName.length < 2 || p.designation.length < 2){ return {err:["نام، ولدیت اور عہدہ لازمی لکھیں۔","Name, son of and designation are required."]}; }
+  var ageTxt = v("age").replace(/[۰-۹]/g, function(d){ return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); });
+  var age = parseInt(ageTxt, 10);
+  if(!/^[0-9]{2}$/.test(ageTxt) || age < 18 || age > 70){ return {err:["عمر 18 سے 70 کے درمیان دو ہندسوں میں لکھیں۔","Enter an age between 18 and 70."]}; }
+  p.age = age;
+  if(!EMAIL_RE.test(p.email) || p.email.length > 120){ return {err:["ای میل کا پتہ درست شکل میں لکھیں۔","Please enter a valid email address."]}; }
+  var m = v("mobile").replace(/[۰-۹]/g, function(d){ return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); }).replace(/[\s\-()]/g, "");
+  if(/^\+92/.test(m)) m = "0" + m.slice(3); else if(/^0092/.test(m)) m = "0" + m.slice(4);
+  if(!/^03[0-9]{9}$/.test(m)){ return {err:["رابطہ نمبر درست لکھیں، مثلاً 03001234567۔","Enter a valid mobile number, e.g. 03001234567."]}; }
+  p.mobile = m;
+  return {p:p};
+}
+
+/* ---------- 1) Request form (login screen, no sign-in needed) ---------- */
+function showRequestForm(on){
+  document.getElementById("loginCard").classList.toggle("hidden", on);
+  document.getElementById("requestCard").classList.toggle("hidden", !on);
+  if(on){ var f = document.getElementById("rq_name"); if(f) f.focus(); }
+}
+document.getElementById("openRequestBtn").addEventListener("click", function(){ showRequestForm(true); });
+document.getElementById("backToLoginBtn2").addEventListener("click", function(){ showRequestForm(false); });
+if(/(^|[#&?])request(=1)?($|&)/.test(location.hash.replace(/^#/, "") || location.search.replace(/^\?/, ""))){ showRequestForm(true); }
+var RQ_BUSY = false;
+document.getElementById("requestForm").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  if(RQ_BUSY) return;
+  var msg = document.getElementById("rq_msg");
+  hideMsg(msg);
+  if(document.getElementById("rq_website").value){ /* hidden trap field: only bots fill it */
+    showMsg(msg, "آپ کی درخواست موصول ہو گئی۔", "Your request has been received.", "ok"); return;
+  }
+  var last = 0; try{ last = parseInt(localStorage.getItem("campReqSent"), 10) || 0; }catch(e){}
+  if(Date.now() - last < 10*60*1000){ showMsg(msg, "آپ ابھی درخواست بھیج چکے ہیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "You just sent a request. Please wait a few minutes.", "info"); return; }
+  var r = readPerson("rq_");
+  if(r.err){ showMsg(msg, r.err[0], r.err[1]); return; }
+  var p = r.p;
+  var doc = { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, status:"pending", createdAt:firebase.firestore.FieldValue.serverTimestamp() };
+  if(p.section) doc.section = p.section.slice(0,80);
+  if(p.remarks) doc.remarks = p.remarks.slice(0,300);
+  RQ_BUSY = true;
+  document.getElementById("rq_submit").disabled = true;
+  document.getElementById("rq_spin").classList.remove("hidden");
+  var done = function(){
+    RQ_BUSY = false; document.getElementById("rq_submit").disabled = false; document.getElementById("rq_spin").classList.add("hidden");
+  };
+  var thanks = function(){
+    try{ localStorage.setItem("campReqSent", String(Date.now())); }catch(e){}
+    done();
+    document.getElementById("requestForm").reset();
+    showMsg(msg, "آپ کی درخواست سپر ایڈمن کو بھیج دی گئی ہے۔ منظوری ہونے پر آپ کو " + p.email + " پر ای میل ملے گی جس سے آپ اپنا پاس ورڈ بنائیں گے۔", "Your request was sent to the Super Admin. When it is approved you will get an email at " + p.email + " to set your password.", "ok");
+  };
+  db.collection("accountRequests").doc(p.email).set(doc).then(thanks).catch(function(err){
+    /* "permission-denied" here means a request for this email already exists: say the same thing, reveal nothing */
+    if(err && err.code === "permission-denied"){ thanks(); return; }
+    done();
+    showMsg(msg, "درخواست نہیں بھیجی جا سکی۔ انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔", "The request could not be sent. Check your internet connection and try again.");
+  });
+});
+
+/* ---------- 2) Make the account (used by direct create AND by approving a request) ---------- */
+function createAccountWithProfile(p, role, extra){
+  var app2 = firebase.initializeApp(firebaseConfig, "creator" + Date.now() + Math.floor(Math.random()*1000));
+  var a2 = app2.auth();
+  var created = false, newUser = null;
+  function cleanup(){ try{ a2.signOut(); }catch(e){} try{ app2.delete(); }catch(e){} }
+  return a2.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){
+    return a2.createUserWithEmailAndPassword(p.email, randomPassword());
+  }).then(function(cred){
+    newUser = cred.user;
+    var prof = {
+      email:p.email, name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, mobile:p.mobile,
+      role:"guest", roleV2:role, approvalStatus:"approved", isActive:true,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(), createdBy:CURRENT_UID, createdVia:(extra && extra.via) || "admin-created"
+    };
+    if(p.section) prof.section = p.section;
+    return db.collection("users").doc(cred.user.uid).set(prof).then(function(){ created = true; }, function(e){
+      /* profile could not be saved: remove the half-made login so nothing stray is left behind */
+      return newUser.delete().then(function(){ throw e; }, function(){ throw e; });
+    });
+  }).then(function(){
+    return a2.sendPasswordResetEmail(p.email).then(function(){ return {mailed:true}; }, function(){ return {mailed:false}; });
+  }).then(function(res){ cleanup(); return res; }, function(err){ cleanup(); err.accountCreated = created; throw err; });
+}
+function fillRoleSelect(sel, keep){
+  if(!sel || !CURRENT_DOC) return;
+  var list = ["viewer","data_entry","admin"];
+  if(CURRENT_DOC.roleV2 === "super_admin") list.push("super_admin");
+  keep = keep || sel.value || "data_entry";
+  sel.innerHTML = list.map(function(r){ return '<option value="'+r+'"'+(r===keep?" selected":"")+'>'+ROLE_LABELS[currentLang][r]+'</option>'; }).join("");
+}
+function fillCreateRoles(){ fillRoleSelect(document.getElementById("cu_role")); }
+
+/* ---------- 3) Super Admin: direct create ---------- */
+document.getElementById("cu_submit").addEventListener("click", function(){
+  var btn = this, msg = document.getElementById("cu_msg"), txt = document.getElementById("cu_submitText");
+  hideMsg(msg);
+  if(!CURRENT_DOC || CURRENT_DOC.roleV2 !== "super_admin"){ showMsg(msg, "اکاؤنٹ صرف سپر ایڈمن بنا سکتا ہے۔", "Only the Super Admin can create accounts."); return; }
+  var r = readPerson("cu_");
+  if(r.err){ showMsg(msg, r.err[0], r.err[1]); return; }
+  var role = document.getElementById("cu_role").value;
+  btn.disabled = true; txt.textContent = I18N[currentLang].btnCreating;
+  createAccountWithProfile(r.p, role, {via:"admin-created"}).then(function(res){
+    if(res.mailed){
+      showMsg(msg, "اکاؤنٹ بن گیا۔ " + r.p.email + " کو پاس ورڈ بنانے کا لنک ای میل کر دیا گیا ہے۔", "Account created. A link to set a password was emailed to " + r.p.email + ".", "ok");
+    } else {
+      showMsg(msg, "اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی۔ فہرست میں اس کے سامنے \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔", "The account was created but the email could not be sent. Use \"Send password reset\" next to it in the list.", "error");
+    }
+    ["name","father","designation","age","email","mobile","section"].forEach(function(f){ document.getElementById("cu_"+f).value = ""; });
+    renderAdminPanel();
+  }).catch(function(err){
+    var m = authMsg(err);
+    showMsg(msg, m[0], m[1]);
+  }).then(function(){ btn.disabled = false; txt.textContent = I18N[currentLang].btnCreateUser; });
+});
+
+/* ---------- 4) Super Admin: list of requests, approve / reject / delete ---------- */
+function fmtReqDate(ts){
+  try{ var d = ts && ts.toDate ? ts.toDate() : null; if(!d) return "—"; return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2); }catch(e){ return "—"; }
+}
+function renderRequests(){
+  var box = document.getElementById("requestsBox"), list = document.getElementById("requestsList");
+  if(!box || !CURRENT_DOC) return;
+  var isSA = CURRENT_DOC.roleV2 === "super_admin";
+  box.classList.toggle("hidden", !isSA);
+  document.getElementById("createUserBox").classList.toggle("hidden", !isSA);
+  if(!isSA) return;
+  db.collection("accountRequests").get().then(function(qs){
+    var rows = []; qs.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });
+    var pending = rows.filter(function(r){ return r.status === "pending"; });
+    rows.sort(function(a,b){ return (a.status==="pending"?0:1) - (b.status==="pending"?0:1) || ((b.createdAt&&b.createdAt.seconds)||0) - ((a.createdAt&&a.createdAt.seconds)||0); });
+    document.getElementById("reqCountChip").textContent = pending.length + " نئی / pending";
+    setReqBadge(pending.length);
+    if(!rows.length){ list.innerHTML = "<div class='field-hint'>ابھی کوئی درخواست نہیں۔ / No requests yet.</div>"; return; }
+    list.innerHTML = rows.map(function(r){
+      var isP = r.status === "pending";
+      var dl = function(k,v){ return "<div><dt>"+k+"</dt><dd>"+esc(v==null||v===""?"—":v)+"</dd></div>"; };
+      return "<div class='req-item"+(isP?"":" done")+"' data-id='"+esc(r.id)+"'><dl>"+
+        dl("نام / Name", r.name)+dl("ولدیت / Son of", r.fatherName)+dl("عہدہ / Designation", r.designation)+
+        dl("عمر / Age", r.age)+dl("ای میل / Email", r.email)+dl("رابطہ / Contact", r.mobile)+
+        dl("شعبہ / Section", r.section)+dl("تاریخ / Date", fmtReqDate(r.createdAt))+dl("حیثیت / Status", r.status)+
+        (r.remarks ? "<div style='grid-column:1/-1'><dt>مزید معلومات / Remarks</dt><dd>"+esc(r.remarks)+"</dd></div>" : "")+
+        "</dl><div class='req-actions'>"+
+        (isP ? "<select data-req-role></select><button class='btn small primary' data-req-approve>منظور کریں / Approve</button><button class='btn small danger' data-req-reject>مسترد / Reject</button>" : "")+
+        "<button class='btn small' data-req-delete>حذف / Delete</button></div><div class='msg-box hidden' data-req-msg></div></div>";
+    }).join("");
+    list.querySelectorAll(".req-item").forEach(function(item){
+      var id = item.getAttribute("data-id");
+      var r = rows.filter(function(x){ return x.id === id; })[0];
+      var sel = item.querySelector("[data-req-role]"); if(sel) fillRoleSelect(sel, "data_entry");
+      var msg = item.querySelector("[data-req-msg]");
+      var ap = item.querySelector("[data-req-approve]");
+      if(ap) ap.addEventListener("click", function(){
+        ap.disabled = true; hideMsg(msg);
+        var p = { name:r.name, fatherName:r.fatherName, designation:r.designation, age:r.age, email:r.email, mobile:r.mobile, section:r.section || "" };
+        createAccountWithProfile(p, sel.value, {via:"approved-request"}).then(function(res){
+          return db.collection("accountRequests").doc(id).update({ status:"approved", approvedBy:CURRENT_UID, approvedAt:firebase.firestore.FieldValue.serverTimestamp() }).then(function(){ return res; });
+        }).then(function(res){
+          renderRequests(); renderAdminPanel();
+          var m = document.getElementById("adminStatusMsg");
+          showMsg(m, res.mailed ? ("اکاؤنٹ بن گیا۔ " + p.email + " کو پاس ورڈ بنانے کا لنک بھیج دیا گیا ہے۔") : ("اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی؛ فہرست میں \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔"),
+            res.mailed ? ("Account created for " + p.email + ". A password link was emailed.") : ("Account created but the email failed; use \"Send password reset\" in the list."), res.mailed ? "ok" : "error");
+        }).catch(function(err){
+          ap.disabled = false;
+          var m = authMsg(err);
+          showMsg(msg, m[0], m[1]);
+        });
+      });
+      var rj = item.querySelector("[data-req-reject]");
+      if(rj) rj.addEventListener("click", function(){
+        db.collection("accountRequests").doc(id).update({ status:"rejected", rejectedBy:CURRENT_UID }).then(renderRequests).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
+      });
+      item.querySelector("[data-req-delete]").addEventListener("click", function(){
+        var ask = currentLang === "ur" ? ("یہ درخواست حذف کریں؟\n" + r.email + "\n(حذف کرنے سے یہ ای میل دوبارہ درخواست بھیج سکے گی۔)") : ("Delete this request?\n" + r.email + "\n(This lets the same email send a request again.)");
+        if(!confirm(ask)) return;
+        db.collection("accountRequests").doc(id).delete().then(renderRequests).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
+      });
+    });
+  }).catch(function(err){
+    list.innerHTML = "<div class='field-hint'>درخواستیں لوڈ نہیں ہو سکیں۔ / Could not load requests.</div>";
+  });
+}
+function setReqBadge(n){
+  var btn = document.getElementById("openAdminPanelBtn");
+  if(!btn) return;
+  var b = document.getElementById("reqBadge");
+  if(!b){ b = document.createElement("span"); b.id = "reqBadge"; b.style.cssText = "margin-inline-start:6px;background:#b3261e;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;"; btn.appendChild(b); }
+  b.textContent = n; b.style.display = n ? "inline-block" : "none";
+}
 
 document.getElementById("openAdminPanelBtn").addEventListener("click", function(){
   var panel = document.getElementById("adminPanel");
@@ -990,6 +1309,8 @@ function renderAdminPanel(){
   if(!body || !CURRENT_DOC) return;
   var myRole = CURRENT_DOC.roleV2 || "viewer";
   if(myRole !== "admin" && myRole !== "super_admin") return;
+  fillCreateRoles();
+  renderRequests();
   db.collection("users").get().then(function(qs){
     var rows = [];
     qs.forEach(function(d){ rows.push(Object.assign({uid:d.id}, d.data())); });
@@ -1015,6 +1336,7 @@ function renderAdminPanel(){
           (status==="pending" ? "<button class='btn small danger' data-reject-uid='"+u.uid+"'>"+(currentLang==='ur'?'مسترد کریں':'Reject')+"</button>" : "")+
           (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
             (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
+          (!isMe ? "<button class='btn small' data-reset-email='"+esc(u.email)+"'>"+(currentLang==='ur'?'پاس ورڈ ری سیٹ بھیجیں':'Send password reset')+"</button>" : "")+
           ((!isMe && myRole === "super_admin") ? "<button class='btn small danger' data-delete-uid='"+u.uid+"' data-email='"+esc(u.email)+"'>🗑 "+(currentLang==='ur'?'حذف کریں':'Delete')+"</button>" : "")+
         "</td>";
       body.appendChild(tr);
@@ -1035,12 +1357,21 @@ function renderAdminPanel(){
         db.collection("users").doc(btn.dataset.toggleActive).update({isActive: next}).then(renderAdminPanel);
       });
     });
+    body.querySelectorAll("[data-reset-email]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var em = btn.dataset.resetEmail || "";
+        var msg = document.getElementById("adminStatusMsg");
+        auth.sendPasswordResetEmail(em).then(function(){
+          showMsg(msg, "پاس ورڈ بدلنے کا لنک " + em + " کو بھیج دیا گیا ہے۔", "A password-reset link was sent to " + em + ".", "ok");
+        }).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
+      });
+    });
     body.querySelectorAll("[data-delete-uid]").forEach(function(btn){
       btn.addEventListener("click", function(){
         var em = btn.dataset.email || "";
         var msg = currentLang==='ur'
-          ? ("کیا آپ واقعی اس یوزر کو حذف کرنا چاہتے ہیں؟\n" + em + "\n\nاس کی رسائی فوراً ختم ہو جائے گی۔ اگر یہ دوبارہ لاگ اِن کرے تو نئی درخواست کی طرح دوبارہ منظوری درکار ہوگی۔")
-          : ("Delete this user?\n" + em + "\n\nTheir access is removed immediately. If they sign in again, they will need approval again as a new request.");
+          ? ("کیا آپ واقعی اس یوزر کا پروفائل حذف کرنا چاہتے ہیں؟\n" + em + "\n\nاس کی رسائی فوراً ختم ہو جائے گی۔ لاگ اِن کرنے پر اسے \"اکاؤنٹ تیار نہیں\" نظر آئے گا۔ عارضی طور پر روکنا ہو تو حذف کے بجائے \"معطل کریں\" استعمال کریں۔")
+          : ("Delete this user's profile?\n" + em + "\n\nTheir access ends immediately and they will see \"Account Not Set Up\" if they sign in. To block someone only for a while, use \"Suspend\" instead of Delete.");
         if(!confirm(msg)) return;
         db.collection("users").doc(btn.dataset.deleteUid).delete().then(renderAdminPanel).catch(function(err){
           alert((currentLang==='ur' ? "حذف نہیں ہو سکا: " : "Could not delete: ") + err.message);
@@ -1376,22 +1707,14 @@ searchInput.addEventListener("input", function(){
   searchResultsEl.classList.remove("hidden");
 });
 
+(function(){
+  var l = null;
+  try{ l = localStorage.getItem("cmpLang"); }catch(e){}
+  if(l === "ur" || l === "en"){ currentLang = l; document.getElementById("langSelect").value = l; }
+  document.getElementById("langSelect").addEventListener("change", function(e){ try{ localStorage.setItem("cmpLang", e.target.value); }catch(x){} });
+})();
 applyI18n();
 </script>
-<!-- ===== Super Admin Security PIN Gate ===== -->
-<div id="spinGateOverlay" style="display:none; position:fixed; inset:0; background:rgba(20,30,40,.55); z-index:99999; align-items:center; justify-content:center; padding:16px;">
-  <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; max-width:340px; width:100%; direction:rtl; font-family:inherit;">
-    <div id="spinGateTitle" style="font-size:17px; font-weight:700; color:var(--text); margin-bottom:6px;"></div>
-    <div id="spinGateSub" style="font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.5;"></div>
-    <input type="text" inputmode="numeric" autocomplete="one-time-code" id="spinGateInput1" placeholder="6 ہندسوں کا کوڈ" style="width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:18px; margin-bottom:10px; text-align:center; letter-spacing:6px;">
-    <div id="spinGateError" style="color:var(--danger); font-size:13px; min-height:18px; margin-bottom:8px;"></div>
-    <button type="button" id="spinGateBtn" style="width:100%; background:var(--navy); color:#fff; border:1px solid var(--navy); padding:10px; border-radius:6px; font-size:15px; font-weight:600; cursor:pointer;">تصدیق کریں</button>
-    <div style="text-align:center; margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
-      <button type="button" id="spinGateResend" style="background:none; border:none; color:var(--muted); font-size:12px; text-decoration:underline; cursor:pointer; padding:0;">کوڈ دوبارہ بھیجیں</button>
-      <a href="#" id="spinGateSignOut" style="font-size:12px; color:var(--muted); text-decoration:underline;">یہ میں نہیں ہوں — سائن آؤٹ کریں</a>
-    </div>
-  </div>
-</div>
 <script src="a11y.js" defer></script>
 </body>
 </html>

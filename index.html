@@ -847,7 +847,8 @@ var AUTH_MSG = {
   "auth/user-disabled": ["یہ اکاؤنٹ بند کر دیا گیا ہے۔ اپنے ایڈمن سے رابطہ کریں۔", "This account has been disabled. Please contact your administrator."],
   "auth/too-many-requests": ["بہت زیادہ کوششیں ہو گئیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "Too many attempts. Please wait a while and try again."],
   "auth/network-request-failed": ["انٹرنیٹ کنکشن میں مسئلہ ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔", "Network problem. Check your internet connection and try again."],
-  "auth/email-already-in-use": ["یہ ای میل پہلے سے رجسٹرڈ ہے۔ فہرست میں تلاش کریں، یا اگر اس کا پروفائل حذف ہو چکا ہے تو Super Admin سے رابطہ کریں۔", "This email is already registered. Look for it in the list, or contact the Super Admin if its profile was deleted."],
+  "auth/email-already-in-use": ["یہ ای میل پہلے سے صارفین کی فہرست میں موجود ہے۔ فہرست میں تلاش کریں۔", "This email is already in the user list. Look for it in the list."],
+  "camp/login-exists-no-profile": ["اس ای میل کا لاگ اِن پہلے سے موجود ہے مگر پروفائل مٹ چکا ہے۔ اس شخص سے کہیں کہ پورٹل کھول کر ایک بار اپنے پرانے پاس ورڈ سے لاگ اِن کرے (پاس ورڈ بھول گیا ہو تو \"پاس ورڈ بھول گئے\" استعمال کرے)، پھر یہاں دوبارہ \"اکاؤنٹ بنائیں\" دبائیں۔", "A login for this email already exists but its profile was deleted. Ask the person to open the portal and sign in once with the old password (or use \"Forgot password\"), then press Create account here again."],
   "permission-denied": ["آپ کو یہ کام کرنے کی اجازت نہیں۔", "You do not have permission to do this."]
 };
 function authMsg(err){
@@ -1043,7 +1044,11 @@ function loadUserProfileAndRoute(user){
   db.collection("users").doc(user.uid).get().then(function(doc){
     if(settled) return; settled = true; clearTimeout(watchdog);
     if(!doc.exists){
-      /* No profile = not a person the office created. Nothing is opened and nothing is auto-created. */
+      /* No profile = not a person the office created. Nothing is opened and nothing is auto-created.
+         Only a tiny note (uid + e-mail) is left so a Super Admin can restore a deleted profile for this login. */
+      try{
+        db.collection("profileClaims").doc(user.uid).set({ email:(user.email || "").toLowerCase(), createdAt:firebase.firestore.FieldValue.serverTimestamp() }).catch(function(){});
+      }catch(e){}
       CURRENT_DOC = null;
       document.getElementById("noProfileEmailLine").textContent = user.email;
       showOnly("noProfileScreen");
@@ -1173,23 +1178,59 @@ function createAccountWithProfile(p, role, extra){
   var a2 = app2.auth();
   var created = false, newUser = null;
   function cleanup(){ try{ a2.signOut(); }catch(e){} try{ app2.delete(); }catch(e){} }
-  return a2.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){
-    return a2.createUserWithEmailAndPassword(p.email, randomPassword());
-  }).then(function(cred){
-    newUser = cred.user;
+  function baseProfile(){
     var prof = {
       email:p.email, name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, mobile:p.mobile,
       role:"guest", roleV2:role, approvalStatus:"approved", isActive:true,
       createdAt:firebase.firestore.FieldValue.serverTimestamp(), createdBy:CURRENT_UID, createdVia:(extra && extra.via) || "admin-created"
     };
     if(p.section) prof.section = p.section;
-    return db.collection("users").doc(cred.user.uid).set(prof).then(function(){ created = true; }, function(e){
+    return prof;
+  }
+  /* The login already exists although its profile is gone (an earlier profile was deleted).
+     The browser cannot look a login up by e-mail, so the person signs in once; the portal then leaves a small
+     "profileClaims/{uid}" note (uid + e-mail only). With that note the Super Admin's form can write the profile. */
+  function restoreExisting(){
+    return db.collection("users").where("email", "==", p.email).limit(1).get().then(function(qs){
+      if(!qs.empty){ var e = new Error("duplicate"); e.code = "auth/email-already-in-use"; throw e; }
+      return db.collection("profileClaims").where("email", "==", p.email).limit(1).get();
+    }).then(function(cs){
+      if(cs.empty){ var e2 = new Error("login exists, no claim yet"); e2.code = "camp/login-exists-no-profile"; throw e2; }
+      var uid = cs.docs[0].id;
+      return db.collection("users").doc(uid).set(baseProfile()).then(function(){
+        created = true;
+        return db.collection("profileClaims").doc(uid).delete().catch(function(){});
+      });
+    }).then(function(){
+      return auth.sendPasswordResetEmail(p.email).then(function(){ return {restored:true, mailed:true}; }, function(){ return {restored:true, mailed:false}; });
+    });
+  }
+  return a2.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){
+    return a2.createUserWithEmailAndPassword(p.email, randomPassword());
+  }).then(function(cred){ return {cred:cred}; }, function(err){
+    if(err && err.code === "auth/email-already-in-use") return {exists:true};
+    throw err;
+  }).then(function(r){
+    if(r.exists) return restoreExisting();
+    var cred = r.cred;
+    newUser = cred.user;
+    return db.collection("users").doc(cred.user.uid).set(baseProfile()).then(function(){ created = true; }, function(e){
       /* profile could not be saved: remove the half-made login so nothing stray is left behind */
       return newUser.delete().then(function(){ throw e; }, function(){ throw e; });
+    }).then(function(){
+      return a2.sendPasswordResetEmail(p.email).then(function(){ return {mailed:true}; }, function(){ return {mailed:false}; });
     });
-  }).then(function(){
-    return a2.sendPasswordResetEmail(p.email).then(function(){ return {mailed:true}; }, function(){ return {mailed:false}; });
   }).then(function(res){ cleanup(); return res; }, function(err){ cleanup(); err.accountCreated = created; throw err; });
+}
+/* one wording for "account made / restored" used by direct create and by approval */
+function accountDoneMsg(res, email){
+  if(res.restored){
+    return ["پرانا لاگ اِن مل گیا اور " + email + " کا پروفائل بحال کر دیا گیا۔ وہ اپنے موجودہ پاس ورڈ سے لاگ اِن کر سکتا ہے" + (res.mailed ? " (پاس ورڈ ری سیٹ کا لنک بھی ای میل کر دیا گیا)۔" : "۔"),
+            "The existing login was found and the profile for " + email + " is restored. They can sign in with their current password" + (res.mailed ? " (a password reset link was also emailed)." : "."), "ok"];
+  }
+  return res.mailed
+    ? ["اکاؤنٹ بن گیا۔ " + email + " کو پاس ورڈ بنانے کا لنک ای میل کر دیا گیا ہے۔", "Account created. A link to set a password was emailed to " + email + ".", "ok"]
+    : ["اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی۔ فہرست میں اس کے سامنے \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔", "The account was created but the email could not be sent. Use \"Send password reset\" next to it in the list.", "error"];
 }
 function fillRoleSelect(sel, keep){
   if(!sel || !CURRENT_DOC) return;
@@ -1210,11 +1251,8 @@ document.getElementById("cu_submit").addEventListener("click", function(){
   var role = document.getElementById("cu_role").value;
   btn.disabled = true; txt.textContent = I18N[currentLang].btnCreating;
   createAccountWithProfile(r.p, role, {via:"admin-created"}).then(function(res){
-    if(res.mailed){
-      showMsg(msg, "اکاؤنٹ بن گیا۔ " + r.p.email + " کو پاس ورڈ بنانے کا لنک ای میل کر دیا گیا ہے۔", "Account created. A link to set a password was emailed to " + r.p.email + ".", "ok");
-    } else {
-      showMsg(msg, "اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی۔ فہرست میں اس کے سامنے \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔", "The account was created but the email could not be sent. Use \"Send password reset\" next to it in the list.", "error");
-    }
+    var dm = accountDoneMsg(res, r.p.email);
+    showMsg(msg, dm[0], dm[1], dm[2]);
     ["name","father","designation","age","email","mobile","section"].forEach(function(f){ document.getElementById("cu_"+f).value = ""; });
     renderAdminPanel();
   }).catch(function(err){
@@ -1267,8 +1305,8 @@ function renderRequests(){
         }).then(function(res){
           renderRequests(); renderAdminPanel();
           var m = document.getElementById("adminStatusMsg");
-          showMsg(m, res.mailed ? ("اکاؤنٹ بن گیا۔ " + p.email + " کو پاس ورڈ بنانے کا لنک بھیج دیا گیا ہے۔") : ("اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی؛ فہرست میں \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔"),
-            res.mailed ? ("Account created for " + p.email + ". A password link was emailed.") : ("Account created but the email failed; use \"Send password reset\" in the list."), res.mailed ? "ok" : "error");
+          var dm = accountDoneMsg(res, p.email);
+          showMsg(m, dm[0], dm[1], dm[2]);
         }).catch(function(err){
           ap.disabled = false;
           var m = authMsg(err);

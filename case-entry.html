@@ -337,6 +337,11 @@ try{ if(/[?&]embed=1(&|$)/.test(location.search)) document.documentElement.class
 html.embedded .sidebar, html.embedded .sidebar-backdrop, html.embedded .topbar, html.embedded .app-footer{ display:none !important; }
 html.embedded .app-shell{ min-height:0; }
 </style>
+<!-- PWA: installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17294a">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="/pwa.js" defer></script>
 </head>
 <body>
 

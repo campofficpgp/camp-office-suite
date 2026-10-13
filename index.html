@@ -408,6 +408,12 @@ html,body{overflow-x:hidden;}
               <label class="show-pw"><input type="checkbox" id="rq_pw_show"> پاس ورڈ دکھائیں / Show password</label>
               <div class="field-hint">کم از کم 8 حروف، اس میں حرف اور ہندسہ دونوں ہوں۔ / At least 8 characters, with a letter and a number.</div>
             </div>
+            <div id="rq_otp_wrap" class="req-wide hidden">
+              <label for="rq_otp">ای میل پر آیا ہوا کوڈ / Code sent to your email *</label>
+              <input type="text" id="rq_otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" dir="ltr" placeholder="123456">
+              <div class="field-hint">کوڈ نہ ملے یا غلط ہو جائے تو نیا کوڈ منگوائیں۔ / No code, or a wrong one? Ask for a new code.</div>
+              <button type="button" class="link-btn" id="rq_back">← تفصیل بدلیں یا نیا کوڈ منگوائیں / Edit details or get a new code</button>
+            </div>
             <div class="req-wide"><label for="rq_remarks">مزید معلومات / Remarks</label><textarea id="rq_remarks" maxlength="300" rows="3"></textarea></div>
           </div>
           <div class="req-hp" aria-hidden="true"><label for="rq_website">Website</label><input type="text" id="rq_website" tabindex="-1" autocomplete="off"></div>
@@ -1198,12 +1204,23 @@ function resetCaptcha(){ try{ if(RQ_CAPTCHA_ID !== null) grecaptcha.reset(RQ_CAP
 function showRequestForm(on){
   document.getElementById("loginCard").classList.toggle("hidden", on);
   document.getElementById("requestCard").classList.toggle("hidden", !on);
-  if(on){ ensureCaptcha(); document.getElementById("rq_pw_wrap").classList.toggle("hidden", !captchaOn()); var f = document.getElementById("rq_name"); if(f) f.focus(); }
+  if(on){ ensureCaptcha(); document.getElementById("rq_pw_wrap").classList.toggle("hidden", !captchaOn()); setRqStage(RQ_STAGE); var f = document.getElementById("rq_name"); if(f) f.focus(); }
 }
 document.getElementById("openRequestBtn").addEventListener("click", function(){ showRequestForm(true); });
 document.getElementById("backToLoginBtn2").addEventListener("click", function(){ showRequestForm(false); });
 if(/(^|[#&?])request(=1)?($|&)/.test(location.hash.replace(/^#/, "") || location.search.replace(/^\?/, ""))){ showRequestForm(true); }
-var RQ_BUSY = false;
+var RQ_BUSY = false, RQ_STAGE = 0;   /* 0 = fill the form + tick, "Send code";  1 = type the e-mailed code, "Submit" */
+function setRqStage(n){
+  RQ_STAGE = n;
+  ["name","father","designation","age","email","mobile","section","remarks","pw","pw2"].forEach(function(f){ var el = document.getElementById("rq_"+f); if(el) el.readOnly = (n === 1); });
+  document.getElementById("rq_otp_wrap").classList.toggle("hidden", n !== 1);
+  document.getElementById("rq_captcha_wrap").classList.toggle("hidden", n === 1 || !captchaOn());
+  var t = document.getElementById("rq_submitText");
+  if(captchaOn()) t.textContent = (n === 1) ? "درخواست جمع کریں / Submit" : "کوڈ بھیجیں / Send code";
+  if(n === 0){ document.getElementById("rq_otp").value = ""; if(captchaOn()){ ensureCaptcha(); resetCaptcha(); } }
+  if(n === 1){ var o = document.getElementById("rq_otp"); if(o) o.focus(); }
+}
+document.getElementById("rq_back").addEventListener("click", function(){ hideMsg(document.getElementById("rq_msg")); setRqStage(0); });
 document.getElementById("requestForm").addEventListener("submit", function(ev){
   ev.preventDefault();
   if(RQ_BUSY) return;
@@ -1229,9 +1246,14 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
   if(p.section) doc.section = p.section.slice(0,80);
   if(p.remarks) doc.remarks = p.remarks.slice(0,300);
   var captchaToken = "";
-  if(captchaOn()){
+  if(captchaOn() && RQ_STAGE === 0){
     try{ captchaToken = (RQ_CAPTCHA_ID !== null) ? grecaptcha.getResponse(RQ_CAPTCHA_ID) : ""; }catch(e){}
     if(!captchaToken){ showMsg(msg, "براہ کرم \"میں روبوٹ نہیں ہوں\" پر ٹِک لگائیں۔", "Please tick \"I'm not a robot\"."); return; }
+  }
+  var otpCode = "";
+  if(captchaOn() && RQ_STAGE === 1){
+    otpCode = document.getElementById("rq_otp").value.replace(/[۰-۹]/g, function(d){ return "۰۱۲۳۴۵۶۷۸۹".indexOf(d); }).replace(/\s+/g, "");
+    if(!/^[0-9]{6}$/.test(otpCode)){ showMsg(msg, "ای میل پر آیا ہوا 6 ہندسوں کا کوڈ لکھیں۔", "Enter the 6-digit code sent to your email."); return; }
   }
   RQ_BUSY = true;
   document.getElementById("rq_submit").disabled = true;
@@ -1244,27 +1266,51 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
     done();
     document.getElementById("requestForm").reset();
     document.getElementById("rq_pw").type = "password"; document.getElementById("rq_pw2").type = "password";
+    setRqStage(0);
     if(selfMade === true){
       showMsg(msg, "آپ کا اکاؤنٹ بن گیا ہے اور سپر ایڈمن کی منظوری کا انتظار ہے۔ منظوری کے بعد آپ " + p.email + " اور اپنے بنائے ہوئے پاس ورڈ سے لاگ اِن کر سکیں گے۔", "Your account is made and is waiting for the Super Admin's approval. After approval you can sign in with " + p.email + " and the password you chose.", "ok");
     } else {
       showMsg(msg, "آپ کی درخواست سپر ایڈمن کو بھیج دی گئی ہے۔ منظوری ہونے پر آپ کو " + p.email + " پر ای میل ملے گی جس سے آپ اپنا پاس ورڈ بنائیں گے۔", "Your request was sent to the Super Admin. When it is approved you will get an email at " + p.email + " to set your password.", "ok");
     }
   };
-  if(captchaOn()){
-    /* server checks the tick with Google, then stores the request */
-    callFn("campRequestAccount", { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "", password:rqPw, recaptchaToken:captchaToken, website:"" }, false).then(function(r){
-      if(r.status === 200 && r.json && r.json.ok){ resetCaptcha(); thanks(r.json.selfCreated === true); return; }
-      done(); resetCaptcha();
+  var netFail = function(){
+    done(); resetCaptcha();
+    showMsg(msg, "درخواست نہیں بھیجی جا سکی۔ انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔", "The request could not be sent. Check your internet connection and try again.");
+  };
+  if(captchaOn() && RQ_STAGE === 0){
+    /* step 1: the server checks the tick, then e-mails a 6-digit code to the address typed */
+    callFn("campSendOtp", { email:p.email, recaptchaToken:captchaToken, website:"" }, false).then(function(r){
+      done();
+      if(r.status === 200 && r.json && r.json.ok){
+        resetCaptcha(); setRqStage(1);
+        showMsg(msg, "آپ کی ای میل " + p.email + " پر 6 ہندسوں کا کوڈ بھیج دیا گیا ہے۔ اسے نیچے لکھیں۔ (کوڈ 10 منٹ چلے گا؛ نہ ملے تو سپیم فولڈر بھی دیکھیں۔)", "A 6-digit code was sent to " + p.email + ". Type it below. (Valid 10 minutes; check the spam folder too.)", "ok");
+        return;
+      }
+      resetCaptcha();
       var code = r.json && r.json.error;
       if(code === "captcha") showMsg(msg, "روبوٹ چیک کامیاب نہیں ہوا۔ دوبارہ ٹِک لگا کر کوشش کریں۔", "The robot check failed. Please tick the box again and retry.");
       else if(code === "exists") showMsg(msg, "اس ای میل پر اکاؤنٹ یا درخواست پہلے سے موجود ہے۔ لاگ اِن کر کے دیکھیں، پاس ورڈ بھول گئے ہوں تو \"پاس ورڈ بھول گئے\" استعمال کریں، ورنہ سپر ایڈمن سے رابطہ کریں۔", "An account or request already exists for this email. Try signing in (use \"Forgot password\" if needed) or contact the Super Admin.");
+      else if(code === "wait") showMsg(msg, "ابھی ابھی کوڈ بھیجا جا چکا ہے۔ ایک منٹ بعد دوبارہ کوشش کریں۔", "A code was just sent. Please wait a minute and try again.", "info");
+      else if(code === "too-many") showMsg(msg, "اس ای میل پر بہت بار کوڈ بھیجا جا چکا ہے۔ ایک گھنٹے بعد کوشش کریں۔", "Too many codes were sent to this email. Try again in an hour.");
+      else if(code === "invalid") showMsg(msg, "ای میل کا پتہ درست نہیں۔", "The email address is not valid.");
+      else if(code === "mail-not-configured" || code === "mail-failed") showMsg(msg, "کوڈ والی ای میل اس وقت نہیں جا سکتی۔ سپر ایڈمن سے رابطہ کریں۔", "The code e-mail cannot be sent right now. Please contact the Super Admin.");
+      else showMsg(msg, "اس وقت کوڈ نہیں بھیجا جا سکتا۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "A code cannot be sent right now. Please try again in a little while.");
+    }).catch(netFail);
+    return;
+  }
+  if(captchaOn()){
+    /* step 2: the server checks the code, then makes the login (his password) + a pending profile */
+    callFn("campRequestAccount", { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "", password:rqPw, otp:otpCode, website:"" }, false).then(function(r){
+      if(r.status === 200 && r.json && r.json.ok){ thanks(r.json.selfCreated === true); return; }
+      done();
+      var code = r.json && r.json.error;
+      if(code === "otp") showMsg(msg, "کوڈ درست نہیں۔ ای میل میں دیکھ کر دوبارہ لکھیں۔", "The code is not correct. Check your email and try again.");
+      else if(code === "otp-expired" || code === "otp-locked"){ setRqStage(0); showMsg(msg, code === "otp-expired" ? "کوڈ کی مدت ختم ہو گئی۔ ٹِک لگا کر نیا کوڈ منگوائیں۔" : "غلط کوششیں زیادہ ہو گئیں۔ ٹِک لگا کر نیا کوڈ منگوائیں۔", code === "otp-expired" ? "The code has expired. Tick the box and ask for a new code." : "Too many wrong tries. Tick the box and ask for a new code."); }
+      else if(code === "exists") showMsg(msg, "اس ای میل پر اکاؤنٹ یا درخواست پہلے سے موجود ہے۔ لاگ اِن کر کے دیکھیں یا سپر ایڈمن سے رابطہ کریں۔", "An account or request already exists for this email. Try signing in or contact the Super Admin.");
       else if(code === "weak-password") showMsg(msg, "پاس ورڈ کم از کم 8 حروف کا ہو اور اس میں حرف اور ہندسہ دونوں ہوں۔", "The password needs at least 8 characters, with a letter and a number.");
       else if(code === "invalid") showMsg(msg, "دی گئی معلومات درست نہیں۔ دوبارہ جانچیں۔", "The details are not valid. Please check them.");
       else showMsg(msg, "درخواست اس وقت نہیں بھیجی جا سکتی۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "The request cannot be sent right now. Please try again in a little while.");
-    }).catch(function(){
-      done(); resetCaptcha();
-      showMsg(msg, "درخواست نہیں بھیجی جا سکی۔ انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔", "The request could not be sent. Check your internet connection and try again.");
-    });
+    }).catch(netFail);
     return;
   }
   db.collection("accountRequests").doc(p.email).set(doc).then(thanks).catch(function(err){

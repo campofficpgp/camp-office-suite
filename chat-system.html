@@ -108,7 +108,13 @@ html,body{overflow-x:hidden;}
   }
   .chat-head{background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 16px; display:flex; align-items:center; justify-content:space-between;}
   .chat-head .title{font-size:13.5px; font-weight:700;}
-  .chat-head .close{display:none;}
+  .chat-head .chat-head-btns{display:flex;gap:6px;align-items:center;}
+  .chat-head .chat-head-btns button{width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:6px;cursor:pointer;}
+  .chat-head .chat-head-btns button:hover{background:rgba(255,255,255,.28);}
+  .chat-head .chat-head-btns svg{pointer-events:none;width:15px;height:15px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  #chatPanel.pmin{flex:none;height:auto;margin-top:auto;}
+  #chatPanel.pmin>:not(.chat-head){display:none !important;}
+  #chatPanel.half{flex:none;height:55vh;margin-top:auto;}
 
   .chat-messages{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px; display:flex; flex-direction:column; gap:10px; background:#faf9f5;}
   .chat-messages, .chat-input-bar{max-width:760px; width:100%; margin:0 auto;}
@@ -286,7 +292,7 @@ html,body{overflow-x:hidden;}
   <div id="chatPanel">
     <div class="chat-head">
       <div class="title" data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</div>
-      <div class="close" onclick="toggleChat()">✕</div>
+      <span class="chat-head-btns"><button id="chatPanelMinBtn" type="button" title="Minimize / چھوٹا کریں" aria-label="Minimize / چھوٹا کریں"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 10h8"/></svg></button><button id="chatFullBtn" type="button" title="Bigger / بڑا کریں" aria-label="Bigger / بڑا کریں"><svg viewBox="0 0 14 14" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/></svg></button><button id="chatCloseBtn" data-home="index.html" type="button" title="Close / بند کریں" aria-label="Close / بند کریں"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg></button></span>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="upload-note" id="uploadNote"></div>
@@ -619,6 +625,21 @@ html,body{overflow-x:hidden;}
 </script>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
+<script>
+/* Team Chat page: same three window controls as the chat boxes — minimize, bigger/smaller, close (back to Dashboard) */
+(function(){
+  var ICON={"min": "<svg viewBox=\"0 0 14 14\" aria-hidden=\"true\"><path d=\"M3 10h8\"/></svg>", "max": "<svg viewBox=\"0 0 14 14\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"8\" height=\"8\" rx=\"1\"/></svg>", "rest": "<svg viewBox=\"0 0 14 14\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"6\" height=\"6\" rx=\"1\"/><path d=\"M5 5V3h6v6H9\"/></svg>", "x": "<svg viewBox=\"0 0 14 14\" aria-hidden=\"true\"><path d=\"M3 3l8 8M11 3l-8 8\"/></svg>"}, p=document.getElementById('chatPanel'), mn=document.getElementById('chatPanelMinBtn'), sz=document.getElementById('chatFullBtn'), cl=document.getElementById('chatCloseBtn');
+  if(!p||!mn||!sz||!cl) return;
+  function paint(){
+    var b=!p.classList.contains('half'), t=b?"Smaller / چھوٹا سائز":"Bigger / بڑا کریں"; sz.innerHTML=b?ICON.rest:ICON.max; sz.title=t; sz.setAttribute('aria-label',t);
+    var tm=p.classList.contains('pmin')?"Restore / واپس کھولیں":"Minimize / چھوٹا کریں"; mn.title=tm; mn.setAttribute('aria-label',tm);
+  }
+  sz.addEventListener('click',function(){ p.classList.remove('pmin'); p.classList.toggle('half'); paint(); });
+  mn.addEventListener('click',function(){ p.classList.toggle('pmin'); paint(); });
+  cl.addEventListener('click',function(){ window.location.href='index.html'; });
+  paint();
+})();
+</script>
 <script src="a11y.js" defer></script>
 </body>
 </html>

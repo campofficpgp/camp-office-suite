@@ -310,6 +310,10 @@ html,body{overflow-x:hidden;}
 
 .auth-card .rq-captcha{margin:14px 0 4px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow-x:auto;max-width:100%}
 .auth-card .rq-captcha.hidden{display:none}
+.topbar2 .lang-btn{ background:#B8860B; color:#1B3F63; border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; line-height:1.2; white-space:nowrap; flex:none; }
+[data-theme="green"] .topbar2 .lang-btn{ background:#C9A227; }
+[data-theme="teal"] .topbar2 .lang-btn{ background:#96762a; color:#fff; }
+[data-theme="night"] .topbar2 .lang-btn{ background:#d4a13d; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -546,6 +550,7 @@ html,body{overflow-x:hidden;}
             <button class="icon-btn" id="themeBtn2" title="Theme">🎨</button>
             <div class="theme-menu hidden" id="themeMenu2"></div>
           </div>
+          <button class="lang-btn" id="langBtn2" type="button">اردو</button>
           <div class="user-chip">
             <div class="avatar" id="userAvatar">?</div>
             <div class="who">
@@ -1994,6 +1999,14 @@ searchInput.addEventListener("input", function(){
   try{ l = localStorage.getItem("cmpLang"); }catch(e){}
   if(l === "ur" || l === "en"){ currentLang = l; document.getElementById("langSelect").value = l; }
   document.getElementById("langSelect").addEventListener("change", function(e){ try{ localStorage.setItem("cmpLang", e.target.value); }catch(x){} });
+})();
+(function(){
+  var lb = document.getElementById("langBtn2"), ls = document.getElementById("langSelect");
+  if(!lb || !ls) return;
+  function syncLb(){ lb.textContent = (ls.value === "ur") ? "English" : "اردو"; }
+  lb.addEventListener("click", function(){ ls.value = (ls.value === "ur") ? "en" : "ur"; ls.dispatchEvent(new Event("change")); syncLb(); });
+  ls.addEventListener("change", syncLb);
+  syncLb();
 })();
 applyI18n();
 </script>

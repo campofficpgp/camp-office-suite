@@ -302,6 +302,9 @@ html,body{overflow-x:hidden;}
     .req-grid{ grid-template-columns:minmax(0,1fr); }
     .req-item dl{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
   }
+
+.auth-card .rq-captcha{margin:14px 0 4px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow-x:auto;max-width:100%}
+.auth-card .rq-captcha.hidden{display:none}
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -398,6 +401,7 @@ html,body{overflow-x:hidden;}
           </div>
           <div class="req-hp" aria-hidden="true"><label for="rq_website">Website</label><input type="text" id="rq_website" tabindex="-1" autocomplete="off"></div>
           <div id="rq_msg" class="msg-box hidden" role="alert"></div>
+          <div class="rq-captcha hidden" id="rq_captcha_wrap"><div id="rq_captcha"></div><div class="field-hint hidden" id="rq_captcha_err"></div></div>
           <button class="btn primary block" id="rq_submit" type="submit"><span class="spinner hidden" id="rq_spin"></span><span id="rq_submitText">درخواست بھیجیں / Send request</span></button>
         </form>
         <div class="auth-links"><button type="button" class="link-btn" id="backToLoginBtn2">← لاگ اِن پر واپس / Back to sign in</button></div>
@@ -848,6 +852,7 @@ var AUTH_MSG = {
   "auth/too-many-requests": ["بہت زیادہ کوششیں ہو گئیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "Too many attempts. Please wait a while and try again."],
   "auth/network-request-failed": ["انٹرنیٹ کنکشن میں مسئلہ ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔", "Network problem. Check your internet connection and try again."],
   "auth/email-already-in-use": ["یہ ای میل پہلے سے صارفین کی فہرست میں موجود ہے۔ فہرست میں تلاش کریں۔", "This email is already in the user list. Look for it in the list."],
+  "functions/invalid": ["دی گئی معلومات درست نہیں۔ دوبارہ جانچیں۔", "The details are not valid. Please check them."],
   "camp/login-exists-no-profile": ["اس ای میل کا لاگ اِن پہلے سے موجود ہے مگر پروفائل مٹ چکا ہے۔ اس شخص سے کہیں کہ پورٹل کھول کر ایک بار اپنے پرانے پاس ورڈ سے لاگ اِن کرے (پاس ورڈ بھول گیا ہو تو \"پاس ورڈ بھول گئے\" استعمال کرے)، پھر یہاں دوبارہ \"اکاؤنٹ بنائیں\" دبائیں۔", "A login for this email already exists but its profile was deleted. Ask the person to open the portal and sign in once with the old password (or use \"Forgot password\"), then press Create account here again."],
   "permission-denied": ["آپ کو یہ کام کرنے کی اجازت نہیں۔", "You do not have permission to do this."]
 };
@@ -1126,11 +1131,59 @@ function readPerson(prefix){
   return {p:p};
 }
 
+/* ---------- server helper (Cloud Functions) ----------
+   Three small server functions do what a browser may not: check the reCAPTCHA tick, create / restore a login,
+   and delete a login completely. If the server cannot be reached the page falls back to the older browser-only way. */
+var FN_BASE = "https://us-central1-camp-office-project.cloudfunctions.net/";
+var RECAPTCHA_V2_SITE_KEY = "6LdpOe0tAAAAAM91SF-3PMv2CMYfotPpeDBRruA7";   /* public "I'm not a robot" site key (v2 checkbox) */
+function captchaOn(){ return !!RECAPTCHA_V2_SITE_KEY && RECAPTCHA_V2_SITE_KEY.indexOf("PASTE_") !== 0; }
+function callFn(name, body, withAuth){
+  function go(token){
+    var h = { "Content-Type":"application/json" };
+    if(token) h.Authorization = "Bearer " + token;
+    return fetch(FN_BASE + name, { method:"POST", headers:h, body:JSON.stringify(body) }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){ return { status:r.status, json:j || {} }; });
+    });
+  }
+  var run = !withAuth ? go(null) : (auth.currentUser ? auth.currentUser.getIdToken().then(go) : Promise.reject({ code:"auth/no-user" }));
+  return run.catch(function(e){
+    if(e && e.code === "auth/no-user") throw e;
+    var u = new Error("server unreachable"); u.fnUnavailable = true; throw u;     /* network error / blocked / offline */
+  });
+}
+
+/* reCAPTCHA v2 tick box on the request form (only when a site key is set) */
+var RQ_CAPTCHA_ID = null, RQ_CAPTCHA_LOADING = false;
+function showCaptchaError(ur, en){
+  var el = document.getElementById("rq_captcha_err"); if(!el) return;
+  el.textContent = (currentLang === "ur" ? ur : en); el.classList.remove("hidden");
+}
+function ensureCaptcha(){
+  if(!captchaOn()) return;
+  document.getElementById("rq_captcha_wrap").classList.remove("hidden");
+  if(RQ_CAPTCHA_ID !== null || RQ_CAPTCHA_LOADING) return;
+  function render(){
+    try{
+      RQ_CAPTCHA_ID = grecaptcha.render("rq_captcha", { sitekey:RECAPTCHA_V2_SITE_KEY });
+      document.getElementById("rq_captcha_err").classList.add("hidden");
+    }catch(e){ showCaptchaError("روبوٹ چیک لوڈ نہیں ہو سکا۔ صفحہ دوبارہ کھولیں۔", "The robot check could not load. Reload the page."); }
+  }
+  if(window.grecaptcha && grecaptcha.render){ render(); return; }
+  RQ_CAPTCHA_LOADING = true;
+  window.campCaptchaReady = function(){ RQ_CAPTCHA_LOADING = false; render(); };
+  var sc = document.createElement("script");
+  sc.src = "https://www.google.com/recaptcha/api.js?onload=campCaptchaReady&render=explicit";
+  sc.async = true; sc.defer = true;
+  sc.onerror = function(){ RQ_CAPTCHA_LOADING = false; showCaptchaError("روبوٹ چیک لوڈ نہیں ہو سکا۔ انٹرنیٹ چیک کریں۔", "The robot check could not load. Check your internet connection."); };
+  document.head.appendChild(sc);
+}
+function resetCaptcha(){ try{ if(RQ_CAPTCHA_ID !== null) grecaptcha.reset(RQ_CAPTCHA_ID); }catch(e){} }
+
 /* ---------- 1) Request form (login screen, no sign-in needed) ---------- */
 function showRequestForm(on){
   document.getElementById("loginCard").classList.toggle("hidden", on);
   document.getElementById("requestCard").classList.toggle("hidden", !on);
-  if(on){ var f = document.getElementById("rq_name"); if(f) f.focus(); }
+  if(on){ ensureCaptcha(); var f = document.getElementById("rq_name"); if(f) f.focus(); }
 }
 document.getElementById("openRequestBtn").addEventListener("click", function(){ showRequestForm(true); });
 document.getElementById("backToLoginBtn2").addEventListener("click", function(){ showRequestForm(false); });
@@ -1152,6 +1205,11 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
   var doc = { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, status:"pending", createdAt:firebase.firestore.FieldValue.serverTimestamp() };
   if(p.section) doc.section = p.section.slice(0,80);
   if(p.remarks) doc.remarks = p.remarks.slice(0,300);
+  var captchaToken = "";
+  if(captchaOn()){
+    try{ captchaToken = (RQ_CAPTCHA_ID !== null) ? grecaptcha.getResponse(RQ_CAPTCHA_ID) : ""; }catch(e){}
+    if(!captchaToken){ showMsg(msg, "براہ کرم \"میں روبوٹ نہیں ہوں\" پر ٹِک لگائیں۔", "Please tick \"I'm not a robot\"."); return; }
+  }
   RQ_BUSY = true;
   document.getElementById("rq_submit").disabled = true;
   document.getElementById("rq_spin").classList.remove("hidden");
@@ -1164,6 +1222,21 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
     document.getElementById("requestForm").reset();
     showMsg(msg, "آپ کی درخواست سپر ایڈمن کو بھیج دی گئی ہے۔ منظوری ہونے پر آپ کو " + p.email + " پر ای میل ملے گی جس سے آپ اپنا پاس ورڈ بنائیں گے۔", "Your request was sent to the Super Admin. When it is approved you will get an email at " + p.email + " to set your password.", "ok");
   };
+  if(captchaOn()){
+    /* server checks the tick with Google, then stores the request */
+    callFn("campRequestAccount", { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "", recaptchaToken:captchaToken, website:"" }, false).then(function(r){
+      if(r.status === 200 && r.json && r.json.ok){ resetCaptcha(); thanks(); return; }
+      done(); resetCaptcha();
+      var code = r.json && r.json.error;
+      if(code === "captcha") showMsg(msg, "روبوٹ چیک کامیاب نہیں ہوا۔ دوبارہ ٹِک لگا کر کوشش کریں۔", "The robot check failed. Please tick the box again and retry.");
+      else if(code === "invalid") showMsg(msg, "دی گئی معلومات درست نہیں۔ دوبارہ جانچیں۔", "The details are not valid. Please check them.");
+      else showMsg(msg, "درخواست اس وقت نہیں بھیجی جا سکتی۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "The request cannot be sent right now. Please try again in a little while.");
+    }).catch(function(){
+      done(); resetCaptcha();
+      showMsg(msg, "درخواست نہیں بھیجی جا سکی۔ انٹرنیٹ چیک کر کے دوبارہ کوشش کریں۔", "The request could not be sent. Check your internet connection and try again.");
+    });
+    return;
+  }
   db.collection("accountRequests").doc(p.email).set(doc).then(thanks).catch(function(err){
     /* "permission-denied" here means a request for this email already exists: say the same thing, reveal nothing */
     if(err && err.code === "permission-denied"){ thanks(); return; }
@@ -1173,7 +1246,28 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
 });
 
 /* ---------- 2) Make the account (used by direct create AND by approving a request) ---------- */
+function createViaServer(p, role, extra){
+  var body = { person:{ name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "" }, role:role, via:(extra && extra.via) || "admin-created" };
+  if(extra && extra.requestId) body.requestId = extra.requestId;
+  return callFn("campAdminCreateAccount", body, true).then(function(r){
+    if(r.status === 200 && r.json && r.json.ok){
+      var restored = !!r.json.restored;
+      return auth.sendPasswordResetEmail(p.email).then(function(){ return { mailed:true, restored:restored }; }, function(){ return { mailed:false, restored:restored }; });
+    }
+    var e;
+    if(r.status === 409){ e = new Error("duplicate"); e.code = "auth/email-already-in-use"; throw e; }
+    if(r.status === 401 || r.status === 403){ e = new Error("forbidden"); e.code = "permission-denied"; throw e; }
+    if(r.status === 404 || r.status === 503){ e = new Error("server not ready"); e.fnUnavailable = true; throw e; }
+    e = new Error("invalid"); e.code = "functions/invalid"; throw e;
+  });
+}
 function createAccountWithProfile(p, role, extra){
+  return createViaServer(p, role, extra).catch(function(err){
+    if(err && err.fnUnavailable) return createAccountClientSide(p, role, extra);   /* older browser-only way */
+    throw err;
+  });
+}
+function createAccountClientSide(p, role, extra){
   var app2 = firebase.initializeApp(firebaseConfig, "creator" + Date.now() + Math.floor(Math.random()*1000));
   var a2 = app2.auth();
   var created = false, newUser = null;
@@ -1231,6 +1325,29 @@ function accountDoneMsg(res, email){
   return res.mailed
     ? ["اکاؤنٹ بن گیا۔ " + email + " کو پاس ورڈ بنانے کا لنک ای میل کر دیا گیا ہے۔", "Account created. A link to set a password was emailed to " + email + ".", "ok"]
     : ["اکاؤنٹ بن گیا مگر ای میل نہیں جا سکی۔ فہرست میں اس کے سامنے \"پاس ورڈ ری سیٹ بھیجیں\" دبائیں۔", "The account was created but the email could not be sent. Use \"Send password reset\" next to it in the list.", "error"];
+}
+
+/* Super Admin "Delete": remove the profile and everything that belongs only to this person (attendance record,
+   restore-note, account request for the same e-mail). The sign-in itself lives in Firebase Authentication and can
+   only be removed there by an owner (a browser is not allowed to delete someone else's login). */
+function deleteAccountEverywhere(uid, email){
+  /* 1) the server deletes the login in Firebase Authentication AND the profile and leftovers */
+  return callFn("campAdminDeleteAccount", { uid:uid }, true).then(function(r){
+    if(r.status === 200 && r.json && r.json.ok){ return { authDeleted:true }; }
+    var e;
+    if(r.status === 401 || r.status === 403){ e = new Error("forbidden"); e.code = "permission-denied"; throw e; }
+    if(r.status === 400 && r.json && r.json.error === "self"){ e = new Error("self"); e.code = "camp/self-delete"; throw e; }
+    e = new Error("server not ready"); e.fnUnavailable = true; throw e;
+  }).catch(function(err){
+    if(!(err && err.fnUnavailable)) throw err;
+    /* 2) server not reachable: remove what the browser may remove; the login itself then stays in Authentication */
+    var em = (email || "").toLowerCase();
+    return db.collection("users").doc(uid).delete().then(function(){
+      var jobs = [ db.collection("presence").doc(uid).delete(), db.collection("profileClaims").doc(uid).delete() ];
+      if(em) jobs.push(db.collection("accountRequests").doc(em).delete());
+      return Promise.all(jobs.map(function(j){ return j.catch(function(){}); }));
+    }).then(function(){ return { authDeleted:false }; });
+  });
 }
 function fillRoleSelect(sel, keep){
   if(!sel || !CURRENT_DOC) return;
@@ -1300,7 +1417,7 @@ function renderRequests(){
       if(ap) ap.addEventListener("click", function(){
         ap.disabled = true; hideMsg(msg);
         var p = { name:r.name, fatherName:r.fatherName, designation:r.designation, age:r.age, email:r.email, mobile:r.mobile, section:r.section || "" };
-        createAccountWithProfile(p, sel.value, {via:"approved-request"}).then(function(res){
+        createAccountWithProfile(p, sel.value, {via:"approved-request", requestId:id}).then(function(res){
           return db.collection("accountRequests").doc(id).update({ status:"approved", approvedBy:CURRENT_UID, approvedAt:firebase.firestore.FieldValue.serverTimestamp() }).then(function(){ return res; });
         }).then(function(res){
           renderRequests(); renderAdminPanel();
@@ -1408,10 +1525,10 @@ function renderAdminPanel(){
       btn.addEventListener("click", function(){
         var em = btn.dataset.email || "";
         var msg = currentLang==='ur'
-          ? ("کیا آپ واقعی اس یوزر کا پروفائل حذف کرنا چاہتے ہیں؟\n" + em + "\n\nاس کی رسائی فوراً ختم ہو جائے گی۔ لاگ اِن کرنے پر اسے \"اکاؤنٹ تیار نہیں\" نظر آئے گا۔ عارضی طور پر روکنا ہو تو حذف کے بجائے \"معطل کریں\" استعمال کریں۔")
-          : ("Delete this user's profile?\n" + em + "\n\nTheir access ends immediately and they will see \"Account Not Set Up\" if they sign in. To block someone only for a while, use \"Suspend\" instead of Delete.");
+          ? ("کیا آپ واقعی اس یوزر کو ہمیشہ کے لیے مٹانا چاہتے ہیں؟\n" + em + "\n\nپروفائل، لاگ اِن (Firebase سے بھی)، حاضری کا ریکارڈ اور اسی ای میل کی درخواست مٹ جائے گی۔ یہ واپس نہیں ہو سکتا۔\n\nعارضی طور پر روکنا ہو تو حذف کے بجائے \"معطل کریں\" استعمال کریں۔")
+          : ("Permanently delete this user?\n" + em + "\n\nTheir profile, their login (from Firebase too), attendance record and any account request for this email will be removed. This cannot be undone.\n\nTo block someone only for a while, use \"Suspend\" instead.");
         if(!confirm(msg)) return;
-        db.collection("users").doc(btn.dataset.deleteUid).delete().then(renderAdminPanel).catch(function(err){
+        deleteAccountEverywhere(btn.dataset.deleteUid, em).then(function(res){ renderAdminPanel(); var sm = document.getElementById("adminStatusMsg"); if(res && res.authDeleted){ showMsg(sm, "یوزر مکمل طور پر مٹا دیا گیا (لاگ اِن سمیت)۔", "The user was deleted completely (including the login).", "ok"); } else { showMsg(sm, "پروفائل مٹا دیا گیا مگر سرور نہ مل سکا، اس لیے لاگ اِن Firebase میں رہ گیا ہے (اس سے کچھ نہیں کھلتا)۔ بعد میں دوبارہ ڈیلیٹ کریں یا Firebase Console سے مٹائیں۔", "The profile was deleted but the server could not be reached, so the login remains in Firebase (it opens nothing). Delete again later or remove it in the Firebase Console.", "error"); } }).catch(function(err){
           alert((currentLang==='ur' ? "حذف نہیں ہو سکا: " : "Could not delete: ") + err.message);
         });
       });

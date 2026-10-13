@@ -281,6 +281,8 @@ html,body{overflow-x:hidden;}
   .create-box h3{ font-size:16px; margin:0 0 2px; }
   .req-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 14px; }
   .req-grid .req-wide{ grid-column:1 / -1; }
+  .req-grid label.show-pw{ display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; }
+  .req-grid label.show-pw input{ width:auto; margin:0; min-height:0; }
   .req-grid label{ margin-top:12px; }
   .auth-card textarea,.create-box textarea{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; font-size:14px; font-family:inherit; background:var(--surface); color:var(--text); resize:vertical; direction:ltr; }
   .create-box input[type=text],.create-box input[type=email],.create-box select{ padding:10px 12px; }
@@ -627,6 +629,10 @@ html,body{overflow-x:hidden;}
               <div><label for="cu_mobile">رابطہ نمبر / Contact no. *</label><input type="text" id="cu_mobile" inputmode="tel" maxlength="16" placeholder="03XX-XXXXXXX" autocomplete="off"></div>
               <div><label for="cu_section">شعبہ / Section</label><input type="text" id="cu_section" maxlength="80" autocomplete="off"></div>
               <div><label for="cu_role" data-i18n="thRole">Role</label><select id="cu_role"></select></div>
+              <div><label for="cu_pw">پاس ورڈ / Password</label><input type="password" id="cu_pw" maxlength="64" autocomplete="new-password" autocapitalize="none" spellcheck="false" dir="ltr"></div>
+              <div><label for="cu_pw2">پاس ورڈ دوبارہ لکھیں / Re-type password</label><input type="password" id="cu_pw2" maxlength="64" autocomplete="new-password" autocapitalize="none" spellcheck="false" dir="ltr"></div>
+              <div class="req-wide"><label class="show-pw"><input type="checkbox" id="cu_pw_show"> <span>پاس ورڈ دکھائیں / Show password</span></label>
+                <p class="field-hint" id="cu_pw_hint">پاس ورڈ کم از کم 8 حروف، جس میں حرف اور ہندسہ دونوں ہوں۔ خالی چھوڑیں تو شخص کو ای میل سے پاس ورڈ بنانے کا لنک جائے گا۔ <span dir="ltr">At least 8 characters with a letter and a number. Leave both empty to email the person a link to set their own password.</span></p></div>
             </div>
             <div style="margin-top:14px"><button type="button" class="btn primary" id="cu_submit"><span id="cu_submitText" data-i18n="btnCreateUser">Create account</span></button></div>
             <div id="cu_msg" class="msg-box hidden" role="status"></div>
@@ -747,7 +753,7 @@ Object.assign(I18N.en, {
   noProfileBody:"You are signed in, but this account has no profile in the office records, so nothing can be opened. Please contact your office administrator.",
   adminHint:"Change roles, suspend or reset passwords here. Only Admin and Super Admin can see this panel. Only the Super Admin approves account requests or creates accounts.",
   createUserTitle:"Create a new account",
-  createUserHint:"Only the Super Admin can do this. The person gets an email to set their own password; you never see or type it.",
+  createUserHint:"Only the Super Admin can do this. Type a password for the person (twice), or leave it empty and they get an email to set their own.",
   btnCreateUser:"Create account", btnCreating:"Creating…"
 });
 Object.assign(I18N.ur, {
@@ -764,7 +770,7 @@ Object.assign(I18N.ur, {
   noProfileBody:"آپ لاگ اِن ہیں مگر اس اکاؤنٹ کا دفتری ریکارڈ میں پروفائل موجود نہیں، اس لیے کچھ نہیں کھل سکتا۔ براہ کرم اپنے دفتر کے ایڈمن سے رابطہ کریں۔",
   adminHint:"یہاں کردار بدلیں، اکاؤنٹ معطل کریں یا پاس ورڈ ری سیٹ بھیجیں۔ Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ اکاؤنٹ کی درخواست منظور کرنا یا اکاؤنٹ بنانا صرف Super Admin کا کام ہے۔",
   createUserTitle:"نیا اکاؤنٹ بنائیں",
-  createUserHint:"یہ صرف سپر ایڈمن کر سکتا ہے۔ شخص کو ای میل آئے گی جس سے وہ اپنا پاس ورڈ خود بنائے گا؛ آپ پاس ورڈ نہ دیکھتے ہیں نہ لکھتے ہیں۔",
+  createUserHint:"یہ صرف سپر ایڈمن کر سکتا ہے۔ شخص کے لیے پاس ورڈ دو بار لکھیں، یا خالی چھوڑیں تو اسے ای میل آئے گی جس سے وہ اپنا پاس ورڈ خود بنائے گا۔",
   btnCreateUser:"اکاؤنٹ بنائیں", btnCreating:"بن رہا ہے…"
 });
 var ROLE_LABELS = {
@@ -1249,9 +1255,12 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
 function createViaServer(p, role, extra){
   var body = { person:{ name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "" }, role:role, via:(extra && extra.via) || "admin-created" };
   if(extra && extra.requestId) body.requestId = extra.requestId;
+  var typedPw = (extra && extra.password) || "";
+  if(typedPw) body.password = typedPw;
   return callFn("campAdminCreateAccount", body, true).then(function(r){
     if(r.status === 200 && r.json && r.json.ok){
       var restored = !!r.json.restored;
+      if(typedPw && r.json.passwordSet === true) return { mailed:false, restored:restored, passwordSet:true };   /* only trust it when the server confirms it used the password */   /* the Super Admin chose the password: no e-mail needed */
       return auth.sendPasswordResetEmail(p.email).then(function(){ return { mailed:true, restored:restored }; }, function(){ return { mailed:false, restored:restored }; });
     }
     var e;
@@ -1300,7 +1309,7 @@ function createAccountClientSide(p, role, extra){
     });
   }
   return a2.setPersistence(firebase.auth.Auth.Persistence.NONE).then(function(){
-    return a2.createUserWithEmailAndPassword(p.email, randomPassword());
+    return a2.createUserWithEmailAndPassword(p.email, (extra && extra.password) || randomPassword());
   }).then(function(cred){ return {cred:cred}; }, function(err){
     if(err && err.code === "auth/email-already-in-use") return {exists:true};
     throw err;
@@ -1312,15 +1321,24 @@ function createAccountClientSide(p, role, extra){
       /* profile could not be saved: remove the half-made login so nothing stray is left behind */
       return newUser.delete().then(function(){ throw e; }, function(){ throw e; });
     }).then(function(){
+      if(extra && extra.password) return {mailed:false, passwordSet:true};
       return a2.sendPasswordResetEmail(p.email).then(function(){ return {mailed:true}; }, function(){ return {mailed:false}; });
     });
   }).then(function(res){ cleanup(); return res; }, function(err){ cleanup(); err.accountCreated = created; throw err; });
 }
 /* one wording for "account made / restored" used by direct create and by approval */
 function accountDoneMsg(res, email){
+  if(res.restored && res.passwordSet){
+    return ["پرانا لاگ اِن مل گیا اور " + email + " کا پروفائل بحال کر دیا گیا۔ اب وہ آپ کے لکھے ہوئے نئے پاس ورڈ سے لاگ اِن کرے گا؛ یہ پاس ورڈ اسے خود بتا دیں۔",
+            "The existing login was found and the profile for " + email + " is restored. They now sign in with the new password you typed; tell it to them yourself.", "ok"];
+  }
   if(res.restored){
     return ["پرانا لاگ اِن مل گیا اور " + email + " کا پروفائل بحال کر دیا گیا۔ وہ اپنے موجودہ پاس ورڈ سے لاگ اِن کر سکتا ہے" + (res.mailed ? " (پاس ورڈ ری سیٹ کا لنک بھی ای میل کر دیا گیا)۔" : "۔"),
             "The existing login was found and the profile for " + email + " is restored. They can sign in with their current password" + (res.mailed ? " (a password reset link was also emailed)." : "."), "ok"];
+  }
+  if(res.passwordSet){
+    return ["اکاؤنٹ بن گیا۔ " + email + " آپ کے لکھے ہوئے پاس ورڈ سے لاگ اِن کر سکتا ہے۔ یہ پاس ورڈ اسے خود بتا دیں، پھر وہ چاہے تو بدل لے۔",
+            "Account created. " + email + " can sign in with the password you typed. Tell it to them yourself; they can change it later.", "ok"];
   }
   return res.mailed
     ? ["اکاؤنٹ بن گیا۔ " + email + " کو پاس ورڈ بنانے کا لنک ای میل کر دیا گیا ہے۔", "Account created. A link to set a password was emailed to " + email + ".", "ok"]
@@ -1366,17 +1384,28 @@ document.getElementById("cu_submit").addEventListener("click", function(){
   var r = readPerson("cu_");
   if(r.err){ showMsg(msg, r.err[0], r.err[1]); return; }
   var role = document.getElementById("cu_role").value;
+  var pw1 = document.getElementById("cu_pw").value, pw2 = document.getElementById("cu_pw2").value;
+  if(pw1 || pw2){
+    if(pw1 !== pw2){ showMsg(msg, "دونوں پاس ورڈ ایک جیسے نہیں۔ دوبارہ لکھیں۔", "The two passwords do not match."); return; }
+    if(pw1.length < 8 || pw1.length > 64 || !/[A-Za-z\u0600-\u06FF]/.test(pw1) || !/[0-9]/.test(pw1)){ showMsg(msg, "پاس ورڈ کم از کم 8 حروف کا ہو اور اس میں حرف اور ہندسہ دونوں ہوں۔", "The password needs at least 8 characters, with a letter and a number."); return; }
+  }
   btn.disabled = true; txt.textContent = I18N[currentLang].btnCreating;
-  createAccountWithProfile(r.p, role, {via:"admin-created"}).then(function(res){
+  createAccountWithProfile(r.p, role, {via:"admin-created", password:pw1}).then(function(res){
     var dm = accountDoneMsg(res, r.p.email);
     showMsg(msg, dm[0], dm[1], dm[2]);
-    ["name","father","designation","age","email","mobile","section"].forEach(function(f){ document.getElementById("cu_"+f).value = ""; });
+    ["name","father","designation","age","email","mobile","section","pw","pw2"].forEach(function(f){ document.getElementById("cu_"+f).value = ""; });
     renderAdminPanel();
   }).catch(function(err){
     var m = authMsg(err);
     showMsg(msg, m[0], m[1]);
   }).then(function(){ btn.disabled = false; txt.textContent = I18N[currentLang].btnCreateUser; });
 });
+
+(function(){
+  var cb = document.getElementById("cu_pw_show");
+  if(!cb) return;
+  cb.addEventListener("change", function(){ var t = cb.checked ? "text" : "password"; document.getElementById("cu_pw").type = t; document.getElementById("cu_pw2").type = t; });
+})();
 
 /* ---------- 4) Super Admin: list of requests, approve / reject / delete ---------- */
 function fmtReqDate(ts){

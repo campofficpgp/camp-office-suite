@@ -147,6 +147,29 @@
     if (!open && panel.classList.contains('full')) { panel.classList.remove('full'); var fb0 = panel.querySelector('[data-act="full"]'); if (fb0) { fb0.textContent = '⛶'; fb0.title = 'Full screen / فل اسکرین'; fb0.setAttribute('aria-label', fb0.title); } }
     if (open) { var f = panel.querySelector('button'); if (f) f.focus(); } else { fab.focus(); }
   }
+  /* Keep the floating accessibility button from covering a chat box's message bar / Send button:
+     when it would overlap one, it sits just above that bar instead (phones and desktop). */
+  function startLift(root, fab) {
+    function lift() {
+      var bot = 14;
+      try {
+        var bars = document.querySelectorAll('.chat-input-bar'), fw = fab.offsetWidth || 150, fh = fab.offsetHeight || 44;
+        var nl = window.innerWidth - 14 - fw, nr = window.innerWidth - 14, nt = window.innerHeight - 14 - fh, nb = window.innerHeight - 14;
+        for (var i = 0; i < bars.length; i++) {
+          var r = bars[i].getBoundingClientRect();
+          if (r.width < 2 || r.height < 2) continue;
+          if (r.right > nl && r.left < nr && r.bottom > nt && r.top < nb) bot = Math.max(bot, Math.round(window.innerHeight - r.top) + 10);
+        }
+      } catch (e) {}
+      var cur = root.style.bottom;
+      if (cur !== bot + 'px') root.style.bottom = (bot === 14 ? '' : bot + 'px');
+    }
+    lift(); window.addEventListener('resize', lift); window.addEventListener('orientationchange', lift);
+    document.addEventListener('click', function () { setTimeout(lift, 120); setTimeout(lift, 500); }, true);
+    document.addEventListener('focusin', function () { setTimeout(lift, 150); });
+    setInterval(lift, 700);
+  }
+
   function buildToolbar() {
     if (inFrame || document.getElementById('a11y-root') || !document.body) return;
     var root = el('div', { id: 'a11y-root' });
@@ -197,6 +220,7 @@
     minBtn.addEventListener('click', function () { mini = !mini; try { localStorage.setItem('a11yMini_v1', mini ? '1' : '0'); } catch (e) {} applyMini(); if (!panel.hidden) openPanel(false); });
     root.appendChild(panel); root.appendChild(fab); root.appendChild(minBtn); root.appendChild(statusEl);
     document.body.appendChild(root);
+    startLift(root, fab);
 
     fab.addEventListener('click', function () { openPanel(panel.hidden); });
     panel.addEventListener('click', function (e) {
@@ -398,4 +422,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 
-/* version: 2026-10-09 full-screen button */
+/* version: 2026-10-13 keep the accessibility button off the chat Send button */

@@ -284,6 +284,9 @@ html,body{overflow-x:hidden;}
   .req-grid label.show-pw{ display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer; }
   .req-grid label.show-pw input{ width:auto; margin:0; min-height:0; }
   .req-grid label{ margin-top:12px; }
+  .req-grid .req-pwgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 14px; }
+  .req-grid .req-pwgrid.hidden{ display:none; }
+  .req-grid .req-pwgrid > label.show-pw, .req-grid .req-pwgrid > .field-hint{ grid-column:1 / -1; }
   .auth-card textarea,.create-box textarea{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:8px; font-size:14px; font-family:inherit; background:var(--surface); color:var(--text); resize:vertical; direction:ltr; }
   .create-box input[type=text],.create-box input[type=email],.create-box select{ padding:10px 12px; }
   .req-hp{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
@@ -301,7 +304,7 @@ html,body{overflow-x:hidden;}
     .auth-points,.auth-brand-foot{ display:none; }
     .auth-brand .auth-brand-title{ font-size:21px; }
     .auth-main{ padding:26px 20px 28px; }
-    .req-grid{ grid-template-columns:minmax(0,1fr); }
+    .req-grid, .req-grid .req-pwgrid{ grid-template-columns:minmax(0,1fr); }
     .req-item dl{ grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
   }
 
@@ -389,7 +392,7 @@ html,body{overflow-x:hidden;}
 
       <div class="auth-card hidden" id="requestCard">
         <h1>اکاؤنٹ کی درخواست / Account Request</h1>
-        <p class="auth-sub">اپنی تفصیل بھریں۔ سپر ایڈمن منظور کرے گا تو اکاؤنٹ بنے گا اور آپ کو ای میل ملے گی۔ <span dir="ltr">Fill in your details. Your account is created only after the Super Admin approves.</span></p>
+        <p class="auth-sub">اپنی تفصیل بھریں اور اپنا پاس ورڈ خود بنائیں۔ سپر ایڈمن منظور کرے گا تو آپ اسی پاس ورڈ سے لاگ اِن کر سکیں گے۔ <span dir="ltr">Fill in your details and choose your own password. You can sign in with it once the Super Admin approves.</span></p>
         <form id="requestForm" novalidate autocomplete="off">
           <div class="req-grid">
             <div><label for="rq_name">نام / Full name *</label><input type="text" id="rq_name" maxlength="80" autocomplete="off"></div>
@@ -399,6 +402,12 @@ html,body{overflow-x:hidden;}
             <div><label for="rq_email">ای میل / Email *</label><input type="email" id="rq_email" maxlength="120" inputmode="email" autocapitalize="none" spellcheck="false" autocomplete="off"></div>
             <div><label for="rq_mobile">رابطہ نمبر / Contact no. *</label><input type="text" id="rq_mobile" inputmode="tel" maxlength="16" placeholder="03XX-XXXXXXX" autocomplete="off"></div>
             <div class="req-wide"><label for="rq_section">شعبہ / Section</label><input type="text" id="rq_section" maxlength="80" autocomplete="off"></div>
+            <div id="rq_pw_wrap" class="req-wide req-pwgrid hidden">
+              <div><label for="rq_pw">پاس ورڈ / Password *</label><input type="password" id="rq_pw" maxlength="64" autocomplete="new-password" autocapitalize="none" spellcheck="false" dir="ltr"></div>
+              <div><label for="rq_pw2">پاس ورڈ دوبارہ / Re-type password *</label><input type="password" id="rq_pw2" maxlength="64" autocomplete="new-password" autocapitalize="none" spellcheck="false" dir="ltr"></div>
+              <label class="show-pw"><input type="checkbox" id="rq_pw_show"> پاس ورڈ دکھائیں / Show password</label>
+              <div class="field-hint">کم از کم 8 حروف، اس میں حرف اور ہندسہ دونوں ہوں۔ / At least 8 characters, with a letter and a number.</div>
+            </div>
             <div class="req-wide"><label for="rq_remarks">مزید معلومات / Remarks</label><textarea id="rq_remarks" maxlength="300" rows="3"></textarea></div>
           </div>
           <div class="req-hp" aria-hidden="true"><label for="rq_website">Website</label><input type="text" id="rq_website" tabindex="-1" autocomplete="off"></div>
@@ -1189,7 +1198,7 @@ function resetCaptcha(){ try{ if(RQ_CAPTCHA_ID !== null) grecaptcha.reset(RQ_CAP
 function showRequestForm(on){
   document.getElementById("loginCard").classList.toggle("hidden", on);
   document.getElementById("requestCard").classList.toggle("hidden", !on);
-  if(on){ ensureCaptcha(); var f = document.getElementById("rq_name"); if(f) f.focus(); }
+  if(on){ ensureCaptcha(); document.getElementById("rq_pw_wrap").classList.toggle("hidden", !captchaOn()); var f = document.getElementById("rq_name"); if(f) f.focus(); }
 }
 document.getElementById("openRequestBtn").addEventListener("click", function(){ showRequestForm(true); });
 document.getElementById("backToLoginBtn2").addEventListener("click", function(){ showRequestForm(false); });
@@ -1208,6 +1217,14 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
   var r = readPerson("rq_");
   if(r.err){ showMsg(msg, r.err[0], r.err[1]); return; }
   var p = r.p;
+  var rqPw = "";
+  if(captchaOn()){   /* the person chooses his own password */
+    var pw1 = document.getElementById("rq_pw").value, pw2 = document.getElementById("rq_pw2").value;
+    if(!pw1){ showMsg(msg, "اپنا پاس ورڈ لکھیں۔", "Please choose a password."); return; }
+    if(pw1 !== pw2){ showMsg(msg, "دونوں پاس ورڈ ایک جیسے نہیں۔ دوبارہ لکھیں۔", "The two passwords do not match."); return; }
+    if(pw1.length < 8 || pw1.length > 64 || !/[A-Za-z\u0600-\u06FF]/.test(pw1) || !/[0-9]/.test(pw1)){ showMsg(msg, "پاس ورڈ کم از کم 8 حروف کا ہو اور اس میں حرف اور ہندسہ دونوں ہوں۔", "The password needs at least 8 characters, with a letter and a number."); return; }
+    rqPw = pw1;
+  }
   var doc = { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, status:"pending", createdAt:firebase.firestore.FieldValue.serverTimestamp() };
   if(p.section) doc.section = p.section.slice(0,80);
   if(p.remarks) doc.remarks = p.remarks.slice(0,300);
@@ -1222,19 +1239,26 @@ document.getElementById("requestForm").addEventListener("submit", function(ev){
   var done = function(){
     RQ_BUSY = false; document.getElementById("rq_submit").disabled = false; document.getElementById("rq_spin").classList.add("hidden");
   };
-  var thanks = function(){
+  var thanks = function(selfMade){
     try{ localStorage.setItem("campReqSent", String(Date.now())); }catch(e){}
     done();
     document.getElementById("requestForm").reset();
-    showMsg(msg, "آپ کی درخواست سپر ایڈمن کو بھیج دی گئی ہے۔ منظوری ہونے پر آپ کو " + p.email + " پر ای میل ملے گی جس سے آپ اپنا پاس ورڈ بنائیں گے۔", "Your request was sent to the Super Admin. When it is approved you will get an email at " + p.email + " to set your password.", "ok");
+    document.getElementById("rq_pw").type = "password"; document.getElementById("rq_pw2").type = "password";
+    if(selfMade === true){
+      showMsg(msg, "آپ کا اکاؤنٹ بن گیا ہے اور سپر ایڈمن کی منظوری کا انتظار ہے۔ منظوری کے بعد آپ " + p.email + " اور اپنے بنائے ہوئے پاس ورڈ سے لاگ اِن کر سکیں گے۔", "Your account is made and is waiting for the Super Admin's approval. After approval you can sign in with " + p.email + " and the password you chose.", "ok");
+    } else {
+      showMsg(msg, "آپ کی درخواست سپر ایڈمن کو بھیج دی گئی ہے۔ منظوری ہونے پر آپ کو " + p.email + " پر ای میل ملے گی جس سے آپ اپنا پاس ورڈ بنائیں گے۔", "Your request was sent to the Super Admin. When it is approved you will get an email at " + p.email + " to set your password.", "ok");
+    }
   };
   if(captchaOn()){
     /* server checks the tick with Google, then stores the request */
-    callFn("campRequestAccount", { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "", recaptchaToken:captchaToken, website:"" }, false).then(function(r){
-      if(r.status === 200 && r.json && r.json.ok){ resetCaptcha(); thanks(); return; }
+    callFn("campRequestAccount", { name:p.name, fatherName:p.fatherName, designation:p.designation, age:p.age, email:p.email, mobile:p.mobile, section:p.section || "", remarks:p.remarks || "", password:rqPw, recaptchaToken:captchaToken, website:"" }, false).then(function(r){
+      if(r.status === 200 && r.json && r.json.ok){ resetCaptcha(); thanks(r.json.selfCreated === true); return; }
       done(); resetCaptcha();
       var code = r.json && r.json.error;
       if(code === "captcha") showMsg(msg, "روبوٹ چیک کامیاب نہیں ہوا۔ دوبارہ ٹِک لگا کر کوشش کریں۔", "The robot check failed. Please tick the box again and retry.");
+      else if(code === "exists") showMsg(msg, "اس ای میل پر اکاؤنٹ یا درخواست پہلے سے موجود ہے۔ لاگ اِن کر کے دیکھیں، پاس ورڈ بھول گئے ہوں تو \"پاس ورڈ بھول گئے\" استعمال کریں، ورنہ سپر ایڈمن سے رابطہ کریں۔", "An account or request already exists for this email. Try signing in (use \"Forgot password\" if needed) or contact the Super Admin.");
+      else if(code === "weak-password") showMsg(msg, "پاس ورڈ کم از کم 8 حروف کا ہو اور اس میں حرف اور ہندسہ دونوں ہوں۔", "The password needs at least 8 characters, with a letter and a number.");
       else if(code === "invalid") showMsg(msg, "دی گئی معلومات درست نہیں۔ دوبارہ جانچیں۔", "The details are not valid. Please check them.");
       else showMsg(msg, "درخواست اس وقت نہیں بھیجی جا سکتی۔ کچھ دیر بعد دوبارہ کوشش کریں۔", "The request cannot be sent right now. Please try again in a little while.");
     }).catch(function(){
@@ -1407,6 +1431,12 @@ document.getElementById("cu_submit").addEventListener("click", function(){
   cb.addEventListener("change", function(){ var t = cb.checked ? "text" : "password"; document.getElementById("cu_pw").type = t; document.getElementById("cu_pw2").type = t; });
 })();
 
+(function(){
+  var cb = document.getElementById("rq_pw_show");
+  if(!cb) return;
+  cb.addEventListener("change", function(){ var t = cb.checked ? "text" : "password"; document.getElementById("rq_pw").type = t; document.getElementById("rq_pw2").type = t; });
+})();
+
 /* ---------- 4) Super Admin: list of requests, approve / reject / delete ---------- */
 function fmtReqDate(ts){
   try{ var d = ts && ts.toDate ? ts.toDate() : null; if(!d) return "—"; return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2); }catch(e){ return "—"; }
@@ -1435,7 +1465,7 @@ function renderRequests(){
         (r.remarks ? "<div style='grid-column:1/-1'><dt>مزید معلومات / Remarks</dt><dd>"+esc(r.remarks)+"</dd></div>" : "")+
         "</dl><div class='req-actions'>"+
         (isP ? "<select data-req-role></select><button class='btn small primary' data-req-approve>منظور کریں / Approve</button><button class='btn small danger' data-req-reject>مسترد / Reject</button>" : "")+
-        "<button class='btn small' data-req-delete>حذف / Delete</button></div><div class='msg-box hidden' data-req-msg></div></div>";
+        "<button class='btn small' data-req-delete>"+(r.uid && r.status !== "approved" ? "حذف / Delete" : "ریکارڈ ہٹائیں / Remove record")+"</button></div><div class='msg-box hidden' data-req-msg></div></div>";
     }).join("");
     list.querySelectorAll(".req-item").forEach(function(item){
       var id = item.getAttribute("data-id");
@@ -1446,12 +1476,23 @@ function renderRequests(){
       if(ap) ap.addEventListener("click", function(){
         ap.disabled = true; hideMsg(msg);
         var p = { name:r.name, fatherName:r.fatherName, designation:r.designation, age:r.age, email:r.email, mobile:r.mobile, section:r.section || "" };
-        createAccountWithProfile(p, sel.value, {via:"approved-request", requestId:id}).then(function(res){
-          return db.collection("accountRequests").doc(id).update({ status:"approved", approvedBy:CURRENT_UID, approvedAt:firebase.firestore.FieldValue.serverTimestamp() }).then(function(){ return res; });
-        }).then(function(res){
+        var stamp = firebase.firestore.FieldValue.serverTimestamp();
+        var work;
+        if(r.uid){
+          /* the person made his own login: approving only switches his profile on and gives the role */
+          work = db.collection("users").doc(r.uid).update({ approvalStatus:"approved", isActive:true, roleV2:sel.value, approvedBy:CURRENT_UID, approvedAt:stamp }).then(function(){
+            return db.collection("accountRequests").doc(id).update({ status:"approved", approvedBy:CURRENT_UID, approvedAt:stamp });
+          }).then(function(){ return { selfMade:true }; });
+        } else {
+          /* old request without a login: the Super Admin's page makes the login (as before) */
+          work = createAccountWithProfile(p, sel.value, {via:"approved-request", requestId:id}).then(function(res){
+            return db.collection("accountRequests").doc(id).update({ status:"approved", approvedBy:CURRENT_UID, approvedAt:stamp }).then(function(){ return res; });
+          });
+        }
+        work.then(function(res){
           renderRequests(); renderAdminPanel();
           var m = document.getElementById("adminStatusMsg");
-          var dm = accountDoneMsg(res, p.email);
+          var dm = res.selfMade ? ["منظور ہو گیا۔ " + p.email + " اب اپنے بنائے ہوئے پاس ورڈ سے لاگ اِن کر سکتا ہے۔", "Approved. " + p.email + " can now sign in with the password they chose.", "ok"] : accountDoneMsg(res, p.email);
           showMsg(m, dm[0], dm[1], dm[2]);
         }).catch(function(err){
           ap.disabled = false;
@@ -1461,12 +1502,23 @@ function renderRequests(){
       });
       var rj = item.querySelector("[data-req-reject]");
       if(rj) rj.addEventListener("click", function(){
-        db.collection("accountRequests").doc(id).update({ status:"rejected", rejectedBy:CURRENT_UID }).then(renderRequests).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
+        var jobs = [ db.collection("accountRequests").doc(id).update({ status:"rejected", rejectedBy:CURRENT_UID }) ];
+        if(r.uid) jobs.push(db.collection("users").doc(r.uid).update({ approvalStatus:"rejected" }));
+        Promise.all(jobs).then(function(){ renderRequests(); renderAdminPanel(); }).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
       });
       item.querySelector("[data-req-delete]").addEventListener("click", function(){
-        var ask = currentLang === "ur" ? ("یہ درخواست حذف کریں؟\n" + r.email + "\n(حذف کرنے سے یہ ای میل دوبارہ درخواست بھیج سکے گی۔)") : ("Delete this request?\n" + r.email + "\n(This lets the same email send a request again.)");
+        var full = !!r.uid && r.status !== "approved";   /* a person who made his own login: delete everything of him */
+        var ask = full
+          ? (currentLang === "ur" ? ("اس شخص کا اکاؤنٹ مکمل ختم کریں (لاگ اِن اور تمام ریکارڈ)؟\n" + r.email + "\n(یہ واپس نہیں ہو سکتا۔)") : ("Delete this person's account completely (login and all records)?\n" + r.email + "\n(This cannot be undone.)"))
+          : (currentLang === "ur" ? ("یہ درخواست کا ریکارڈ ہٹائیں؟\n" + r.email + "\n(اکاؤنٹ برقرار رہے گا۔)") : ("Remove this request record?\n" + r.email + "\n(The account itself stays.)"));
         if(!confirm(ask)) return;
-        db.collection("accountRequests").doc(id).delete().then(renderRequests).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
+        var job = full ? deleteAccountEverywhere(r.uid, r.email).then(function(res){
+          if(res && res.authDeleted === false){
+            var m0 = document.getElementById("adminStatusMsg");
+            showMsg(m0, "ریکارڈ ہٹا دیا گیا مگر سرور نہیں ملا، اس لیے لاگ اِن Firebase میں رہ گیا ہے۔ سرور چلنے پر دوبارہ حذف کریں۔", "Records were removed but the server could not be reached, so the login is still in Firebase. Delete again when the server works.", "error");
+          }
+        }) : db.collection("accountRequests").doc(id).delete();
+        job.then(function(){ renderRequests(); renderAdminPanel(); }).catch(function(err){ var m = authMsg(err); showMsg(msg, m[0], m[1]); });
       });
     });
   }).catch(function(err){

@@ -1741,6 +1741,9 @@ async function doSave(newTypes, newJudges, only){
       if(e && e.code === 'permission-denied' && create.length){ withExtras = false; await commit(false); }
       else throw e;
     }
+    /* a forced (re-entered) row must not stay forced after it is saved, otherwise the next Save creates it a second time */
+    create.forEach(function(r){ if(r.force){ r.force = false; } });
+    if(create.length){ saveDraft(); render(); }
     if(addLists && (newTypes.length || newJudges.length)){
       try{
         await db.collection('lookupLists').doc('caseEntry').set({

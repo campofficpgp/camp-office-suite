@@ -155,7 +155,23 @@
   /* Keep the floating accessibility button from covering a chat box's message bar / Send button:
      when it would overlap one, it sits just above that bar instead (phones and desktop). */
   function startLift(root, fab) {
+    function modalOpen() {
+      try {
+        var c = document.querySelectorAll('[class*="overlay"],[class*="modal"],[class*="backdrop"],[role="dialog"],[aria-modal="true"]');
+        for (var i = 0; i < c.length; i++) {
+          var e = c[i]; if (root.contains(e) || (e.classList && e.classList.contains('fullscreen-overlay'))) continue;
+          var cs = getComputedStyle(e); if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue;
+          var r = e.getBoundingClientRect();
+          if (r.width >= window.innerWidth * 0.85 && r.height >= window.innerHeight * 0.85 && r.left <= 2 && r.top <= 2) return true;
+        }
+      } catch (er) {}
+      return false;
+    }
     function lift() {
+      var panelEl = document.getElementById('a11y-panel');
+      var hide = modalOpen() && (!panelEl || panelEl.hidden);
+      var wantVis = hide ? 'hidden' : '';
+      if (root.style.visibility !== wantVis) root.style.visibility = wantVis;
       var bot = 14;
       try {
         var bars = document.querySelectorAll('.chat-input-bar, #chatPanel.pmin .chat-head'), fw = fab.offsetWidth || 150, fh = fab.offsetHeight || 44;

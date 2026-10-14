@@ -264,6 +264,7 @@ html,body{overflow-x:hidden;}
   .auth-card .pw-toggle:hover{ background:var(--navy-tint); }
   .auth-card .btn.block{ padding:13px 16px; font-size:15px; border-radius:8px; margin-top:20px; }
   .auth-card .btn .spinner{ margin-inline-end:6px; }
+  .otp-input{ letter-spacing:.35em; font-size:20px; font-weight:700; text-align:center; font-variant-numeric:tabular-nums; }
   .link-btn{ background:none; border:none; padding:6px 0; color:var(--navy); font-weight:700; font-size:13px; cursor:pointer; text-decoration:underline; font-family:inherit; }
   .link-btn:disabled{ opacity:.55; cursor:not-allowed; text-decoration:none; }
   .auth-links{ display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
@@ -427,6 +428,21 @@ html,body{overflow-x:hidden;}
           <button class="btn primary block" id="rq_submit" type="submit"><span class="spinner hidden" id="rq_spin"></span><span id="rq_submitText">درخواست بھیجیں / Send request</span></button>
         </form>
         <div class="auth-links"><button type="button" class="link-btn" id="backToLoginBtn2">← لاگ اِن پر واپس / Back to sign in</button></div>
+      </div>
+
+      <div class="auth-card hidden" id="otpCard">
+        <h1>سپر ایڈمن تصدیق / Super Admin verification</h1>
+        <p class="auth-sub">آپ کی ای میل <span dir="ltr" id="otp_to"></span> پر 6 ہندسوں کا کوڈ بھیجا گیا ہے۔ اسے یہاں لکھیں۔ <span dir="ltr">A 6-digit code was e-mailed to you. Type it here to continue.</span></p>
+        <div id="otp_msg" class="msg-box hidden" role="status"></div>
+        <form id="otpForm" novalidate>
+          <label for="otp_code">کوڈ / Code</label>
+          <input type="text" id="otp_code" class="otp-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" autocapitalize="none" spellcheck="false" dir="ltr">
+          <button class="btn primary block" id="otp_submit" type="submit"><span class="spinner hidden" id="otp_spin"></span><span id="otp_submitText">تصدیق کریں / Verify</span></button>
+        </form>
+        <div class="auth-links" style="display:flex;flex-wrap:wrap;gap:4px 18px;justify-content:space-between">
+          <button type="button" class="link-btn" id="otp_resend">کوڈ دوبارہ بھیجیں / Send the code again</button>
+          <button type="button" class="link-btn" id="otp_signout">لاگ آؤٹ / Sign out</button>
+        </div>
       </div>
 
       <div class="auth-card hidden" id="authLoadErrorCard">
@@ -637,6 +653,27 @@ html,body{overflow-x:hidden;}
             <div class="userbar"><h3>اکاؤنٹ کی درخواستیں / Account requests</h3><span class="count-chip" id="reqCountChip"></span></div>
             <p class="field-hint">منظور کرنے سے پہلے کردار چنیں۔ منظوری پر اکاؤنٹ بنتا ہے اور شخص کو پاس ورڈ بنانے کا لنک ای میل ہوتا ہے۔ <span dir="ltr">Pick a role, then approve: the account is created and the person gets an email to set a password.</span></p>
             <div id="requestsList"></div>
+          </div>
+          <div class="create-box hidden" id="otpBox">
+            <div class="userbar"><h3>سپر ایڈمن لاگ اِن کوڈ (OTP) / Super Admin sign-in code</h3><span class="count-chip" id="otpStateChip">…</span></div>
+            <p class="field-hint">آن ہو تو ہر بار لاگ اِن کے بعد سپر ایڈمن کی ای میل پر 6 ہندسوں کا کوڈ آئے گا اور اسے لکھے بغیر کوئی ڈیٹا نہیں کھلے گا۔ یہ سوئچ صرف سپر ایڈمن بدل سکتا ہے۔ دوسرے یوزرز کو کبھی کوڈ نہیں پوچھا جاتا۔ <span dir="ltr">When ON, every Super Admin sign-in needs a 6-digit code e-mailed to the Super Admin; no data opens without it. Only the Super Admin can change this switch. Other users are never asked for a code.</span></p>
+            <div style="margin-top:10px"><button type="button" class="btn primary" id="otpToggleBtn" disabled>…</button></div>
+            <div class="hidden" id="otpEnableStep" style="margin-top:12px">
+              <label for="otpb_code">ای میل میں آیا ہوا کوڈ / Code from your e-mail</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <input type="text" id="otpb_code" class="otp-input" inputmode="numeric" maxlength="6" autocomplete="one-time-code" dir="ltr" style="max-width:180px">
+                <button type="button" class="btn primary" id="otpb_verify">تصدیق کر کے آن کریں / Verify &amp; turn ON</button>
+                <button type="button" class="btn" id="otpb_cancel">منسوخ / Cancel</button>
+              </div>
+            </div>
+            <div class="hidden" id="otpDisableStep" style="margin-top:12px">
+              <div class="field-hint">کیا آپ واقعی کوڈ بند کرنا چاہتے ہیں؟ <span dir="ltr">Turn the sign-in code OFF?</span></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                <button type="button" class="btn danger" id="otpd_yes">ہاں، بند کریں / Yes, turn OFF</button>
+                <button type="button" class="btn" id="otpd_no">نہیں / No</button>
+              </div>
+            </div>
+            <div id="otpBoxMsg" class="msg-box hidden" role="status"></div>
           </div>
           <div class="create-box hidden" id="createUserBox">
             <h3 data-i18n="createUserTitle">Create a new account</h3>
@@ -1065,6 +1102,7 @@ function enterApp(user, data){
 }
 
 function loadUserProfileAndRoute(user){
+  document.getElementById("otpCard").classList.add("hidden");
   document.getElementById("authLoadErrorCard").classList.add("hidden");
   document.getElementById("loginCard").classList.remove("hidden");
   CURRENT_UID = user.uid;
@@ -1093,6 +1131,8 @@ function loadUserProfileAndRoute(user){
     } else if(data.approvalStatus !== "approved"){
       document.getElementById("pendingEmailLine").textContent = user.email;
       showOnly("pendingScreen");
+    } else if(data.roleV2 === "super_admin"){
+      otpGate(user, data);
     } else {
       enterApp(user, data);
     }
@@ -1114,6 +1154,7 @@ auth.onAuthStateChanged(function(user){
     CURRENT_DOC = null; CURRENT_UID = null;
     if(NOTIF_POLL_TIMER){ clearInterval(NOTIF_POLL_TIMER); NOTIF_POLL_TIMER = null; }
     document.getElementById("authLoadErrorCard").classList.add("hidden");
+    document.getElementById("otpCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
     document.getElementById("li_password").value = "";
     setBusy(false);
@@ -1122,6 +1163,155 @@ auth.onAuthStateChanged(function(user){
     return;
   }
   loadUserProfileAndRoute(user);
+});
+
+/* ============================================================================
+   SUPER ADMIN SIGN-IN CODE (OTP)
+   ----------------------------------------------------------------------------
+   The switch (appConfig/security.superAdminOtp) can only be changed by the server, after a code is proved.
+   When it is ON, a Super Admin is shown the code screen after the password; the server checks the 6 digits
+   and stamps this sign-in. The Firestore rules refuse the Super Admin every read/write until that stamp exists,
+   so this screen is only the doorway; the rules are the real lock. Other roles never see any of this.
+   ============================================================================ */
+var OTP_SENT_FOR = null, OTP_USER = null, OTP_DATA = null;
+var OTP_ERR = {
+  "otp":            ["کوڈ غلط ہے۔ دوبارہ دیکھ کر لکھیں۔", "That code is wrong. Check and try again."],
+  "otp-expired":    ["کوڈ کی مدت ختم ہو گئی ہے۔ نیا کوڈ منگوائیں۔", "The code has expired. Ask for a new one."],
+  "otp-locked":     ["بہت زیادہ غلط کوششیں۔ نیا کوڈ منگوائیں۔", "Too many wrong tries. Ask for a new code."],
+  "wait":           ["کوڈ ابھی ابھی بھیجا گیا ہے۔ ایک منٹ بعد دوبارہ منگوائیں۔ (پہلا کوڈ 10 منٹ تک چلتا ہے۔)", "A code was just sent. Wait a minute before asking again. (The first code is valid for 10 minutes.)"],
+  "too-many":       ["ایک گھنٹے میں بہت کوڈ منگوائے گئے۔ کچھ دیر بعد کوشش کریں۔", "Too many codes in an hour. Try again later."],
+  "mail-not-configured": ["ای میل کا نظام سیٹ نہیں ہے۔", "The e-mail sender is not set up."],
+  "mail-failed":    ["ای میل بھیجی نہیں جا سکی۔ کچھ دیر بعد کوشش کریں۔", "The e-mail could not be sent. Try again shortly."],
+  "otp-required":   ["پہلے کوڈ کی تصدیق ضروری ہے۔", "Verify the code first."]
+};
+function otpErrMsg(el, j, status){
+  var m = OTP_ERR[j && j.error] || ["کچھ گڑبڑ ہوئی۔ دوبارہ کوشش کریں۔", "Something went wrong. Please try again."];
+  showMsg(el, m[0], m[1], "error");
+}
+function otpSend(msgEl, toEl){
+  return callFn("campOtpSend", {}, true).then(function(r){
+    var j = r.json || {};
+    if(r.status === 200 && j.ok){
+      if(toEl && j.sentTo) toEl.textContent = j.sentTo;
+      showMsg(msgEl, "کوڈ آپ کی ای میل پر بھیج دیا گیا ہے۔", "The code has been e-mailed to you.", "ok");
+      return true;
+    }
+    if(r.status === 429 && j.error === "wait"){ otpErrMsg(msgEl, j); return true; }   /* a valid earlier code may still be in the inbox */
+    otpErrMsg(msgEl, j); return false;
+  }).catch(function(){
+    showMsg(msgEl, "سرور سے رابطہ نہیں ہو سکا۔ انٹرنیٹ دیکھیں۔", "Could not reach the server. Check your connection.", "error"); return false;
+  });
+}
+function otpGate(user, data){
+  callFn("campOtpStatus", {}, true).then(function(r){
+    var j = r.json || {};
+    if(r.status === 200 && j.required && !j.verified){ showOtpScreen(user, data); }
+    else { enterApp(user, data); }
+  }).catch(function(){ enterApp(user, data); });   /* server unreachable: open as before; the Firestore rules still decide what is readable */
+}
+function showOtpScreen(user, data){
+  OTP_USER = user; OTP_DATA = data;
+  showOnly("authScreen");
+  ["loginCard","requestCard","authLoadErrorCard"].forEach(function(id){ var e = document.getElementById(id); if(e) e.classList.add("hidden"); });
+  document.getElementById("otpCard").classList.remove("hidden");
+  var msg = document.getElementById("otp_msg"); hideMsg(msg);
+  document.getElementById("otp_code").value = "";
+  document.getElementById("otp_to").textContent = (user.email || "").replace(/^(.{2}).*(@.*)$/, "$1***$2");
+  if(OTP_SENT_FOR !== user.uid){
+    OTP_SENT_FOR = user.uid;
+    otpSend(msg, document.getElementById("otp_to"));
+  }
+  try{ document.getElementById("otp_code").focus(); }catch(e){}
+}
+function otpBusy(on){
+  document.getElementById("otp_submit").disabled = on;
+  document.getElementById("otp_spin").classList.toggle("hidden", !on);
+}
+document.getElementById("otpForm").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  var msg = document.getElementById("otp_msg");
+  var code = document.getElementById("otp_code").value.replace(/\s+/g, "");
+  if(!/^[0-9]{6}$/.test(code)){ showMsg(msg, "6 ہندسوں کا کوڈ لکھیں۔", "Enter the 6-digit code.", "error"); return; }
+  otpBusy(true);
+  callFn("campOtpVerify", { code: code }, true).then(function(r){
+    var j = r.json || {};
+    if(r.status === 200 && j.ok){
+      return auth.currentUser.getIdToken(true).then(function(){ otpBusy(false); document.getElementById("otpCard").classList.add("hidden"); enterApp(OTP_USER, OTP_DATA); });
+    }
+    otpBusy(false); otpErrMsg(msg, j);
+  }).catch(function(){
+    otpBusy(false);
+    showMsg(msg, "سرور سے رابطہ نہیں ہو سکا۔ انٹرنیٹ دیکھیں۔", "Could not reach the server. Check your connection.", "error");
+  });
+});
+document.getElementById("otp_resend").addEventListener("click", function(){
+  var btn = this; btn.disabled = true;
+  otpSend(document.getElementById("otp_msg"), document.getElementById("otp_to")).then(function(){ setTimeout(function(){ btn.disabled = false; }, 15000); });
+});
+document.getElementById("otp_signout").addEventListener("click", function(){ OTP_SENT_FOR = null; auth.signOut(); });
+
+/* ----- the ON / OFF switch (Super Admin, in the Admin Controls panel) ----- */
+var OTP_SWITCH_ON = null;
+function otpBoxMsg(ur, en, kind){ showMsg(document.getElementById("otpBoxMsg"), ur, en, kind || "info"); }
+function otpBoxShow(){
+  var on = OTP_SWITCH_ON;
+  var chip = document.getElementById("otpStateChip"), btn = document.getElementById("otpToggleBtn");
+  if(on === null){ chip.textContent = "…"; btn.disabled = true; btn.textContent = "…"; return; }
+  chip.textContent = on ? "آن / ON" : "بند / OFF";
+  btn.disabled = false;
+  btn.textContent = on ? "کوڈ بند کریں / Turn OFF" : "کوڈ آن کریں / Turn ON";
+  btn.className = on ? "btn danger" : "btn primary";
+}
+function refreshOtpBox(){
+  var box = document.getElementById("otpBox");
+  var isSA = !!(CURRENT_DOC && CURRENT_DOC.roleV2 === "super_admin");
+  box.classList.toggle("hidden", !isSA);
+  if(!isSA) return;
+  callFn("campOtpStatus", {}, true).then(function(r){
+    var j = r.json || {};
+    OTP_SWITCH_ON = (r.status === 200) ? !!j.enabled : null;
+    otpBoxShow();
+    if(r.status !== 200) otpBoxMsg("سوئچ کی حالت معلوم نہیں ہو سکی۔", "Could not read the switch state.", "error");
+  }).catch(function(){ OTP_SWITCH_ON = null; otpBoxShow(); otpBoxMsg("سرور سے رابطہ نہیں ہو سکا۔", "Could not reach the server.", "error"); });
+}
+function otpSetSwitch(enabled){
+  return callFn("campOtpSetting", { enabled: enabled }, true).then(function(r){
+    var j = r.json || {};
+    if(r.status === 200 && j.ok){
+      OTP_SWITCH_ON = !!j.enabled; otpBoxShow();
+      document.getElementById("otpEnableStep").classList.add("hidden");
+      document.getElementById("otpDisableStep").classList.add("hidden");
+      if(OTP_SWITCH_ON) otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ آن ہو گیا۔ اب ہر لاگ اِن پر ای میل کا کوڈ پوچھا جائے گا۔", "Super Admin sign-in code is now ON. Every sign-in will ask for the e-mailed code.", "ok");
+      else otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ بند ہو گیا۔", "Super Admin sign-in code is now OFF.", "ok");
+      return true;
+    }
+    otpErrMsg(document.getElementById("otpBoxMsg"), j); return false;
+  }).catch(function(){ otpBoxMsg("سرور سے رابطہ نہیں ہو سکا۔", "Could not reach the server.", "error"); return false; });
+}
+document.getElementById("otpToggleBtn").addEventListener("click", function(){
+  hideMsg(document.getElementById("otpBoxMsg"));
+  if(OTP_SWITCH_ON){ document.getElementById("otpDisableStep").classList.remove("hidden"); return; }
+  /* turning ON: first prove that the e-mail really works by entering a code */
+  var btn = this; btn.disabled = true;
+  otpSend(document.getElementById("otpBoxMsg"), null).then(function(ok){
+    btn.disabled = false;
+    if(ok){ document.getElementById("otpEnableStep").classList.remove("hidden"); document.getElementById("otpb_code").value = ""; try{ document.getElementById("otpb_code").focus(); }catch(e){} }
+  });
+});
+document.getElementById("otpd_no").addEventListener("click", function(){ document.getElementById("otpDisableStep").classList.add("hidden"); });
+document.getElementById("otpd_yes").addEventListener("click", function(){ otpSetSwitch(false); });
+document.getElementById("otpb_cancel").addEventListener("click", function(){ document.getElementById("otpEnableStep").classList.add("hidden"); hideMsg(document.getElementById("otpBoxMsg")); });
+document.getElementById("otpb_verify").addEventListener("click", function(){
+  var msg = document.getElementById("otpBoxMsg");
+  var code = document.getElementById("otpb_code").value.replace(/\s+/g, "");
+  if(!/^[0-9]{6}$/.test(code)){ showMsg(msg, "6 ہندسوں کا کوڈ لکھیں۔", "Enter the 6-digit code.", "error"); return; }
+  var btn = this; btn.disabled = true;
+  callFn("campOtpVerify", { code: code }, true).then(function(r){
+    var j = r.json || {};
+    if(r.status === 200 && j.ok){ return auth.currentUser.getIdToken(true).then(function(){ return otpSetSwitch(true); }); }
+    otpErrMsg(msg, j);
+  }).catch(function(){ showMsg(msg, "سرور سے رابطہ نہیں ہو سکا۔", "Could not reach the server.", "error"); })
+    .then(function(){ btn.disabled = false; });
 });
 
 /* ============================================================================
@@ -1499,6 +1689,7 @@ function renderRequests(){
   var isSA = CURRENT_DOC.roleV2 === "super_admin";
   box.classList.toggle("hidden", !isSA);
   document.getElementById("createUserBox").classList.toggle("hidden", !isSA);
+  refreshOtpBox();
   if(!isSA) return;
   db.collection("accountRequests").get().then(function(qs){
     var rows = []; qs.forEach(function(d){ rows.push(Object.assign({id:d.id}, d.data())); });

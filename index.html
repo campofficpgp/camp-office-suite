@@ -667,10 +667,12 @@ html,body{overflow-x:hidden;}
               </div>
             </div>
             <div class="hidden" id="otpDisableStep" style="margin-top:12px">
-              <div class="field-hint">کیا آپ واقعی کوڈ بند کرنا چاہتے ہیں؟ <span dir="ltr">Turn the sign-in code OFF?</span></div>
+              <div class="field-hint">کوڈ کتنی دیر کے لیے بند کرنا ہے؟ وقت پورا ہوتے ہی یہ خود بخود دوبارہ آن ہو جائے گا، چاہے آپ بھول جائیں۔ <span dir="ltr">For how long should the code be OFF? When the time is up it turns itself back ON, even if you forget.</span></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-                <button type="button" class="btn danger" id="otpd_yes">ہاں، بند کریں / Yes, turn OFF</button>
-                <button type="button" class="btn" id="otpd_no">نہیں / No</button>
+                <button type="button" class="btn danger" data-otph="1">1 گھنٹہ / 1 hour</button>
+                <button type="button" class="btn danger" data-otph="4">4 گھنٹے / 4 hours</button>
+                <button type="button" class="btn danger" data-otph="24">1 دن / 1 day</button>
+                <button type="button" class="btn" id="otpd_no">منسوخ / Cancel</button>
               </div>
             </div>
             <div id="otpBoxMsg" class="msg-box hidden" role="status"></div>
@@ -1132,8 +1134,10 @@ function loadUserProfileAndRoute(user){
       document.getElementById("pendingEmailLine").textContent = user.email;
       showOnly("pendingScreen");
     } else if(data.roleV2 === "super_admin"){
+      try{ if(window.CampGuard && CampGuard.markSuper){ CampGuard.markSuper(user.uid); } }catch(e){}
       otpGate(user, data);
     } else {
+      try{ if(window.CampGuard && CampGuard.unmarkSuper){ CampGuard.unmarkSuper(user.uid); } }catch(e){}
       enterApp(user, data);
     }
   }).catch(function(err){
@@ -1251,15 +1255,16 @@ document.getElementById("otp_resend").addEventListener("click", function(){
 document.getElementById("otp_signout").addEventListener("click", function(){ OTP_SENT_FOR = null; auth.signOut(); });
 
 /* ----- the ON / OFF switch (Super Admin, in the Admin Controls panel) ----- */
-var OTP_SWITCH_ON = null;
+var OTP_SWITCH_ON = null, OTP_OFF_UNTIL = 0;
+function otpClock(ms){ var d = new Date(ms), p = function(n){ return (n < 10 ? "0" : "") + n; }; return d.toLocaleDateString("en-GB", { day:"2-digit", month:"short" }) + " " + p(d.getHours()) + ":" + p(d.getMinutes()); }
 function otpBoxMsg(ur, en, kind){ showMsg(document.getElementById("otpBoxMsg"), ur, en, kind || "info"); }
 function otpBoxShow(){
   var on = OTP_SWITCH_ON;
   var chip = document.getElementById("otpStateChip"), btn = document.getElementById("otpToggleBtn");
   if(on === null){ chip.textContent = "…"; btn.disabled = true; btn.textContent = "…"; return; }
-  chip.textContent = on ? "آن / ON" : "بند / OFF";
+  chip.textContent = on ? "آن / ON" : (OTP_OFF_UNTIL > Date.now() ? "بند / OFF — " + otpClock(OTP_OFF_UNTIL) + " تک / until" : "بند / OFF");
   btn.disabled = false;
-  btn.textContent = on ? "کوڈ بند کریں / Turn OFF" : "کوڈ آن کریں / Turn ON";
+  btn.textContent = on ? "کوڈ بند کریں / Turn OFF" : "ابھی دوبارہ آن کریں / Turn ON now";
   btn.className = on ? "btn danger" : "btn primary";
 }
 function refreshOtpBox(){
@@ -1270,19 +1275,21 @@ function refreshOtpBox(){
   callFn("campOtpStatus", {}, true).then(function(r){
     var j = r.json || {};
     OTP_SWITCH_ON = (r.status === 200) ? !!j.enabled : null;
+    OTP_OFF_UNTIL = (r.status === 200 && j.offUntilMs) ? j.offUntilMs : 0;
     otpBoxShow();
     if(r.status !== 200) otpBoxMsg("سوئچ کی حالت معلوم نہیں ہو سکی۔", "Could not read the switch state.", "error");
   }).catch(function(){ OTP_SWITCH_ON = null; otpBoxShow(); otpBoxMsg("سرور سے رابطہ نہیں ہو سکا۔", "Could not reach the server.", "error"); });
 }
-function otpSetSwitch(enabled){
-  return callFn("campOtpSetting", { enabled: enabled }, true).then(function(r){
+function otpSetSwitch(enabled, hours){
+  var payload = enabled ? { enabled: true } : { enabled: false, hours: hours };
+  return callFn("campOtpSetting", payload, true).then(function(r){
     var j = r.json || {};
     if(r.status === 200 && j.ok){
-      OTP_SWITCH_ON = !!j.enabled; otpBoxShow();
+      OTP_SWITCH_ON = !!j.enabled; OTP_OFF_UNTIL = j.enabled ? 0 : (j.offUntilMs || 0); otpBoxShow();
       document.getElementById("otpEnableStep").classList.add("hidden");
       document.getElementById("otpDisableStep").classList.add("hidden");
       if(OTP_SWITCH_ON) otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ آن ہو گیا۔ اب ہر لاگ اِن پر ای میل کا کوڈ پوچھا جائے گا۔", "Super Admin sign-in code is now ON. Every sign-in will ask for the e-mailed code.", "ok");
-      else otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ بند ہو گیا۔", "Super Admin sign-in code is now OFF.", "ok");
+      else otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ بند ہو گیا۔ یہ " + otpClock(OTP_OFF_UNTIL) + " پر خود بخود دوبارہ آن ہو جائے گا۔", "Super Admin sign-in code is OFF. It turns itself back ON at " + otpClock(OTP_OFF_UNTIL) + ".", "ok");
       return true;
     }
     otpErrMsg(document.getElementById("otpBoxMsg"), j); return false;
@@ -1299,7 +1306,9 @@ document.getElementById("otpToggleBtn").addEventListener("click", function(){
   });
 });
 document.getElementById("otpd_no").addEventListener("click", function(){ document.getElementById("otpDisableStep").classList.add("hidden"); });
-document.getElementById("otpd_yes").addEventListener("click", function(){ otpSetSwitch(false); });
+Array.prototype.forEach.call(document.querySelectorAll("[data-otph]"), function(b){
+  b.addEventListener("click", function(){ otpSetSwitch(false, parseInt(b.getAttribute("data-otph"), 10)); });
+});
 document.getElementById("otpb_cancel").addEventListener("click", function(){ document.getElementById("otpEnableStep").classList.add("hidden"); hideMsg(document.getElementById("otpBoxMsg")); });
 document.getElementById("otpb_verify").addEventListener("click", function(){
   var msg = document.getElementById("otpBoxMsg");

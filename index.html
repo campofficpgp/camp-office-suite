@@ -1361,7 +1361,7 @@ function readPerson(prefix){
    Three small server functions do what a browser may not: check the reCAPTCHA tick, create / restore a login,
    and delete a login completely. If the server cannot be reached the page falls back to the older browser-only way. */
 var FN_BASE = "https://us-central1-camp-office-project.cloudfunctions.net/";
-var RECAPTCHA_V2_SITE_KEY = "6LdpOe0tAAAAAM91SF-3PMv2CMYfotPpeDBRruA7";   /* public "I'm not a robot" site key (v2 checkbox) */
+var RECAPTCHA_V2_SITE_KEY = "6Lemiu8tAAAAAHEa3nq2sTN6jto17RS3XQoHyeFL";   /* public "I'm not a robot" site key (v2 checkbox) */
 function captchaOn(){ return !!RECAPTCHA_V2_SITE_KEY && RECAPTCHA_V2_SITE_KEY.indexOf("PASTE_") !== 0; }
 function callFn(name, body, withAuth){
   function go(token){

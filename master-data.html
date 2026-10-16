@@ -958,7 +958,12 @@ html,body{overflow-x:hidden;}
         return;
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
-      CAN_EDIT = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      /* Master Data is for the Super Admin only (the link in Users & Settings is hidden for everyone else too) */
+      if(r2 !== 'super_admin'){
+        gate('صرف سپر ایڈمن', 'Super Admin only', 'یہ صفحہ صرف سپر ایڈمن کے لیے ہے۔', true);
+        return;
+      }
+      CAN_EDIT = true;
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

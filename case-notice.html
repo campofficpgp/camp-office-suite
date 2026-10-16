@@ -262,6 +262,7 @@ html,body{overflow-x:hidden;}
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head>
@@ -338,7 +339,7 @@ html,body{overflow-x:hidden;}
           <tr>
             <th data-en="Case No" data-ur="کیس نمبر">Case No</th>
             <th data-en="Versus" data-ur="بمقابلہ">Versus</th>
-            <th data-en="Nature" data-ur="نوعیت">Nature</th>
+            <th data-en="Category" data-ur="زمرہ">Category</th>
             <th data-en="FIR No" data-ur="ایف آئی آر نمبر">FIR No</th>
             <th data-en="Police Station" data-ur="تھانہ">Police Station</th>
             <th data-en="District" data-ur="ضلع">District</th>
@@ -361,12 +362,12 @@ html,body{overflow-x:hidden;}
         <div class="lbl" id="formTitle" data-en="Add New Notice" data-ur="نیا نوٹس شامل کریں">Add New Notice</div>
         <input type="hidden" id="nId">
         <div class="search-grid">
-          <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type <span class="manage-link" onclick="openListManage('type')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nType"></select></div>
+          <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type</label><select id="nType"></select></div>
           <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="number" id="nCaseNo" placeholder="e.g. 869"></div>
           <div class="field"><label data-en="Year" data-ur="سال">Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nYear"></select></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Title of Case" data-ur="کیس کا عنوان">Title of Case</label><input type="text" id="nTitle" placeholder="e.g. The State"></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Versus" data-ur="بمقابلہ">Versus</label><input type="text" id="nVersus" placeholder="e.g. Salman Azam"></div>
-          <div class="field"><label data-en="Nature / Relief" data-ur="نوعیت / ریلیف">Nature / Relief <span class="manage-link" onclick="openListManage('relief')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nRelief"></select></div>
+          <div class="field"><label data-en="Category" data-ur="زمرہ">Category</label><select id="nRelief"></select><div id="nReliefHint" style="display:none; margin-top:4px; font-size:11.5px; color:#b3261e; font-weight:600;"></div></div>
           <div class="field"><label data-en="FIR No" data-ur="ایف آئی آر نمبر">FIR No</label><input type="text" id="nFirNo" placeholder="e.g. 201"></div>
           <div class="field"><label data-en="FIR Year" data-ur="ایف آئی آر سال">FIR Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nFirYear"></select></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Under Section (U/S)" data-ur="زیر دفعہ (یو/ایس)">Under Section (U/S)</label><input type="text" id="nSections" placeholder="e.g. 7ATA, 341, 188, 186, 506, 353, 109, 148, 149 PPC"></div>
@@ -476,13 +477,8 @@ html,body{overflow-x:hidden;}
     });
   }
 
-  var CASE_TYPES = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','Other'];
-  var RELIEFS = [
-    'Pre Arrest - Cancellation of Bail (COB)', 'Post Arrest - Cancellation of Bail (COB)',
-    'Bail Before Arrest', 'Bail After Arrest', 'Interim Bail', 'Bail on Medical Grounds',
-    'Grant of Bail', 'Suspension of Sentence', 'Extension of Bail', 'Death Sentence',
-    'Life Imprisonment', 'Acquittal', 'Setting Aside of Acquittal', 'Leave to Appeal', 'Other'
-  ];
+  // Case types and their categories come from ONE master table (case-master.js) shared by every page.
+  var CASE_TYPES = CaseMaster.types();
   var BENCH_NOS = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
   var DISTRICTS = ['Attock','Bahawalnagar','Bahawalpur','Bhakkar','Chakwal','Chiniot','Dera Ghazi Khan','Faisalabad','Gujranwala','Gujrat','Hafizabad','Jhang','Jhelum','Kasur','Khanewal','Khushab','Lahore','Layyah','Lodhran','Mandi Bahauddin','Mianwali','Multan','Muzaffargarh','Narowal','Nankana Sahib','Okara','Pakpattan','Rahim Yar Khan','Rajanpur','Rawalpindi','Sahiwal','Sargodha','Sheikhupura','Sialkot','Toba Tek Singh','Vehari'];
   var SIGNATORIES = ['Rashid Mahmood — Focal Person Punjab Police, Supreme Court Islamabad'];
@@ -542,9 +538,7 @@ html,body{overflow-x:hidden;}
   var YEARS = yearRange();
 
   var LIST_CONFIGS = {
-    type:      { arr: CASE_TYPES, formSelectId: 'nType',      titleEn: 'Manage Case Types',       titleUr: 'کیس کی اقسام کا انتظام' },
     year:      { arr: YEARS,      formSelectId: null,         titleEn: 'Manage Years',            titleUr: 'سالوں کا انتظام' },
-    relief:    { arr: RELIEFS,    formSelectId: 'nRelief',    titleEn: 'Manage Nature / Relief',  titleUr: 'نوعیت / ریلیف کا انتظام' },
     bench:     { arr: BENCH_NOS,  formSelectId: 'nBench',     titleEn: 'Manage Bench Numbers',    titleUr: 'بینچ نمبروں کا انتظام' },
     district:  { arr: DISTRICTS,  formSelectId: 'nDistrict',  titleEn: 'Manage Districts',        titleUr: 'اضلاع کا انتظام' },
     signatory: { arr: SIGNATORIES,formSelectId: 'nSignatory', titleEn: 'Manage Signatories',      titleUr: 'دستخط کنندگان کا انتظام' }
@@ -559,11 +553,55 @@ html,body{overflow-x:hidden;}
 
   function uniqueSorted(arr){ return Array.from(new Set(arr)).filter(Boolean).sort(); }
 
+  /* Case Type and Category come from the shared master table (case-master.js), same as Daily Case Entry. */
+  function refreshTypeOptions(keepValue){
+    var sel = document.getElementById('nType'); if(!sel) return;
+    var cur = (keepValue === undefined) ? sel.value : keepValue;
+    var list = CaseMaster.types();
+    CASE_TYPES.length = 0; Array.prototype.push.apply(CASE_TYPES, list);
+    var shown = list.slice();
+    if(cur && shown.indexOf(cur) === -1) shown.push(cur);
+    fillSelect(sel, shown, false);
+    if(cur) sel.value = cur;
+  }
+  function refreshCategoryOptions(keepValue){
+    var sel = document.getElementById('nRelief'), hint = document.getElementById('nReliefHint');
+    if(!sel) return;
+    var cur = (keepValue === undefined) ? sel.value : keepValue;
+    var type = document.getElementById('nType') ? document.getElementById('nType').value : '';
+    var list = CaseMaster.categoriesFor(type);
+    fillSelect(sel, list, false);
+    var msg = '';
+    if(cur && list.indexOf(cur) === -1){
+      sel.innerHTML += '<option value="' + cur + '">⚠ ' + cur + '</option>';
+      msg = isUrdu ? 'یہ زمرہ اس کیس کی قسم کے ساتھ درست نہیں — قسم یا زمرہ بدلیں۔' : 'This category does not belong to this case type — change the type or the category.';
+    }
+    if(cur) sel.value = cur;
+    if(hint){ hint.textContent = msg; hint.style.display = msg ? '' : 'none'; }
+  }
+  (function(){
+    var t = document.getElementById('nType');
+    if(!t) return;
+    t.addEventListener('change', function(){
+      var sel = document.getElementById('nRelief'), cur = sel.value;
+      if(cur && !CaseMaster.allows(t.value, cur)){
+        refreshCategoryOptions('');
+        sel.selectedIndex = 0;
+        var hint = document.getElementById('nReliefHint');
+        hint.textContent = isUrdu ? 'یہ زمرہ اس کیس کی قسم میں نہیں ہوتا، اس لیے زمرہ دوبارہ چنیں۔' : 'That category does not belong to this case type, so please choose the category again.';
+        hint.style.display = '';
+      } else {
+        refreshCategoryOptions(cur);
+      }
+    });
+    CaseMaster.onChange(function(){ refreshTypeOptions(); refreshCategoryOptions(); });
+  })();
+
   function populateStaticDropdowns(){
-    fillSelect(document.getElementById('nType'), CASE_TYPES, false);
+    refreshTypeOptions();
     fillSelect(document.getElementById('nYear'), YEARS, false);
     fillSelect(document.getElementById('nFirYear'), YEARS, false);
-    fillSelect(document.getElementById('nRelief'), RELIEFS, false);
+    refreshCategoryOptions();
     fillSelect(document.getElementById('nDistrict'), DISTRICTS, false);
     fillSelect(document.getElementById('nBench'), BENCH_NOS, false);
     fillSelect(document.getElementById('nSignatory'), SIGNATORIES, false);
@@ -764,6 +802,7 @@ html,body{overflow-x:hidden;}
     ['nType','nYear','nFirYear','nRelief','nDistrict','nBench','nSignatory'].forEach(function(id){
       document.getElementById(id).selectedIndex = 0;
     });
+    refreshCategoryOptions('');
     refreshTehsilStationOptions();
     document.getElementById('noticeForm').classList.add('open');
   }
@@ -787,11 +826,12 @@ html,body{overflow-x:hidden;}
     if(!n) return;
     document.getElementById('nId').value = n.id;
     document.getElementById('formTitle').textContent = isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice';
-    document.getElementById('nType').value = n.type;
+    refreshTypeOptions(n.type);
     document.getElementById('nCaseNo').value = n.caseNo;
     document.getElementById('nYear').value = n.year;
     document.getElementById('nTitle').value = n.title;
     document.getElementById('nVersus').value = n.versus;
+    refreshCategoryOptions(n.relief);
     document.getElementById('nRelief').value = n.relief;
     document.getElementById('nFirNo').value = n.firNo;
     document.getElementById('nFirYear').value = n.firYear;
@@ -847,6 +887,14 @@ html,body{overflow-x:hidden;}
     };
 
     if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit notices'); return; }
+    var oldN = idVal ? NOTICES.find(function(x){ return x.id === idVal; }) : null;
+    var catUnchanged = oldN && oldN.type === data.type && (oldN.relief || '') === (data.relief || '');
+    if(!catUnchanged && !CaseMaster.allows(data.type, data.relief)){
+      alert(isUrdu
+        ? 'یہ زمرہ (' + data.relief + ') اس کیس کی قسم (' + data.type + ') میں نہیں ہوتا۔ کیس کی قسم یا زمرہ درست کریں۔'
+        : 'The category "' + data.relief + '" does not belong to case type ' + data.type + '. Please correct the Case Type or the Category.');
+      return;
+    }
     var now = firebase.firestore.FieldValue.serverTimestamp();
     data.updatedBy = CURRENT_USER.email; data.updatedAt = now;
     var p;
@@ -1272,6 +1320,7 @@ html,body{overflow-x:hidden;}
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
+  CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false;
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
@@ -1285,14 +1334,14 @@ html,body{overflow-x:hidden;}
   function saveListsToDb(){
     if(!CAN_LISTS) return;
     db.collection('lookupLists').doc('caseNotice').set({
-      types: CASE_TYPES, years: YEARS, reliefs: RELIEFS, benches: BENCH_NOS, districts: DISTRICTS, signatories: SIGNATORIES,
+      years: YEARS, benches: BENCH_NOS, districts: DISTRICTS, signatories: SIGNATORIES,
       tehsils: DISTRICT_TEHSILS, stations: DISTRICT_STATIONS,
       updatedBy: CURRENT_USER.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(function(err){ alert((isUrdu ? 'فہرست محفوظ نہیں ہو سکی: ' : 'Could not save list: ') + err.message); });
   }
 
   function applyLists(d){
-    [['types',CASE_TYPES],['years',YEARS],['reliefs',RELIEFS],['benches',BENCH_NOS],['districts',DISTRICTS],['signatories',SIGNATORIES]].forEach(function(pair){
+    [['years',YEARS],['benches',BENCH_NOS],['districts',DISTRICTS],['signatories',SIGNATORIES]].forEach(function(pair){
       var v = d[pair[0]];
       if(Array.isArray(v) && v.length){ pair[1].length = 0; Array.prototype.push.apply(pair[1], v); }
     });

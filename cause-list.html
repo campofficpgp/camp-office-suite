@@ -463,6 +463,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head><body>
@@ -605,7 +606,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
         <div class="cl-field"><label>Nature text (from list) / نوعیت</label><input id="fNat"></div>
         <div class="cl-field"><label>Section / دفعہ</label><input id="fSec"></div>
         <div class="cl-field"><label>Result / نتیجہ</label><select id="fResult"></select></div>
-        <div class="cl-field"><label>Relief Sought / ریلیف</label><select id="fRelief"></select></div>
+        <div class="cl-field"><label>Category / زمرہ</label><select id="fRelief"></select></div>
         <div class="cl-field full"><label>Officer for this case / اس کیس کا آفیسر</label><select id="fOff"></select></div>
         <div class="cl-field full"><label>Remarks / ریمارکس</label><input id="fRem"></div>
         <div class="cl-field full" id="fSitBox"><label>Sitting / نشست (optional, e.g. After Noon Bench at 1:00 p.m.)</label><input id="fSit"></div>
@@ -714,6 +715,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
+  CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
@@ -920,10 +922,10 @@ var CASES = [];                     // live copy of the shared Daily Case Entry 
 var LISTS = {                       // same defaults as Daily Case Entry; replaced by the live lists when they load
   judges: ['Justice Yahya Afridi (Chief Justice)','Justice Mansoor Ali Shah','Justice Muneeb Akhtar','Justice Ameenuddin Khan','Justice Jamal Khan Mandokhel','Justice Muhammad Ali Mazhar','Justice Ayesha A. Malik','Justice Athar Minallah','Justice Hasan Azhar Rizvi','Justice Shahid Waheed','Justice Musarrat Hilali','Justice Irfan Saadat Khan','Justice Naeem Akhtar Afghan','Justice Shehzad Malik','Justice Aqeel Ahmed Abbasi','Justice Shahid Bilal Hassan','Justice Muhammad Hashim Kakar','Justice Shafi Siddiqui'],
   benches: ['I','II','III','IV','V','VI','VII','VIII','IX','X'],
-  types: ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','Other'],
+  types: CaseMaster.types(),   // from the shared master table (case-master.js)
   natures: ['Criminal','Civil','Constitutional','Service','Tax','Property','Family','Banking','Other'],
   results: ['Dismissed','Dismissed as W/D','Dismissed Infructuous','Dismissed DNP','Dismissed Abated','Allowed','Partly Allowed','Allowed though Compromise','Converted into Lesser Sentence','Leave Granted','Pending','Other'],
-  reliefs: ['Bail Before Arrest','Bail After Arrest','Interim Bail','Bail on Medical Grounds','Cancellation of Bail','Grant of Bail','Suspension of Sentence','Extension of Bail','Death Sentence','Life Imprisonment','Enhancement of Sentence','Acquittal','Setting Aside of Acquittal','Leave to Appeal','Revision Petition','Quashment of FIR/Proceedings','Other Sentence','Not Applicable','Other'],
+  reliefs: CaseMaster.allCategories(),   // categories come from the shared master table, per case type
   officers: ['Tariq Siddique — APG','Ahmad Raza Gilani — APG','Rai Akhtar Hussain — APG','M. Irfan Zia — DPG','Ms. Memoona Ehsan Ul Haq — DPG','Sajjad Hussain — DPG','Mirza Abid Majeed — DPG']
 };
 var TYPE_NAMES = {
@@ -990,7 +992,7 @@ function splitTitle(t){
   return m ? {title:cleanParty(m[1]), versus:cleanParty(m[2])} : {title:cleanParty(t), versus:''};
 }
 function joinTitle(title, versus){ return String(title||'').trim() + (versus && versus !== '—' ? ' v. ' + String(versus).trim() : ''); }
-function mapRelief(nt){
+function mapRelief(nt, type){
   var a = String(nt||'').split('/')[0].trim().toLowerCase(), v = 'Other';
   if(/^bail before arrest/.test(a)) v = 'Bail Before Arrest';
   else if(/^bail after arrest/.test(a)) v = 'Bail After Arrest';
@@ -998,11 +1000,12 @@ function mapRelief(nt){
   else if(/^life/.test(a)) v = 'Life Imprisonment';
   else if(/^death/.test(a)) v = 'Death Sentence';
   else if(/enhancement/.test(a)) v = 'Enhancement of Sentence';
-  else if(/against acquittal/.test(a)) v = 'Setting Aside of Acquittal';
+  else if(/against acquittal/.test(a)) v = 'Against Acquittal';
   else if(/^suspension of sentence/.test(a)) v = 'Suspension of Sentence';
   else if(/^conviction/.test(a)) v = 'Other Sentence';
   else if(/land acquisition/.test(a)) v = 'Not Applicable';
-  return LISTS.reliefs.indexOf(v) >= 0 ? v : (LISTS.reliefs.indexOf('Other') >= 0 ? 'Other' : '');
+  /* the category must belong to this case type (case-master.js), otherwise it is just 'Other' */
+  return CaseMaster.allows(type || '', v) ? v : 'Other';
 }
 function mapNature(type){
   var v = /^(Crl|J\.P)/i.test(type) ? 'Criminal' : 'Civil';
@@ -1011,7 +1014,7 @@ function mapNature(type){
 function typeName(t){ return TYPE_NAMES[t] || ''; }
 function caseText(r){ return (r.type || '') + (r.no || '') + (r.year ? '/' + r.year : ''); }
 function srText(r){ return r.sub ? 'and (' + r.sub + ')' : String(r.sr || ''); }
-function typeKnown(t){ return LISTS.types.some(function(x){ return normType(x) === normType(t); }); }
+function typeKnown(t){ return !!CaseMaster.canonType(t); }
 function judgeKnown(j){ return LISTS.judges.indexOf(j) >= 0; }
 function validNo(n){ return /^\d{1,8}(-[A-Z]{1,2})?$/.test(normNo(n)); }
 
@@ -1083,7 +1086,7 @@ function rowsFromParsed(list){
         bt:e.bt, mine:!!e.pg, lawyers:e.lawyers, idx:e.idx
       });
       if(!cn.type && e.caseno){ r.type = e.caseno; }
-      r.relief = mapRelief(e.nature);
+      r.relief = mapRelief(e.nature, r.type);
       r.remarks = r.main ? 'IN ' + r.main : '';
       applyAutoOut(r);
       if(r.mine) r.unc = uncertainReasons(r);
@@ -1429,6 +1432,12 @@ function fillSelect(id, list, val, blank){
   var l = list.slice(); if(val && l.indexOf(val) < 0) l.push(val);
   $(id).innerHTML = (blank ? '<option value=""></option>' : '') + l.map(function(x){ return '<option' + (x === val ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
 }
+/* the Category choices depend on the Case Type (shared master table). A value that does not belong is shown flagged ⚠. */
+function fillReliefOptions(type, cur){
+  var l = CaseMaster.categoriesFor(type), keepOk = !cur || l.indexOf(cur) >= 0;
+  $('fRelief').innerHTML = '<option value=""></option>' + l.map(function(x){ return '<option' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('')
+    + (keepOk ? '' : '<option selected value="' + esc(cur) + '">⚠ ' + esc(cur) + '</option>');
+}
 function openDialog(r, add){
   ADD_MODE = add; EDIT_ID = add ? null : r.id;
   $('editTitle').textContent = add ? 'Add a case / نیا کیس شامل کریں' : 'Edit / ترمیم';
@@ -1437,11 +1446,12 @@ function openDialog(r, add){
   var bl = LISTS.benches.slice(); ['XI','XII'].forEach(function(x){ if(bl.indexOf(x) < 0 && r.bench === x) bl.push(x); });
   fillSelect('fBench', bl, r.bench || 'I');
   $('fSr').value = r.sr; $('fSub').value = r.sub;
-  fillSelect('fType', LISTS.types, r.type);
+  fillSelect('fType', CaseMaster.types(), r.type);
+  $('fType').onchange = function(){ fillReliefOptions($('fType').value, $('fRelief').value); };
   $('fNo').value = r.no; $('fYear').value = r.year; $('fBt').value = r.bt || '';
   $('fTitle').value = r.title; $('fVersus').value = r.versus; $('fNat').value = r.natText; $('fSec').value = r.section;
   $('fResult').innerHTML = resultOptions(r.result);
-  $('fRelief').innerHTML = '<option value=""></option>' + LISTS.reliefs.map(function(x){ return '<option' + (x === r.relief ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('');
+  fillReliefOptions(r.type, r.relief);
   $('fOff').innerHTML = officerOptions(r.officer, '— same as bench/day —'); $('fRem').value = r.remarks; $('fSit').value = r.sitting ? r.sitting.replace(/^\(|\)$/g,'') : '';
   $('editBg').classList.add('show');
 }
@@ -1746,9 +1756,14 @@ async function doSave(newTypes, newJudges, only){
     if(create.length){ saveDraft(); render(); }
     if(addLists && (newTypes.length || newJudges.length)){
       try{
-        await db.collection('lookupLists').doc('caseEntry').set({
-          types: LISTS.types.concat(newTypes), judges: LISTS.judges.concat(newJudges), updatedBy: by, updatedAt: stamp
+        if(newJudges.length) await db.collection('lookupLists').doc('caseEntry').set({
+          judges: LISTS.judges.concat(newJudges), updatedBy: by, updatedAt: stamp
         }, {merge:true});
+        if(newTypes.length){   // a case type new to the master table: add it with the general categories
+          var items = CaseMaster.items();
+          newTypes.forEach(function(nt){ if(!CaseMaster.canonType(nt)) items.push({ type: nt, categories: ['Restoration', 'Misc. Matter', 'Other'] }); });
+          await CaseMaster.save(db, items, by);
+        }
       }catch(e){ console.error('lists', e); }
     }
     if(only) showAct('✅ ' + bi('یہ کیس محفوظ ہو گیا (' + caseText(only) + ')' + (create.length ? '' : '؛ نتیجہ اپڈیٹ ہوا') + '۔ یومیہ کیس انٹری میں دیکھ سکتے ہیں۔', 'This case was saved (' + caseText(only) + ')' + (create.length ? '' : '; result updated') + '. See it in Daily Case Entry.'), 'good');
@@ -2022,7 +2037,7 @@ async function buildXlsx(days){
     '<headerFooter><oddFooter>&amp;L&amp;8Camp Office, Prosecutor General Punjab&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter></worksheet>';
 
   /* ---- sheet 2: flat table (sort / filter friendly) ---- */
-  var fh = ['Date','Day','Bench','Sitting','Judges','Sr.','Case Type','Case No','Year','Title','Versus','Nature','Nature (as in list)','Section','Bench Type','Punjab case','Officer','Result','Relief Sought','Remarks'];
+  var fh = ['Date','Day','Bench','Sitting','Judges','Sr.','Case Type','Case No','Year','Title','Versus','Nature','Nature (as in list)','Section','Bench Type','Punjab case','Officer','Result','Category','Remarks'];
   var fw = [12, 11, 7, 22, 40, 7, 11, 10, 7, 38, 30, 30, 34, 24, 9, 9, 26, 22, 24, 24];
   var fr = '<row r="1" ht="30" customHeight="1">' + fh.map(function(h, i){ return c(colName(i) + '1', h, S.flatHead); }).join('') + '</row>', n2 = 1;
   days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(x){
@@ -2115,7 +2130,7 @@ async function buildDocx(days){
 
 /* ---------- sign-in, roles and live data (same pattern as the other Camp Office pages) ---------- */
 function applyLists(d){
-  [['judges','judges'],['benches','benches'],['types','types'],['natures','natures'],['results','results'],['reliefs','reliefs'],['officers','officers']].forEach(function(p){
+  [['judges','judges'],['benches','benches'],['natures','natures'],['results','results'],['officers','officers']].forEach(function(p){
     if(Array.isArray(d[p[0]]) && d[p[0]].length) LISTS[p[1]] = d[p[0]];
   });
   fillOfficers(); render();

@@ -331,6 +331,7 @@ html,body{overflow-x:hidden;}
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head><body>
@@ -495,6 +496,8 @@ html,body{overflow-x:hidden;}
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
+  CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
+  CaseMaster.onChange(function(){ try { buildFilters('cases'); buildFilters('notices'); } catch(e){} });
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
@@ -530,7 +533,7 @@ html,body{overflow-x:hidden;}
         { key:'year',   type:'select', en:'Year',            ur:'سال' },
         { key:'nature', type:'select', en:'Nature',          ur:'نوعیت' },
         { key:'result', type:'select', en:'Result',          ur:'نتیجہ' },
-        { key:'relief', type:'select', en:'Relief Sought',   ur:'مطلوبہ ریلیف' },
+        { key:'relief', type:'select', en:'Category',         ur:'زمرہ' },
         { key:'from',   type:'date',   en:'Date from',       ur:'تاریخ سے' },
         { key:'to',     type:'date',   en:'Date to',         ur:'تاریخ تک' }
       ],
@@ -545,7 +548,7 @@ html,body{overflow-x:hidden;}
         { en:'Date',     ur:'تاریخ',      f:function(r){ return r.date||''; } },
         { en:'Nature',   ur:'نوعیت',      f:function(r){ return r.nature||''; } },
         { en:'Result',   ur:'نتیجہ',      f:function(r){ return r.result||''; } },
-        { en:'Relief',   ur:'ریلیف',      f:function(r){ return r.relief||''; } }
+        { en:'Category', ur:'زمرہ',       f:function(r){ return r.relief||''; } }
       ]
     },
     notices: {
@@ -557,7 +560,7 @@ html,body{overflow-x:hidden;}
         { key:'bench',    type:'select', en:'Bench No',        ur:'بینچ نمبر' },
         { key:'type',     type:'select', en:'Case Type',       ur:'کیس کی قسم' },
         { key:'year',     type:'select', en:'Year',            ur:'سال' },
-        { key:'relief',   type:'select', en:'Relief / Nature', ur:'ریلیف / نوعیت' },
+        { key:'relief',   type:'select', en:'Category',        ur:'زمرہ' },
         { key:'from',     type:'date',   en:'Date from',       ur:'تاریخ سے' },
         { key:'to',       type:'date',   en:'Date to',         ur:'تاریخ تک' }
       ],
@@ -565,7 +568,7 @@ html,body{overflow-x:hidden;}
       cols: [
         { en:'Case No',   ur:'کیس نمبر',   f:function(r){ return (r.type||'') + ' ' + (r.caseNo||'') + (r.year ? '/' + r.year : ''); } },
         { en:'Title',     ur:'عنوان',      f:function(r){ return (r.title||'') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : ''); } },
-        { en:'Relief',    ur:'ریلیف',      f:function(r){ return r.relief||''; } },
+        { en:'Category',  ur:'زمرہ',       f:function(r){ return r.relief||''; } },
         { en:'FIR No',    ur:'ایف آئی آر', f:function(r){ return (r.firNo||'') + (r.firYear ? '/' + r.firYear : ''); } },
         { en:'Station',   ur:'تھانہ',      f:function(r){ return r.station||''; } },
         { en:'District',  ur:'ضلع',        f:function(r){ return r.district||''; } },
@@ -598,6 +601,12 @@ html,body{overflow-x:hidden;}
         var seen = {};
         DATA[kind].forEach(function(r){ var v = r[f.key]; if(v != null && v !== '' && v !== '—') seen[v] = true; });
         var vals = Object.keys(seen).sort(function(a,b){ return String(a).localeCompare(String(b), undefined, {numeric:true}); });
+        /* Case Type and Category follow the order of the shared master table (case-master.js); anything else stays A-Z */
+        if(f.key === 'type' || f.key === 'relief'){
+          var order = f.key === 'type' ? CaseMaster.types() : CaseMaster.allCategories();
+          var pos = function(x){ var i = order.indexOf(x); return i < 0 ? 9999 : i; };
+          vals = vals.map(function(v, i){ return { v: v, i: i }; }).sort(function(a, b){ return (pos(a.v) - pos(b.v)) || (a.i - b.i); }).map(function(o){ return o.v; });
+        }
         return '<div class="field">' + label + '<select id="' + id + '"><option value="">' + (isUrdu ? 'سب' : 'All') + '</option>' +
           vals.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('') + '</select></div>';
       }

@@ -344,6 +344,7 @@ html.embedded .app-shell{ min-height:0; }
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head>
@@ -417,7 +418,7 @@ html.embedded .app-shell{ min-height:0; }
           <div class="field"><label data-en="By Case Type" data-ur="کیس کی قسم سے">By Case Type</label><select id="byType"></select></div>
           <div class="field"><label data-en="By Year" data-ur="سال سے">By Year</label><select id="byYear"></select></div>
           <div class="field"><label data-en="By Result" data-ur="نتیجہ سے">By Result</label><select id="byResult"></select></div>
-          <div class="field"><label data-en="By Relief Sought" data-ur="مطلوبہ ریلیف سے">By Relief Sought</label><select id="byRelief"></select></div>
+          <div class="field"><label data-en="By Category" data-ur="زمرہ سے">By Category</label><select id="byRelief"></select></div>
         </div>
         <div class="count" id="count"></div>
         <div style="margin-top:12px;">
@@ -441,7 +442,7 @@ html.embedded .app-shell{ min-height:0; }
               <th data-en="Date" data-ur="تاریخ">Date</th>
               <th data-en="Nature of Case" data-ur="کیس کی نوعیت">Nature of Case</th>
               <th data-en="Result of Case" data-ur="کیس کا نتیجہ">Result of Case</th>
-              <th data-en="Relief Sought" data-ur="مطلوبہ ریلیف">Relief Sought</th>
+              <th data-en="Category" data-ur="زمرہ">Category</th>
               <th data-en="Actions" data-ur="اعمال">Actions</th>
             </tr>
           </thead>
@@ -509,7 +510,7 @@ html.embedded .app-shell{ min-height:0; }
           <div class="field"><label data-en="Bench No" data-ur="بینچ نمبر">Bench No <span class="manage-link" onclick="openListManage('bench')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cBench"></select></div>
           <div class="field"><label data-en="Cause List Serial No" data-ur="کاز لسٹ سیریل نمبر">Cause List Serial No</label><input type="text" id="cSerial" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="e.g. 7"></div>
           <div class="field"><label data-en="Date" data-ur="تاریخ">Date</label><input type="date" id="cDate"></div>
-          <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type <span class="manage-link" onclick="openListManage('type')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cType"></select></div>
+          <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type</label><select id="cType"></select></div>
           <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="text" id="cCaseNo" autocomplete="off" maxlength="14" placeholder="e.g. 142 or 12345-L"></div>
           <div class="field"><label data-en="Year" data-ur="سال">Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cYear"></select></div>
           <div class="field" style="grid-column:1 / -1; display:none;" id="relistNoteField"><div class="relist-note" id="relistNote"></div></div>
@@ -525,7 +526,7 @@ html.embedded .app-shell{ min-height:0; }
           </div>
           <div class="field"><label data-en="Nature of Case" data-ur="کیس کی نوعیت">Nature of Case <span class="manage-link" onclick="openListManage('nature')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cNature"></select></div>
           <div class="field"><label data-en="Result of Case" data-ur="کیس کا نتیجہ">Result of Case <span class="manage-link" onclick="openListManage('result')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cResult"></select></div>
-          <div class="field"><label data-en="Relief Sought" data-ur="مطلوبہ ریلیف">Relief Sought <span class="manage-link" onclick="openListManage('relief')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="cRelief"></select></div>
+          <div class="field"><label data-en="Category" data-ur="زمرہ">Category</label><select id="cRelief"></select><div id="reliefHint" style="display:none; margin-top:4px; font-size:11.5px; color:#b3261e; font-weight:600;"></div></div>
           <div class="field" style="grid-column:1 / -1;">
             <label data-en="Remarks" data-ur="تبصرہ">Remarks</label><textarea id="cRemarks" placeholder="e.g. Fixed for hearing next month."></textarea>
             <div class="needs-ai" style="margin-top:8px;">
@@ -653,7 +654,8 @@ html.embedded .app-shell{ min-height:0; }
     'Justice Shahid Bilal Hassan', 'Justice Muhammad Hashim Kakar', 'Justice Shafi Siddiqui'
   ];
   var BENCH_NOS = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-  var CASE_TYPES = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','Review Petition','C.P.','Other'];
+  // Case types and their categories come from ONE master table (case-master.js) shared by every page.
+  var CASE_TYPES = CaseMaster.types();
   var NATURES = ['Criminal','Civil','Constitutional','Service','Tax','Property','Family','Banking','Other'];
 
   // Result options expanded to match the Monthly Progress Report format (August 2026 sample you sent) — these become the report's columns.
@@ -672,15 +674,6 @@ html.embedded .app-shell{ min-height:0; }
   var MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var MONTHS_UR = ['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'];
 
-  // Relief Sought — common in Punjab / Supreme Court of Pakistan criminal petitions (bail + sentence matters)
-  var RELIEFS = [
-    'Bail Before Arrest', 'Bail After Arrest', 'Interim Bail', 'Bail on Medical Grounds',
-    'Cancellation of Bail', 'Grant of Bail', 'Suspension of Sentence', 'Extension of Bail',
-    'Death Sentence', 'Life Imprisonment', 'Enhancement of Sentence', 'Acquittal',
-    'Setting Aside of Acquittal', 'Leave to Appeal', 'Revision Petition', 'Quashment of FIR/Proceedings',
-    'Other Sentence', 'Not Applicable', 'Other'
-  ];
-
   function yearRange(){
     var years = [];
     var current = new Date().getFullYear();
@@ -692,11 +685,9 @@ html.embedded .app-shell{ min-height:0; }
   var LIST_CONFIGS = {
     judge:    { arr: JUDGES,    formSelectId: 'cJudge',   titleEn: 'Manage Judge Names',           titleUr: 'جج کے نام کا انتظام' },
     bench:    { arr: BENCH_NOS, formSelectId: 'cBench',   titleEn: 'Manage Bench Numbers',         titleUr: 'بینچ نمبروں کا انتظام' },
-    type:     { arr: CASE_TYPES,formSelectId: 'cType',    titleEn: 'Manage Case Types',            titleUr: 'کیس کی اقسام کا انتظام' },
     year:     { arr: YEARS,     formSelectId: 'cYear',    titleEn: 'Manage Years',                 titleUr: 'سالوں کا انتظام' },
     nature:   { arr: NATURES,   formSelectId: 'cNature',  titleEn: 'Manage Nature of Case',        titleUr: 'کیس کی نوعیت کا انتظام' },
     result:   { arr: RESULTS,   formSelectId: 'cResult',  titleEn: 'Manage Result Options',        titleUr: 'نتیجہ کے آپشنز کا انتظام' },
-    relief:   { arr: RELIEFS,   formSelectId: 'cRelief',  titleEn: 'Manage Relief Sought Options',  titleUr: 'مطلوبہ ریلیف کے آپشنز کا انتظام' },
     officer:  { arr: OFFICERS,  formSelectId: 'cOfficer', titleEn: 'Manage Officers (APG/DPG)',    titleUr: 'آفیسرز (اے پی جی/ڈی پی جی) کا انتظام' }
   };
 
@@ -810,7 +801,7 @@ html.embedded .app-shell{ min-height:0; }
     fillSelect(document.getElementById('cYear'), YEARS, false);
     fillSelect(document.getElementById('cNature'), NATURES, false);
     fillSelect(document.getElementById('cResult'), RESULTS, false);
-    fillSelect(document.getElementById('cRelief'), RELIEFS, false);
+    refreshReliefOptions();
 
     fillSelect(document.getElementById('rOfficer'), OFFICERS, false);
     fillSelect(document.getElementById('rYear'), YEARS, false);
@@ -1098,6 +1089,7 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('cYear').selectedIndex = 0;
     document.getElementById('cNature').selectedIndex = 0;
     document.getElementById('cResult').selectedIndex = 0;
+    refreshReliefOptions('');
     document.getElementById('cRelief').selectedIndex = 0;
     DUP_CONFIRMED = false;
     document.getElementById('dupWarningBox').classList.remove('show');
@@ -1107,6 +1099,54 @@ html.embedded .app-shell{ min-height:0; }
     updateRelistNote();
     document.getElementById('caseForm').classList.add('open');
   }
+
+  /* Case Type decides which Categories can be chosen. The table lives in case-master.js (shared by every page):
+     for example Crl.A. and J.P. never have bail categories, while Crl.P.L.A. has the full list. */
+  function reliefAllowedFor(type, cat){ return CaseMaster.allows(type, cat); }
+  function refreshReliefOptions(keepValue){
+    var sel = document.getElementById('cRelief'), hint = document.getElementById('reliefHint');
+    if(!sel) return;
+    var cur = (keepValue === undefined) ? sel.value : keepValue;
+    var type = document.getElementById('cType') ? document.getElementById('cType').value : '';
+    var list = CaseMaster.categoriesFor(type);
+    fillSelect(sel, list, false);
+    var msg = '';
+    if(cur && list.indexOf(cur) === -1){
+      // an older record with a category that does not belong to this type: show it, flagged, so it can be corrected
+      sel.innerHTML += '<option value="' + cur + '">⚠ ' + cur + '</option>';
+      msg = isUrdu ? 'یہ زمرہ اس کیس کی قسم کے ساتھ درست نہیں — قسم یا زمرہ بدلیں۔' : 'This category does not belong to this case type — change the type or the category.';
+    }
+    if(cur) sel.value = cur;
+    if(hint){ hint.textContent = msg; hint.style.display = msg ? '' : 'none'; }
+  }
+  /* keep the Case Type list in step with the master table (and keep an old record's own type selectable) */
+  function refreshTypeOptions(keepValue){
+    var sel = document.getElementById('cType'); if(!sel) return;
+    var cur = (keepValue === undefined) ? sel.value : keepValue;
+    var list = CaseMaster.types();
+    CASE_TYPES.length = 0; Array.prototype.push.apply(CASE_TYPES, list);
+    var shown = list.slice();
+    if(cur && shown.indexOf(cur) === -1) shown.push(cur);
+    fillSelect(sel, shown, false);
+    if(cur) sel.value = cur;
+  }
+  (function(){
+    var t = document.getElementById('cType');
+    if(!t) return;
+    t.addEventListener('change', function(){
+      var sel = document.getElementById('cRelief'), cur = sel.value;
+      if(cur && !CaseMaster.allows(t.value, cur)){
+        refreshReliefOptions('');
+        sel.selectedIndex = 0;
+        var hint = document.getElementById('reliefHint');
+        hint.textContent = isUrdu ? 'یہ زمرہ اس کیس کی قسم میں نہیں ہوتا، اس لیے زمرہ دوبارہ چنیں۔' : 'That category does not belong to this case type, so please choose the category again.';
+        hint.style.display = '';
+      } else {
+        refreshReliefOptions(cur);
+      }
+    });
+    CaseMaster.onChange(function(){ refreshTypeOptions(); refreshReliefOptions(); });
+  })();
 
   /* Opened from the Lookup page's "Edit" button: case-entry.html?edit=<case id> opens that case's
      edit form once the cases have loaded. Only for people who may edit (same rule as the Edit button). */
@@ -1132,13 +1172,14 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('cBench').value = c.bench;
     document.getElementById('cSerial').value = c.serial || '';
     document.getElementById('cDate').value = c.date;
-    document.getElementById('cType').value = c.type;
+    refreshTypeOptions(c.type);
     document.getElementById('cCaseNo').value = c.caseNo;
     document.getElementById('cYear').value = c.year;
     document.getElementById('cTitle').value = c.title;
     document.getElementById('cVersus').value = c.versus;
     document.getElementById('cNature').value = c.nature;
     document.getElementById('cResult').value = c.result;
+    refreshReliefOptions(c.relief);
     document.getElementById('cRelief').value = c.relief;
     document.getElementById('cRemarks').value = c.remarks;
     DUP_CONFIRMED = false;
@@ -1193,6 +1234,13 @@ html.embedded .app-shell{ min-height:0; }
     if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit cases'); return; }
     /* The same case may legitimately be listed again (e.g. adjourned and fixed for next week),
        so only an entry for the SAME case on the SAME date is blocked as a repeat. */
+    var catUnchanged = oldRec && oldRec.type === data.type && (oldRec.relief || '') === (data.relief || '');
+    if(!catUnchanged && !CaseMaster.allows(data.type, data.relief)){
+      alert(isUrdu
+        ? 'یہ زمرہ (' + data.relief + ') اس کیس کی قسم (' + data.type + ') میں نہیں ہوتا۔ کیس کی قسم یا زمرہ درست کریں۔'
+        : 'The category "' + data.relief + '" does not belong to case type ' + data.type + '. Please correct the Case Type or the Category.');
+      return;
+    }
     var sameCases = findSameCase(data.type, caseNo, year, idVal);
     var sameDay = sameCases.filter(function(x){ return String(x.date || '') === String(data.date || ''); });
     if(sameDay.length){
@@ -2355,6 +2403,7 @@ html.embedded .app-shell{ min-height:0; }
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
+  CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
@@ -2368,14 +2417,14 @@ html.embedded .app-shell{ min-height:0; }
   function saveListsToDb(){
     if(!CAN_LISTS) return;
     db.collection('lookupLists').doc('caseEntry').set({
-      judges: JUDGES, benches: BENCH_NOS, types: CASE_TYPES, years: YEARS, natures: NATURES,
-      results: RESULTS, reliefs: RELIEFS, officers: OFFICERS,
+      judges: JUDGES, benches: BENCH_NOS, years: YEARS, natures: NATURES,
+      results: RESULTS, officers: OFFICERS,
       updatedBy: CURRENT_USER.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(function(err){ alert((isUrdu ? 'فہرست محفوظ نہیں ہو سکی: ' : 'Could not save list: ') + err.message); });
   }
 
   function applyLists(d){
-    [['judges',JUDGES],['benches',BENCH_NOS],['types',CASE_TYPES],['years',YEARS],['natures',NATURES],['results',RESULTS],['reliefs',RELIEFS],['officers',OFFICERS]].forEach(function(pair){
+    [['judges',JUDGES],['benches',BENCH_NOS],['years',YEARS],['natures',NATURES],['results',RESULTS],['officers',OFFICERS]].forEach(function(pair){
       var v = d[pair[0]];
       if(Array.isArray(v) && v.length){ pair[1].length = 0; Array.prototype.push.apply(pair[1], v); }
     });

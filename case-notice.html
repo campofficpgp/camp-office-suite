@@ -768,6 +768,20 @@ html,body{overflow-x:hidden;}
     document.getElementById('noticeForm').classList.add('open');
   }
 
+  /* Opened from the Lookup page's "Edit" button: case-notice.html?edit=<notice id> opens that notice's
+     edit form once the notices have loaded. Only for people who may edit (same rule as the Edit button). */
+  var EDIT_FROM_LINK = (function(){ try { return new URLSearchParams(location.search).get('edit') || ''; } catch(e){ return ''; } })();
+  function openEditFromLink(){
+    if(!EDIT_FROM_LINK || !CAN_WRITE) return;
+    var id = EDIT_FROM_LINK; EDIT_FROM_LINK = '';
+    try {
+      var p = new URLSearchParams(location.search); p.delete('edit');
+      var q = p.toString();
+      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    } catch(e){}
+    setTimeout(function(){ if(NOTICES.some(function(x){ return x.id === id; })) openEditForm(id); }, 400);
+  }
+
   function openEditForm(id){
     var n = NOTICES.find(function(x){ return x.id === id; });
     if(!n) return;
@@ -1303,6 +1317,7 @@ html,body{overflow-x:hidden;}
       if(keep) document.getElementById('byCaseNo').value = keep;
       renderTable();
       document.getElementById('authGate').style.display = 'none';
+      openEditFromLink();
     }, function(err){
       gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true);
     });

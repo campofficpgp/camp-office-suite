@@ -637,12 +637,13 @@ html,body{overflow-x:hidden;}
     var d = ids(kind);
     var rows = filtered(kind);
     var cols = DEF[kind].cols;
-    var canEditRows = (kind === 'cases' && CAN_WRITE);
+    var canEditRows = CAN_WRITE;
+    var editPage = kind === 'cases' ? 'case-entry.html' : 'case-notice.html';
     document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){ return '<th>' + esc(isUrdu ? c.ur : c.en) + '</th>'; }).join('') + (canEditRows ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr>';
     var shown = rows.slice(0, LIMIT);
     document.getElementById(d.b).innerHTML = shown.length ? shown.map(function(r){
       return '<tr>' + cols.map(function(c){ return '<td>' + esc(c.f(r)) + '</td>'; }).join('') +
-        (canEditRows ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
+        (canEditRows ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
     }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + (canEditRows ? 1 : 0)) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
     document.getElementById(d.c).textContent = (isUrdu ? 'ملے: ' : 'Found: ') + rows.length + (isUrdu ? ' از ' : ' of ') + DATA[kind].length;
     document.getElementById(d.n).textContent = rows.length > LIMIT ? (isUrdu ? ('پہلے ' + LIMIT + ' ریکارڈ دکھائے گئے ہیں — فلٹر مزید تنگ کریں۔ ایکسپورٹ میں سب شامل ہوں گے۔') : ('Showing the first ' + LIMIT + ' records — narrow the filters. Export includes all matches.')) : '';

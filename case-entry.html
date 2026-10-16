@@ -1108,6 +1108,20 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('caseForm').classList.add('open');
   }
 
+  /* Opened from the Lookup page's "Edit" button: case-entry.html?edit=<case id> opens that case's
+     edit form once the cases have loaded. Only for people who may edit (same rule as the Edit button). */
+  var EDIT_FROM_LINK = (function(){ try { return new URLSearchParams(location.search).get('edit') || ''; } catch(e){ return ''; } })();
+  function openEditFromLink(){
+    if(!EDIT_FROM_LINK || !CAN_WRITE) return;
+    var id = EDIT_FROM_LINK; EDIT_FROM_LINK = '';
+    try {
+      var p = new URLSearchParams(location.search); p.delete('edit');
+      var q = p.toString();
+      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    } catch(e){}
+    setTimeout(function(){ if(CASES.some(function(x){ return x.id === id; })) openEditForm(id); }, 400);
+  }
+
   function openEditForm(id){
     var c = CASES.find(function(x){ return x.id === id; });
     if(!c) return;
@@ -2383,6 +2397,7 @@ html.embedded .app-shell{ min-height:0; }
       if(keep) document.getElementById('byCaseNo').value = keep;
       renderTable();
       document.getElementById('authGate').style.display = 'none';
+      openEditFromLink();
     }, function(err){
       gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'ڈیٹا لوڈ نہیں ہو سکا: ' + err.message, true);
     });

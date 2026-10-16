@@ -637,11 +637,13 @@ html,body{overflow-x:hidden;}
     var d = ids(kind);
     var rows = filtered(kind);
     var cols = DEF[kind].cols;
-    document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){ return '<th>' + esc(isUrdu ? c.ur : c.en) + '</th>'; }).join('') + '</tr>';
+    var canEditRows = (kind === 'cases' && CAN_WRITE);
+    document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){ return '<th>' + esc(isUrdu ? c.ur : c.en) + '</th>'; }).join('') + (canEditRows ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr>';
     var shown = rows.slice(0, LIMIT);
     document.getElementById(d.b).innerHTML = shown.length ? shown.map(function(r){
-      return '<tr>' + cols.map(function(c){ return '<td>' + esc(c.f(r)) + '</td>'; }).join('') + '</tr>';
-    }).join('') : '<tr><td class="lk-empty" colspan="' + cols.length + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
+      return '<tr>' + cols.map(function(c){ return '<td>' + esc(c.f(r)) + '</td>'; }).join('') +
+        (canEditRows ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
+    }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + (canEditRows ? 1 : 0)) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
     document.getElementById(d.c).textContent = (isUrdu ? 'ملے: ' : 'Found: ') + rows.length + (isUrdu ? ' از ' : ' of ') + DATA[kind].length;
     document.getElementById(d.n).textContent = rows.length > LIMIT ? (isUrdu ? ('پہلے ' + LIMIT + ' ریکارڈ دکھائے گئے ہیں — فلٹر مزید تنگ کریں۔ ایکسپورٹ میں سب شامل ہوں گے۔') : ('Showing the first ' + LIMIT + ' records — narrow the filters. Export includes all matches.')) : '';
   }
@@ -715,6 +717,8 @@ html,body{overflow-x:hidden;}
         return;
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      /* Edit button on each case row is for people who may add/edit cases only (same rule as Daily Case Entry). */
+      CAN_WRITE = legacyAdmin || r2 === 'admin' || r2 === 'super_admin' || r2 === 'data_entry';
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

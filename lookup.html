@@ -319,6 +319,8 @@ html,body{overflow-x:hidden;}
 .lk-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--card); }
 .lk-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
 .lk-table th{ background:var(--navy); color:#fff; padding:8px 9px; text-align:start; white-space:nowrap; position:sticky; top:0; }
+/* Mouse + keyboard screens: the result list scrolls inside its own box so the left-right scroll bar is always on screen and the headings stay visible. Touch screens are unchanged. */
+@media (pointer:fine){ .lk-wrap{ max-height:calc(100vh - 110px); overflow:auto; } .lk-table th{ z-index:2; } }
 .lk-table td{ padding:7px 9px; border-bottom:1px solid var(--border); vertical-align:top; }
 .lk-table tr:hover td{ background:rgba(0,0,0,0.03); }
 .lk-note{ font-size:12px; color:var(--muted); margin:8px 2px; }

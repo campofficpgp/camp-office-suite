@@ -544,6 +544,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head><body>
@@ -678,7 +679,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
         <div class="cl-field full"><label for="fCourt">Court that passed it / عدالت <span class="manage-link" role="button" tabindex="0" onclick="openListManage('court')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCourt"></select></div>
         <div class="cl-field full"><label for="fJudges">Bench / judges / جج صاحبان</label><input id="fJudges" placeholder="Justice … , Justice …"></div>
         <div class="cl-field full"><label for="fLower">Lower court &amp; judgment challenged / نیچے کی عدالت اور فیصلہ</label><input id="fLower" placeholder="e.g. Lahore High Court, Multan Bench, Cr. Appeal No. 1577/2019 (judgment dated 20-01-2022)"></div>
-        <div class="cl-field"><label for="fCaseType">Case Type / کیس کی قسم (BBA, BAA, J.P. …) <span class="manage-link" role="button" tabindex="0" onclick="openListManage('type')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseType"></select></div>
+        <div class="cl-field"><label for="fCaseType">Case Type / کیس کی قسم</label><select id="fCaseType"></select></div>
         <div class="cl-field"><label for="fCaseNo">Case No / کیس نمبر</label><input id="fCaseNo" placeholder="142 or 950-L"></div>
         <div class="cl-field"><label for="fCaseYear">Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fCaseYear"></select></div>
         <div class="cl-field full" id="caseMatch" style="display:none" role="status" aria-live="polite"></div>
@@ -713,7 +714,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
           <div id="aiOut" class="sc-ai-out" style="display:none"></div>
         </div>
         <div class="cl-field full" id="linkRow" style="display:none"><label for="fLinkTo">Linked to judgment / متعلقہ فیصلہ (the opinion is copied into that judgment record / رائے اس فیصلے کے ریکارڈ میں بھی جائے گی)</label><select id="fLinkTo"></select><div id="linkInfo" class="sc-aut-note" style="display:none"></div></div>
-        <div class="cl-field"><label for="fScType">Filed in Supreme Court as / سپریم کورٹ میں دائر <span class="manage-link" role="button" tabindex="0" onclick="openListManage('type')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fScType"></select></div>
+        <div class="cl-field"><label for="fScType">Filed in Supreme Court as / سپریم کورٹ میں دائر</label><select id="fScType"></select></div>
         <div class="cl-field"><label for="fScNo">SC Case No / نمبر</label><input id="fScNo" placeholder="e.g. 1450-L"></div>
         <div class="cl-field"><label for="fScYear">SC Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fScYear"></select></div>
         <div class="cl-field full"><label for="fGrounds">Major grounds of acquittal / conversion / بریت یا تبدیلی کی اہم وجوہات (Inspection Proforma B)</label><textarea id="fGrounds" rows="3" placeholder="One reason per line / ہر وجہ نئی سطر میں"></textarea></div>
@@ -852,6 +853,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
   firebase.initializeApp(firebaseConfig);
   var auth = firebase.auth();
   var db = firebase.firestore();
+  CaseMaster.connect(db);   // shared Case Type -> Category master table
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
@@ -979,11 +981,7 @@ function uniqKeep(a){ var out = []; a.forEach(function(v){ if(v && out.indexOf(v
 function recomputeLists(){
   var ce = SRC.caseEntry, cn = SRC.caseNotice, sc = SRC.scanning;
   LISTS.officers = arrOk(ce.officers) ? ce.officers.slice() : (sharedList('officers') || []);
-  if(arrOk(sc.types)) LISTS.types = sc.types.slice();
-  else {
-    var t = uniqKeep([].concat(arrOk(ce.types) ? ce.types : [], arrOk(cn.types) ? cn.types : [], sharedList('caseType_caseNotice') || []));
-    LISTS.types = t.length ? t : BASE_TYPES.slice();
-  }
+  LISTS.types = CaseMaster.types();   // one master table for every page (case-master.js)
   LISTS.courts   = arrOk(sc.courts)   ? sc.courts.slice()   : (sharedList('courtTypes') || COURTS.slice());
   LISTS.outcomes = arrOk(sc.outcomes) ? sc.outcomes.slice() : (sharedList('resultCategory') || OUTCOMES.slice());
   LISTS.docTypes = arrOk(sc.docTypes) ? sc.docTypes.slice() : DOC_TYPES.slice();
@@ -1009,6 +1007,7 @@ function fillSel(id, arr, blank, keep){
   el.innerHTML = optHtml(arr, blank, cur);
   if(cur !== undefined) el.value = cur;
 }
+CaseMaster.onChange(function(){ try { recomputeLists(); fillForm(); } catch(e){} });
 function fillForm(){
   var keepT = $('fTehsil').value, keepS = $('fStation').value;
   fillSel('fDocType', withUr(LISTS.docTypes), null);
@@ -1187,7 +1186,6 @@ var LIST_DEFS = {
   district: { src:'caseNotice', field:'districts', get:function(){ return DISTRICTS; },       en:'Manage Districts', ur:'اضلاع کا انتظام', note:['Shared with Case Notices.','کیس نوٹس کے ساتھ مشترکہ فہرست۔'] },
   tehsil:   { src:'caseNotice', map:'tehsils',  en:'Manage Tehsils', ur:'تحصیلوں کا انتظام', note:['Shared with Case Notices (per district).','کیس نوٹس کے ساتھ مشترکہ (ضلع کے مطابق)۔'] },
   station:  { src:'caseNotice', map:'stations', en:'Manage Police Stations', ur:'تھانوں کا انتظام', note:['Shared with Case Notices (per district).','کیس نوٹس کے ساتھ مشترکہ (ضلع کے مطابق)۔'] },
-  type:     { src:'scanning',   field:'types',     get:function(){ return LISTS.types; },    en:'Manage Case Types', ur:'کیس کی اقسام کا انتظام', note:['Starts from the Daily Case Entry + Case Notice types; after you save here it is the Scanning Desk list.','ڈیلی کیس انٹری اور کیس نوٹس کی اقسام سے شروع ہوتی ہے؛ یہاں محفوظ کرنے کے بعد اسکین ڈیسک کی اپنی فہرست بن جاتی ہے۔'] },
   court:    { src:'scanning',   field:'courts',    get:function(){ return LISTS.courts; },   en:'Manage Courts', ur:'عدالتوں کا انتظام', note:['Follows the Shared Dropdown Manager (Court) until you save here.','یہاں محفوظ کرنے تک مشترکہ ڈراپ ڈاؤن مینیجر (عدالت) کی فہرست چلتی ہے۔'] },
   outcome:  { src:'scanning',   field:'outcomes',  get:function(){ return LISTS.outcomes; }, en:'Manage Judgment Results', ur:'فیصلے کے نتیجے کا انتظام', note:['Follows the Shared Dropdown Manager (Result Category) until you save here.','یہاں محفوظ کرنے تک مشترکہ ڈراپ ڈاؤن مینیجر (نتیجہ کی قسم) کی فہرست چلتی ہے۔'] },
   docType:  { src:'scanning',   field:'docTypes',  get:function(){ return LISTS.docTypes; }, en:'Manage Document Types', ur:'دستاویز کی اقسام کا انتظام', note:['Scanning Desk list.','صرف اسکین ڈیسک کی فہرست۔'] },

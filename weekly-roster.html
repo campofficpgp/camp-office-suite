@@ -334,6 +334,7 @@ html,body{overflow-x:hidden;}
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head>
@@ -543,7 +544,7 @@ html,body{overflow-x:hidden;}
   // [Year dropdown] + [Nature of Case button, its own per case number]. Fill one, it "closes" into a
   // one-line summary, then "+ Connected Case No." opens a fresh block for the next one (2nd, 3rd, ...).
   // These lists are each a STARTER/sample list — manage/add-edit them via the links above.
-  var CASE_TYPES2 = ['Crl.P.L.A.','C.P.L.A.','Crl.A.','C.A.','Const.P.','Crl.M.A.','C.M.A.','Crl.O.P.','H.R.C.','J.P.','Review Petition','C.P.','Other'];
+  var CASE_TYPES2 = CaseMaster.types();   // one master table for every page (case-master.js)
 
   function rosterYearRange(){
     var years = [];
@@ -669,7 +670,7 @@ html,body{overflow-x:hidden;}
     var html = '<div class="case-number-row">' +
       '<span class="case-row-del" title="'+(isUrdu?'یہ کیس نمبر ہٹائیں':'Remove this case number')+'">✕</span>' +
       '<select class="case-type-select"><option value="">'+(isUrdu?'کیس کی قسم':'Case Type')+'</option>' +
-      CASE_TYPES2.map(function(t){ return '<option value="'+escapeAttr(t)+'"'+(t===prefill.type?' selected':'')+'>'+t+'</option>'; }).join('') +
+      (function(){ var l = CaseMaster.types(); if(prefill.type && l.indexOf(prefill.type) < 0) l.push(prefill.type); return l; })().map(function(t){ return '<option value="'+escapeAttr(t)+'"'+(t===prefill.type?' selected':'')+'>'+t+'</option>'; }).join('') +
       '</select>' +
       '<input type="text" class="case-no-input" value="'+escapeAttr(prefill.no||'')+'" placeholder="'+(isUrdu?'کیس نمبر':'Case No.')+'">' +
       '<select class="case-year-select"><option value="">'+(isUrdu?'سال':'Year')+'</option>' +
@@ -1506,6 +1507,7 @@ html,body{overflow-x:hidden;}
   (function(){
     var cfg = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
     if(!firebase.apps.length) firebase.initializeApp(cfg);
+    try { CaseMaster.connect(firebase.firestore()); } catch(e){}   // shared Case Type -> Category master table
     var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
     function gate(tu, te, bu){
       document.getElementById('gateTitle').textContent = tu + ' / ' + te;

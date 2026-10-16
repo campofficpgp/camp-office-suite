@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result List — Camp Office PG Punjab</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#2A5A84; --navy2:#3d6f9c; --navy3:#1B3F63;
+    --gold:#B8860B; --gold-light:#d4a839; --gold-deep:#8a660a;
+    --bg:#F6F5F1; --card:#ffffff; --border:#E1DDD3; --text:#28394A; --muted:#647581;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg; --accent-stripe-height:0px; --accent-stripe-color:transparent;
+    --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0;
+  }
+
+  /* Theme palettes — 7 selectable design styles (🎨 picker in the topbar), same softened
+     navy/green/teal/ocean/sepia/contrast/night set used across the whole project (Dashboard /
+     Weekly Court Roster / Daily Case Entry / Case Notice). Navy is the default set in :root
+     above; the rest override the same tokens so every existing rule that already reads
+     var(--navy)/var(--gold)/etc. re-colors and re-shapes itself. */
+  body[data-theme="green"]{ /* Green */
+    --navy:#1a6b45; --navy2:#2f8a5c; --navy3:#12492f;
+    --gold:#C9A227; --gold-light:#ddbb52; --gold-deep:#9c7d1e;
+    --bg:#F6F8F6; --card:#ffffff; --border:#DEE6E0; --text:#233229; --muted:#5E6F64;
+    --radius-lg:6px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:120deg;
+    --sidebar-bg:#12492f; --sidebar-bg2:#1a6b45; --sidebar-text:#e8f2ec; --sidebar-muted:#a6c2b2;
+  }
+  body[data-theme="teal"]{ /* Teal */
+    --navy:#128f89; --navy2:#26a89f; --navy3:#0c655f;
+    --gold:#96762a; --gold-light:#b8934a; --gold-deep:#6f5720;
+    --bg:#F4F9F8; --card:#ffffff; --border:#DCEBE9; --text:#22302F; --muted:#5C7071;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:110deg;
+    --sidebar-bg:#0c655f; --sidebar-bg2:#128f89; --sidebar-text:#e6f4f2; --sidebar-muted:#a5cac6;
+  }
+  body[data-theme="ocean"]{ /* Ocean */
+    --navy:#1670a0; --navy2:#2a8cc4; --navy3:#0f4a6e;
+    --gold:#c9852a; --gold-light:#dba24f; --gold-deep:#9c6620;
+    --bg:#F2F8FB; --card:#ffffff; --border:#D8E9F0; --text:#1A3444; --muted:#5A7E8F;
+    --radius-lg:10px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:130deg;
+    --sidebar-bg:#0f4a6e; --sidebar-bg2:#1670a0; --sidebar-text:#e8f4fa; --sidebar-muted:#a8cfe0;
+  }
+  body[data-theme="sepia"]{ /* Sepia */
+    --navy:#6d5330; --navy2:#8a6c40; --navy3:#4a381f;
+    --gold:#a3742a; --gold-light:#c2924a; --gold-deep:#7d591f;
+    --bg:#f6efe0; --card:#fcf7ee; --border:#e5d9bd; --text:#42341f; --muted:#83725a;
+    --radius-lg:8px; --radius-sm:6px; --font-head:Georgia,'Times New Roman',serif;
+    --topbar-grad-angle:140deg;
+    --sidebar-bg:#4a381f; --sidebar-bg2:#6d5330; --sidebar-text:#f3e9d8; --sidebar-muted:#d0bd97;
+  }
+  body[data-theme="contrast"]{ /* High Contrast */
+    --navy:#111111; --navy2:#2a2a2a; --navy3:#000000;
+    --gold:#8a4b00; --gold-light:#b3661a; --gold-deep:#663700;
+    --bg:#fafafa; --card:#ffffff; --border:#1a1a1a; --text:#0a0a0a; --muted:#2e2e2e;
+    --radius-lg:6px; --radius-sm:4px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:180deg;
+    --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0;
+  }
+  body[data-theme="night"]{ /* Night */
+    --navy:#5b7bb0; --navy2:#7292c4; --navy3:#3f5580;
+    --gold:#d4a13d; --gold-light:#e0b968; --gold-deep:#a87f2c;
+    --bg:#181c26; --card:#232838; --border:#333a4e; --text:#dcdfe8; --muted:#96a0b8;
+    --radius-lg:8px; --radius-sm:6px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#12151f; --sidebar-bg2:#1e2436; --sidebar-text:#dcdfe8; --sidebar-muted:#96a0b8;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{background:var(--bg); color:var(--text); font-family:var(--font-head); line-height:1.5;}
+
+  .topbar{background:linear-gradient(var(--topbar-grad-angle),var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:var(--accent-stripe-height) solid var(--accent-stripe-color); direction:ltr;}
+  .topbar .brand{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;}
+  .topbar .right-controls{display:flex; align-items:center; gap:10px;}
+  .brand-logo-img{ height:30px; width:auto; flex-shrink:0; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .lang-btn{background:var(--gold); color:var(--navy3); border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer;}
+
+  .theme-switch-wrap{position:relative;}
+  .theme-btn{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1;}
+  .theme-btn:hover{background:rgba(255,255,255,.24);}
+  .theme-picker{position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60;}
+  [dir="rtl"] .theme-picker{right:auto; left:0;}
+  .theme-picker.open{display:flex;}
+  .theme-swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);}
+  .theme-swatch:hover{transform:scale(1.08);}
+  .theme-swatch.active{border-color:var(--navy); box-shadow:0 0 0 2px var(--gold);}
+
+  .wrap{max-width:1120px; margin:0 auto; padding:22px 20px 60px; min-width:0; width:100%;}
+
+  /* ===== AI Draft / suggestion styling (Stage 11 guardrail: always visually distinct,
+     never looks like normal saved data, never blocks the user, never writes by itself) ===== */
+  .ai-box{background:#f5f0fb; border:1px solid #c9b3ea; border-left:4px solid #7b3fd4; border-radius:0 8px 8px 0; padding:10px 14px; margin-top:10px; font-size:12.5px; color:#3d2a5c; display:none;}
+  [dir="rtl"] .ai-box{border-left:1px solid #c9b3ea; border-right:4px solid #7b3fd4; border-radius:8px 0 0 8px;}
+  .ai-box.show{display:block;}
+  .relist-note{background:#eaf4ec; border:1px solid #9cc8a6; border-left:4px solid #2e7d4f; border-radius:0 8px 8px 0; padding:9px 14px; font-size:12.5px; color:#1f4a31;}
+  .relist-note.clash{background:#fdf0e6; border-color:#e3b58a; border-left-color:#c46a1c; color:#6b3a10;}
+  [dir="rtl"] .relist-note{border-left:1px solid #9cc8a6; border-right:4px solid #2e7d4f; border-radius:8px 0 0 8px;}
+  [dir="rtl"] .relist-note.clash{border-left-color:#e3b58a; border-right-color:#c46a1c;}
+  .ai-box .ai-tag{display:inline-flex; align-items:center; gap:5px; font-weight:700; font-size:11px; color:#7b3fd4; text-transform:uppercase; letter-spacing:.3px; margin-bottom:6px;}
+  .ai-box .ai-hint{font-size:11px; color:#6b5c8a; margin-top:6px; font-style:italic;}
+  .ai-box ul{margin:4px 0 0; padding-left:18px;}
+  [dir="rtl"] .ai-box ul{padding-left:0; padding-right:18px;}
+  .ai-box li{margin-bottom:3px;}
+  .ai-box mark{background:#e6d9fa; color:#3d2a5c; padding:0 2px; border-radius:3px; font-weight:600;}
+  .ai-box .ai-dup-actions{margin-top:8px; display:flex; gap:8px;}
+  .ai-box .ai-dup-actions .btn{padding:5px 12px; font-size:11.5px;}
+
+  .tab-switch{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;}
+  .tab-switch .btn{padding:10px 20px;}
+
+  .search-box{background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; margin-bottom:20px;}
+  .search-box .lbl{font-size:11.5px; font-weight:700; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; margin-bottom:10px;}
+  .search-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px;}
+  .field label{display:block; font-size:11.5px; font-weight:600; color:var(--navy); margin-bottom:4px;}
+  .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
+  [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
+  .field textarea{resize:vertical; min-height:56px;}
+  .count{font-size:11px; color:var(--muted); margin-top:10px;}
+
+  .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
+  .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
+  .btn.danger:hover{background:#fdecec;}
+  .btn.ghost:hover{background:#f2f0e8;}
+  .btn.gold{background:var(--gold); color:var(--navy3); border-color:var(--gold-deep);}
+  .btn.gold:hover{background:var(--gold-light);}
+
+  .table-scroll{overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border);}
+  table.case-table{width:100%; border-collapse:collapse; background:var(--card); font-size:12px; min-width:1140px;}
+  table.case-table th{background:var(--navy); color:#fff; text-align:left; padding:10px 10px; font-weight:600; font-size:11px; white-space:nowrap;}
+  table.case-table td{padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; white-space:nowrap;}
+  table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
+  table.case-table tr:last-child td{border-bottom:none;}
+  table.case-table tr:hover td{background:#faf8f2;}
+  .result-pill{display:inline-block; padding:2px 9px; border-radius:12px; font-size:10px; font-weight:700; white-space:nowrap;}
+  .result-pending{background:#fdf0e0; color:#9c5b0e;}
+  .result-allowed{background:#e6f6ea; color:#2c7a3d;}
+  .result-dismissed{background:#fdecec; color:#a33a3a;}
+  .result-leave{background:#e3ecfb; color:#1c4faa;}
+  .result-compromise{background:#f3e6fa; color:#7a2ea3;}
+  .result-other{background:#f0efe8; color:var(--muted);}
+  .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
+  .row-actions .btn{padding:5px 10px; font-size:11px;}
+
+  .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
+  .modal-overlay.open{display:flex;}
+  .modal-panel{background:var(--card); border-radius:var(--radius-lg); max-width:720px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); margin:auto;}
+  .modal-panel .search-box{margin-bottom:0; border:none; border-radius:var(--radius-lg);}
+  .modal-close{position:sticky; top:0; display:flex; justify-content:flex-end; padding:10px 14px 0; background:var(--card);}
+  .modal-close span{cursor:pointer; font-size:20px; color:var(--muted); line-height:1;}
+  .disclaimer{margin-top:14px; font-size:10.5px; color:var(--muted); font-style:italic; border-left:3px solid var(--gold); padding:8px 12px; background:#faf8f2;}
+
+  /* Monthly Progress Report */
+  table.report-table{width:100%; border-collapse:collapse; background:var(--card); font-size:11.5px; min-width:900px;}
+  table.report-table th{background:var(--navy); color:#fff; text-align:center; padding:8px 8px; font-weight:600; font-size:10.5px;}
+  table.report-table td{padding:7px 8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); text-align:center; white-space:nowrap;}
+  table.report-table td.nature-cell{text-align:left; white-space:normal; min-width:190px; max-width:220px; font-weight:600;}
+  [dir="rtl"] table.report-table td.nature-cell{text-align:right;}
+  table.report-table tr.grand-total-row td{background:#efe9d8; font-weight:700;}
+  table.report-table tr:hover td{background:#faf8f2;}
+  table.report-table td.edited-cell{background:#fdf0d0;}
+  .cell-input{width:42px; text-align:center; border:1px solid var(--border); border-radius:4px; padding:3px 2px; font-size:11.5px; background:#fff;}
+  .cell-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .nature-input{width:150px; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:11.5px; font-weight:600; background:#fff;}
+  .nature-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
+  .row-del{cursor:pointer; color:#a33a3a; font-weight:700; margin-left:6px; font-size:12px;}
+  [dir="rtl"] .row-del{margin-left:0; margin-right:6px;}
+  .report-legend{font-size:11px; color:var(--muted); margin-top:10px; display:flex; align-items:center; gap:6px;}
+  .report-legend .swatch{display:inline-block; width:12px; height:12px; background:#fdf0d0; border:1px solid var(--border); border-radius:3px;}
+  .report-meta{display:flex; flex-wrap:wrap; gap:18px; margin-bottom:14px; font-size:12.5px;}
+  .report-meta b{color:var(--navy);}
+  .saved-report-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:8px; font-size:12.5px; flex-wrap:wrap;}
+
+  .print-sheet{background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); padding:30px 34px; font-size:13px;}
+  .print-sheet .p-head{font-weight:700; font-size:15px; white-space:pre-line; line-height:1.4;}
+  .print-sheet .p-sub{font-size:12px; color:var(--muted); white-space:pre-line; line-height:1.4;}
+  /* Print letterhead (p-head/p-sub) is editable in place — same ✎ edit / ↺ reset pattern used in
+     the Weekly Court Roster and Case Notice tools, so it always shows the same office address. */
+  .print-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .print-sheet .p-head-row{margin-bottom:16px;}
+  .print-sheet .p-logo{width:52px; height:52px; margin:0 auto 8px; display:block;}
+  .print-sheet .p-logo svg{width:100%; height:100%; display:block;}
+  .print-sheet .p-sub-row{margin-bottom:16px;}
+  .print-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
+  .print-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
+  .print-sheet .print-heading-input{font-size:12.5px; padding:3px 6px; border-radius:5px; border:1px solid var(--gold-deep); min-width:260px; font-family:inherit; text-align:center;}
+  .print-sheet .p-officer{display:flex; justify-content:space-between; margin-bottom:14px; font-size:13px; font-weight:600;}
+  .print-sheet .p-sign{display:flex; justify-content:space-between; align-items:flex-start; margin-top:24px; font-size:12.5px; gap:16px;}
+  /* Sign-off stamps: left = prepared by, right = approved by. Each is a small editable
+     Name/Designation/Office-Address block (✎ edit, ✕ clear). */
+  .print-sheet .p-stamp-block{flex:1; min-width:0;}
+  .print-sheet .p-stamp-block[data-side="right"]{text-align:right;}
+  [dir="rtl"] .print-sheet .p-stamp-block[data-side="right"]{text-align:left;}
+  .print-sheet .p-stamp-line{font-size:11.5px; color:var(--navy); line-height:1.5; white-space:pre-line;}
+  .print-sheet .p-stamp-line:first-child{font-weight:700;}
+  .print-sheet .p-stamp-empty{color:var(--muted); font-style:italic; font-weight:400;}
+  .print-sheet .p-stamp-icons{margin-top:4px;}
+  .print-sheet .p-stamp-icons .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:10.5px; opacity:.75; margin-right:8px;}
+  [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
+  .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
+  .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
+
+  [dir="rtl"] table.case-table th, [dir="rtl"] table.case-table td{text-align:right;}
+  [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
+
+  @media print{
+    body *{visibility:hidden;}
+    #reportPrintArea, #reportPrintArea *{visibility:visible;}
+    #reportPrintArea{position:absolute; top:0; left:0; width:100%;}
+    /* The global "html,body{overflow-x:hidden}" rule (near the top of this stylesheet) is meant
+       to stop an accidental horizontal scrollbar on screen — but during PDF capture it also
+       clips a wide report table. Let the body grow to the full width for the capture. */
+    html,body{overflow-x:visible !important;}
+    #reportPrintArea .heading-icon{display:none;}
+    /* If someone prints (Ctrl+P / browser print icon) without first opening this page's
+       own "Print / Preview" button, #reportPrintArea is still empty and the sheet would
+       otherwise print completely blank with no explanation. Show a plain message instead. */
+    #reportPrintArea:empty::before{
+      visibility:visible; display:block; padding:60px 20px; text-align:center; font-size:14px; color:#333;
+      white-space:pre-line;
+      content:"Please use this page's own \"Print / Preview\" button first, then press Print inside that preview.\A براہ کرم پہلے اس صفحے کا اپنا \"Print / Preview\" بٹن کھولیں، پھر اسی پیش منظر کے اندر Print دبائیں۔";
+    }
+  }
+
+.app-footer{
+  text-align:left;
+  direction:ltr;
+  padding:10px 18px;
+  font-size:12px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--card);
+}
+@media print{
+  .app-footer{ display:none; }
+  #authGate, .userbar-ce{ display:none !important; }
+}
+#authGate{ position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; }
+#authGate .gate-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:26px 22px; max-width:420px; width:100%; text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06); }
+#authGate .gate-card h2{ margin:0 0 8px; font-size:18px; color:var(--navy); }
+#authGate .gate-card p{ color:var(--muted); font-size:13.5px; line-height:1.7; margin:6px 0; }
+#authGate .gate-card a{ display:inline-block; margin-top:12px; background:var(--navy); color:#fff; padding:9px 18px; border-radius:6px; text-decoration:none; font-size:13.5px; }
+.userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
+.userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
+.userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
+.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-delete .needs-delete{ display:none !important; }
+.no-lists .manage-link{ display:none !important; }
+.no-ai .needs-ai{ display:none !important; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  /* inside the white user bar the chip must use theme colours (it was white-on-white) */
+  .userbar-ce .user-chip-sm{ display:flex; flex-wrap:wrap; color:var(--text); background:var(--bg); border-color:var(--border); font-size:12.5px; white-space:normal; }
+  .userbar-ce .user-chip-sm .role-chip{ background:var(--card); border:1px solid var(--border); color:var(--text); }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+</style>
+<style>
+.md-head{ margin:4px 2px 12px; }
+.md-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
+.md-head p{ margin:0; color:var(--muted); font-size:13px; }
+.md-bar{ position:sticky; top:0; z-index:30; display:flex; flex-wrap:wrap; align-items:center; gap:8px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:10px 12px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.md-bar .spacer{ flex:1; min-width:8px; }
+.mdb{ min-height:38px; padding:7px 14px; border-radius:var(--radius-sm); border:1px solid var(--navy); background:var(--card); color:var(--navy); cursor:pointer; font-size:13px; font-weight:600; font-family:inherit; }
+.mdb:hover:not(:disabled){ background:rgba(0,0,0,.05); }
+.mdb:disabled{ opacity:.42; cursor:not-allowed; }
+.mdb.primary{ background:var(--navy); color:#fff; }
+.mdb.primary:hover:not(:disabled){ background:var(--navy3); }
+.mdb.gold{ background:var(--gold); border-color:var(--gold-deep); color:var(--navy3); }
+.mdb.danger{ color:#a33a3a; border-color:#e0bcbc; background:var(--card); }
+.mdb.sm{ min-height:32px; min-width:32px; padding:4px 9px; font-size:12px; }
+.md-state{ font-size:12.5px; font-weight:700; padding:4px 10px; border-radius:20px; background:#e6f6ea; color:#2c7a3d; white-space:nowrap; }
+.md-state.dirty{ background:#fdf0e0; color:#9c5b0e; }
+.md-notice{ border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:0 8px 8px 0; background:var(--card); padding:9px 13px; margin-bottom:12px; font-size:12.5px; color:var(--text); }
+[dir="rtl"] .md-notice{ border-left:1px solid var(--border); border-right:4px solid var(--gold); border-radius:8px 0 0 8px; }
+.md-notice.warn{ border-left-color:#c46a1c; background:#fdf0e6; color:#6b3a10; }
+[dir="rtl"] .md-notice.warn{ border-right-color:#c46a1c; }
+.md-notice .mdb{ margin-top:6px; }
+.md-grid{ display:grid; grid-template-columns:minmax(0,330px) minmax(0,1fr); gap:14px; align-items:start; }
+.md-card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:12px; min-width:0; }
+.md-card h3{ margin:0 0 8px; font-size:13px; color:var(--gold-deep); text-transform:uppercase; letter-spacing:.4px; }
+.md-add{ display:flex; gap:6px; margin-top:10px; }
+.md-add input{ flex:1; min-width:0; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:13px; background:var(--card); color:var(--text); font-family:inherit; }
+.md-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
+.md-row{ display:flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 6px; background:var(--card); min-width:0; }
+.md-row.sel{ border-color:var(--navy); background:rgba(42,90,132,.08); box-shadow:inset 3px 0 0 var(--navy); }
+[dir="rtl"] .md-row.sel{ box-shadow:inset -3px 0 0 var(--navy); }
+.md-row .nm{ flex:1; min-width:0; background:none; border:none; text-align:start; cursor:pointer; font-size:13.5px; font-weight:600; color:var(--text); padding:5px 4px; font-family:inherit; overflow-wrap:anywhere; unicode-bidi:plaintext; }
+.md-row .nm.cat{ cursor:default; font-weight:500; }
+.md-row .cnt{ font-size:11px; color:var(--muted); white-space:nowrap; }
+.md-row .cnt b{ color:var(--navy); }
+.md-row .acts{ display:flex; gap:3px; flex:none; }
+.md-edit{ flex:1; min-width:0; padding:6px 8px; border:2px solid var(--gold); border-radius:var(--radius-sm); font-size:13.5px; background:var(--card); color:var(--text); font-family:inherit; }
+.md-empty{ padding:18px; text-align:center; color:var(--muted); font-size:13px; }
+.md-lock{ font-size:10.5px; color:var(--muted); border:1px solid var(--border); border-radius:10px; padding:1px 7px; white-space:nowrap; }
+.md-toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#1f2937; color:#fff; padding:10px 18px; border-radius:24px; font-size:13px; z-index:200; max-width:92vw; text-align:center; opacity:0; pointer-events:none; transition:opacity .2s; }
+.md-toast.show{ opacity:1; }
+.md-toast.err{ background:#a33a3a; }
+.md-modal{ position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:150; display:none; align-items:center; justify-content:center; padding:16px; }
+.md-modal.open{ display:flex; }
+.md-panel{ background:var(--card); border-radius:var(--radius-lg); max-width:560px; width:100%; max-height:88vh; overflow-y:auto; padding:18px 18px 14px; box-shadow:0 20px 60px rgba(0,0,0,.35); }
+.md-panel h3{ margin:0 0 10px; color:var(--navy); font-size:16px; }
+.md-panel .body{ font-size:13px; line-height:1.7; }
+.md-panel .body ul{ margin:6px 0; padding-inline-start:20px; }
+.md-panel .btns{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px; }
+.md-diff-add{ color:#2c7a3d; font-weight:600; } .md-diff-del{ color:#a33a3a; font-weight:600; } .md-diff-mv{ color:var(--navy); font-weight:600; }
+.md-no{ flex:none; width:24px; text-align:center; font-size:11px; color:var(--muted); font-weight:700; }
+.readonly-mode .needs-edit{ display:none !important; }
+.sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+@media (max-width:760px){
+  .md-grid{ grid-template-columns:minmax(0,1fr); }
+  .wrap{ padding:14px 12px 60px; }
+  .md-bar{ gap:6px; padding:8px; }
+  .mdb{ padding:7px 11px; }
+  .md-state{ order:9; flex-basis:100%; text-align:center; }
+}
+</style>
+<!-- PWA: installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17294a">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="/pwa.js" defer></script>
+<script src="/auth-guard.js" defer></script>
+</head><body>
+
+  <div id="authGate"><div class="gate-card">
+    <h2 id="gateTitle">⏳ لاگ اِن کی جانچ ہو رہی ہے… / Checking sign-in…</h2>
+    <p id="gateBody"></p>
+    <a id="gateLink" href="index.html" style="display:none">← پورٹل پر جائیں / Go to Portal</a>
+  </div></div>
+
+    <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label">Lookup</span></a>
+        <a class="nav-item" href="master-data.html"><span class="ico">🧩</span><span class="label">Master Data</span></a>
+        <a class="nav-item active" href="result-list.html"><span class="ico">🏁</span><span class="label">Result List</span></a>
+        <a class="nav-item" href="cause-list.html"><span class="ico">📥</span><span class="label">Cause List Import</span></a>
+        <a class="nav-item" href="scanning.html"><span class="ico">📠</span><span class="label">Scanning Desk</span></a>
+        <div class="nav-group open" id="navGroupCase"><button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button><div class="nav-submenu"><a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a><a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a><a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a></div></div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html" target="_blank"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label" data-en="Portal" data-ur="پورٹل">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+      <div class="topbar">
+    <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-en="Result List" data-ur="نتیجہ کی فہرست">Result List</span></div>
+    <div class="right-controls">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
+      <div class="theme-switch-wrap">
+        <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+        <div class="theme-picker" id="themePicker"></div>
+      </div>
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">اردو</button>
+      <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+    </div>
+  </div>
+
+  <div class="userbar-ce">
+    <div class="user-chip-sm"><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
+  </div>
+<div class="wrap">
+
+  <div class="md-head">
+    <h2 data-en="Result List" data-ur="نتیجہ کی فہرست">Result List</h2>
+    <p data-en="The Result options used in Daily Case Entry and Cause List Import. The order below is also the column order of the Monthly Progress Report." data-ur="یومیہ کیس انٹری اور کاز لسٹ امپورٹ میں استعمال ہونے والے نتیجے کے آپشنز۔ نیچے کی ترتیب ہی ماہانہ پیش رفت رپورٹ کے کالموں کی ترتیب ہے۔">The Result options used in Daily Case Entry and Cause List Import. The order below is also the column order of the Monthly Progress Report.</p>
+  </div>
+
+  <div id="mdNotice"></div>
+  <div class="md-notice" data-en="Each Result is one column in the Monthly Progress Report. A Result that is removed or renamed here has no column in new reports, and saved cases that still carry the old name are listed as 'uncounted'. Reports already saved for past months do not change. Nothing changes on the live portal until you press Save." data-ur="ہر نتیجہ ماہانہ پیش رفت رپورٹ میں ایک کالم ہے۔ یہاں سے نکالا یا نام بدلا گیا نتیجہ نئی رپورٹوں میں کالم نہیں بنائے گا، اور جن محفوظ کیسز میں پرانا نام ہے وہ 'شمار سے باہر' لکھے آئیں گے۔ پچھلے مہینوں کی محفوظ شدہ رپورٹیں نہیں بدلتیں۔ جب تک Save نہ دبائیں لائیو پورٹل پر کچھ نہیں بدلتا۔">Each Result is one column in the Monthly Progress Report. A Result that is removed or renamed here has no column in new reports, and saved cases that still carry the old name are listed as 'uncounted'. Reports already saved for past months do not change. Nothing changes on the live portal until you press Save.</div>
+
+  <div class="md-bar" id="mdBar">
+    <button class="mdb needs-edit" id="bUndo" onclick="doUndo()" disabled title="Ctrl+Z">↶ <span data-en="Undo" data-ur="واپس">Undo</span></button>
+    <button class="mdb needs-edit" id="bRedo" onclick="doRedo()" disabled title="Ctrl+Y">↷ <span data-en="Redo" data-ur="دوبارہ">Redo</span></button>
+    <button class="mdb needs-edit" id="bRestore" onclick="doRestore()" disabled>⟲ <span data-en="Discard changes" data-ur="تبدیلیاں ختم کریں">Discard changes</span></button>
+    <span class="spacer"></span>
+    <span class="md-state" id="mdState" role="status"></span>
+    <button class="mdb primary needs-edit" id="bSave" onclick="doSave()" disabled>💾 <span data-en="Save" data-ur="محفوظ کریں">Save</span></button>
+  </div>
+
+  <div class="md-card" style="max-width:720px">
+    <h3 data-en="Results" data-ur="نتیجے">Results</h3>
+    <ul class="md-list" id="resList"></ul>
+    <div class="md-add needs-edit">
+      <input id="newRes" maxlength="60" dir="ltr" autocomplete="off" aria-label="New result">
+      <button class="mdb primary" onclick="addRes()">＋ <span data-en="Add" data-ur="شامل کریں">Add</span></button>
+    </div>
+  </div>
+
+  <div class="md-card" style="margin-top:14px">
+    <h3 data-en="Check against saved cases" data-ur="محفوظ کیسز سے موازنہ">Check against saved cases</h3>
+    <div id="mdCheck" style="font-size:13px"></div>
+  </div>
+
+</div>
+
+<div class="md-modal" id="mdModal" role="dialog" aria-modal="true"><div class="md-panel"><h3 id="mdMTitle"></h3><div class="body" id="mdMBody"></div><div class="btns"><button class="mdb" id="mdMCancel"></button><button class="mdb primary" id="mdMOk"></button></div></div></div>
+<div class="md-toast" id="mdToast" role="status"></div>
+
+<script>
+  var isUrdu = false;
+  function T(en, ur){ return isUrdu ? ur : en; }
+  /* ================= Shared sidebar / mobile-drawer interactivity ================= */
+  (function(){
+    var sidebarEl = document.getElementById('sidebar');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    var mobileBtn = document.getElementById('mobileMenuBtn');
+    if(mobileBtn) mobileBtn.addEventListener('click', function(){
+      sidebarEl.classList.add('mobile-open'); backdrop.classList.add('show');
+    });
+    if(backdrop) backdrop.addEventListener('click', function(){
+      sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show');
+    });
+    document.querySelectorAll('.nav-group-head').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.getElementById(btn.dataset.group).classList.toggle('open');
+      });
+    });
+    document.querySelectorAll('.sidebar .nav-item:not(.disabled), .sidebar .nav-subitem').forEach(function(el){
+      el.addEventListener('click', function(){
+        if(window.innerWidth <= 960){ sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show'); }
+      });
+    });
+  })();
+
+  var THEMES = [
+    { id:'navy', nameEn:'Navy', nameUr:'نیلا', navy:'#2A5A84', gold:'#B8860B' },
+    { id:'green', nameEn:'Green', nameUr:'سبز', navy:'#1a6b45', gold:'#C9A227' },
+    { id:'teal', nameEn:'Teal', nameUr:'ٹیل', navy:'#128f89', gold:'#96762a' },
+    { id:'ocean', nameEn:'Ocean', nameUr:'سمندری', navy:'#1670a0', gold:'#c9852a' },
+    { id:'sepia', nameEn:'Sepia', nameUr:'بھورا', navy:'#6d5330', gold:'#a3742a' },
+    { id:'contrast', nameEn:'Contrast', nameUr:'کنٹراسٹ', navy:'#111111', gold:'#8a4b00' },
+    { id:'night', nameEn:'Night', nameUr:'تاریک', navy:'#5b7bb0', gold:'#d4a13d' }
+  ];
+  var currentTheme = (function(){ try{ return localStorage.getItem('cmpTheme') || 'navy'; }catch(e){ return 'navy'; } })();
+  function renderThemePicker(){
+    var box = document.getElementById('themePicker');
+    box.innerHTML = THEMES.map(function(t){
+      var active = (t.id === currentTheme) ? ' active' : '';
+      var label = isUrdu ? t.nameUr : t.nameEn;
+      return '<div class="theme-swatch'+active+'" data-theme-id="'+t.id+'" title="'+label+'" ' +
+        'style="background:linear-gradient(135deg,'+t.gold+' 50%,'+t.navy+' 50%);"></div>';
+    }).join('');
+  }
+  function toggleThemePicker(){ document.getElementById('themePicker').classList.toggle('open'); }
+  function setTheme(id){
+    currentTheme = id;
+    document.body.setAttribute('data-theme', id);
+    try{ localStorage.setItem('cmpTheme', id); }catch(e){}
+    renderThemePicker();
+    document.getElementById('themePicker').classList.remove('open');
+  }
+  document.getElementById('themePicker').addEventListener('click', function(e){
+    var sw = e.target.closest('.theme-swatch');
+    if(sw) setTheme(sw.dataset.themeId);
+  });
+  document.addEventListener('click', function(e){
+    var wrap = document.querySelector('.theme-switch-wrap');
+    if(wrap && !wrap.contains(e.target)) document.getElementById('themePicker').classList.remove('open');
+  });
+
+  var firebaseConfig = { apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU", authDomain: "camp-office-project.firebaseapp.com", projectId: "camp-office-project" };
+  firebase.initializeApp(firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var CURRENT_USER = null, CAN_EDIT = false;
+  var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
+
+  function gate(titleUr, titleEn, bodyUr, showLink){
+    document.getElementById('gateTitle').textContent = titleUr + ' / ' + titleEn;
+    document.getElementById('gateBody').textContent = bodyUr || '';
+    document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
+    document.getElementById('authGate').style.display = 'flex';
+  }
+
+  /* ================= Result list editor ================= */
+  function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function J(x){ return JSON.stringify(x); }
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  function tidy(s){ return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+  /* same matching the Monthly Progress Report uses (case-insensitive, two known old typos) */
+  function resKey(v){ var k = tidy(v).toLowerCase(); if(k === 'adjurned') k = 'adjourned'; if(k === 'converted into lessor sentence') k = 'converted into lesser sentence'; return k; }
+  function sanitize(a){ var o = []; (a || []).forEach(function(x){ x = tidy(x); if(x && o.map(resKey).indexOf(resKey(x)) < 0) o.push(x); }); return o; }
+
+  var SERVER = [], BASE = '', WORK = [], HIST = [], HIX = -1;
+  var LOADED = false, SAVING = false, REMOTE = false, EDITING = null;
+  var USE = null, USE_BLANK = 0, USE_TOTAL = 0, USE_ERR = false, USE_RAW = {};   // saved cases: resKey -> count
+
+  function dirty(){ return J(WORK) !== BASE; }
+  function commit(){
+    var s = J(WORK);
+    if(HIST[HIX] !== s){
+      HIST = HIST.slice(0, HIX + 1); HIST.push(s);
+      if(HIST.length > 200) HIST.shift();
+      HIX = HIST.length - 1;
+    }
+    render();
+  }
+  function restoreAt(ix){ WORK = JSON.parse(HIST[ix]); HIX = ix; EDITING = null; render(); }
+  function doUndo(){ if(!CAN_EDIT || HIX <= 0) return; restoreAt(HIX - 1); toast(T('Undone', 'واپس کر دیا')); }
+  function doRedo(){ if(!CAN_EDIT || HIX >= HIST.length - 1) return; restoreAt(HIX + 1); toast(T('Redone', 'دوبارہ کر دیا')); }
+  function doRestore(){
+    if(!CAN_EDIT || !dirty()) return;
+    askModal({ title: T('Discard unsaved changes?', 'بغیر محفوظ تبدیلیاں ختم کریں؟'),
+      html: T('The list goes back to the last saved version. You can still press Undo to bring your changes back.', 'فہرست آخری محفوظ حالت پر آ جائے گی۔ چاہیں تو Undo دبا کر اپنی تبدیلیاں واپس لا سکتے ہیں۔'),
+      ok: T('Discard', 'ختم کریں') }, function(){ WORK = clone(SERVER); EDITING = null; commit(); });
+  }
+
+  /* ---------- saved-case usage ---------- */
+  function usageOf(name){ return USE ? (USE[resKey(name)] || 0) : null; }
+  function loadUsage(){
+    db.collection('cases').get().then(function(qs){
+      var tmp = {}, blank = 0, total = 0, raw = {};
+      qs.forEach(function(d){
+        var r = d.data() || {}, v = tidy(r.result); total++;
+        if(!v){ blank++; return; }
+        var k = resKey(v); tmp[k] = (tmp[k] || 0) + 1; if(!raw[k]) raw[k] = v;
+      });
+      USE = tmp; USE_BLANK = blank; USE_TOTAL = total; USE_RAW = raw; render();
+    }).catch(function(e){ console.error('cases', e); USE_ERR = true; render(); });
+  }
+
+  /* ---------- rendering ---------- */
+  function rowButtons(i, last){
+    if(!CAN_EDIT) return '';
+    return '<span class="acts needs-edit">' +
+      '<button class="mdb sm" data-act="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="' + esc(T('Move up', 'اوپر')) + '" title="' + esc(T('Move up', 'اوپر')) + '">▲</button>' +
+      '<button class="mdb sm" data-act="down" data-i="' + i + '"' + (last ? ' disabled' : '') + ' aria-label="' + esc(T('Move down', 'نیچے')) + '" title="' + esc(T('Move down', 'نیچے')) + '">▼</button>' +
+      '<button class="mdb sm" data-act="edit" data-i="' + i + '" aria-label="' + esc(T('Edit', 'ترمیم')) + '" title="' + esc(T('Edit', 'ترمیم')) + '">✎</button>' +
+      '<button class="mdb sm danger" data-act="del" data-i="' + i + '" aria-label="' + esc(T('Delete', 'حذف')) + '" title="' + esc(T('Delete', 'حذف')) + '">✕</button></span>';
+  }
+  function renderList(){
+    var h = '';
+    WORK.forEach(function(name, i){
+      h += '<li class="md-row">';
+      if(EDITING && EDITING.i === i){
+        h += '<input class="md-edit" id="editInput" dir="ltr" maxlength="60" value="' + esc(name) + '" aria-label="' + esc(T('New name', 'نیا نام')) + '">' +
+          '<span class="acts"><button class="mdb sm primary" data-act="ok" aria-label="OK" title="OK">✓</button><button class="mdb sm" data-act="cancel" aria-label="Cancel" title="Esc">✕</button></span>';
+      } else {
+        var n = usageOf(name);
+        h += '<span class="md-no" aria-hidden="true">' + (i + 1) + '</span><span class="nm cat" dir="ltr">' + esc(name) + '</span>' +
+          (n == null ? '' : '<span class="cnt" title="' + esc(T('saved cases using it', 'اس کو استعمال کرنے والے محفوظ کیسز')) + '"><b>' + n + '</b></span>') + rowButtons(i, i === WORK.length - 1);
+      }
+      h += '</li>';
+    });
+    document.getElementById('resList').innerHTML = h || '<li class="md-empty">' + esc(T('No results yet.', 'ابھی کوئی نتیجہ نہیں۔')) + '</li>';
+  }
+  function renderCheck(){
+    var box = document.getElementById('mdCheck');
+    if(USE_ERR){ box.textContent = T('Saved cases could not be read, so usage counts are not shown.', 'محفوظ کیسز نہیں پڑھے جا سکے، اس لیے استعمال کی گنتی نہیں دکھائی گئی۔'); return; }
+    if(!USE){ box.textContent = T('Counting saved cases…', 'محفوظ کیسز گنے جا رہے ہیں…'); return; }
+    var keys = WORK.map(resKey), bad = [], badN = 0;
+    Object.keys(USE).forEach(function(k){ if(keys.indexOf(k) < 0){ bad.push({ v: USE_RAW[k] || k, n: USE[k] }); badN += USE[k]; } });
+    var h = '<div>' + esc(T(USE_TOTAL + ' saved cases checked.', USE_TOTAL + ' محفوظ کیسز چیک کیے گئے۔')) + '</div>';
+    if(!badN) h += '<div style="color:#2c7a3d;font-weight:600;margin-top:4px">✔ ' + esc(T('Every saved Result is in the list on screen.', 'ہر محفوظ نتیجہ سکرین والی فہرست میں موجود ہے۔')) + '</div>';
+    else {
+      h += '<div style="color:#9c5b0e;font-weight:600;margin-top:4px">⚠ ' + esc(T(badN + ' case(s) carry a Result that is not in the list on screen. In the Monthly Report they would be shown as uncounted. They are never changed or deleted automatically; correct them in Daily Case Entry.', badN + ' کیسز کا نتیجہ سکرین والی فہرست میں نہیں ہے۔ ماہانہ رپورٹ میں یہ "شمار سے باہر" دکھائے جائیں گے۔ یہ خود بخود نہیں بدلے یا مٹائے جاتے؛ انہیں یومیہ کیس انٹری میں درست کریں۔')) + '</div><ul style="margin:6px 0 0;padding-inline-start:20px">';
+      bad.sort(function(a, b){ return b.n - a.n; }).forEach(function(b){ h += '<li><span dir="ltr">' + esc(b.v) + '</span> — <b>' + b.n + '</b></li>'; });
+      h += '</ul>';
+    }
+    if(USE_BLANK) h += '<div style="color:var(--muted);font-size:12px;margin-top:6px">' + esc(T(USE_BLANK + ' case(s) have no Result yet (the Monthly Report lists them as uncounted too).', USE_BLANK + ' کیسز میں ابھی نتیجہ خالی ہے (ماہانہ رپورٹ انہیں بھی "شمار سے باہر" لکھتی ہے)۔')) + '</div>';
+    box.innerHTML = h;
+  }
+  function renderBar(){
+    var d = dirty();
+    document.getElementById('bUndo').disabled = !(CAN_EDIT && HIX > 0);
+    document.getElementById('bRedo').disabled = !(CAN_EDIT && HIX < HIST.length - 1);
+    document.getElementById('bRestore').disabled = !(CAN_EDIT && d);
+    document.getElementById('bSave').disabled = !(CAN_EDIT && d && !SAVING);
+    var st = document.getElementById('mdState');
+    st.className = 'md-state' + (d ? ' dirty' : '');
+    st.textContent = d ? T('● Unsaved changes', '● تبدیلیاں محفوظ نہیں') : T('✔ Saved', '✔ محفوظ');
+  }
+  function renderNotice(){
+    var box = document.getElementById('mdNotice'), h = '';
+    if(REMOTE) h += '<div class="md-notice warn">⚠ ' + esc(T('Someone else saved a newer version while you were editing. If you press Save you will replace their version.', 'آپ کے ایڈٹ کرتے ہوئے کسی اور نے نیا ورژن محفوظ کر دیا ہے۔ آپ Save دبائیں گے تو ان کا ورژن بدل جائے گا۔')) +
+      '<br><button class="mdb sm" onclick="takeTheirs()">' + esc(T('Load their version', 'ان کا ورژن لوڈ کریں')) + '</button> <button class="mdb sm" onclick="REMOTE=false;render()">' + esc(T('Keep mine', 'میرا رکھیں')) + '</button></div>';
+    box.innerHTML = h;
+  }
+  function takeTheirs(){ REMOTE = false; WORK = clone(SERVER); EDITING = null; commit(); }
+  function render(){
+    if(!LOADED) return;
+    document.body.classList.toggle('readonly-mode', !CAN_EDIT);
+    document.getElementById('newRes').placeholder = T('New result, e.g. Disposed of', 'نیا نتیجہ، مثلاً Disposed of');
+    renderNotice(); renderList(); renderCheck(); renderBar();
+    if(EDITING){ var ei = document.getElementById('editInput'); if(ei && document.activeElement !== ei){ ei.focus(); ei.select(); } }
+  }
+
+  /* ---------- toast + modal ---------- */
+  var toastT = null;
+  function toast(msg, isErr){
+    var t = document.getElementById('mdToast');
+    t.textContent = msg; t.className = 'md-toast show' + (isErr ? ' err' : '');
+    clearTimeout(toastT); toastT = setTimeout(function(){ t.className = 'md-toast'; }, isErr ? 4200 : 1800);
+  }
+  var modalCb = null;
+  function askModal(o, cb){
+    document.getElementById('mdMTitle').textContent = o.title;
+    document.getElementById('mdMBody').innerHTML = o.html;
+    var ok = document.getElementById('mdMOk'), cn = document.getElementById('mdMCancel');
+    ok.textContent = o.ok || 'OK'; cn.textContent = T('Cancel', 'منسوخ');
+    ok.style.display = cb ? '' : 'none';
+    modalCb = cb || null;
+    document.getElementById('mdModal').classList.add('open');
+    (cb ? ok : cn).focus();
+  }
+  function closeModal(){ document.getElementById('mdModal').classList.remove('open'); modalCb = null; }
+  document.getElementById('mdMCancel').addEventListener('click', closeModal);
+  document.getElementById('mdMOk').addEventListener('click', function(){ var f = modalCb; closeModal(); if(f) f(); });
+  document.getElementById('mdModal').addEventListener('click', function(e){ if(e.target === this) closeModal(); });
+
+  /* ---------- editing actions ---------- */
+  function checkName(name, selfIdx){
+    if(!name) return T('Please type a name.', 'براہ کرم نام لکھیں۔');
+    for(var i = 0; i < WORK.length; i++) if(i !== selfIdx && resKey(WORK[i]) === resKey(name)) return T('This Result already exists.', 'یہ نتیجہ پہلے سے موجود ہے۔');
+    return '';
+  }
+  function addRes(){
+    if(!CAN_EDIT) return;
+    var inp = document.getElementById('newRes'), name = tidy(inp.value), err = checkName(name, -1);
+    if(err){ toast(err, true); inp.focus(); return; }
+    WORK.push(name); inp.value = ''; EDITING = null; commit();
+    toast(T('Added at the end. Use ▲ to move it where you want its report column.', 'آخر میں شامل ہو گیا۔ رپورٹ میں کالم کی جگہ کے لیے ▲ سے اوپر لائیں۔'));
+  }
+  document.getElementById('newRes').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); addRes(); } });
+  function move(i, dir){
+    var j = i + dir; if(j < 0 || j >= WORK.length) return;
+    var t = WORK[i]; WORK[i] = WORK[j]; WORK[j] = t; EDITING = null; commit();
+  }
+  function commitEdit(){
+    if(!EDITING) return;
+    var i = EDITING.i, inp = document.getElementById('editInput'), name = tidy(inp.value), old = WORK[i];
+    if(name === old){ EDITING = null; render(); return; }
+    var err = checkName(name, i);
+    if(err){ toast(err, true); inp.focus(); return; }
+    var used = usageOf(old);
+    function apply(){ WORK[i] = name; EDITING = null; commit(); }
+    if(used > 0){
+      askModal({ title: T('This Result is used by saved cases', 'یہ نتیجہ محفوظ کیسز میں استعمال ہو رہا ہے'),
+        html: '<p dir="ltr"><b>' + esc(old) + '</b> → <b>' + esc(name) + '</b></p><p>' + esc(T(used + ' saved case(s) carry the old name. They are NOT changed, so in the Monthly Report they would be listed as uncounted. If you only want another option, use Add instead of renaming.', used + ' محفوظ کیسز میں پرانا نام ہے۔ وہ بدلے نہیں جائیں گے، اس لیے ماہانہ رپورٹ میں "شمار سے باہر" لکھے آئیں گے۔ اگر صرف نیا آپشن چاہیے تو نام بدلنے کے بجائے Add استعمال کریں۔')) + '</p>',
+        ok: T('Rename anyway', 'پھر بھی نام بدلیں') }, apply);
+    } else apply();
+  }
+  function cancelEdit(){ EDITING = null; render(); }
+  function delItem(i){
+    if(WORK.length <= 1){ toast(T('At least one Result is needed.', 'کم از کم ایک نتیجہ ضروری ہے۔'), true); return; }
+    var name = WORK[i], used = usageOf(name);
+    function apply(){ WORK.splice(i, 1); EDITING = null; commit(); }
+    if(used > 0){
+      askModal({ title: T('Remove from the list?', 'فہرست سے نکالیں؟'),
+        html: '<p dir="ltr"><b>' + esc(name) + '</b></p><p>' + esc(T(used + ' saved case(s) carry it. They are NOT deleted or changed, but the Monthly Report will have no column for it and will list them as uncounted.', used + ' محفوظ کیسز میں یہ نتیجہ ہے۔ وہ مٹائے یا بدلے نہیں جائیں گے، لیکن ماہانہ رپورٹ میں اس کا کالم نہیں ہوگا اور وہ "شمار سے باہر" لکھے آئیں گے۔')) + '</p><p>' + esc(T('Nothing is saved until you press Save, and Undo brings it back.', 'جب تک Save نہ دبائیں کچھ محفوظ نہیں ہوتا، اور Undo اسے واپس لے آتا ہے۔')) + '</p>',
+        ok: T('Remove', 'نکالیں') }, apply);
+    } else apply();
+  }
+  document.getElementById('resList').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-act]'); if(!b || !CAN_EDIT) return;
+    var act = b.dataset.act, i = +b.dataset.i;
+    if(act === 'up') return move(i, -1);
+    if(act === 'down') return move(i, 1);
+    if(act === 'edit'){ EDITING = { i: i }; return render(); }
+    if(act === 'del') return delItem(i);
+    if(act === 'ok') return commitEdit();
+    if(act === 'cancel') return cancelEdit();
+  });
+  document.addEventListener('keydown', function(e){
+    var tg = e.target, tag = tg && tg.tagName;
+    if(tg && tg.id === 'editInput'){
+      if(e.key === 'Enter'){ e.preventDefault(); commitEdit(); } else if(e.key === 'Escape'){ cancelEdit(); }
+      return;
+    }
+    var open = document.getElementById('mdModal').classList.contains('open');
+    if(e.key === 'Escape' && open){ closeModal(); return; }
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || open) return;
+    if(e.ctrlKey || e.metaKey){
+      var k = e.key.toLowerCase();
+      if(k === 'z' && !e.shiftKey){ e.preventDefault(); doUndo(); }
+      else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); doRedo(); }
+    }
+  });
+  window.addEventListener('beforeunload', function(e){ if(CAN_EDIT && LOADED && dirty()){ e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---------- save ---------- */
+  function diffHtml(){
+    var oldK = SERVER.map(resKey), newK = WORK.map(resKey), h = '<ul>', any = false;
+    WORK.forEach(function(n){ if(oldK.indexOf(resKey(n)) < 0){ any = true; h += '<li class="md-diff-add" dir="ltr">＋ ' + esc(n) + '</li>'; } });
+    SERVER.forEach(function(o){
+      if(newK.indexOf(resKey(o)) < 0){
+        any = true; var u = usageOf(o);
+        h += '<li class="md-diff-del" dir="ltr">− ' + esc(o) + (u ? ' <small>(' + u + ' ' + esc(T('saved cases → uncounted in report', 'محفوظ کیسز ← رپورٹ میں شمار سے باہر')) + ')</small>' : '') + '</li>';
+      }
+    });
+    var common = SERVER.filter(function(o){ return newK.indexOf(resKey(o)) >= 0; }).map(resKey);
+    var commonNew = WORK.filter(function(n){ return oldK.indexOf(resKey(n)) >= 0; }).map(resKey);
+    if(J(common) !== J(commonNew) || (!any && J(oldK) !== J(newK))){ any = true; h += '<li class="md-diff-mv">↕ ' + esc(T('order of report columns changed', 'رپورٹ کے کالموں کی ترتیب بدلی')) + '</li>'; }
+    if(!any) h += '<li class="md-diff-mv">' + esc(T('Only spelling or capital letters changed.', 'صرف املا یا بڑے چھوٹے حروف بدلے ہیں۔')) + '</li>';
+    return h + '</ul>';
+  }
+  function doSave(){
+    if(!CAN_EDIT || !dirty() || SAVING) return;
+    askModal({ title: T('Save to the live portal?', 'لائیو پورٹل پر محفوظ کریں؟'),
+      html: '<p>' + esc(T('Daily Case Entry and Cause List Import will use this list straight away, and new Monthly Reports use its order as the columns:', 'یومیہ کیس انٹری اور کاز لسٹ امپورٹ فوراً یہ فہرست استعمال کریں گے، اور نئی ماہانہ رپورٹیں اس کی ترتیب کو کالم بنائیں گی:')) + '</p>' + diffHtml() +
+        '<p style="color:var(--muted);font-size:12px">' + esc(T('Saved cases, notices and already-saved monthly reports are never changed or deleted by this.', 'اس سے محفوظ کیسز، نوٹس اور پہلے سے محفوظ ماہانہ رپورٹیں نہ بدلتی ہیں نہ مٹتی ہیں۔')) + '</p>',
+      ok: T('Save', 'محفوظ کریں') }, function(){
+        SAVING = true; renderBar();
+        var items = clone(WORK);
+        /* merge: only the "results" field of lookupLists/caseEntry is written; judges, officers etc. stay untouched */
+        db.collection('lookupLists').doc('caseEntry').set({
+          results: items, updatedBy: (CURRENT_USER && CURRENT_USER.email) || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).then(function(){
+          SAVING = false; SERVER = clone(items); BASE = J(items); REMOTE = false; render();
+          toast(T('✔ Saved. The pages now use this list.', '✔ محفوظ ہو گیا۔ اب صفحات یہی فہرست استعمال کریں گے۔'));
+        }).catch(function(err){
+          SAVING = false; render();
+          toast(T('Could not save: ', 'محفوظ نہیں ہو سکا: ') + (err && err.message ? err.message : err), true);
+        });
+      });
+  }
+
+  /* ---------- live copy ---------- */
+  function startLive(){
+    db.collection('lookupLists').doc('caseEntry').onSnapshot(function(doc){
+      var d = (doc.exists && doc.data()) || {};
+      var items = sanitize(Array.isArray(d.results) ? d.results : []);
+      if(!items.length){
+        gate('فہرست نہیں ملی', 'List not found', 'نتیجے کی محفوظ فہرست نہیں ملی۔ پہلے یومیہ کیس انٹری سے فہرست محفوظ کریں۔', true);
+        return;
+      }
+      var nb = J(items);
+      if(!LOADED){
+        SERVER = items; BASE = nb; WORK = clone(items); HIST = [J(WORK)]; HIX = 0; LOADED = true;
+        document.getElementById('authGate').style.display = 'none';
+        render(); loadUsage(); return;
+      }
+      if(nb === BASE) return;
+      var wasDirty = dirty();
+      SERVER = items; BASE = nb;
+      if(!wasDirty){ WORK = clone(items); EDITING = null; commit(); }
+      else if(J(WORK) !== BASE){ REMOTE = true; render(); }
+      else render();
+    }, function(err){
+      gate('ڈیٹا تک رسائی نہیں', 'No access to data', 'فہرست لوڈ نہیں ہو سکی: ' + err.message, true);
+    });
+  }
+
+  function toggleLang(){
+    isUrdu = !isUrdu;
+    document.querySelectorAll('[data-en]').forEach(function(el){ el.textContent = isUrdu ? el.dataset.ur : el.dataset.en; });
+    document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
+    document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
+    renderThemePicker(); render();
+  }
+
+  auth.onAuthStateChanged(function(user){
+    if(!user){
+      gate('پہلے لاگ اِن کریں', 'Please sign in first', 'یہ صفحہ صرف منظور شدہ عملے کے لیے ہے۔ پورٹل پر جا کر لاگ اِن کریں، پھر یہاں واپس آئیں۔', true);
+      return;
+    }
+    CURRENT_USER = user;
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var u = doc.exists ? doc.data() : {};
+      var approved = u.approvalStatus === 'approved' && u.isActive !== false;
+      var legacyAdmin = u.role === 'admin';
+      if(!approved && !legacyAdmin){
+        gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true);
+        return;
+      }
+      var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      /* Result List is for the Super Admin only (the link in Users & Settings is hidden for everyone else too) */
+      if(r2 !== 'super_admin'){
+        gate('صرف سپر ایڈمن', 'Super Admin only', 'یہ صفحہ صرف سپر ایڈمن کے لیے ہے۔', true);
+        return;
+      }
+      CAN_EDIT = true;
+      document.getElementById('ceUserEmail').textContent = user.email;
+      var rn = ROLE_NAMES[r2] || [r2, r2];
+      document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
+      startLive();
+    }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
+  });
+
+  document.body.setAttribute('data-theme', currentTheme);
+  renderThemePicker();
+</script>
+
+  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+</body>
+</html>

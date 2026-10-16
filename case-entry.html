@@ -151,9 +151,10 @@ html,body{overflow-x:hidden;}
   table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
   table.case-table tr:last-child td{border-bottom:none;}
   table.case-table tr:hover td{background:#faf8f2;}
-  /* Mouse + keyboard screens: the case list scrolls inside its own box, so the left-right scroll bar is always on screen
-     (not hidden at the very bottom of a very long page) and the column headings stay visible. Touch screens are unchanged. */
-  @media (pointer:fine){
+  /* Computer-size screens (wide window, with a mouse OR a touch screen): the case list scrolls inside its own box, so the
+     left-right scroll bar is always on screen (not hidden at the very bottom of a very long page) and the column headings
+     stay visible. Phone-size screens are unchanged. */
+  @media (min-width:961px), (any-pointer:fine){
     .table-scroll.case-scroll{ max-height:calc(100vh - 110px); overflow:auto; }
     .case-scroll table.case-table th{ position:sticky; top:0; z-index:2; }
   }

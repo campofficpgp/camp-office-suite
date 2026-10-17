@@ -136,6 +136,41 @@ html,body{overflow-x:hidden;}
   .field textarea{resize:vertical; min-height:56px;}
   .count{font-size:11px; color:var(--muted); margin-top:10px;}
 
+  /* Case List toolbar and table controls (same look and behaviour as the Lookup page) */
+  .lk-chips{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .lk-chips-l{ font-size:11.5px; color:var(--muted); margin-inline-end:2px; }
+  .lk-chip{ padding:4px 12px; border-radius:16px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; font-size:12px; font-family:inherit; }
+  .lk-chip[aria-pressed="true"]{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .lk-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+  .lk-grid .field input{ box-sizing:border-box; }
+  .ce-actions{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  button.btn{ font-family:inherit; }
+  .ms{ position:relative; }
+  .ms-btn{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:6px; padding:7px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; font-family:inherit; cursor:pointer; box-sizing:border-box; text-align:start; min-height:34px; }
+  .ms-btn.on{ border-color:var(--navy); box-shadow:inset 0 0 0 1px var(--navy); }
+  .ms-txt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ms-panel{ position:absolute; z-index:30; inset-inline-start:0; top:100%; margin-top:2px; min-width:100%; width:max-content; max-width:min(320px,90vw); background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.18); padding:8px; box-sizing:border-box; }
+  .ms-panel[hidden]{ display:none; }
+  .ms-list{ max-height:220px; overflow:auto; display:flex; flex-direction:column; gap:2px; }
+  .ms-list label, .lk-grid .ms-list label{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; padding:4px; cursor:pointer; color:var(--text); margin:0; }
+  .ms-list input, .lk-grid .ms-list input{ width:auto; padding:0; margin:0; }
+  .lk-grid .ms-find{ margin-bottom:6px; }
+  .ms-foot{ display:flex; justify-content:flex-end; margin-top:6px; }
+  .ms-clear{ background:none; border:0; color:var(--navy); cursor:pointer; font-size:12px; font-family:inherit; text-decoration:underline; }
+  .cols-wrap{ position:relative; display:inline-block; }
+  .cols-panel{ min-width:190px; }
+  .lk-pager{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 2px; font-size:12.5px; color:var(--muted); }
+  .lk-pager select{ padding:5px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); }
+  .lk-pager .btn{ padding:5px 12px; font-size:12.5px; }
+  .lk-pager .btn[disabled]{ opacity:.45; cursor:default; }
+  .lk-sort{ background:none; border:0; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; padding:0; display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
+  .lk-sort .ar{ font-size:10px; opacity:.55; }
+  .lk-sort.on .ar{ opacity:1; }
+  .lk-sort:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+  .lk-empty{ padding:24px; text-align:center; color:var(--muted); white-space:normal; }
+  [dir="rtl"] table.case-table th{ text-align:right; }
+  @media (max-width:600px){ .lk-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .ms-panel{ max-width:min(320px,calc(100vw - 48px)); } .lk-grid .field:nth-child(even) .ms-panel{ inset-inline-start:auto; inset-inline-end:0; } }
+
   .btn{padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; border:1px solid var(--border); cursor:pointer; background:#fff; color:var(--navy); display:inline-block;}
   .btn.primary{background:var(--navy); color:#fff; border-color:var(--navy);}
   .btn.danger{background:#fff; color:#a33a3a; border-color:#e0bcbc;}
@@ -416,46 +451,25 @@ html.embedded .app-shell{ min-height:0; }
     <div id="caseListSection">
 
       <div class="search-box">
-        <div class="lbl"><a href="lookup.html" target="_top" style="color:inherit;text-decoration:underline;" data-en="🔎 Search &amp; filter has moved to Lookup" data-ur="🔎 سرچ اور فلٹر اب Lookup میں ہے">🔎 Search &amp; filter has moved to Lookup</a></div>
-        <div class="search-grid" style="display:none;">
-          <div class="field"><label data-en="By Case No" data-ur="کیس نمبر سے">By Case No</label><select id="byCaseNo"></select></div>
-          <div class="field"><label data-en="By Officer" data-ur="آفیسر سے">By Officer</label><select id="byOfficer"></select></div>
-          <div class="field"><label data-en="By Judge" data-ur="جج سے">By Judge</label><select id="byJudge"></select></div>
-          <div class="field"><label data-en="By Bench No" data-ur="بینچ نمبر سے">By Bench No</label><select id="byBench"></select></div>
-          <div class="field"><label data-en="By Case Type" data-ur="کیس کی قسم سے">By Case Type</label><select id="byType"></select></div>
-          <div class="field"><label data-en="By Year" data-ur="سال سے">By Year</label><select id="byYear"></select></div>
-          <div class="field"><label data-en="By Result" data-ur="نتیجہ سے">By Result</label><select id="byResult"></select></div>
-          <div class="field"><label data-en="By Category" data-ur="زمرہ سے">By Category</label><select id="byRelief"></select></div>
-        </div>
+        <div class="lbl"><span data-en="🔎 Search &amp; filter" data-ur="🔎 سرچ اور فلٹر">🔎 Search &amp; filter</span> · <a href="lookup.html" target="_top" style="color:inherit;text-decoration:underline;font-weight:600;text-transform:none;" data-en="Open Lookup" data-ur="Lookup کھولیں">Open Lookup</a></div>
+        <div class="lk-chips" id="ceChips"></div>
+        <div class="lk-grid" id="ceFilters"></div>
         <div class="count" id="count"></div>
-        <div style="margin-top:12px;">
+        <div class="ce-actions">
           <div class="btn primary needs-write" onclick="openAddForm()" data-en="+ Add New Case" data-ur="+ نیا کیس شامل کریں">+ Add New Case</div>
+          <span class="cols-wrap" id="ceCols"></span>
+          <button type="button" class="btn ghost" id="ceClear" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
+          <button type="button" class="btn ghost" id="ceExport" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
         </div>
       </div>
 
       <div class="table-scroll case-scroll">
         <table class="case-table">
-          <thead>
-            <tr>
-              <th data-en="Case No" data-ur="کیس نمبر">Case No</th>
-              <th data-en="Year" data-ur="سال">Year</th>
-              <th data-en="Case Type" data-ur="کیس کی قسم">Case Type</th>
-              <th data-en="Title of Case" data-ur="کیس کا عنوان">Title of Case</th>
-              <th data-en="Versus" data-ur="بمقابلہ">Versus</th>
-              <th data-en="Officer" data-ur="آفیسر">Officer</th>
-              <th data-en="Judge Name" data-ur="جج کا نام">Judge Name</th>
-              <th data-en="Bench No" data-ur="بینچ نمبر">Bench No</th>
-              <th data-en="Cause List Sr. No" data-ur="کاز لسٹ سیریل">Cause List Sr. No</th>
-              <th data-en="Date" data-ur="تاریخ">Date</th>
-              <th data-en="Nature of Case" data-ur="کیس کی نوعیت">Nature of Case</th>
-              <th data-en="Result of Case" data-ur="کیس کا نتیجہ">Result of Case</th>
-              <th data-en="Category" data-ur="زمرہ">Category</th>
-              <th data-en="Actions" data-ur="اعمال">Actions</th>
-            </tr>
-          </thead>
+          <thead id="ceHead"></thead>
           <tbody id="caseTableBody"></tbody>
         </table>
       </div>
+      <div class="lk-pager" id="cePager"></div>
 
     </div>
 
@@ -824,24 +838,6 @@ html.embedded .app-shell{ min-height:0; }
     sel.selectedIndex = cur >= 0 ? cur : new Date().getMonth();
   }
 
-  function populateFilters(){
-    fillSelect(document.getElementById('byOfficer'), uniqueSorted(CASES.map(function(c){return c.officer;})), true);
-    fillSelect(document.getElementById('byJudge'), uniqueSorted(CASES.map(function(c){return c.judge;})), true);
-    fillSelect(document.getElementById('byBench'), uniqueSorted(CASES.map(function(c){return c.bench;})), true);
-    fillSelect(document.getElementById('byType'), uniqueSorted(CASES.map(function(c){return c.type;})), true);
-    fillSelect(document.getElementById('byYear'), uniqueSorted(CASES.map(function(c){return c.year;})).sort().reverse(), true);
-    fillSelect(document.getElementById('byResult'), uniqueSorted(CASES.map(function(c){return c.result;})), true);
-    fillSelect(document.getElementById('byRelief'), uniqueSorted(CASES.map(function(c){return c.relief;})), true);
-
-    var byCaseNo = document.getElementById('byCaseNo');
-    byCaseNo.innerHTML = '<option value="">—</option>';
-    CASES.slice().sort(function(a,b){ return String(a.caseNo).localeCompare(String(b.caseNo)); }).forEach(function(c){
-      byCaseNo.innerHTML += '<option value="'+escapeAttr(c.id)+'">'+escapeAttr(c.caseNo)+'/'+escapeAttr(c.year)+' — '+escapeAttr(c.title)+'</option>';
-    });
-
-    document.getElementById('count').textContent = CASES.length + ' case(s) loaded';
-  }
-
   function resultClass(r){
     if(r === 'Pending') return 'result-pending';
     if(r === 'Allowed' || r === 'Partly Allowed') return 'result-allowed';
@@ -851,59 +847,375 @@ html.embedded .app-shell{ min-height:0; }
     return 'result-other';
   }
 
-  function renderTable(){
-    var caseNoF = document.getElementById('byCaseNo').value;
-    var officerF = document.getElementById('byOfficer').value;
-    var judgeF = document.getElementById('byJudge').value;
-    var benchF = document.getElementById('byBench').value;
-    var typeF = document.getElementById('byType').value;
-    var yearF = document.getElementById('byYear').value;
-    var resultF = document.getElementById('byResult').value;
-    var reliefF = document.getElementById('byRelief').value;
+  /* ============================================================
+     Case List table: same advanced search / filter / sort / columns / paging as the Lookup page.
+     Everything lives inside CaseList so it cannot clash with the rest of this page.
+     ============================================================ */
+  var CaseList = (function(){
+    var SEL = {};                       /* chosen values of each multi-select filter */
+    var SORT = { col:'date', dir:-1 };
+    var PAGER = { page:1, size:100 };
+    var COLVIS = {};
+    var SIZES = [25, 50, 100, 250, 0];
+    function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+    function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+    try { COLVIS = JSON.parse(lsGet('ceCols') || '{}') || {}; } catch(e){ COLVIS = {}; }
 
-    var list = CASES.filter(function(c){
-      if(caseNoF && String(c.id) !== caseNoF) return false;
-      if(officerF && c.officer !== officerF) return false;
-      if(judgeF && c.judge !== judgeF) return false;
-      if(benchF && c.bench !== benchF) return false;
-      if(typeF && c.type !== typeF) return false;
-      if(yearF && c.year !== yearF) return false;
-      if(resultF && c.result !== resultF) return false;
-      if(reliefF && c.relief !== reliefF) return false;
-      return true;
-    });
+    function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+    function normNo(v){ return String(v==null ? '' : v).replace(/\s+/g,'').toUpperCase(); }
+    function caseKey(r){
+      var m = String(r.caseNo || '').match(/^(\d+)(.*)$/);
+      var n = m ? m[1] : '0', rest = m ? m[2] : String(r.caseNo || '');
+      return String(r.type || '').toLowerCase() + '|' + ('0000' + (r.year || '')).slice(-4) + '|' + ('0000000000' + n).slice(-10) + rest.toLowerCase();
+    }
+    function serialKey(r){
+      var s = String(r.serial == null ? '' : r.serial), m = s.match(/^(\d+)(.*)$/);
+      return m ? ('00000' + m[1]).slice(-5) + m[2] : 'zzzzz' + s;
+    }
 
-    var body = document.getElementById('caseTableBody');
-    body.innerHTML = '';
-    list.forEach(function(c){
-      var tr = document.createElement('tr');
-      var E = escapeAttr;
-      var idq = "'" + String(c.id).replace(/[^A-Za-z0-9_-]/g,'') + "'";
-      tr.innerHTML =
-        '<td>'+E(c.type)+' '+E(c.caseNo)+'</td>' +
-        '<td>'+E(c.year)+'</td>' +
-        '<td>'+E(c.type)+'</td>' +
-        '<td class="wrap-cell">'+E(c.title)+'</td>' +
-        '<td class="wrap-cell">'+E(c.versus)+'</td>' +
-        '<td class="wrap-cell">'+E(c.officer || '—')+'</td>' +
-        '<td class="wrap-cell">'+E(c.judge)+'</td>' +
-        '<td>'+E(c.bench)+'</td>' +
-        '<td>'+E(c.serial || '—')+'</td>' +
-        '<td>'+E(c.date || '—')+'</td>' +
-        '<td>'+E(c.nature)+'</td>' +
-        '<td><span class="result-pill '+resultClass(c.result)+'">'+E(c.result)+'</span></td>' +
-        '<td class="wrap-cell">'+E(c.relief || '—')+'</td>' +
+    /* filters: text boxes, drop-downs (choose several), dates. get = how a text filter reads its value from a case */
+    var FILTERS = [
+      { key:'q',      type:'text',   en:'Search anything', ur:'کچھ بھی تلاش کریں' },
+      { key:'caseNo', type:'text',   en:'Case No',         ur:'کیس نمبر' },
+      { key:'party',  type:'text',   en:'Party name',      ur:'فریق کا نام', get:function(r){ return (r.title||'') + ' ' + (r.versus||''); } },
+      { key:'section',type:'text',   en:'Section',         ur:'دفعہ', get:function(r){ return r.section||''; } },
+      { key:'remarks',type:'text',   en:'Remarks',         ur:'ریمارکس', get:function(r){ return r.remarks||''; } },
+      { key:'officer',type:'select', en:'Officer',         ur:'آفیسر' },
+      { key:'judge',  type:'select', en:'Judge',           ur:'جج' },
+      { key:'bench',  type:'select', en:'Bench No',        ur:'بینچ نمبر' },
+      { key:'type',   type:'select', en:'Case Type',       ur:'کیس کی قسم' },
+      { key:'year',   type:'select', en:'Year',            ur:'سال' },
+      { key:'nature', type:'select', en:'Nature',          ur:'نوعیت' },
+      { key:'result', type:'select', en:'Result',          ur:'نتیجہ' },
+      { key:'relief', type:'select', en:'Category',        ur:'زمرہ' },
+      { key:'from',   type:'date',   en:'Date from',       ur:'تاریخ سے' },
+      { key:'to',     type:'date',   en:'Date to',         ur:'تاریخ تک' }
+    ];
+    var TEXTKEYS = ['type','caseNo','year','title','versus','officer','judge','bench','serial','nature','result','relief','remarks','section','natureText','benchType','source'];
+    /* columns (the first 13 are on as before; extra = hidden until switched on; w = long text that may wrap) */
+    var COLS = [
+      { id:'no',      en:'Case No',        ur:'کیس نمبر',       f:function(r){ return (r.type||'') + ' ' + (r.caseNo||''); }, s:caseKey },
+      { id:'year',    en:'Year',           ur:'سال',            f:function(r){ return r.year||''; } },
+      { id:'type',    en:'Case Type',      ur:'کیس کی قسم',     f:function(r){ return r.type||''; } },
+      { id:'title',   en:'Title of Case',  ur:'کیس کا عنوان',   f:function(r){ return r.title||''; }, w:true },
+      { id:'versus',  en:'Versus',         ur:'بمقابلہ',        f:function(r){ return r.versus||''; }, w:true },
+      { id:'officer', en:'Officer',        ur:'آفیسر',          f:function(r){ return r.officer||''; }, w:true },
+      { id:'judge',   en:'Judge Name',     ur:'جج کا نام',      f:function(r){ return r.judge||''; }, w:true },
+      { id:'bench',   en:'Bench No',       ur:'بینچ نمبر',      f:function(r){ return r.bench||''; } },
+      { id:'serial',  en:'Cause List Sr. No', ur:'کاز لسٹ سیریل', f:function(r){ return r.serial||''; }, s:serialKey },
+      { id:'date',    en:'Date',           ur:'تاریخ',          f:function(r){ return r.date||''; } },
+      { id:'nature',  en:'Nature of Case', ur:'کیس کی نوعیت',   f:function(r){ return r.nature||''; } },
+      { id:'result',  en:'Result of Case', ur:'کیس کا نتیجہ',   f:function(r){ return r.result||''; }, pill:true },
+      { id:'relief',  en:'Category',       ur:'زمرہ',           f:function(r){ return r.relief||''; }, w:true },
+      { id:'remarks', en:'Remarks',        ur:'ریمارکس',        f:function(r){ return r.remarks && r.remarks !== '—' ? r.remarks : ''; }, w:true, extra:true },
+      { id:'section', en:'Section',        ur:'دفعہ',           f:function(r){ return r.section||''; }, extra:true },
+      { id:'btype',   en:'Bench type',     ur:'بینچ کی قسم',    f:function(r){ return r.benchType||''; }, extra:true },
+      { id:'source',  en:'Source',         ur:'ماخذ',           f:function(r){ return r.source||''; }, extra:true }
+    ];
+    function colVisible(c){ var v = COLVIS[c.id]; return v === undefined ? !c.extra : !!v; }
+    function visCols(){ return COLS.filter(colVisible); }
+    function data(){ return (typeof CASES !== 'undefined' && CASES) ? CASES : []; }
+
+    function readFilters(){
+      var out = {};
+      FILTERS.forEach(function(f){
+        if(f.type === 'select'){ out[f.key] = (SEL[f.key] || []).slice(); return; }
+        var el = document.getElementById('ceF_' + f.key);
+        out[f.key] = el ? el.value : '';
+      });
+      return out;
+    }
+    function msSummary(sel){
+      if(!sel || !sel.length) return isUrdu ? 'سب' : 'All';
+      if(sel.length === 1) return sel[0];
+      return sel.length + (isUrdu ? ' منتخب' : ' selected');
+    }
+    function updateMsBtn(wrap){
+      var sel = SEL[wrap.getAttribute('data-key')] || [];
+      var btn = wrap.querySelector('.ms-btn');
+      btn.querySelector('.ms-txt').textContent = msSummary(sel);
+      btn.classList.toggle('on', sel.length > 0);
+    }
+    function closeMs(){
+      document.querySelectorAll('#caseListSection .ms.open, #caseListSection .cols-wrap.open').forEach(function(w){
+        w.classList.remove('open');
+        var b = w.querySelector('.ms-btn, .cols-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+        var p = w.querySelector('.ms-panel'); if(p) p.hidden = true;
+      });
+    }
+    function openMs(wrap){
+      closeMs();
+      wrap.classList.add('open');
+      var b = wrap.querySelector('.ms-btn, .cols-btn'); if(b) b.setAttribute('aria-expanded', 'true');
+      var p = wrap.querySelector('.ms-panel'); if(p) p.hidden = false;
+      var fi = wrap.querySelector('.ms-find'); if(fi) fi.focus();
+    }
+
+    function buildFilters(){
+      var box = document.getElementById('ceFilters');
+      var keep = {};
+      FILTERS.forEach(function(f){
+        if(f.type === 'select') return;
+        var el = document.getElementById('ceF_' + f.key);
+        if(el) keep[f.key] = el.value;
+      });
+      var rows = data();
+      box.innerHTML = FILTERS.map(function(f){
+        var id = 'ceF_' + f.key;
+        var lab = esc(isUrdu ? f.ur : f.en);
+        if(f.type === 'select'){
+          var seen = {};
+          rows.forEach(function(r){ var v = r[f.key]; if(v != null && v !== '' && v !== '—') seen[v] = true; });
+          var vals = Object.keys(seen).sort(function(a,b){ return String(a).localeCompare(String(b), undefined, {numeric:true}); });
+          /* Case Type and Category follow the order of the shared master table (case-master.js); the rest stay A-Z */
+          if(f.key === 'type' || f.key === 'relief'){
+            var order = f.key === 'type' ? CaseMaster.types() : CaseMaster.allCategories();
+            var pos = function(x){ var i = order.indexOf(x); return i < 0 ? 9999 : i; };
+            vals = vals.map(function(v, i){ return { v: v, i: i }; }).sort(function(a, b){ return (pos(a.v) - pos(b.v)) || (a.i - b.i); }).map(function(o){ return o.v; });
+          }
+          var sel = SEL[f.key] || [];
+          return '<div class="field ms" data-key="' + f.key + '">' +
+            '<label id="' + id + '_l">' + lab + '</label>' +
+            '<button type="button" class="ms-btn' + (sel.length ? ' on' : '') + '" id="' + id + '" aria-haspopup="true" aria-expanded="false" aria-labelledby="' + id + '_l ' + id + '">' +
+              '<span class="ms-txt">' + esc(msSummary(sel)) + '</span><span class="ms-car" aria-hidden="true">▾</span></button>' +
+            '<div class="ms-panel" hidden>' +
+              (vals.length > 8 ? '<input type="search" class="ms-find" aria-label="' + (isUrdu ? 'فہرست میں تلاش' : 'Search the list') + '" placeholder="' + (isUrdu ? 'تلاش…' : 'Search…') + '">' : '') +
+              '<div class="ms-list">' + vals.map(function(v){
+                return '<label><input type="checkbox" value="' + esc(v) + '"' + (sel.indexOf(String(v)) >= 0 ? ' checked' : '') + '> <span>' + esc(v) + '</span></label>';
+              }).join('') + '</div>' +
+              '<div class="ms-foot"><button type="button" class="ms-clear">' + (isUrdu ? 'صاف کریں' : 'Clear') + '</button></div>' +
+            '</div></div>';
+        }
+        return '<div class="field"><label for="' + id + '">' + lab + '</label><input id="' + id + '" type="' + (f.type === 'date' ? 'date' : 'text') + '"></div>';
+      }).join('');
+      FILTERS.forEach(function(f){
+        if(f.type === 'select') return;
+        var el = document.getElementById('ceF_' + f.key);
+        if(!el) return;
+        if(keep[f.key]) el.value = keep[f.key];
+        el.addEventListener(f.type === 'date' ? 'change' : 'input', function(){ PAGER.page = 1; render(); });
+      });
+      renderColsMenu();
+    }
+
+    /* quick date buttons */
+    var CHIPS = [
+      { id:'today',     en:'Today',      ur:'آج' },
+      { id:'week',      en:'This week',  ur:'اس ہفتے' },
+      { id:'lastweek',  en:'Last week',  ur:'پچھلے ہفتے' },
+      { id:'month',     en:'This month', ur:'اس مہینے' },
+      { id:'lastmonth', en:'Last month', ur:'پچھلے مہینے' },
+      { id:'year',      en:'This year',  ur:'اس سال' },
+      { id:'any',       en:'Any date',   ur:'کوئی بھی تاریخ' }
+    ];
+    function ymd(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+    function chipRange(id){
+      var t = new Date(); t.setHours(12, 0, 0, 0);
+      var y = t.getFullYear(), m = t.getMonth();
+      var mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+      var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      if(id === 'today') return [ymd(t), ymd(t)];
+      if(id === 'week') return [ymd(mon), ymd(sun)];
+      if(id === 'lastweek'){ var a = new Date(mon); a.setDate(a.getDate() - 7); var b = new Date(a); b.setDate(a.getDate() + 6); return [ymd(a), ymd(b)]; }
+      if(id === 'month') return [ymd(new Date(y, m, 1)), ymd(new Date(y, m + 1, 0))];
+      if(id === 'lastmonth') return [ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0))];
+      if(id === 'year') return [y + '-01-01', y + '-12-31'];
+      return ['', ''];
+    }
+    function renderChips(){
+      var box = document.getElementById('ceChips');
+      var fr = document.getElementById('ceF_from'), to = document.getElementById('ceF_to');
+      var cf = fr ? fr.value : '', ct = to ? to.value : '';
+      box.innerHTML = '<span class="lk-chips-l">' + (isUrdu ? 'تاریخ:' : 'Date:') + '</span>' + CHIPS.map(function(c){
+        var r = chipRange(c.id);
+        var on = (r[0] === cf && r[1] === ct);
+        return '<button type="button" class="lk-chip" data-r="' + c.id + '" aria-pressed="' + on + '">' + esc(isUrdu ? c.ur : c.en) + '</button>';
+      }).join('');
+    }
+
+    function renderColsMenu(){
+      var wrap = document.getElementById('ceCols');
+      var open = wrap.classList.contains('open');
+      wrap.innerHTML = '<button type="button" class="btn ghost cols-btn" aria-haspopup="true" aria-expanded="' + open + '">' + (isUrdu ? 'کالم ▾' : 'Columns ▾') + '</button>' +
+        '<div class="ms-panel cols-panel"' + (open ? '' : ' hidden') + '><div class="ms-list">' +
+        COLS.map(function(c){
+          return '<label><input type="checkbox" data-col="' + c.id + '"' + (colVisible(c) ? ' checked' : '') + '> <span>' + esc(isUrdu ? c.ur : c.en) + '</span></label>';
+        }).join('') + '</div><div class="ms-foot"><button type="button" class="cols-reset ms-clear">' + (isUrdu ? 'پہلے جیسا کریں' : 'Reset') + '</button></div></div>';
+    }
+
+    function filtered(){
+      var v = readFilters();
+      var words = String(v.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+      var no = normNo(v.caseNo);
+      var textFs = FILTERS.filter(function(f){ return f.get; });
+      var selFs = FILTERS.filter(function(f){ return f.type === 'select' && v[f.key].length; });
+      return data().filter(function(r){
+        if(words.length){
+          var hay = TEXTKEYS.map(function(k){ return r[k] == null ? '' : r[k]; }).join(' ').toLowerCase();
+          for(var i = 0; i < words.length; i++) if(hay.indexOf(words[i]) === -1) return false;
+        }
+        if(no && normNo(r.caseNo).indexOf(no) === -1) return false;
+        for(var j = 0; j < textFs.length; j++){
+          var t = String(v[textFs[j].key] || '').trim().toLowerCase();
+          if(t && String(textFs[j].get(r) || '').toLowerCase().indexOf(t) === -1) return false;
+        }
+        for(var k = 0; k < selFs.length; k++){
+          if(v[selFs[k].key].indexOf(String(r[selFs[k].key] == null ? '' : r[selFs[k].key])) === -1) return false;
+        }
+        if(v.from && String(r.date || '') < v.from) return false;
+        if(v.to && String(r.date || '') > v.to) return false;
+        return true;
+      });
+    }
+
+    function sorted(rows){
+      var c = COLS.filter(function(x){ return x.id === SORT.col; })[0];
+      if(!c) return rows;
+      var dec = rows.map(function(r, i){ return { r:r, i:i, k:String(c.s ? c.s(r) : (c.f(r) == null ? '' : c.f(r))) }; });
+      dec.sort(function(a, b){
+        if(a.k === '' && b.k !== '') return 1;       /* empty values always go last */
+        if(b.k === '' && a.k !== '') return -1;
+        var res = a.k.localeCompare(b.k, undefined, { numeric:true, sensitivity:'base' });
+        return (res * SORT.dir) || (a.i - b.i);
+      });
+      return dec.map(function(x){ return x.r; });
+    }
+
+    function render(){
+      var all = data();
+      var rows = sorted(filtered());
+      var cols = visCols();
+      document.getElementById('ceHead').innerHTML = '<tr>' + cols.map(function(c){
+        var on = SORT.col === c.id;
+        return '<th aria-sort="' + (on ? (SORT.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button type="button" class="lk-sort' + (on ? ' on' : '') + '" data-col="' + c.id + '">' +
+          esc(isUrdu ? c.ur : c.en) + '<span class="ar" aria-hidden="true">' + (on ? (SORT.dir > 0 ? '▲' : '▼') : '⇅') + '</span></button></th>';
+      }).join('') + '<th>' + (isUrdu ? 'اعمال' : 'Actions') + '</th></tr>';
+
+      var total = rows.length;
+      var size = PAGER.size || total || 1;
+      var pages = Math.max(1, Math.ceil(total / size));
+      if(PAGER.page > pages) PAGER.page = pages;
+      if(PAGER.page < 1) PAGER.page = 1;
+      var start = (PAGER.page - 1) * size;
+      var shown = PAGER.size ? rows.slice(start, start + size) : rows;
+
+      document.getElementById('caseTableBody').innerHTML = shown.length ? shown.map(function(c){
+        var idq = "'" + String(c.id).replace(/[^A-Za-z0-9_-]/g,'') + "'";
+        return '<tr>' + cols.map(function(col){
+          var v = col.f(c);
+          var show = (v === '' || v == null) ? '—' : v;
+          if(col.pill) return '<td><span class="result-pill ' + resultClass(c.result) + '">' + esc(c.result) + '</span></td>';
+          return '<td' + (col.w ? ' class="wrap-cell"' : '') + '>' + esc(show) + '</td>';
+        }).join('') +
         '<td><div class="row-actions">' +
-          '<div class="btn ghost needs-write" onclick="openEditForm('+idq+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
-          '<div class="btn danger needs-delete" onclick="deleteCase('+idq+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>' +
-        '</div></td>';
-      body.appendChild(tr);
-    });
-  }
+          '<div class="btn ghost needs-write" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' +
+          '<div class="btn danger needs-delete" onclick="deleteCase(' + idq + ')">' + (isUrdu ? 'حذف کریں' : 'Delete') + '</div>' +
+        '</div></td></tr>';
+      }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + 1) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
+      document.getElementById('count').textContent = (isUrdu ? 'ملے: ' : 'Found: ') + total + (isUrdu ? ' از ' : ' of ') + all.length;
 
-  ['byCaseNo','byOfficer','byJudge','byBench','byType','byYear','byResult','byRelief'].forEach(function(id){
-    document.getElementById(id).addEventListener('change', renderTable);
-  });
+      var from = total ? start + 1 : 0, to = total ? Math.min(total, start + shown.length) : 0;
+      document.getElementById('cePager').innerHTML =
+        '<button type="button" class="btn ghost pg-prev"' + (PAGER.page <= 1 ? ' disabled' : '') + ' aria-label="' + (isUrdu ? 'پچھلا صفحہ' : 'Previous page') + '">' + (isUrdu ? '‹ پچھلا' : '‹ Prev') + '</button>' +
+        '<span>' + (isUrdu ? 'صفحہ ' : 'Page ') + PAGER.page + (isUrdu ? ' از ' : ' / ') + pages + '</span>' +
+        '<button type="button" class="btn ghost pg-next"' + (PAGER.page >= pages ? ' disabled' : '') + ' aria-label="' + (isUrdu ? 'اگلا صفحہ' : 'Next page') + '">' + (isUrdu ? 'اگلا ›' : 'Next ›') + '</button>' +
+        '<span>' + from + '–' + to + (isUrdu ? ' از ' : ' of ') + total + '</span>' +
+        '<label>' + (isUrdu ? 'فی صفحہ: ' : 'Per page: ') + '<select class="pg-size" aria-label="' + (isUrdu ? 'فی صفحہ ریکارڈ' : 'Rows per page') + '">' +
+          SIZES.map(function(n){ return '<option value="' + n + '"' + (PAGER.size === n ? ' selected' : '') + '>' + (n ? n : (isUrdu ? 'سب' : 'All')) + '</option>'; }).join('') + '</select></label>';
+      renderChips();
+    }
+
+    function clearAll(){
+      SEL = {};
+      FILTERS.forEach(function(f){ var el = document.getElementById('ceF_' + f.key); if(el && f.type !== 'select') el.value = ''; });
+      PAGER.page = 1;
+      buildFilters();
+      render();
+    }
+
+    function exportCsv(){
+      /* every matching case (not just the page on screen), in the order on screen, with the columns switched on */
+      var rows = sorted(filtered()), cols = visCols();
+      function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
+      var lines = [cols.map(function(c){ return cell(c.en); }).join(',')];
+      rows.forEach(function(r){ lines.push(cols.map(function(c){ return cell(c.f(r)); }).join(',')); });
+      var blob = new Blob(['﻿' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cases_' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    /* one-time wiring of the clicks (filters, quick dates, columns menu, headers, pager) */
+    var box = document.getElementById('ceFilters');
+    box.addEventListener('click', function(e){
+      var btn = e.target.closest('.ms-btn');
+      if(btn){ var w = btn.closest('.ms'); if(w.classList.contains('open')) closeMs(); else openMs(w); return; }
+      if(e.target.closest('.ms-clear')){
+        var w2 = e.target.closest('.ms');
+        SEL[w2.getAttribute('data-key')] = [];
+        w2.querySelectorAll('.ms-list input').forEach(function(cb){ cb.checked = false; });
+        updateMsBtn(w2); PAGER.page = 1; render();
+      }
+    });
+    box.addEventListener('change', function(e){
+      var cb = e.target.closest('.ms-list input'); if(!cb) return;
+      var w = cb.closest('.ms'), key = w.getAttribute('data-key');
+      var arr = SEL[key] || [], i = arr.indexOf(cb.value);
+      if(cb.checked && i < 0) arr.push(cb.value);
+      if(!cb.checked && i >= 0) arr.splice(i, 1);
+      SEL[key] = arr; updateMsBtn(w); PAGER.page = 1; render();
+    });
+    box.addEventListener('input', function(e){
+      var fi = e.target.closest('.ms-find'); if(!fi) return;
+      var q = fi.value.toLowerCase();
+      fi.closest('.ms').querySelectorAll('.ms-list label').forEach(function(l){ l.style.display = l.textContent.toLowerCase().indexOf(q) < 0 ? 'none' : ''; });
+    });
+    document.getElementById('ceChips').addEventListener('click', function(e){
+      var b = e.target.closest('.lk-chip'); if(!b) return;
+      var r = chipRange(b.getAttribute('data-r'));
+      document.getElementById('ceF_from').value = r[0];
+      document.getElementById('ceF_to').value = r[1];
+      PAGER.page = 1; render();
+    });
+    var cw = document.getElementById('ceCols');
+    cw.addEventListener('click', function(e){
+      if(e.target.closest('.cols-btn')){ if(cw.classList.contains('open')) closeMs(); else openMs(cw); return; }
+      if(e.target.closest('.cols-reset')){ COLVIS = {}; lsSet('ceCols', '{}'); renderColsMenu(); cw.classList.add('open'); cw.querySelector('.cols-panel').hidden = false; render(); }
+    });
+    cw.addEventListener('change', function(e){
+      var cb = e.target.closest('input[data-col]'); if(!cb) return;
+      COLVIS[cb.getAttribute('data-col')] = cb.checked;
+      lsSet('ceCols', JSON.stringify(COLVIS));
+      render();
+    });
+    document.getElementById('ceHead').addEventListener('click', function(e){
+      var b = e.target.closest('.lk-sort'); if(!b) return;
+      var col = b.getAttribute('data-col');
+      if(SORT.col === col) SORT.dir = -SORT.dir; else { SORT.col = col; SORT.dir = (col === 'date') ? -1 : 1; }
+      PAGER.page = 1; render();
+    });
+    var pg = document.getElementById('cePager');
+    pg.addEventListener('click', function(e){
+      if(e.target.closest('.pg-prev')){ PAGER.page--; render(); }
+      else if(e.target.closest('.pg-next')){ PAGER.page++; render(); }
+    });
+    pg.addEventListener('change', function(e){
+      var s = e.target.closest('.pg-size'); if(!s) return;
+      PAGER.size = parseInt(s.value, 10) || 0; PAGER.page = 1; render();
+    });
+    document.getElementById('ceClear').addEventListener('click', clearAll);
+    document.getElementById('ceExport').addEventListener('click', exportCsv);
+    document.addEventListener('click', function(e){ if(!e.target.closest('#caseListSection .ms, #caseListSection .cols-wrap')) closeMs(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMs(); });
+
+    return { rebuild:function(){ buildFilters(); render(); }, render:render };
+  })();
+
+  function populateFilters(){ CaseList.rebuild(); }
+
+  function renderTable(){ CaseList.render(); }
 
   /* ============================================================
      Stage 11 — "AI" assistance for this form (Duplicate Case Detection +
@@ -2384,7 +2696,7 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('langBtn').textContent = isUrdu ? 'English' : 'اردو';
     document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
     fillMonthSelect();
-    renderTable();
+    populateFilters();
     renderThemePicker();
     if(currentReport){
       currentReport.monthName = (isUrdu ? MONTHS_UR : MONTHS_EN)[currentReport.month-1];
@@ -2448,10 +2760,7 @@ html.embedded .app-shell{ min-height:0; }
       qs.forEach(function(d){ var c = d.data(); c.id = d.id; arr.push(c); });
       arr.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
       CASES = arr;
-      var keep = document.getElementById('byCaseNo').value;
       populateFilters();
-      if(keep) document.getElementById('byCaseNo').value = keep;
-      renderTable();
       document.getElementById('authGate').style.display = 'none';
       openEditFromLink();
     }, function(err){

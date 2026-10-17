@@ -325,6 +325,33 @@ html,body{overflow-x:hidden;}
 .lk-table tr:hover td{ background:rgba(0,0,0,0.03); }
 .lk-note{ font-size:12px; color:var(--muted); margin:8px 2px; }
 .lk-empty{ padding:24px; text-align:center; color:var(--muted); }
+.lk-chips{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.lk-chips-l{ font-size:11.5px; color:var(--muted); margin-inline-end:2px; }
+.lk-chip{ padding:4px 12px; border-radius:16px; border:1px solid var(--border); background:var(--card); color:var(--text); cursor:pointer; font-size:12px; }
+.lk-chip[aria-pressed="true"]{ background:var(--navy); color:#fff; border-color:var(--navy); }
+.ms{ position:relative; }
+.ms-btn{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:6px; padding:7px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-size:13px; cursor:pointer; box-sizing:border-box; text-align:start; min-height:34px; }
+.ms-btn.on{ border-color:var(--navy); box-shadow:inset 0 0 0 1px var(--navy); }
+.ms-txt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ms-panel{ position:absolute; z-index:30; inset-inline-start:0; top:100%; margin-top:2px; min-width:100%; width:max-content; max-width:min(320px,90vw); background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.18); padding:8px; box-sizing:border-box; }
+.ms-panel[hidden]{ display:none; }
+.ms-list{ max-height:220px; overflow:auto; display:flex; flex-direction:column; gap:2px; }
+.lk-grid .ms-list label, .ms-list label{ display:flex; align-items:center; gap:8px; font-size:13px; padding:4px; cursor:pointer; color:var(--text); margin:0; }
+.lk-grid .ms-list input, .ms-list input{ width:auto; padding:0; margin:0; }
+.lk-grid .ms-find{ margin-bottom:6px; }
+.ms-foot{ display:flex; justify-content:flex-end; margin-top:6px; }
+.ms-clear{ background:none; border:0; color:var(--navy); cursor:pointer; font-size:12px; text-decoration:underline; }
+.cols-wrap{ position:relative; display:inline-block; }
+.cols-panel{ min-width:190px; }
+.lk-pager{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 2px; font-size:12.5px; color:var(--muted); }
+.lk-pager select{ padding:5px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); }
+.lk-pager .lk-btn{ padding:5px 12px; }
+.lk-pager .lk-btn[disabled]{ opacity:.45; cursor:default; }
+.lk-sort{ background:none; border:0; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; padding:0; display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
+.lk-sort .ar{ font-size:10px; opacity:.55; }
+.lk-sort.on .ar{ opacity:1; }
+.lk-sort:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
+@media (max-width:600px){ .lk-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .ms-panel{ max-width:min(320px,calc(100vw - 48px)); } .lk-grid .field:nth-child(even) .ms-panel{ inset-inline-start:auto; inset-inline-end:0; } }
 .lk-head{ margin:4px 2px 14px; }
 .lk-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
 .lk-head p{ margin:0; color:var(--muted); font-size:13px; }
@@ -402,31 +429,37 @@ html,body{overflow-x:hidden;}
   <!-- ===== Cases ===== -->
   <div id="secCases">
     <div class="lk-card">
+      <div class="lk-chips" id="cChips"></div>
       <div class="lk-grid" id="cFilters"></div>
       <div class="lk-bar">
         <span class="lk-count" id="cCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('cases')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
+        <span class="cols-wrap" id="cCols"></span>
         <button class="lk-btn" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-entry.html" data-en="Open Daily Case Entry" data-ur="یومیہ کیس انٹری کھولیں">Open Daily Case Entry</a>
       </div>
     </div>
     <div class="lk-wrap"><table class="lk-table"><thead id="cHead"></thead><tbody id="cBody"></tbody></table></div>
     <div class="lk-note" id="cNote"></div>
+    <div class="lk-pager" id="cPager"></div>
   </div>
 
   <!-- ===== Notices ===== -->
   <div id="secNotices" style="display:none;">
     <div class="lk-card">
+      <div class="lk-chips" id="nChips"></div>
       <div class="lk-grid" id="nFilters"></div>
       <div class="lk-bar">
         <span class="lk-count" id="nCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('notices')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
+        <span class="cols-wrap" id="nCols"></span>
         <button class="lk-btn" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-notice.html" data-en="Open Case Notices" data-ur="کیس نوٹسز کھولیں">Open Case Notices</a>
       </div>
     </div>
     <div class="lk-wrap"><table class="lk-table"><thead id="nHead"></thead><tbody id="nBody"></tbody></table></div>
     <div class="lk-note" id="nNote"></div>
+    <div class="lk-pager" id="nPager"></div>
   </div>
 
 </div>
@@ -519,15 +552,37 @@ html,body{overflow-x:hidden;}
 
   var DATA = { cases: [], notices: [] };
   var CUR = 'cases';
-  var LIMIT = 500;
+  /* chosen values of every drop-down filter (several can be chosen at once), the sort order,
+     the page, and which table columns are hidden/shown - one set per tab */
+  var SEL   = { cases:{}, notices:{} };
+  var SORT  = { cases:{ col:'date', dir:-1 }, notices:{ col:'date', dir:-1 } };
+  var PAGER = { cases:{ page:1, size:100 }, notices:{ page:1, size:100 } };
+  var COLVIS = { cases:{}, notices:{} };
+  function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+  function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+  ['cases','notices'].forEach(function(k){ try { COLVIS[k] = JSON.parse(lsGet('lkCols_' + k) || '{}') || {}; } catch(e){ COLVIS[k] = {}; } });
+
+  function caseKey(r){
+    var m = String(r.caseNo || '').match(/^(\d+)(.*)$/);
+    var n = m ? m[1] : '0', rest = m ? m[2] : String(r.caseNo || '');
+    return String(r.type || '').toLowerCase() + '|' + ('0000' + (r.year || '')).slice(-4) + '|' + ('0000000000' + n).slice(-10) + rest.toLowerCase();
+  }
+  function serialKey(r){
+    var s = String(r.serial == null ? (r.srNo == null ? '' : r.srNo) : r.serial), m = s.match(/^(\d+)(.*)$/);
+    return m ? ('00000' + m[1]).slice(-5) + m[2] : 'zzzzz' + s;
+  }
 
   /* what each tab can filter on (select boxes are filled from the real data) and which
-     columns it shows. Same field names as the entry pages save them. */
+     columns it shows. Same field names as the entry pages save them.
+     get = how a text filter reads its value from a record; extra = a column that is hidden until switched on. */
   var DEF = {
     cases: {
       filters: [
         { key:'q',      type:'text',   en:'Search anything', ur:'کچھ بھی تلاش کریں' },
         { key:'caseNo', type:'text',   en:'Case No',         ur:'کیس نمبر' },
+        { key:'party',  type:'text',   en:'Party name',      ur:'فریق کا نام', get:function(r){ return (r.title||'') + ' ' + (r.versus||''); } },
+        { key:'section',type:'text',   en:'Section',         ur:'دفعہ', get:function(r){ return r.section||''; } },
+        { key:'remarks',type:'text',   en:'Remarks',         ur:'ریمارکس', get:function(r){ return r.remarks||''; } },
         { key:'officer',type:'select', en:'Officer',         ur:'آفیسر' },
         { key:'judge',  type:'select', en:'Judge',           ur:'جج' },
         { key:'bench',  type:'select', en:'Bench No',        ur:'بینچ نمبر' },
@@ -535,28 +590,34 @@ html,body{overflow-x:hidden;}
         { key:'year',   type:'select', en:'Year',            ur:'سال' },
         { key:'nature', type:'select', en:'Nature',          ur:'نوعیت' },
         { key:'result', type:'select', en:'Result',          ur:'نتیجہ' },
-        { key:'relief', type:'select', en:'Category',         ur:'زمرہ' },
+        { key:'relief', type:'select', en:'Category',        ur:'زمرہ' },
         { key:'from',   type:'date',   en:'Date from',       ur:'تاریخ سے' },
         { key:'to',     type:'date',   en:'Date to',         ur:'تاریخ تک' }
       ],
-      textKeys: ['type','caseNo','year','title','versus','officer','judge','bench','serial','nature','result','relief','remarks'],
+      textKeys: ['type','caseNo','year','title','versus','officer','judge','bench','serial','nature','result','relief','remarks','section','natureText','benchType','source'],
       cols: [
-        { en:'Case No',  ur:'کیس نمبر',   f:function(r){ return (r.type||'') + ' ' + (r.caseNo||'') + (r.year ? '/' + r.year : ''); } },
-        { en:'Title',    ur:'عنوان',      f:function(r){ return (r.title||'') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : ''); } },
-        { en:'Officer',  ur:'آفیسر',      f:function(r){ return r.officer||''; } },
-        { en:'Judge',    ur:'جج',         f:function(r){ return r.judge||''; } },
-        { en:'Bench',    ur:'بینچ',       f:function(r){ return r.bench||''; } },
-        { en:'Sr. No',   ur:'سیریل',      f:function(r){ return r.serial||''; } },
-        { en:'Date',     ur:'تاریخ',      f:function(r){ return r.date||''; } },
-        { en:'Nature',   ur:'نوعیت',      f:function(r){ return r.nature||''; } },
-        { en:'Result',   ur:'نتیجہ',      f:function(r){ return r.result||''; } },
-        { en:'Category', ur:'زمرہ',       f:function(r){ return r.relief||''; } }
+        { id:'no',      en:'Case No',   ur:'کیس نمبر',   f:function(r){ return (r.type||'') + ' ' + (r.caseNo||'') + (r.year ? '/' + r.year : ''); }, s:caseKey },
+        { id:'title',   en:'Title',     ur:'عنوان',      f:function(r){ return (r.title||'') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : ''); } },
+        { id:'officer', en:'Officer',   ur:'آفیسر',      f:function(r){ return r.officer||''; } },
+        { id:'judge',   en:'Judge',     ur:'جج',         f:function(r){ return r.judge||''; } },
+        { id:'bench',   en:'Bench',     ur:'بینچ',       f:function(r){ return r.bench||''; } },
+        { id:'serial',  en:'Sr. No',    ur:'سیریل',      f:function(r){ return r.serial||''; }, s:serialKey },
+        { id:'date',    en:'Date',      ur:'تاریخ',      f:function(r){ return r.date||''; } },
+        { id:'nature',  en:'Nature',    ur:'نوعیت',      f:function(r){ return r.nature||''; } },
+        { id:'result',  en:'Result',    ur:'نتیجہ',      f:function(r){ return r.result||''; } },
+        { id:'relief',  en:'Category',  ur:'زمرہ',       f:function(r){ return r.relief||''; } },
+        { id:'remarks', en:'Remarks',   ur:'ریمارکس',    f:function(r){ return r.remarks && r.remarks !== '—' ? r.remarks : ''; }, extra:true },
+        { id:'section', en:'Section',   ur:'دفعہ',       f:function(r){ return r.section||''; }, extra:true },
+        { id:'btype',   en:'Bench type',ur:'بینچ کی قسم',f:function(r){ return r.benchType||''; }, extra:true },
+        { id:'source',  en:'Source',    ur:'ماخذ',       f:function(r){ return r.source||''; }, extra:true }
       ]
     },
     notices: {
       filters: [
         { key:'q',        type:'text',   en:'Search anything', ur:'کچھ بھی تلاش کریں' },
         { key:'caseNo',   type:'text',   en:'Case No',         ur:'کیس نمبر' },
+        { key:'party',    type:'text',   en:'Party name',      ur:'فریق کا نام', get:function(r){ return (r.title||'') + ' ' + (r.versus||''); } },
+        { key:'sections', type:'text',   en:'Sections',        ur:'دفعات', get:function(r){ return r.sections||''; } },
         { key:'district', type:'select', en:'District',        ur:'ضلع' },
         { key:'station',  type:'select', en:'Police Station',  ur:'تھانہ' },
         { key:'bench',    type:'select', en:'Bench No',        ur:'بینچ نمبر' },
@@ -568,37 +629,79 @@ html,body{overflow-x:hidden;}
       ],
       textKeys: ['type','caseNo','year','title','versus','relief','firNo','sections','station','tehsil','district','bench','srNo','signatory'],
       cols: [
-        { en:'Case No',   ur:'کیس نمبر',   f:function(r){ return (r.type||'') + ' ' + (r.caseNo||'') + (r.year ? '/' + r.year : ''); } },
-        { en:'Title',     ur:'عنوان',      f:function(r){ return (r.title||'') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : ''); } },
-        { en:'Category',  ur:'زمرہ',       f:function(r){ return r.relief||''; } },
-        { en:'FIR No',    ur:'ایف آئی آر', f:function(r){ return (r.firNo||'') + (r.firYear ? '/' + r.firYear : ''); } },
-        { en:'Station',   ur:'تھانہ',      f:function(r){ return r.station||''; } },
-        { en:'District',  ur:'ضلع',        f:function(r){ return r.district||''; } },
-        { en:'Bench',     ur:'بینچ',       f:function(r){ return r.bench||''; } },
-        { en:'Date',      ur:'تاریخ',      f:function(r){ return r.date||''; } }
+        { id:'no',       en:'Case No',   ur:'کیس نمبر',   f:function(r){ return (r.type||'') + ' ' + (r.caseNo||'') + (r.year ? '/' + r.year : ''); }, s:caseKey },
+        { id:'title',    en:'Title',     ur:'عنوان',      f:function(r){ return (r.title||'') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : ''); } },
+        { id:'relief',   en:'Category',  ur:'زمرہ',       f:function(r){ return r.relief||''; } },
+        { id:'fir',      en:'FIR No',    ur:'ایف آئی آر', f:function(r){ return (r.firNo||'') + (r.firYear ? '/' + r.firYear : ''); } },
+        { id:'station',  en:'Station',   ur:'تھانہ',      f:function(r){ return r.station||''; } },
+        { id:'district', en:'District',  ur:'ضلع',        f:function(r){ return r.district||''; } },
+        { id:'bench',    en:'Bench',     ur:'بینچ',       f:function(r){ return r.bench||''; } },
+        { id:'date',     en:'Date',      ur:'تاریخ',      f:function(r){ return r.date||''; } },
+        { id:'sections', en:'Sections',  ur:'دفعات',      f:function(r){ return r.sections||''; }, extra:true },
+        { id:'tehsil',   en:'Tehsil',    ur:'تحصیل',      f:function(r){ return r.tehsil||''; }, extra:true },
+        { id:'srNo',     en:'Sr. No',    ur:'سیریل',      f:function(r){ return r.srNo||''; }, s:serialKey, extra:true },
+        { id:'signatory',en:'Signatory', ur:'دستخط کنندہ',f:function(r){ return r.signatory||''; }, extra:true }
       ]
     }
   };
 
   function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function normNo(v){ return String(v==null ? '' : v).replace(/\s+/g,'').toUpperCase(); }
-  function ids(kind){ return kind === 'cases' ? { f:'cFilters', c:'cCount', h:'cHead', b:'cBody', n:'cNote' } : { f:'nFilters', c:'nCount', h:'nHead', b:'nBody', n:'nNote' }; }
+  function ids(kind){ return kind === 'cases'
+    ? { f:'cFilters', c:'cCount', h:'cHead', b:'cBody', n:'cNote', p:'cPager', k:'cChips', m:'cCols' }
+    : { f:'nFilters', c:'nCount', h:'nHead', b:'nBody', n:'nNote', p:'nPager', k:'nChips', m:'nCols' }; }
+
+  function colVisible(kind, c){ var v = COLVIS[kind][c.id]; return v === undefined ? !c.extra : !!v; }
+  function visCols(kind){ return DEF[kind].cols.filter(function(c){ return colVisible(kind, c); }); }
 
   function readFilters(kind){
     var out = {};
     DEF[kind].filters.forEach(function(f){
+      if(f.type === 'select'){ out[f.key] = (SEL[kind][f.key] || []).slice(); return; }
       var el = document.getElementById('f_' + kind + '_' + f.key);
       out[f.key] = el ? el.value : '';
     });
     return out;
   }
 
+  function msSummary(sel){
+    if(!sel || !sel.length) return isUrdu ? 'سب' : 'All';
+    if(sel.length === 1) return sel[0];
+    return sel.length + (isUrdu ? ' منتخب' : ' selected');
+  }
+  function updateMsBtn(kind, wrap){
+    var key = wrap.getAttribute('data-key'), sel = SEL[kind][key] || [];
+    var btn = wrap.querySelector('.ms-btn');
+    btn.querySelector('.ms-txt').textContent = msSummary(sel);
+    btn.classList.toggle('on', sel.length > 0);
+  }
+  function closeMs(){
+    document.querySelectorAll('.ms.open, .cols-wrap.open').forEach(function(w){
+      w.classList.remove('open');
+      var b = w.querySelector('.ms-btn, .cols-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+      var p = w.querySelector('.ms-panel'); if(p) p.hidden = true;
+    });
+  }
+  function openMs(wrap){
+    closeMs();
+    wrap.classList.add('open');
+    var b = wrap.querySelector('.ms-btn, .cols-btn'); if(b) b.setAttribute('aria-expanded', 'true');
+    var p = wrap.querySelector('.ms-panel'); if(p) p.hidden = false;
+    var fi = wrap.querySelector('.ms-find'); if(fi) fi.focus();
+  }
+
   function buildFilters(kind){
-    var box = document.getElementById(ids(kind).f);
-    var keep = readFilters(kind);
+    var d = ids(kind);
+    var box = document.getElementById(d.f);
+    var keep = {};
+    DEF[kind].filters.forEach(function(f){
+      if(f.type === 'select') return;
+      var el = document.getElementById('f_' + kind + '_' + f.key);
+      if(el) keep[f.key] = el.value;
+    });
     var html = DEF[kind].filters.map(function(f){
       var id = 'f_' + kind + '_' + f.key;
-      var label = '<label>' + esc(isUrdu ? f.ur : f.en) + '</label>';
+      var lab = esc(isUrdu ? f.ur : f.en);
       if(f.type === 'select'){
         var seen = {};
         DATA[kind].forEach(function(r){ var v = r[f.key]; if(v != null && v !== '' && v !== '—') seen[v] = true; });
@@ -609,55 +712,156 @@ html,body{overflow-x:hidden;}
           var pos = function(x){ var i = order.indexOf(x); return i < 0 ? 9999 : i; };
           vals = vals.map(function(v, i){ return { v: v, i: i }; }).sort(function(a, b){ return (pos(a.v) - pos(b.v)) || (a.i - b.i); }).map(function(o){ return o.v; });
         }
-        return '<div class="field">' + label + '<select id="' + id + '"><option value="">' + (isUrdu ? 'سب' : 'All') + '</option>' +
-          vals.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('') + '</select></div>';
+        var sel = SEL[kind][f.key] || [];
+        return '<div class="field ms" data-key="' + f.key + '">' +
+          '<label id="' + id + '_l">' + lab + '</label>' +
+          '<button type="button" class="ms-btn' + (sel.length ? ' on' : '') + '" id="' + id + '" aria-haspopup="true" aria-expanded="false" aria-labelledby="' + id + '_l ' + id + '">' +
+            '<span class="ms-txt">' + esc(msSummary(sel)) + '</span><span class="ms-car" aria-hidden="true">▾</span></button>' +
+          '<div class="ms-panel" hidden>' +
+            (vals.length > 8 ? '<input type="search" class="ms-find" aria-label="' + (isUrdu ? 'فہرست میں تلاش' : 'Search the list') + '" placeholder="' + (isUrdu ? 'تلاش…' : 'Search…') + '">' : '') +
+            '<div class="ms-list">' + vals.map(function(v){
+              return '<label><input type="checkbox" value="' + esc(v) + '"' + (sel.indexOf(String(v)) >= 0 ? ' checked' : '') + '> <span>' + esc(v) + '</span></label>';
+            }).join('') + '</div>' +
+            '<div class="ms-foot"><button type="button" class="ms-clear">' + (isUrdu ? 'صاف کریں' : 'Clear') + '</button></div>' +
+          '</div></div>';
       }
-      return '<div class="field">' + label + '<input id="' + id + '" type="' + (f.type === 'date' ? 'date' : 'text') + '"></div>';
+      return '<div class="field"><label for="' + id + '">' + lab + '</label><input id="' + id + '" type="' + (f.type === 'date' ? 'date' : 'text') + '"></div>';
     }).join('');
     box.innerHTML = html;
     DEF[kind].filters.forEach(function(f){
+      if(f.type === 'select') return;
       var el = document.getElementById('f_' + kind + '_' + f.key);
       if(!el) return;
       if(keep[f.key]) el.value = keep[f.key];
-      el.addEventListener(f.type === 'select' || f.type === 'date' ? 'change' : 'input', function(){ render(kind); });
+      el.addEventListener(f.type === 'date' ? 'change' : 'input', function(){ PAGER[kind].page = 1; render(kind); });
     });
+    renderColsMenu(kind);
+  }
+
+  /* quick date buttons */
+  var CHIPS = [
+    { id:'today',     en:'Today',      ur:'آج' },
+    { id:'week',      en:'This week',  ur:'اس ہفتے' },
+    { id:'lastweek',  en:'Last week',  ur:'پچھلے ہفتے' },
+    { id:'month',     en:'This month', ur:'اس مہینے' },
+    { id:'lastmonth', en:'Last month', ur:'پچھلے مہینے' },
+    { id:'year',      en:'This year',  ur:'اس سال' },
+    { id:'any',       en:'Any date',   ur:'کوئی بھی تاریخ' }
+  ];
+  function ymd(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function chipRange(id){
+    var t = new Date(); t.setHours(12, 0, 0, 0);
+    var y = t.getFullYear(), m = t.getMonth();
+    var mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+    var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    if(id === 'today') return [ymd(t), ymd(t)];
+    if(id === 'week') return [ymd(mon), ymd(sun)];
+    if(id === 'lastweek'){ var a = new Date(mon); a.setDate(a.getDate() - 7); var b = new Date(a); b.setDate(a.getDate() + 6); return [ymd(a), ymd(b)]; }
+    if(id === 'month') return [ymd(new Date(y, m, 1)), ymd(new Date(y, m + 1, 0))];
+    if(id === 'lastmonth') return [ymd(new Date(y, m - 1, 1)), ymd(new Date(y, m, 0))];
+    if(id === 'year') return [y + '-01-01', y + '-12-31'];
+    return ['', ''];
+  }
+  function renderChips(kind){
+    var box = document.getElementById(ids(kind).k);
+    var fr = document.getElementById('f_' + kind + '_from'), to = document.getElementById('f_' + kind + '_to');
+    var cf = fr ? fr.value : '', ct = to ? to.value : '';
+    box.innerHTML = '<span class="lk-chips-l">' + (isUrdu ? 'تاریخ:' : 'Date:') + '</span>' + CHIPS.map(function(c){
+      var r = chipRange(c.id);
+      var on = (r[0] === cf && r[1] === ct);
+      return '<button type="button" class="lk-chip" data-r="' + c.id + '" aria-pressed="' + on + '">' + esc(isUrdu ? c.ur : c.en) + '</button>';
+    }).join('');
+  }
+
+  /* Columns menu (which table columns to show) */
+  function renderColsMenu(kind){
+    var wrap = document.getElementById(ids(kind).m);
+    var open = wrap.classList.contains('open');
+    wrap.innerHTML = '<button type="button" class="lk-btn ghost cols-btn" aria-haspopup="true" aria-expanded="' + open + '">' + (isUrdu ? 'کالم ▾' : 'Columns ▾') + '</button>' +
+      '<div class="ms-panel cols-panel"' + (open ? '' : ' hidden') + '><div class="ms-list">' +
+      DEF[kind].cols.map(function(c){
+        return '<label><input type="checkbox" data-col="' + c.id + '"' + (colVisible(kind, c) ? ' checked' : '') + '> <span>' + esc(isUrdu ? c.ur : c.en) + '</span></label>';
+      }).join('') + '</div><div class="ms-foot"><button type="button" class="cols-reset ms-clear">' + (isUrdu ? 'پہلے جیسا کریں' : 'Reset') + '</button></div></div>';
   }
 
   function filtered(kind){
-    var v = readFilters(kind);
-    var q = String(v.q || '').trim().toLowerCase();
+    var v = readFilters(kind), def = DEF[kind];
+    var words = String(v.q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
     var no = normNo(v.caseNo);
+    var textFs = def.filters.filter(function(f){ return f.get; });
+    var selFs = def.filters.filter(function(f){ return f.type === 'select' && v[f.key].length; });
     return DATA[kind].filter(function(r){
-      if(q){
-        var hay = DEF[kind].textKeys.map(function(k){ return r[k] == null ? '' : r[k]; }).join(' ').toLowerCase();
-        if(hay.indexOf(q) === -1) return false;
+      if(words.length){
+        var hay = def.textKeys.map(function(k){ return r[k] == null ? '' : r[k]; }).join(' ').toLowerCase();
+        for(var i = 0; i < words.length; i++) if(hay.indexOf(words[i]) === -1) return false;
       }
       if(no && normNo(r.caseNo).indexOf(no) === -1) return false;
-      var ok = true;
-      DEF[kind].filters.forEach(function(f){
-        if(f.type === 'select' && v[f.key] && String(r[f.key] == null ? '' : r[f.key]) !== v[f.key]) ok = false;
-      });
-      if(!ok) return false;
+      for(var j = 0; j < textFs.length; j++){
+        var t = String(v[textFs[j].key] || '').trim().toLowerCase();
+        if(t && String(textFs[j].get(r) || '').toLowerCase().indexOf(t) === -1) return false;
+      }
+      for(var k = 0; k < selFs.length; k++){
+        if(v[selFs[k].key].indexOf(String(r[selFs[k].key] == null ? '' : r[selFs[k].key])) === -1) return false;
+      }
       if(v.from && String(r.date || '') < v.from) return false;
       if(v.to && String(r.date || '') > v.to) return false;
       return true;
     });
   }
 
+  function sorted(kind, rows){
+    var st = SORT[kind];
+    var c = DEF[kind].cols.filter(function(x){ return x.id === st.col; })[0];
+    if(!c) return rows;
+    var dec = rows.map(function(r, i){ return { r:r, i:i, k:String(c.s ? c.s(r) : (c.f(r) == null ? '' : c.f(r))) }; });
+    dec.sort(function(a, b){
+      if(a.k === '' && b.k !== '') return 1;       /* empty values always go last */
+      if(b.k === '' && a.k !== '') return -1;
+      var res = a.k.localeCompare(b.k, undefined, { numeric:true, sensitivity:'base' });
+      return (res * st.dir) || (a.i - b.i);
+    });
+    return dec.map(function(x){ return x.r; });
+  }
+
+  var SIZES = [25, 50, 100, 250, 0];
   function render(kind){
     var d = ids(kind);
-    var rows = filtered(kind);
-    var cols = DEF[kind].cols;
+    var rows = sorted(kind, filtered(kind));
+    var cols = visCols(kind);
     var canEditRows = CAN_WRITE;
     var editPage = kind === 'cases' ? 'case-entry.html' : 'case-notice.html';
-    document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){ return '<th>' + esc(isUrdu ? c.ur : c.en) + '</th>'; }).join('') + (canEditRows ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr>';
-    var shown = rows.slice(0, LIMIT);
+    var st = SORT[kind];
+    document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){
+      var on = st.col === c.id;
+      return '<th aria-sort="' + (on ? (st.dir > 0 ? 'ascending' : 'descending') : 'none') + '"><button type="button" class="lk-sort' + (on ? ' on' : '') + '" data-col="' + c.id + '">' +
+        esc(isUrdu ? c.ur : c.en) + '<span class="ar" aria-hidden="true">' + (on ? (st.dir > 0 ? '▲' : '▼') : '⇅') + '</span></button></th>';
+    }).join('') + (canEditRows ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr>';
+
+    var P = PAGER[kind], total = rows.length;
+    var size = P.size || total || 1;
+    var pages = Math.max(1, Math.ceil(total / size));
+    if(P.page > pages) P.page = pages;
+    if(P.page < 1) P.page = 1;
+    var start = (P.page - 1) * size;
+    var shown = P.size ? rows.slice(start, start + size) : rows;
+
     document.getElementById(d.b).innerHTML = shown.length ? shown.map(function(r){
       return '<tr>' + cols.map(function(c){ return '<td>' + esc(c.f(r)) + '</td>'; }).join('') +
         (canEditRows ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
     }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + (canEditRows ? 1 : 0)) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
     document.getElementById(d.c).textContent = (isUrdu ? 'ملے: ' : 'Found: ') + rows.length + (isUrdu ? ' از ' : ' of ') + DATA[kind].length;
-    document.getElementById(d.n).textContent = rows.length > LIMIT ? (isUrdu ? ('پہلے ' + LIMIT + ' ریکارڈ دکھائے گئے ہیں — فلٹر مزید تنگ کریں۔ ایکسپورٹ میں سب شامل ہوں گے۔') : ('Showing the first ' + LIMIT + ' records — narrow the filters. Export includes all matches.')) : '';
+    document.getElementById(d.n).textContent = '';
+
+    /* pager */
+    var from = total ? start + 1 : 0, to = total ? Math.min(total, start + shown.length) : 0;
+    document.getElementById(d.p).innerHTML =
+      '<button type="button" class="lk-btn ghost pg-prev"' + (P.page <= 1 ? ' disabled' : '') + ' aria-label="' + (isUrdu ? 'پچھلا صفحہ' : 'Previous page') + '">' + (isUrdu ? '‹ پچھلا' : '‹ Prev') + '</button>' +
+      '<span>' + (isUrdu ? 'صفحہ ' : 'Page ') + P.page + (isUrdu ? ' از ' : ' / ') + pages + '</span>' +
+      '<button type="button" class="lk-btn ghost pg-next"' + (P.page >= pages ? ' disabled' : '') + ' aria-label="' + (isUrdu ? 'اگلا صفحہ' : 'Next page') + '">' + (isUrdu ? 'اگلا ›' : 'Next ›') + '</button>' +
+      '<span>' + from + '–' + to + (isUrdu ? ' از ' : ' of ') + total + '</span>' +
+      '<label>' + (isUrdu ? 'فی صفحہ: ' : 'Per page: ') + '<select class="pg-size" aria-label="' + (isUrdu ? 'فی صفحہ ریکارڈ' : 'Rows per page') + '">' +
+        SIZES.map(function(n){ return '<option value="' + n + '"' + (P.size === n ? ' selected' : '') + '>' + (n ? n : (isUrdu ? 'سب' : 'All')) + '</option>'; }).join('') + '</select></label>';
+    renderChips(kind);
   }
 
   function lkTab(kind){
@@ -669,12 +873,16 @@ html,body{overflow-x:hidden;}
   }
 
   function lkClear(kind){
-    DEF[kind].filters.forEach(function(f){ var el = document.getElementById('f_' + kind + '_' + f.key); if(el) el.value = ''; });
+    SEL[kind] = {};
+    DEF[kind].filters.forEach(function(f){ var el = document.getElementById('f_' + kind + '_' + f.key); if(el && f.type !== 'select') el.value = ''; });
+    PAGER[kind].page = 1;
+    buildFilters(kind);
     render(kind);
   }
 
   function lkExport(kind){
-    var rows = filtered(kind), cols = DEF[kind].cols;
+    /* exports every matching row (not just the page on screen), in the order on screen, with the columns that are switched on */
+    var rows = sorted(kind, filtered(kind)), cols = visCols(kind);
     function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
     var lines = [cols.map(function(c){ return cell(c.en); }).join(',')];
     rows.forEach(function(r){ lines.push(cols.map(function(c){ return cell(c.f(r)); }).join(',')); });
@@ -685,6 +893,71 @@ html,body{overflow-x:hidden;}
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   }
+
+  /* one-time wiring of the clicks on filters, quick dates, columns menu, headers and pager */
+  function initLookupEvents(kind){
+    var d = ids(kind);
+    var box = document.getElementById(d.f);
+    box.addEventListener('click', function(e){
+      var btn = e.target.closest('.ms-btn');
+      if(btn){ var w = btn.closest('.ms'); if(w.classList.contains('open')) closeMs(); else openMs(w); return; }
+      if(e.target.closest('.ms-clear')){
+        var w2 = e.target.closest('.ms');
+        SEL[kind][w2.getAttribute('data-key')] = [];
+        w2.querySelectorAll('.ms-list input').forEach(function(cb){ cb.checked = false; });
+        updateMsBtn(kind, w2); PAGER[kind].page = 1; render(kind);
+      }
+    });
+    box.addEventListener('change', function(e){
+      var cb = e.target.closest('.ms-list input'); if(!cb) return;
+      var w = cb.closest('.ms'), key = w.getAttribute('data-key');
+      var arr = SEL[kind][key] || [], i = arr.indexOf(cb.value);
+      if(cb.checked && i < 0) arr.push(cb.value);
+      if(!cb.checked && i >= 0) arr.splice(i, 1);
+      SEL[kind][key] = arr; updateMsBtn(kind, w); PAGER[kind].page = 1; render(kind);
+    });
+    box.addEventListener('input', function(e){
+      var fi = e.target.closest('.ms-find'); if(!fi) return;
+      var q = fi.value.toLowerCase();
+      fi.closest('.ms').querySelectorAll('.ms-list label').forEach(function(l){ l.style.display = l.textContent.toLowerCase().indexOf(q) < 0 ? 'none' : ''; });
+    });
+    document.getElementById(d.k).addEventListener('click', function(e){
+      var b = e.target.closest('.lk-chip'); if(!b) return;
+      var r = chipRange(b.getAttribute('data-r'));
+      document.getElementById('f_' + kind + '_from').value = r[0];
+      document.getElementById('f_' + kind + '_to').value = r[1];
+      PAGER[kind].page = 1; render(kind);
+    });
+    var cw = document.getElementById(d.m);
+    cw.addEventListener('click', function(e){
+      if(e.target.closest('.cols-btn')){ if(cw.classList.contains('open')) closeMs(); else openMs(cw); return; }
+      if(e.target.closest('.cols-reset')){ COLVIS[kind] = {}; lsSet('lkCols_' + kind, '{}'); renderColsMenu(kind); cw.classList.add('open'); cw.querySelector('.cols-panel').hidden = false; render(kind); }
+    });
+    cw.addEventListener('change', function(e){
+      var cb = e.target.closest('input[data-col]'); if(!cb) return;
+      COLVIS[kind][cb.getAttribute('data-col')] = cb.checked;
+      lsSet('lkCols_' + kind, JSON.stringify(COLVIS[kind]));
+      render(kind);
+    });
+    document.getElementById(d.h).addEventListener('click', function(e){
+      var b = e.target.closest('.lk-sort'); if(!b) return;
+      var col = b.getAttribute('data-col'), st = SORT[kind];
+      if(st.col === col) st.dir = -st.dir; else { st.col = col; st.dir = (col === 'date') ? -1 : 1; }
+      PAGER[kind].page = 1; render(kind);
+    });
+    var pg = document.getElementById(d.p);
+    pg.addEventListener('click', function(e){
+      if(e.target.closest('.pg-prev')){ PAGER[kind].page--; render(kind); }
+      else if(e.target.closest('.pg-next')){ PAGER[kind].page++; render(kind); }
+    });
+    pg.addEventListener('change', function(e){
+      var s = e.target.closest('.pg-size'); if(!s) return;
+      PAGER[kind].size = parseInt(s.value, 10) || 0; PAGER[kind].page = 1; render(kind);
+    });
+  }
+  document.addEventListener('click', function(e){ if(!e.target.closest('.ms, .cols-wrap')) closeMs(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMs(); });
+  initLookupEvents('cases'); initLookupEvents('notices');
 
   function toggleLang(){
     isUrdu = !isUrdu;

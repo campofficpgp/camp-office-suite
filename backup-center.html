@@ -316,8 +316,10 @@ var I18N = {
     btnSignOut:"Sign Out", signedInAs:"Signed in as",
     lastBackupLabel:"Last successful backup:",
     lastBackupNone:"No backup has been taken yet from this Backup Center.",
+    backupAgeToday:"(today)", backupAgeDays:"({n} days ago)",
+    backupStaleWarn:"⚠ The last backup is more than 7 days old — please take a new one now.",
     dbBackupTitle:"Database Backup / Export",
-    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.",
+    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Daily Cases, Case Notices, Monthly Reports, Cause Lists, Inspection Desk, Scanning Desk records, Employee Directory, Bill Register, Daily Case Management, Gallery photo records, Team Chat, shared lists). Documents/photos themselves stay on Cloudinary, and the scanned PDF files of the Scanning Desk stay in Firebase Storage — this file has their records and links, not the actual files. Take a backup every week and keep the file somewhere safe (another computer or a USB drive).",
     btnRunBackup:"⬇️ Download Full Backup Now",
     backupRunning:"Reading data and building backup file…",
     backupDone:"✅ Backup downloaded and logged successfully.",
@@ -349,8 +351,10 @@ var I18N = {
     btnSignOut:"لاگ آؤٹ", signedInAs:"لاگ اِن ہیں بطور",
     lastBackupLabel:"آخری کامیاب بیک اپ:",
     lastBackupNone:"اس Backup Center سے ابھی تک کوئی بیک اپ نہیں لیا گیا۔",
+    backupAgeToday:"(آج)", backupAgeDays:"({n} دن پہلے)",
+    backupStaleWarn:"⚠ آخری بیک اپ 7 دن سے زیادہ پرانا ہے — براہ کرم ابھی نیا بیک اپ لیں۔",
     dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
-    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat)۔ اصل دستاویزات/تصاویر Cloudinary پر ہی رہیں گی — اس فائل میں صرف ان کے لنکس ہوں گے۔",
+    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، یومیہ کیسز، کیس نوٹسز، ماہانہ رپورٹس، کاز لسٹس، انسپکشن ڈیسک، اسکیننگ ڈیسک کا ریکارڈ، ملازمین کی ڈائریکٹری، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، مشترکہ فہرستیں)۔ اصل دستاویزات/تصاویر Cloudinary پر اور اسکیننگ ڈیسک کی اسکین شدہ PDF فائلیں Firebase Storage میں ہی رہیں گی — اس فائل میں صرف ان کا ریکارڈ اور لنکس ہوں گے۔ ہر ہفتے ایک بیک اپ لیں اور فائل کسی محفوظ جگہ (دوسرا کمپیوٹر یا USB) رکھیں۔",
     btnRunBackup:"⬇️ ابھی مکمل بیک اپ ڈاؤن لوڈ کریں",
     backupRunning:"ڈیٹا پڑھا جا رہا ہے اور بیک اپ فائل بنائی جا رہی ہے…",
     backupDone:"✅ بیک اپ کامیابی سے ڈاؤن لوڈ اور محفوظ ہو گیا۔",
@@ -447,16 +451,28 @@ auth.onAuthStateChanged(function(user){
 function renderLastBackupLine(){
   var el = document.getElementById("lastBackupLine");
   if(!el || document.getElementById("mainApp").classList.contains("hidden")) return;
-  db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(1).get().then(function(qs){
-    if(qs.empty){
+  /* newest real backup (a "restore" entry is not a backup) */
+  db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(25).get().then(function(qs){
+    var d = null;
+    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore") d = v; });
+    if(!d){
       el.textContent = I18N[currentLang].lastBackupNone;
+      el.style.color = "";
       return;
     }
-    var d = qs.docs[0].data();
     var when = d.timestamp && d.timestamp.toDate ? d.timestamp.toDate() : null;
     var whenStr = when ? when.toLocaleString(currentLang==="ur" ? "ur-PK" : "en-GB") : "?";
     var who = d.performedByEmail || d.performedByUserId || "?";
-    el.textContent = whenStr + " — " + who;
+    var line = whenStr + " — " + who;
+    var stale = false;
+    if(when){
+      var days = Math.floor((Date.now() - when.getTime()) / 86400000);
+      line += " " + (days <= 0 ? I18N[currentLang].backupAgeToday : I18N[currentLang].backupAgeDays.replace("{n}", days));
+      stale = days > 7;
+    }
+    el.textContent = line + (stale ? "  " + I18N[currentLang].backupStaleWarn : "");
+    el.style.color = stale ? "#b3261e" : "";
+    el.style.fontWeight = stale ? "700" : "";
   }).catch(function(err){
     // appData_backupmeta collection may not exist yet (no backup taken) — treat like "none".
     el.textContent = I18N[currentLang].lastBackupNone;
@@ -477,7 +493,9 @@ function renderLastBackupLine(){
    Backup Now" was silently NOT backing up most of the office's real data. */
 var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages",
   "cases","monthlyReports","caseNotices","employees","lookupLists",
-  "contacts","helpArticles","advertisements"];
+  "contacts","helpArticles","advertisements",
+  /* 19 Oct 2026: added the systems built after the 3 Oct review - Scanning Desk records, saved Cause Lists, Inspection Desk (inspections, references, manual sign-offs) */
+  "scans","causeLists","inspections","inspectionRefs","inspectionManual"];
 var KNOWN_SHARED_DOCS = [
   {collection:"appData_bill", doc:"shared", label:"bill_register"},
   {collection:"appData_dcms", doc:"shared", label:"daily_case_management"},
@@ -485,7 +503,9 @@ var KNOWN_SHARED_DOCS = [
   {collection:"appData_weeklyroster", doc:"shared", label:"weekly_court_roster"},
   {collection:"appData_case", doc:"shared", label:"legacy_case_notice_system"},
   {collection:"appData_announcement", doc:"current", label:"announcement_banner"},
-  {collection:"siteContent", doc:"about", label:"about_page_content"}
+  {collection:"siteContent", doc:"about", label:"about_page_content"},
+  {collection:"appData_sharedDropdowns", doc:"shared", label:"shared_dropdowns"},
+  {collection:"inspectionConfig", doc:"main", label:"inspection_config"}
 ];
 
 /* Reads every known collection/doc, downloads one JSON file, and logs the

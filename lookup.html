@@ -373,6 +373,14 @@ html,body{overflow-x:hidden;}
 .hist-hd h3{ margin:0 0 4px; font-size:16px; color:var(--navy); }
 .hist-hd p{ margin:0; font-size:13px; color:var(--muted); }
 .hist-x{ border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:6px; cursor:pointer; font-size:16px; line-height:1; padding:6px 10px; font-family:inherit; }
+.exp-chk{ display:flex; gap:8px; align-items:center; font-size:13px; cursor:pointer; }
+.exp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; padding:8px 16px 4px; transition:opacity .15s; }
+.exp-col h4{ margin:0 0 4px; font-size:13px; color:var(--navy); }
+.exp-col label{ display:block; font-size:12px; color:var(--muted); margin:7px 0 2px; }
+.exp-col input, .exp-col textarea{ width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-family:inherit; font-size:13px; }
+.exp-ft{ display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--border); margin-top:8px; }
+.exp-err{ flex:1; font-size:12.5px; color:var(--muted); min-width:140px; }
+@media (max-width:600px){ .exp-grid{ grid-template-columns:1fr; } }
 .hist-facts{ display:flex; gap:8px 18px; flex-wrap:wrap; padding:10px 16px; font-size:12.5px; border-bottom:1px solid var(--border); }
 .hist-facts b{ color:var(--navy); }
 .hist-body{ padding:10px 16px 16px; overflow-x:auto; }
@@ -465,6 +473,8 @@ html,body{overflow-x:hidden;}
         <span class="cols-wrap" id="cCols"></span>
         <button class="lk-btn ghost" id="cSumBtn" type="button" aria-expanded="true" aria-controls="cSum"></button>
         <button class="lk-btn" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <button class="lk-btn" type="button" data-exp="cases:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
+        <button class="lk-btn" type="button" data-exp="cases:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-entry.html" data-en="Open Daily Case Entry" data-ur="یومیہ کیس انٹری کھولیں">Open Daily Case Entry</a>
       </div>
     </div>
@@ -484,6 +494,8 @@ html,body{overflow-x:hidden;}
         <button class="lk-btn ghost" onclick="lkClear('notices')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
         <span class="cols-wrap" id="nCols"></span>
         <button class="lk-btn" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <button class="lk-btn" type="button" data-exp="notices:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
+        <button class="lk-btn" type="button" data-exp="notices:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-notice.html" data-en="Open Case Notices" data-ur="کیس نوٹسز کھولیں">Open Case Notices</a>
       </div>
     </div>
@@ -492,6 +504,28 @@ html,body{overflow-x:hidden;}
     <div class="lk-pager" id="nPager"></div>
   </div>
 
+</div>
+
+<div class="hist-back" id="expBack" hidden>
+  <div class="hist-box" role="dialog" aria-modal="true" aria-labelledby="expTitle" id="expBox" style="width:min(720px,100%);">
+    <div class="hist-hd"><div><h3 id="expTitle"></h3><p id="expSub"></p></div><button type="button" class="hist-x" id="expX" aria-label="Close">✕</button></div>
+    <div style="padding:12px 16px 0;">
+      <label class="exp-chk"><input type="checkbox" id="exp_on" checked> <span data-en="Add the sign-off (Prepared by / Approved by) at the end" data-ur="آخر میں دستخط/مہر (Prepared by / Approved by) شامل کریں">Add the sign-off (Prepared by / Approved by) at the end</span></label>
+    </div>
+    <div class="exp-grid" id="expFields">
+      <div class="exp-col"><h4 data-en="Prepared by" data-ur="Prepared by (تیار کنندہ)">Prepared by</h4>
+        <label for="exp_left_name" data-en="Name" data-ur="نام">Name</label><input type="text" id="exp_left_name">
+        <label for="exp_left_designation" data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="exp_left_designation">
+        <label for="exp_left_address" data-en="Office address" data-ur="دفتر کا پتہ">Office address</label><textarea id="exp_left_address" rows="3"></textarea></div>
+      <div class="exp-col"><h4 data-en="Approved by" data-ur="Approved by (منظور کنندہ)">Approved by</h4>
+        <label for="exp_right_name" data-en="Name" data-ur="نام">Name</label><input type="text" id="exp_right_name">
+        <label for="exp_right_designation" data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="exp_right_designation">
+        <label for="exp_right_address" data-en="Office address" data-ur="دفتر کا پتہ">Office address</label><textarea id="exp_right_address" rows="3"></textarea></div>
+    </div>
+    <div class="exp-ft"><span id="expErr" role="status" aria-live="polite" class="exp-err"></span>
+      <button type="button" class="lk-btn ghost" id="expCancel" data-en="Cancel" data-ur="منسوخ">Cancel</button>
+      <button type="button" class="lk-btn" id="expGo" data-en="Download" data-ur="ڈاؤن لوڈ کریں">Download</button></div>
+  </div>
 </div>
 
 <div class="hist-back" id="histBack" hidden>
@@ -932,6 +966,528 @@ html,body{overflow-x:hidden;}
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   }
+
+
+  /* ================= PDF / Excel export of the Lookup result =================
+     Same approved look as the Monthly Progress Report and the Weekly Roster files: A4 landscape, Government of
+     Punjab emblem on the LEFT, centred office heading, gold + navy rule, navy table header repeated on every page,
+     zebra rows, footer "office | Generated date | Page x of y". The file holds EVERY matching record, in the order on
+     screen, with the columns that are switched on. The sign-off block (Prepared by / Approved by) is placed once, at
+     the end. Libraries load on demand (pdf-lib, JSZip). The CSV button is unchanged. */
+  var RLIBS = {
+    pdflib:['https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js','https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js'],
+    jszip:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://unpkg.com/jszip@3.10.1/dist/jszip.min.js']
+  };
+  var RLIBCHK = { pdflib:function(){ return window.PDFLib; }, jszip:function(){ return window.JSZip; } };
+  function rAddScript(src){ return new Promise(function(res, rej){ var el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = function(){ rej(new Error('load ' + src)); }; document.head.appendChild(el); }); }
+  async function rLoadLib(name){
+    if(RLIBCHK[name]()) return;
+    var err = null;
+    for(var i = 0; i < RLIBS[name].length; i++){
+      try{ await rAddScript(RLIBS[name][i]); if(RLIBCHK[name]()) return; }catch(e){ err = e; }
+    }
+    throw err || new Error('library ' + name);
+  }
+  var LK_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var LK_HEAD_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
+  var LK_HEAD_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var LK_ADDR = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
+  var AR_RE = /[؀-ۿ]/;
+  function xmlEsc(v){ return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function colLetter(i){ var s2 = ''; i++; while(i > 0){ var m = (i - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; i = Math.floor((i - 1) / 26); } return s2; }
+  function lkDownloadBlob(blob, name){
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  async function lkLogoBytes(){
+    try{
+      var r = await fetch('logo-punjab-govt.png', { cache:'force-cache' });
+      if(!r.ok) return null;
+      return new Uint8Array(await r.arrayBuffer());
+    }catch(e){ return null; }
+  }
+  var LK_LOGO_RATIO = 300 / 236;
+
+  /* sign-off texts: remembered on this computer, editable in the export window */
+  var LK_STAMP = (function(){
+    var d = { left:{ name:'Iftikhar Ahmed', designation:'Junior Clerk', address:LK_ADDR }, right:{ name:'', designation:'', address:LK_ADDR }, on:true };
+    try{ var s = JSON.parse(lsGet('lkStamp') || 'null'); if(s && s.left && s.right){ d = { left:s.left, right:s.right, on:s.on !== false }; } }catch(e){}
+    return d;
+  })();
+  function stampLines(st){ return [st.name, st.designation, st.address].filter(function(v){ return v && String(v).trim(); }).join('\n').split('\n').filter(function(v){ return v.trim(); }); }
+
+  /* the filters that are switched on, as readable pairs */
+  function lkFilterPairs(kind){
+    var f = readFilters(kind), out = [];
+    DEF[kind].filters.forEach(function(d){
+      if(d.key === 'from' || d.key === 'to') return;
+      var v = f[d.key];
+      if(d.type === 'select'){ if(v && v.length) out.push([d.en, v.join(', ')]); }
+      else if(v && String(v).trim()){ out.push([d.en, String(v).trim()]); }
+    });
+    if(f.from || f.to) out.push(['Date', (f.from || '…') + '  to  ' + (f.to || '…')]);
+    return out;
+  }
+  function lkExportModel(kind){
+    var cols = visCols(kind), recs = sorted(kind, filtered(kind));
+    var st = SORT[kind], sc = DEF[kind].cols.filter(function(c){ return c.id === st.col; })[0];
+    var sortText = sc ? (sc.en + (sc.id === 'date' ? (st.dir < 0 ? ' (newest first)' : ' (oldest first)') : (st.dir > 0 ? ' (ascending)' : ' (descending)'))) : '';
+    var now = new Date(), iso = now.toISOString().slice(0, 10);
+    var isC = kind === 'cases';
+    return {
+      kind:kind, cols:cols, nRows:recs.length, total:DATA[kind].length,
+      rows:recs.map(function(r){ return cols.map(function(c){ var v = c.f(r); return String(v == null ? '' : v).replace(/\t/g, ' ').trim(); }); }),
+      pairs:lkFilterPairs(kind), sortText:sortText,
+      headLines:(isUrdu ? LK_HEAD_UR : LK_HEAD_EN).split('\n'),
+      title:isC ? 'DAILY CASES' : 'CASE NOTICES',
+      fileBase:'CampOffice-Lookup-' + (isC ? 'Cases' : 'Notices') + '-' + iso,
+      genDate:now.getDate() + ' ' + LK_MONTHS[now.getMonth()] + ' ' + now.getFullYear(),
+      stamp:LK_STAMP.on ? { left:LK_STAMP.left, right:LK_STAMP.right } : null
+    };
+  }
+  /* relative width of each column */
+  var LK_W = { no:1.6, title:2.9, officer:1.7, judge:2, bench:.85, serial:.6, date:1.05, nature:1, result:1.4, relief:1.3, remarks:2.4, section:1.3, btype:1, source:.8,
+               fir:1, station:1.5, district:1.2, sections:1.7, tehsil:1.2, srNo:.6, signatory:1.5 };
+
+  /* ---------------- PDF (pdf-lib, real vector text) ---------------- */
+  function pdfLatin(sx){ return /^[\x20-\x7E -ÿ–—‘’“”•…]*$/.test(sx); }
+  function pdfSafe(sx){ return String(sx == null ? '' : sx).replace(/[^\x20-\x7E -ÿ–—‘’“”•…]/g, '?'); }
+  function rasterFontStr(px, bold, sc){ return (bold ? 'bold ' : '') + (px * sc) + 'px "Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Segoe UI",Arial,sans-serif'; }
+  function rasterText(text, px, bold, color){
+    var sc = 3, cv = document.createElement('canvas'), cx = cv.getContext('2d');
+    var font = rasterFontStr(px, bold, sc);
+    cx.font = font;
+    var rtl = AR_RE.test(text);
+    cx.direction = rtl ? 'rtl' : 'ltr';
+    var w = Math.ceil(cx.measureText(text).width) + 8, h = Math.ceil(px * sc * 1.9);
+    cv.width = w; cv.height = h;
+    cx = cv.getContext('2d'); cx.font = font; cx.direction = rtl ? 'rtl' : 'ltr';
+    cx.fillStyle = color || '#111'; cx.textBaseline = 'middle'; cx.textAlign = rtl ? 'right' : 'left';
+    cx.fillText(text, rtl ? w - 4 : 4, h / 2);
+    return new Promise(function(res){ cv.toBlob(function(b){ b.arrayBuffer().then(function(ab){ res({bytes:new Uint8Array(ab), w:w / sc, h:h / sc}); }); }, 'image/png'); });
+  }
+  function rasterWrap(text, px, bold, width){
+    var cx = document.createElement('canvas').getContext('2d'); cx.font = rasterFontStr(px, bold, 1);
+    var lim = width / 0.78, words = text.split(/\s+/).filter(Boolean), lines = [], cur = '';
+    words.forEach(function(w0){
+      var t0 = cur ? cur + ' ' + w0 : w0;
+      if(cx.measureText(t0).width <= lim || !cur){ cur = t0; } else { lines.push(cur); cur = w0; }
+    });
+    if(cur) lines.push(cur);
+    return lines.length ? lines : [text];
+  }
+
+  async function buildLookupPdf(X){
+    var PL = window.PDFLib;
+    var doc = await PL.PDFDocument.create();
+    var fR = await doc.embedFont(PL.StandardFonts.Helvetica), fB = await doc.embedFont(PL.StandardFonts.HelveticaBold), fI = await doc.embedFont(PL.StandardFonts.HelveticaOblique);
+    var PW = 841.89, PH = 595.28, MG = 34, TOP = 26, BOT = 40, TW = PW - 2 * MG;
+    var NAVY = PL.rgb(0.106, 0.247, 0.388), NAVY2 = PL.rgb(0.165, 0.353, 0.518), GOLDL = PL.rgb(0.722, 0.525, 0.043);
+    var INK = PL.rgb(0.09, 0.11, 0.14), GREYTX = PL.rgb(0.35, 0.38, 0.42), WHITE = PL.rgb(1, 1, 1);
+    var ZEBRA = PL.rgb(0.957, 0.968, 0.982), BORDER = PL.rgb(0.74, 0.79, 0.85), BOXBG = PL.rgb(0.965, 0.973, 0.984);
+    var BS = 7.8, LH = 10, PADX = 3.5, PADV = 3;
+    var pages = [], page = null, y = 0;
+    function hline(x1, x2, yy, th, col){ page.drawLine({start:{x:x1, y:yy}, end:{x:x2, y:yy}, thickness:th, color:col}); }
+    function txt(t0, o){ page.drawText(pdfSafe(t0), o); }
+    function newPage(){ page = doc.addPage([PW, PH]); pages.push(page); y = PH - TOP; }
+    function wrapLatin(text, font, size, width){
+      var words = pdfSafe(text).split(/\s+/).filter(Boolean), lines = [], cur = '';
+      words.forEach(function(w0){
+        var t0 = cur ? cur + ' ' + w0 : w0;
+        if(font.widthOfTextAtSize(t0, size) <= width || !cur){ cur = t0; } else { lines.push(cur); cur = w0; }
+      });
+      if(cur) lines.push(cur);
+      var out = [];
+      lines.forEach(function(ln){
+        while(font.widthOfTextAtSize(ln, size) > width && ln.length > 2){
+          var k = ln.length; while(k > 1 && font.widthOfTextAtSize(ln.slice(0, k), size) > width) k--;
+          out.push(ln.slice(0, k)); ln = ln.slice(k);
+        }
+        out.push(ln);
+      });
+      return out.length ? out : [''];
+    }
+    async function layout(text, size, bold, hex, width){
+      var out = [], font = bold ? fB : fR;
+      var paras = String(text == null ? '' : text).replace(/\t/g, ' ').split(/\r?\n/);
+      for(var pi = 0; pi < paras.length; pi++){
+        var p0 = paras[pi]; if(!p0.trim()) continue;
+        if(pdfLatin(p0)){
+          wrapLatin(p0, font, size, width).forEach(function(l){ out.push({s:l, w:font.widthOfTextAtSize(l, size), bold:bold}); });
+        } else {
+          var rl = rasterWrap(p0, size, bold, width);
+          for(var li = 0; li < rl.length; li++){
+            var im = await rasterText(rl[li], size, bold, hex), emb = await doc.embedPng(im.bytes), hh = size * 1.55;
+            out.push({emb:emb, w:im.w * (hh / im.h), h:hh, rtl:AR_RE.test(rl[li])});
+          }
+        }
+      }
+      return out;
+    }
+    function drawLines(lines, x, yTop, width, o){
+      var yy = yTop, lh = o.lh || LH;
+      lines.forEach(function(ln){
+        var al = o.align || ((ln.emb && ln.rtl) ? 'r' : 'l');
+        var xx = al === 'c' ? x + (width - ln.w) / 2 : (al === 'r' ? x + width - ln.w : x);
+        if(ln.emb){ page.drawImage(ln.emb, {x:xx, y:yy - lh / 2 - ln.h / 2, width:ln.w, height:ln.h}); }
+        else { page.drawText(ln.s, {x:xx, y:yy - lh / 2 - o.size * 0.35, size:o.size, font:o.font || (ln.bold ? fB : fR), color:o.color}); }
+        yy -= lh;
+      });
+      return yy;
+    }
+    async function centredLine(text, size, bold, color, hex){
+      var ls = await layout(text, size, bold, hex, TW - 160), h = size * 1.45;
+      ls.forEach(function(ln){
+        if(ln.emb){ page.drawImage(ln.emb, {x:(PW - ln.w) / 2, y:y - h + 1, width:ln.w, height:ln.h}); }
+        else { page.drawText(ln.s, {x:(PW - ln.w) / 2, y:y - size, size:size, font:bold ? fB : fR, color:color}); }
+        y -= h;
+      });
+    }
+    var logo = await lkLogoBytes(), emblem = logo ? await doc.embedPng(logo) : null;
+
+    /* ---- page one: letterhead, title, information box ---- */
+    newPage();
+    var headTop = y;
+    if(emblem){ page.drawImage(emblem, {x:MG, y:y - 46, width:46 * LK_LOGO_RATIO, height:46}); }
+    y -= 1;
+    for(var i = 0; i < X.headLines.length; i++){ await centredLine(X.headLines[i], i === 0 ? 14.5 : 9.6, i === 0, i === 0 ? NAVY : GREYTX, i === 0 ? '#1b3f63' : '#555555'); }
+    y = Math.min(y, headTop - 48) - 3;
+    hline(MG, PW - MG, y, 2.2, GOLDL); hline(MG, PW - MG, y - 3.6, 0.7, NAVY);
+    y -= 15;
+    await centredLine(X.title + ' — LOOKUP RESULT', 14, true, NAVY, '#1b3f63');
+    var sub = 'Generated ' + X.genDate, sw0 = fR.widthOfTextAtSize(sub, 10);
+    txt(sub, {x:(PW - sw0) / 2, y:y - 9, size:10, font:fR, color:GREYTX});
+    y -= 19;
+
+    var boxW = TW, ix = MG + 16, iw = boxW - 32;
+    var filtTxt = X.pairs.length ? X.pairs.map(function(p){ return p[0] + ': ' + p[1]; }).join('   |   ') : 'None (all records)';
+    var filtL = await layout(filtTxt, 8.6, false, '#333333', iw);
+    var boxH = 8 + 22 + 12 + 9 + 3 + filtL.length * 11 + 8;
+    page.drawRectangle({x:MG, y:y - boxH, width:boxW, height:boxH, color:BOXBG, borderColor:BORDER, borderWidth:0.8});
+    page.drawRectangle({x:MG, y:y - boxH, width:4, height:boxH, color:NAVY2});
+    txt('RECORDS', {x:ix, y:y - 15, size:7.2, font:fB, color:GREYTX});
+    txt(X.nRows + ' of ' + X.total, {x:ix, y:y - 27, size:10.5, font:fB, color:INK});
+    txt('SORTED BY', {x:ix + boxW * 0.22, y:y - 15, size:7.2, font:fB, color:GREYTX});
+    txt(X.sortText || '—', {x:ix + boxW * 0.22, y:y - 27, size:10.5, font:fB, color:INK});
+    txt('FILTERS APPLIED', {x:ix, y:y - 8 - 22 - 12 - 3, size:7.2, font:fB, color:GREYTX});
+    drawLines(filtL, ix, y - 8 - 22 - 12 - 9 - 3, iw, {size:8.6, color:PL.rgb(0.2, 0.2, 0.2), lh:11});
+    y -= boxH + 10;
+
+    /* ---- column widths and header ---- */
+    var cols = X.cols, nC = cols.length, NUMW = 24;
+    var wts = cols.map(function(c){ return LK_W[c.id] || 1.2; }), wsum = 0; wts.forEach(function(w){ wsum += w; });
+    var cw = wts.map(function(w){ return (TW - NUMW) * w / wsum; });
+    var HS = 7.8;
+    (function(){
+      var words = []; cols.forEach(function(c){ String(c.en).split(/\s+/).forEach(function(w0){ if(w0) words.push([w0, cw[cols.indexOf(c)]]); }); });
+      function ok(sz){ return words.every(function(p){ return fB.widthOfTextAtSize(pdfSafe(p[0]), sz) <= p[1] - 2 * 3; }); }
+      while(HS > 5.4 && !ok(HS)) HS -= 0.2;
+    })();
+    var headLinesW = cols.map(function(c, i){ return wrapLatin(c.en, fB, HS, cw[i] - 6); });
+    var mxh = 1; headLinesW.forEach(function(w){ mxh = Math.max(mxh, w.length); });
+    var HDR_H = mxh * (HS + 2) + 10;
+    function tableHeader(){
+      var top = y, x = MG;
+      page.drawRectangle({x:x, y:top - HDR_H, width:NUMW, height:HDR_H, color:NAVY2, borderColor:WHITE, borderWidth:0.6});
+      var w0 = fB.widthOfTextAtSize('#', HS); txt('#', {x:x + (NUMW - w0) / 2, y:top - HDR_H / 2 - HS / 2 + 1, size:HS, font:fB, color:WHITE});
+      x += NUMW;
+      cols.forEach(function(c, i){
+        page.drawRectangle({x:x, y:top - HDR_H, width:cw[i], height:HDR_H, color:NAVY2, borderColor:WHITE, borderWidth:0.6});
+        var ls = headLinesW[i], ty = top - (HDR_H - ls.length * (HS + 2)) / 2 - HS + 0.5;
+        ls.forEach(function(ln, li){ var lw = fB.widthOfTextAtSize(ln, HS); txt(ln, {x:x + (cw[i] - lw) / 2, y:ty - li * (HS + 2), size:HS, font:fB, color:WHITE}); });
+        x += cw[i];
+      });
+      y -= HDR_H;
+    }
+    function contHeader(){
+      txt(X.title + ' — Lookup result  (continued)', {x:MG, y:y - 8, size:8, font:fI, color:GREYTX});
+      hline(MG, PW - MG, y - 13, 0.6, BORDER); y -= 24;
+    }
+    tableHeader();
+    var BOTLIM = BOT + 8;
+    if(!X.rows.length){
+      txt('No records match the filters.', {x:MG, y:y - 18, size:10, font:fI, color:GREYTX}); y -= 30;
+    }
+    for(var ri = 0; ri < X.rows.length; ri++){
+      var cellL = [];
+      for(var ci = 0; ci < nC; ci++){ cellL.push(await layout(X.rows[ri][ci], BS, false, '#1c3363', cw[ci] - 2 * PADX)); }
+      var maxL = 1; cellL.forEach(function(cl){ maxL = Math.max(maxL, cl.length); });
+      var rh = maxL * LH + 2 * PADV;
+      if(y - rh < BOTLIM){ newPage(); contHeader(); tableHeader(); }
+      var bg = (ri % 2) ? ZEBRA : WHITE, x = MG;
+      page.drawRectangle({x:x, y:y - rh, width:NUMW, height:rh, color:bg, borderColor:BORDER, borderWidth:0.5});
+      var ns = String(ri + 1), nw = fR.widthOfTextAtSize(ns, BS);
+      txt(ns, {x:x + (NUMW - nw) / 2, y:y - PADV - LH / 2 - BS * 0.35, size:BS, font:fR, color:GREYTX});
+      x += NUMW;
+      for(var cj = 0; cj < nC; cj++){
+        page.drawRectangle({x:x, y:y - rh, width:cw[cj], height:rh, color:bg, borderColor:BORDER, borderWidth:0.5});
+        drawLines(cellL[cj], x + PADX, y - PADV, cw[cj] - 2 * PADX, {size:BS, color:PL.rgb(0.11, 0.2, 0.39), lh:LH});
+        x += cw[cj];
+      }
+      y -= rh;
+    }
+
+    /* ---- sign-off, once, at the very end ---- */
+    if(X.stamp){
+      var stL = stampLines(X.stamp.left), stR = stampLines(X.stamp.right), mxs = Math.max(stL.length, stR.length);
+      var signH = 10 + 26 + mxs * 10.8 + 4;
+      if(y - signH < BOT - 2){ newPage(); contHeader(); }
+      y -= 10;
+      var signCol = async function(label, lines, rightAlign){
+        var lineW = 190, x0 = rightAlign ? PW - MG - lineW : MG;
+        txt(label, {x:x0, y:y - 8, size:7.6, font:fB, color:GREYTX});
+        hline(x0, x0 + lineW, y - 22, 0.8, INK);
+        var yy = y - 25;
+        for(var k = 0; k < lines.length; k++){
+          var bold = k === 0, ls = await layout(lines[k], 8.8, bold, bold ? '#111111' : '#555555', 330);
+          ls.forEach(function(ln){
+            if(ln.emb){ page.drawImage(ln.emb, {x:rightAlign ? PW - MG - ln.w : MG, y:yy - ln.h + 2, width:ln.w, height:ln.h}); }
+            else { page.drawText(ln.s, {x:rightAlign ? PW - MG - ln.w : MG, y:yy - 8.8, size:8.8, font:bold ? fB : fR, color:bold ? INK : GREYTX}); }
+            yy -= 10.8;
+          });
+        }
+      };
+      await signCol('PREPARED BY', stL, false); await signCol('APPROVED BY', stR, true);
+    }
+
+    var tot = pages.length;
+    pages.forEach(function(pg, i){
+      pg.drawLine({start:{x:MG, y:30}, end:{x:PW - MG, y:30}, thickness:0.6, color:BORDER});
+      pg.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:MG, y:19, size:7, font:fR, color:GREYTX});
+      var mid = 'Generated ' + X.genDate, mw = fR.widthOfTextAtSize(mid, 7);
+      pg.drawText(mid, {x:(PW - mw) / 2, y:19, size:7, font:fR, color:GREYTX});
+      var pn = 'Page ' + (i + 1) + ' of ' + tot, pw0 = fB.widthOfTextAtSize(pn, 7.4);
+      pg.drawText(pn, {x:PW - MG - pw0, y:19, size:7.4, font:fB, color:NAVY});
+    });
+    doc.setTitle(pdfSafe(X.title + ' — Lookup result — ' + X.genDate));
+    doc.setCreator('Camp Office, Prosecutor General Punjab');
+    doc.setAuthor((X.stamp && X.stamp.left.name && X.stamp.left.name.trim()) ? pdfSafe(X.stamp.left.name.trim()) : 'Camp Office, Prosecutor General Punjab');
+    return await doc.save();
+  }
+
+  /* ---------------- Excel (.xlsx) ---------------- */
+  async function buildLookupXlsx(X){
+    var cols = X.cols, nC = cols.length + 1, lastCol = nC - 1, L = colLetter(lastCol);     // column A = row number
+    var wts = cols.map(function(c){ return LK_W[c.id] || 1.2; });
+    var widths = [5].concat(wts.map(function(w){ return Math.max(9, Math.min(60, Math.round(w * 11))); }));
+    function t(ref, text, st){ return '<c r="'+ref+'" s="'+st+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEsc(text)+'</t></is></c>'; }
+    function blank(ref, st){ return '<c r="'+ref+'" s="'+st+'"/>'; }
+    function lineCount(text, perLine){
+      var n = 0;
+      String(text).split(/\r?\n/).forEach(function(p){
+        var cur = 0, ln = 1;
+        p.split(/\s+/).filter(Boolean).forEach(function(w){
+          if(cur && cur + 1 + w.length > perLine){ ln++; cur = w.length; } else { cur += (cur ? 1 : 0) + w.length; }
+          while(cur > perLine){ ln++; cur -= perLine; }
+        });
+        n += ln;
+      });
+      return Math.max(1, n);
+    }
+    var rows = '', merges = [], rowNo = 0;
+    function addRow(cells, ht){ rowNo++; rows += '<row r="'+rowNo+'"'+(ht ? ' ht="'+ht+'" customHeight="1"' : '')+'>'+cells(rowNo)+'</row>'; return rowNo; }
+    function mergedRow(text, st, ht){ return addRow(function(rn){ merges.push('A'+rn+':'+L+rn); return t('A'+rn, text, st); }, ht); }
+    var heads = X.headLines.slice(); while(heads.length < 3) heads.push('');
+    heads.forEach(function(line, i){ mergedRow(line, i === 0 ? 1 : 2, i === 0 ? 24 : 16); });
+    mergedRow(X.title + ' — LOOKUP RESULT', 3, 22);
+    mergedRow('Generated ' + X.genDate, 4, 18);
+    addRow(function(){ return ''; }, 6);
+    var totalW = 0; widths.forEach(function(w){ totalW += w; });
+    var filtTxt = X.pairs.length ? X.pairs.map(function(p){ return p[0] + ': ' + p[1]; }).join('   |   ') : 'None (all records)';
+    mergedRow('RECORDS:  ' + X.nRows + ' of ' + X.total + '        SORTED BY:  ' + (X.sortText || '—'), 5, 20);
+    mergedRow('FILTERS APPLIED:  ' + filtTxt, 6, Math.min(120, 4 + 12.5 * lineCount('FILTERS APPLIED:  ' + filtTxt, Math.floor(totalW * 1.05))));
+    addRow(function(){ return ''; }, 8);
+    var headRow = addRow(function(rn){
+      return t('A'+rn, '#', 8) + cols.map(function(c, i){ return t(colLetter(i+1)+rn, c.en, 8); }).join('');
+    }, 24);
+    X.rows.forEach(function(r, ri){
+      var mx = 1;
+      r.forEach(function(v, i){ if(v) mx = Math.max(mx, lineCount(v, Math.max(6, Math.floor(widths[i+1] * 1.2)))); });
+      var st = (ri % 2) ? 10 : 9;
+      addRow(function(rn){
+        return t('A'+rn, String(ri + 1), (ri % 2) ? 12 : 11) + r.map(function(v, i){ return v ? t(colLetter(i+1)+rn, v, st) : blank(colLetter(i+1)+rn, st); }).join('');
+      }, Math.min(400, 5 + 12 * mx));
+    });
+    var lastData = rowNo;
+    if(!X.rows.length){ mergedRow('No records match the filters.', 6, 20); }
+    if(X.stamp){
+      addRow(function(){ return ''; }, 14);
+      var sl = stampLines(X.stamp.left), sr2 = stampLines(X.stamp.right), mxl = Math.max(sl.length, sr2.length);
+      var leftEnd = Math.floor(lastCol / 2), rightStart = leftEnd + 1, LE = colLetter(leftEnd), RS = colLetter(rightStart);
+      function mergeSide(rn, side){
+        var s = side === 'L' ? 0 : rightStart, e = side === 'L' ? leftEnd : lastCol;
+        if(e > s) merges.push(colLetter(s) + rn + ':' + colLetter(e) + rn);
+      }
+      addRow(function(rn){ mergeSide(rn, 'L'); mergeSide(rn, 'R'); return t('A'+rn, 'PREPARED BY', 13) + t(RS+rn, 'APPROVED BY', 18); }, 14);
+      addRow(function(rn){
+        mergeSide(rn, 'L'); mergeSide(rn, 'R');
+        var o = ''; for(var c0 = 0; c0 <= leftEnd; c0++) o += blank(colLetter(c0)+rn, 19);
+        for(var c1 = rightStart; c1 <= lastCol; c1++) o += blank(colLetter(c1)+rn, 20);
+        return o;
+      }, 30);
+      for(var i = 0; i < mxl; i++){
+        (function(i){ addRow(function(rn){
+          var o = '';
+          if(sl[i]){ mergeSide(rn, 'L'); o += t('A'+rn, sl[i], i === 0 ? 14 : 16); }
+          if(sr2[i]){ mergeSide(rn, 'R'); o += t(RS+rn, sr2[i], i === 0 ? 15 : 17); }
+          return o;
+        }, 14); })(i);
+      }
+    }
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="11">' +
+      '<font><sz val="10"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="14"/><color rgb="FF1B3F63"/><name val="Arial"/></font>' +
+      '<font><sz val="9.5"/><color rgb="FF555555"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="13"/><color rgb="FF1B3F63"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="10.5"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>' +
+      '<font><sz val="9"/><color rgb="FF1C3363"/><name val="Arial"/></font>' +
+      '<font><sz val="9"/><color rgb="FF555555"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="7.5"/><color rgb="FF5A6470"/><name val="Arial"/></font>' +
+      '<font><b/><sz val="9"/><color rgb="FF111111"/><name val="Arial"/></font>' +
+      '<font><sz val="9"/><color rgb="FF555555"/><name val="Arial"/></font>' +
+      '</fonts>' +
+      '<fills count="5"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFF4F7FB"/><bgColor indexed="64"/></patternFill></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFF6F8FB"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+      '<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+      '<border><left style="thin"><color rgb="FFBFCAD9"/></left><right style="thin"><color rgb="FFBFCAD9"/></right><top style="thin"><color rgb="FFBFCAD9"/></top><bottom style="thin"><color rgb="FFBFCAD9"/></bottom><diagonal/></border>' +
+      '<border><left/><right/><top style="thin"><color rgb="FF222222"/></top><bottom/><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="21">' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                                                                                                                                  // 0
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                                              // 1 heading
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                                              // 2 sub heading
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                                              // 3 title
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +                                                              // 4 generated
+      '<xf numFmtId="0" fontId="4" fillId="4" borderId="0" xfId="0" applyFont="1" applyFill="1"><alignment horizontal="left" vertical="center" wrapText="1" indent="1"/></xf>' +                        // 5 info bold
+      '<xf numFmtId="0" fontId="0" fillId="4" borderId="0" xfId="0" applyFill="1"><alignment horizontal="left" vertical="top" wrapText="1" indent="1"/></xf>' +                                         // 6 info text
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +                                                                                                                                  // 7 spare
+      '<xf numFmtId="0" fontId="5" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +                // 8 table head
+      '<xf numFmtId="0" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>' +                                   // 9 cell
+      '<xf numFmtId="0" fontId="6" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>' +                    // 10 cell zebra
+      '<xf numFmtId="0" fontId="7" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"><alignment horizontal="center" vertical="top"/></xf>' +                                             // 11 number
+      '<xf numFmtId="0" fontId="7" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="top"/></xf>' +                              // 12 number zebra
+      '<xf numFmtId="0" fontId="8" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                                              // 13 label left
+      '<xf numFmtId="0" fontId="9" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                                              // 14 stamp name L
+      '<xf numFmtId="0" fontId="9" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                                             // 15 stamp name R
+      '<xf numFmtId="0" fontId="10" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +                                                            // 16 stamp line L
+      '<xf numFmtId="0" fontId="10" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                                           // 17 stamp line R
+      '<xf numFmtId="0" fontId="8" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="right" vertical="center"/></xf>' +                                                             // 18 label right
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1"/>' +                                                                                                                // 19 sign line L
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1"/>' +                                                                                                                // 20 sign line R
+      '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+
+    var NS_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    var sheetNm = X.kind === 'cases' ? 'Daily Cases' : 'Case Notices';
+    var logo = await lkLogoBytes();
+    var logoH = 56, logoW = Math.round(logoH * LK_LOGO_RATIO), cx0 = logoW * 9525, cy0 = logoH * 9525;
+    var drawing = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="'+NS_R+'">' +
+      '<xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>76200</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>38100</xdr:rowOff></xdr:from><xdr:ext cx="'+cx0+'" cy="'+cy0+'"/>' +
+      '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="Government of Punjab" descr="Government of Punjab"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
+      '<xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+      '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx0+'" cy="'+cy0+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>';
+    var footerTxt = '&amp;L&amp;"Arial,Regular"&amp;7Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad&amp;C&amp;"Arial,Regular"&amp;7Generated ' + xmlEsc(X.genDate) + '&amp;R&amp;"Arial,Bold"&amp;7Page &amp;P of &amp;N';
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="'+NS_MAIN+'" xmlns:r="'+NS_R+'">' +
+      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0" tabSelected="1"><pane ySplit="'+headRow+'" topLeftCell="A'+(headRow+1)+'" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A'+(headRow+1)+'" sqref="A'+(headRow+1)+'"/></sheetView></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + rows + '</sheetData>' + (X.rows.length ? '<autoFilter ref="A'+headRow+':'+L+(headRow + X.rows.length)+'"/>' : '') +
+      (merges.length ? '<mergeCells count="'+merges.length+'">' + merges.map(function(m){ return '<mergeCell ref="'+m+'"/>'; }).join('') + '</mergeCells>' : '') +
+      '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.6" header="0.25" footer="0.3"/>' +
+      '<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
+      '<headerFooter><oddFooter>'+footerTxt+'</oddFooter></headerFooter>' + (logo ? '<drawing r:id="rId1"/>' : '') + '</worksheet>';
+    var zip = new JSZip();
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      (logo ? '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' : '') +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+    var dn = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'' + sheetNm + '\'!$' + headRow + ':$' + headRow + '</definedName>' +
+      (X.rows.length ? '<definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'' + sheetNm + '\'!$A$' + headRow + ':$' + L + '$' + (headRow + X.rows.length) + '</definedName>' : '');
+    zip.file('xl/workbook.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="'+NS_MAIN+'" xmlns:r="'+NS_R+'"><bookViews><workbookView/></bookViews><sheets><sheet name="'+sheetNm+'" sheetId="1" r:id="rId1"/></sheets><definedNames>' + dn + '</definedNames></workbook>');
+    zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+    zip.file('xl/styles.xml', styles);
+    zip.file('xl/worksheets/sheet1.xml', sheet);
+    if(logo){
+      zip.file('xl/media/logo.png', logo);
+      zip.file('xl/worksheets/_rels/sheet1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>');
+      zip.file('xl/drawings/drawing1.xml', drawing);
+      zip.file('xl/drawings/_rels/drawing1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/logo.png"/></Relationships>');
+    }
+    return await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+
+  /* ---------------- the small "Export" window: sign-off texts + Download ---------------- */
+  var EXP = { kind:'cases', fmt:'pdf', from:null };
+  function expField(side, key){ return document.getElementById('exp_' + side + '_' + key); }
+  function openExport(kind, fmt, from){
+    EXP.kind = kind; EXP.fmt = fmt; EXP.from = from || null;
+    var X = lkExportModel(kind);
+    document.getElementById('expTitle').textContent = (isUrdu ? 'ایکسپورٹ — ' : 'Export — ') + (fmt === 'pdf' ? 'PDF' : 'Excel');
+    document.getElementById('expSub').textContent = (isUrdu ? 'ریکارڈ: ' : 'Records: ') + X.nRows + (isUrdu ? ' از ' : ' of ') + X.total + (X.pairs.length ? '' : (isUrdu ? ' (کوئی فلٹر نہیں)' : ' (no filter)'));
+    ['left','right'].forEach(function(s){ ['name','designation','address'].forEach(function(k){ expField(s, k).value = LK_STAMP[s][k] || ''; }); });
+    document.getElementById('exp_on').checked = LK_STAMP.on;
+    expToggle();
+    document.getElementById('expErr').textContent = '';
+    document.getElementById('expGo').disabled = false;
+    document.getElementById('expBack').hidden = false;
+    document.getElementById('expX').focus();
+  }
+  function closeExport(){
+    var b = document.getElementById('expBack'); if(b.hidden) return;
+    b.hidden = true;
+    if(EXP.from && EXP.from.focus && document.body.contains(EXP.from)) EXP.from.focus();
+    EXP.from = null;
+  }
+  function expToggle(){ document.getElementById('expFields').style.opacity = document.getElementById('exp_on').checked ? '1' : '.45'; }
+  async function expGo(){
+    var btn = document.getElementById('expGo'), err = document.getElementById('expErr');
+    ['left','right'].forEach(function(s){ ['name','designation','address'].forEach(function(k){ LK_STAMP[s][k] = expField(s, k).value.trim(); }); });
+    LK_STAMP.on = document.getElementById('exp_on').checked;
+    lsSet('lkStamp', JSON.stringify(LK_STAMP));
+    btn.disabled = true; err.textContent = isUrdu ? 'فائل بن رہی ہے…' : 'Building the file…';
+    try{
+      var X = lkExportModel(EXP.kind);
+      if(EXP.fmt === 'pdf'){
+        await rLoadLib('pdflib');
+        var bytes = await buildLookupPdf(X);
+        lkDownloadBlob(new Blob([bytes], {type:'application/pdf'}), X.fileBase + '.pdf');
+      } else {
+        await rLoadLib('jszip');
+        lkDownloadBlob(await buildLookupXlsx(X), X.fileBase + '.xlsx');
+      }
+      closeExport();
+    }catch(e){
+      console.error(e);
+      err.textContent = (isUrdu ? 'فائل نہیں بن سکی: ' : 'Could not build the file: ') + (e && e.message ? e.message : e);
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('expX').addEventListener('click', closeExport);
+  document.getElementById('expCancel').addEventListener('click', closeExport);
+  document.getElementById('expGo').addEventListener('click', expGo);
+  document.getElementById('exp_on').addEventListener('change', expToggle);
+  document.getElementById('expBack').addEventListener('click', function(e){ if(e.target === this) closeExport(); });
+  document.addEventListener('keydown', function(e){
+    var bk = document.getElementById('expBack'); if(bk.hidden) return;
+    if(e.key === 'Escape'){ closeExport(); return; }
+    if(e.key === 'Tab'){
+      var f = document.getElementById('expBox').querySelectorAll('input:not([disabled]), textarea, button:not([disabled])');
+      if(!f.length) return;
+      var first = f[0], lastEl = f[f.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); lastEl.focus(); }
+      else if(!e.shiftKey && document.activeElement === lastEl){ e.preventDefault(); first.focus(); }
+      else if(!document.getElementById('expBox').contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    }
+  });
+  document.querySelectorAll('[data-exp]').forEach(function(b){
+    b.addEventListener('click', function(){ var p = b.getAttribute('data-exp').split(':'); openExport(p[0], p[1], b); });
+  });
+
 
   /* one-time wiring of the clicks on filters, quick dates, columns menu, headers and pager */
   function initLookupEvents(kind){

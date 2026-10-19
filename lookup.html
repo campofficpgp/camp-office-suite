@@ -397,6 +397,19 @@ html,body{overflow-x:hidden;}
 .exp-ft{ display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--border); margin-top:8px; }
 .exp-err{ flex:1; font-size:12.5px; color:var(--muted); min-width:140px; }
 @media (max-width:600px){ .exp-grid{ grid-template-columns:1fr; } }
+.dq-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; flex:none; }
+.dq-dot.fix{ background:#c62828; }
+.dq-dot.check{ background:#d99a00; }
+.dq-tag{ display:inline-flex; align-items:center; gap:6px; margin:1px 10px 1px 0; font-size:12px; color:var(--text); }
+.dq-edit{ display:inline-block; margin-top:5px; padding:3px 12px; font-size:12px; text-decoration:none; }
+.hist-table td.dq-pr{ min-width:190px; }
+.dq-pr .dq-tag{ display:flex; margin:2px 0; }
+.dq-chips{ display:flex; flex-wrap:wrap; gap:6px; padding:10px 16px 0; }
+.dq-chips:empty{ display:none; }
+.dq-chips .lk-pill{ text-align:start; }
+.dq-bar{ display:flex; gap:8px 18px; flex-wrap:wrap; align-items:center; padding:10px 16px 0; }
+.dq-bar:empty{ display:none; }
+.dq-more{ display:flex; gap:10px; align-items:center; justify-content:center; padding:12px 0 0; font-size:12.5px; color:var(--muted); }
 .hist-facts{ display:flex; gap:8px 18px; flex-wrap:wrap; padding:10px 16px; font-size:12.5px; border-bottom:1px solid var(--border); }
 .hist-facts b{ color:var(--navy); }
 .hist-body{ padding:10px 16px 16px; overflow-x:auto; }
@@ -487,6 +500,7 @@ html,body{overflow-x:hidden;}
         <span class="lk-count" id="cCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('cases')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
         <span class="cols-wrap" id="cSaved"></span>
+        <button class="lk-btn ghost" type="button" data-dq="cases" data-en="Data check" data-ur="ڈیٹا کی جانچ">Data check</button>
         <span class="cols-wrap" id="cCols"></span>
         <button class="lk-btn ghost" id="cSumBtn" type="button" aria-expanded="true" aria-controls="cSum"></button>
         <button class="lk-btn" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
@@ -510,6 +524,7 @@ html,body{overflow-x:hidden;}
         <span class="lk-count" id="nCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('notices')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
         <span class="cols-wrap" id="nSaved"></span>
+        <button class="lk-btn ghost" type="button" data-dq="notices" data-en="Data check" data-ur="ڈیٹا کی جانچ">Data check</button>
         <span class="cols-wrap" id="nCols"></span>
         <button class="lk-btn" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
         <button class="lk-btn" type="button" data-exp="notices:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
@@ -543,6 +558,15 @@ html,body{overflow-x:hidden;}
     <div class="exp-ft"><span id="expErr" role="status" aria-live="polite" class="exp-err"></span>
       <button type="button" class="lk-btn ghost" id="expCancel" data-en="Cancel" data-ur="منسوخ">Cancel</button>
       <button type="button" class="lk-btn" id="expGo" data-en="Download" data-ur="ڈاؤن لوڈ کریں">Download</button></div>
+  </div>
+</div>
+
+<div class="hist-back" id="dqBack" hidden>
+  <div class="hist-box" role="dialog" aria-modal="true" aria-labelledby="dqTitle" id="dqBox">
+    <div class="hist-hd"><div><h3 id="dqTitle"></h3><p id="dqSub" role="status" aria-live="polite"></p></div><button type="button" class="hist-x" id="dqX" aria-label="Close">✕</button></div>
+    <div class="dq-bar"><label class="exp-chk"><input type="checkbox" id="dqScope"> <span id="dqScopeLab"></span></label><span id="dqLegend"></span></div>
+    <div class="dq-chips" id="dqChips"></div>
+    <div class="hist-body" id="dqBody"></div>
   </div>
 </div>
 
@@ -827,6 +851,7 @@ html,body{overflow-x:hidden;}
     });
     renderColsMenu(kind);
     renderSavedMenu(kind);
+    renderDqBtn(kind);
   }
 
   /* quick date buttons */
@@ -1684,6 +1709,190 @@ html,body{overflow-x:hidden;}
     });
   }
   initSavedEvents('cases'); initSavedEvents('notices');
+
+  /* ================= Step 3c: data check (find records with problems) =================
+     Looks through the records of a tab and lists the ones that break the office rules or look wrong:
+     missing Case No / Title, a Case No that is not "142" or "12345-L", a bad year or date, a case type that is not in the
+     master table, a category that does not belong to the case type, the same case entered twice on the same date,
+     and (as "check" items) empty Officer / Judge / Bench / Result, very old or future dates.
+     It only SHOWS the problems - nothing is changed. Each row has an Edit link to fix it on the entry page. */
+  var DQ_DEF = {
+    cases: [
+      { id:'req',      sev:'fix',   en:'Case No or Title missing',          ur:'کیس نمبر یا عنوان خالی' },
+      { id:'caseno',   sev:'fix',   en:'Case No not in the right shape',    ur:'کیس نمبر کی شکل غلط (مثلاً 142 یا 12345-L)' },
+      { id:'year',     sev:'fix',   en:'Year missing or wrong',             ur:'سال خالی یا غلط' },
+      { id:'date',     sev:'fix',   en:'Date missing or invalid',           ur:'تاریخ خالی یا غلط' },
+      { id:'type',     sev:'fix',   en:'Case Type not in the master list',  ur:'کیس کی قسم ماسٹر فہرست میں نہیں' },
+      { id:'category', sev:'fix',   en:'Category does not belong to the Case Type', ur:'زمرہ اس کیس کی قسم سے میل نہیں کھاتا' },
+      { id:'dup',      sev:'fix',   en:'Same case entered twice on the same date',  ur:'ایک ہی کیس ایک ہی تاریخ پر دو بار' },
+      { id:'future',   sev:'check', en:'Date is in the future',             ur:'تاریخ آنے والے دنوں کی ہے' },
+      { id:'old',      sev:'check', en:'Date is very old (before 2015)',    ur:'تاریخ بہت پرانی ہے (2015 سے پہلے)' },
+      { id:'typesp',   sev:'check', en:'Case Type spelled differently',     ur:'کیس کی قسم کا ہجے مختلف' },
+      { id:'catsp',    sev:'check', en:'Category spelled wrongly',          ur:'زمرے کا ہجے غلط' },
+      { id:'officer',  sev:'check', en:'Officer empty',                     ur:'آفیسر خالی' },
+      { id:'judge',    sev:'check', en:'Judge empty',                       ur:'جج خالی' },
+      { id:'bench',    sev:'check', en:'Bench empty',                       ur:'بینچ خالی' },
+      { id:'result',   sev:'check', en:'Result empty',                      ur:'نتیجہ خالی' }
+    ],
+    notices: [
+      { id:'req',      sev:'fix',   en:'Case No or Title missing',          ur:'کیس نمبر یا عنوان خالی' },
+      { id:'caseno',   sev:'fix',   en:'Case No not in the right shape',    ur:'کیس نمبر کی شکل غلط (مثلاً 142 یا 12345-L)' },
+      { id:'year',     sev:'fix',   en:'Year missing or wrong',             ur:'سال خالی یا غلط' },
+      { id:'date',     sev:'fix',   en:'Date missing or invalid',           ur:'تاریخ خالی یا غلط' },
+      { id:'type',     sev:'fix',   en:'Case Type not in the master list',  ur:'کیس کی قسم ماسٹر فہرست میں نہیں' },
+      { id:'category', sev:'fix',   en:'Category does not belong to the Case Type', ur:'زمرہ اس کیس کی قسم سے میل نہیں کھاتا' },
+      { id:'dup',      sev:'fix',   en:'Same case noticed twice on the same date',  ur:'ایک ہی کیس کا نوٹس ایک ہی تاریخ پر دو بار' },
+      { id:'old',      sev:'check', en:'Date is very old (before 2015)',    ur:'تاریخ بہت پرانی ہے (2015 سے پہلے)' },
+      { id:'typesp',   sev:'check', en:'Case Type spelled differently',     ur:'کیس کی قسم کا ہجے مختلف' },
+      { id:'catsp',    sev:'check', en:'Category spelled wrongly',          ur:'زمرے کا ہجے غلط' },
+      { id:'district', sev:'check', en:'District empty',                    ur:'ضلع خالی' },
+      { id:'station',  sev:'check', en:'Police Station empty',              ur:'تھانہ خالی' },
+      { id:'bench',    sev:'check', en:'Bench empty',                       ur:'بینچ خالی' },
+      { id:'firyear',  sev:'check', en:'FIR No and FIR year do not go together', ur:'ایف آئی آر نمبر اور سال میں سے ایک خالی' },
+      { id:'mobile',   sev:'check', en:'Mobile number looks wrong',         ur:'موبائل نمبر درست نہیں لگتا' }
+    ]
+  };
+  function dqDef(kind, id){ return DQ_DEF[kind].filter(function(d){ return d.id === id; })[0]; }
+  function dqEmpty(v){ var s = String(v == null ? '' : v).trim(); return s === '' || s === '—' || s === '-' || s === '–'; }
+  function dqRealDate(s){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    var p = s.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.getFullYear() === +p[0] && d.getMonth() === +p[1] - 1 && d.getDate() === +p[2];
+  }
+  function dqScan(kind, rows){
+    var today = ymd(new Date()), thisYear = new Date().getFullYear();
+    var groups = {};
+    rows.forEach(function(r){
+      if(dqEmpty(r.caseNo) || dqEmpty(r.date)) return;
+      var k = caseIdent(r) + '|' + r.date;
+      (groups[k] = groups[k] || []).push(r);
+    });
+    var counts = {}, items = [];
+    rows.forEach(function(r){
+      var ids2 = [], add = function(id){ if(ids2.indexOf(id) < 0) ids2.push(id); };
+      var no = normNo(r.caseNo);
+      if(dqEmpty(r.caseNo) || dqEmpty(r.title)) add('req');
+      if(!dqEmpty(r.caseNo) && !/^\d{1,8}(-[A-Z]{1,2})?$/.test(no)) add('caseno');
+      var y = String(r.year == null ? '' : r.year).trim();
+      if(!/^\d{4}$/.test(y) || +y < 1950 || +y > thisYear) add('year');
+      var dt = String(r.date == null ? '' : r.date).trim();
+      if(!dqRealDate(dt)) add('date');
+      else {
+        if(kind === 'cases' && dt > today) add('future');
+        if(+dt.slice(0, 4) < 2015) add('old');
+      }
+      var typeKnown = false;
+      if(dqEmpty(r.type) || !CaseMaster.canonType(r.type)) add('type');
+      else { typeKnown = true; if(CaseMaster.canonType(r.type) !== String(r.type).trim()) add('typesp'); }
+      if(!dqEmpty(r.relief) && typeKnown){
+        if(!CaseMaster.allows(r.type, r.relief)) add('category');
+        else if(CaseMaster.fix(r.relief) !== String(r.relief).trim()) add('catsp');
+      }
+      if(!dqEmpty(r.caseNo) && !dqEmpty(r.date) && groups[caseIdent(r) + '|' + r.date].length > 1) add('dup');
+      if(kind === 'cases'){
+        if(dqEmpty(r.officer)) add('officer');
+        if(dqEmpty(r.judge)) add('judge');
+        if(dqEmpty(r.bench)) add('bench');
+        if(dqEmpty(r.result)) add('result');
+      } else {
+        if(dqEmpty(r.district)) add('district');
+        if(dqEmpty(r.station)) add('station');
+        if(dqEmpty(r.bench)) add('bench');
+        var fn = !dqEmpty(r.firNo), fy = !dqEmpty(r.firYear);
+        if(fn !== fy) add('firyear');
+        if(!dqEmpty(r.mobile)){ var dg = String(r.mobile).replace(/\D/g, ''); if(!(/^03\d{9}$/.test(dg) || /^923\d{9}$/.test(dg))) add('mobile'); }
+      }
+      if(ids2.length){
+        ids2.forEach(function(id){ counts[id] = (counts[id] || 0) + 1; });
+        items.push({ r:r, ids:ids2, fix: ids2.filter(function(id){ return dqDef(kind, id).sev === 'fix'; }).length });
+      }
+    });
+    items.sort(function(a, b){ return (b.fix > 0) - (a.fix > 0) || String(b.r.date || '').localeCompare(String(a.r.date || '')); });
+    return { items:items, counts:counts, checked:rows.length };
+  }
+  var DQ_CACHE = {};
+  function dqAll(kind){
+    var sig = JSON.stringify(CaseMaster.items()) + '#' + ymd(new Date());
+    var c = DQ_CACHE[kind];
+    if(c && c.src === DATA[kind] && c.n === DATA[kind].length && c.sig === sig) return c.res;
+    var res = dqScan(kind, DATA[kind]);
+    DQ_CACHE[kind] = { src:DATA[kind], n:DATA[kind].length, sig:sig, res:res };
+    return res;
+  }
+  function renderDqBtn(kind){
+    var b = document.querySelector('[data-dq="' + kind + '"]'); if(!b) return;
+    var res = dqAll(kind), n = res.items.length;
+    b.textContent = (isUrdu ? 'ڈیٹا کی جانچ' : 'Data check') + (DATA[kind].length ? (n ? ' (' + n + ')' : ' ✓') : '');
+  }
+  var DQ = { kind:'cases', only:null, scope:false, limit:100, from:null };
+  function dqRows(){ return DQ.scope ? filtered(DQ.kind) : DATA[DQ.kind]; }
+  function renderDq(){
+    var kind = DQ.kind, res = DQ.scope ? dqScan(kind, dqRows()) : dqAll(kind);
+    var title = (kind === 'cases' ? (isUrdu ? 'ڈیٹا کی جانچ — یومیہ کیسز' : 'Data check — Daily Cases') : (isUrdu ? 'ڈیٹا کی جانچ — کیس نوٹسز' : 'Data check — Case Notices'));
+    document.getElementById('dqTitle').textContent = title;
+    document.getElementById('dqSub').textContent = res.items.length
+      ? (isUrdu ? res.checked + ' میں سے ' + res.items.length + ' ریکارڈ میں مسئلہ ملا۔ یہ صرف دکھاتا ہے، خود کچھ نہیں بدلتا۔' : res.items.length + ' of ' + res.checked + ' records have a problem. This only shows them; nothing is changed.')
+      : (isUrdu ? res.checked + ' ریکارڈ دیکھے، کوئی مسئلہ نہیں ملا ✓' : 'Checked ' + res.checked + ' records - no problems found ✓');
+    document.getElementById('dqScopeLab').textContent = isUrdu ? 'صرف موجودہ فلٹر کے ریکارڈ دیکھیں' : 'Check only the records matching the current filters';
+    var defs = DQ_DEF[kind].filter(function(d){ return res.counts[d.id]; });
+    if(DQ.only && !res.counts[DQ.only]) DQ.only = null;
+    document.getElementById('dqChips').innerHTML = defs.length ? ('<button type="button" class="lk-pill" data-dq-only="" aria-pressed="' + (!DQ.only) + '">' + (isUrdu ? 'سب' : 'All') + ' <b>' + res.items.length + '</b></button>' +
+      defs.map(function(d){ return '<button type="button" class="lk-pill" data-dq-only="' + d.id + '" aria-pressed="' + (DQ.only === d.id) + '"><span class="dq-dot ' + d.sev + '" aria-hidden="true"></span>' + esc(isUrdu ? d.ur : d.en) + ' <b>' + res.counts[d.id] + '</b></button>'; }).join('')) : '';
+    var list = DQ.only ? res.items.filter(function(it){ return it.ids.indexOf(DQ.only) >= 0; }) : res.items;
+    var shown = list.slice(0, DQ.limit);
+    var editPage = kind === 'cases' ? 'case-entry.html' : 'case-notice.html';
+    var H = [isUrdu ? 'کیس نمبر' : 'Case No', isUrdu ? 'مسئلہ' : 'Problem', isUrdu ? 'عنوان' : 'Title', isUrdu ? 'تاریخ' : 'Date'];
+    var body = '';
+    if(list.length){
+      body = '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        shown.map(function(it){
+          var r = it.r;
+          return '<tr><td>' + esc(((r.type || '') + ' ' + (r.caseNo || '') + (r.year ? '/' + r.year : '')).trim() || '—') +
+            (CAN_WRITE ? '<br><a class="lk-btn ghost dq-edit" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '') + '</td>' +
+            '<td class="dq-pr">' + it.ids.map(function(id){ var d = dqDef(kind, id); return '<span class="dq-tag"><span class="dq-dot ' + d.sev + '" aria-hidden="true"></span>' + esc(isUrdu ? d.ur : d.en) + '</span>'; }).join('') + '</td>' +
+            '<td>' + esc((r.title || '') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : '') || '—') + '</td>' +
+            '<td style="white-space:nowrap">' + esc(r.date || '—') + '</td>' + '</tr>';
+        }).join('') + '</tbody></table>' +
+        (list.length > shown.length ? '<div class="dq-more"><span>' + shown.length + (isUrdu ? ' از ' : ' of ') + list.length + '</span> <button type="button" class="lk-btn ghost" id="dqMore">' + (isUrdu ? 'مزید دکھائیں' : 'Show more') + '</button></div>' : '');
+    }
+    document.getElementById('dqBody').innerHTML = body;
+    document.getElementById('dqLegend').innerHTML = res.items.length ? '<span class="dq-tag"><span class="dq-dot fix" aria-hidden="true"></span>' + (isUrdu ? 'ٹھیک کریں' : 'Needs fixing') + '</span> <span class="dq-tag"><span class="dq-dot check" aria-hidden="true"></span>' + (isUrdu ? 'دیکھ لیں' : 'Please check') + '</span>' : '';
+    document.getElementById('dqX').setAttribute('aria-label', isUrdu ? 'بند کریں' : 'Close');
+  }
+  function openDq(kind, from){
+    DQ.kind = kind; DQ.only = null; DQ.scope = false; DQ.limit = 100; DQ.from = from || null;
+    document.getElementById('dqScope').checked = false;
+    renderDq();
+    document.getElementById('dqBack').hidden = false;
+    document.getElementById('dqX').focus();
+  }
+  function closeDq(){
+    var b = document.getElementById('dqBack'); if(b.hidden) return;
+    b.hidden = true;
+    if(DQ.from && DQ.from.focus && document.body.contains(DQ.from)) DQ.from.focus();
+    DQ.from = null;
+  }
+  document.getElementById('dqX').addEventListener('click', closeDq);
+  document.getElementById('dqBack').addEventListener('click', function(e){ if(e.target === this) closeDq(); });
+  document.getElementById('dqScope').addEventListener('change', function(){ DQ.scope = this.checked; DQ.only = null; DQ.limit = 100; renderDq(); });
+  document.getElementById('dqChips').addEventListener('click', function(e){
+    var b = e.target.closest('[data-dq-only]'); if(!b) return;
+    DQ.only = b.getAttribute('data-dq-only') || null; DQ.limit = 100; renderDq();
+  });
+  document.getElementById('dqBody').addEventListener('click', function(e){ if(e.target.closest('#dqMore')){ DQ.limit += 200; renderDq(); } });
+  document.addEventListener('keydown', function(e){
+    var bk = document.getElementById('dqBack'); if(bk.hidden) return;
+    if(e.key === 'Escape'){ closeDq(); return; }
+    if(e.key === 'Tab'){
+      var f = document.getElementById('dqBox').querySelectorAll('a[href], input:not([disabled]), button:not([disabled])');
+      if(!f.length) return;
+      var first = f[0], lastEl = f[f.length - 1];
+      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); lastEl.focus(); }
+      else if(!e.shiftKey && document.activeElement === lastEl){ e.preventDefault(); first.focus(); }
+      else if(!document.getElementById('dqBox').contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    }
+  });
+  document.querySelectorAll('[data-dq]').forEach(function(b){ b.addEventListener('click', function(){ openDq(b.getAttribute('data-dq'), b); }); });
 
   /* ================= Step 2: summary counts + case history ================= */
   function caseIdent(r){ return String(r.type || '').toLowerCase() + '|' + normNo(r.caseNo) + '|' + String(r.year || ''); }

@@ -250,6 +250,7 @@ html,body{overflow-x:hidden;}
       <div>
         <div style="font-weight:700;" data-i18n="lastBackupLabel">Last successful backup:</div>
         <div id="lastBackupLine" class="field-hint" data-i18n="lastBackupNone">No backup has been taken yet from this Backup Center.</div>
+        <label class="field-hint" style="display:flex; gap:8px; align-items:flex-start; margin-top:8px; cursor:pointer;"><input type="checkbox" id="autoBackupOn" checked style="margin-top:3px;"> <span data-i18n="autoBackupLabel">Take a backup automatically when this page opens and the last one is older than 7 days</span></label>
       </div>
     </div>
 
@@ -316,6 +317,8 @@ var I18N = {
     btnSignOut:"Sign Out", signedInAs:"Signed in as",
     lastBackupLabel:"Last successful backup:",
     lastBackupNone:"No backup has been taken yet from this Backup Center.",
+    autoBackupLabel:"Take a backup automatically when this page opens and the last one is older than 7 days",
+    autoBackupStarted:"Automatic backup started because the last one is too old — the file will download by itself.",
     backupAgeToday:"(today)", backupAgeDays:"({n} days ago)",
     backupStaleWarn:"⚠ The last backup is more than 7 days old — please take a new one now.",
     dbBackupTitle:"Database Backup / Export",
@@ -351,6 +354,8 @@ var I18N = {
     btnSignOut:"لاگ آؤٹ", signedInAs:"لاگ اِن ہیں بطور",
     lastBackupLabel:"آخری کامیاب بیک اپ:",
     lastBackupNone:"اس Backup Center سے ابھی تک کوئی بیک اپ نہیں لیا گیا۔",
+    autoBackupLabel:"اس صفحے کے کھلنے پر اگر آخری بیک اپ 7 دن سے پرانا ہو (یا کبھی نہ لیا ہو) تو خود بیک اپ لے لیں",
+    autoBackupStarted:"آخری بیک اپ بہت پرانا ہے اس لیے خودکار بیک اپ شروع ہو گیا ہے — فائل خود ڈاؤن لوڈ ہو جائے گی۔",
     backupAgeToday:"(آج)", backupAgeDays:"({n} دن پہلے)",
     backupStaleWarn:"⚠ آخری بیک اپ 7 دن سے زیادہ پرانا ہے — براہ کرم ابھی نیا بیک اپ لیں۔",
     dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
@@ -448,6 +453,24 @@ auth.onAuthStateChanged(function(user){
 });
 
 /* ---------- Last successful backup line ---------- */
+/* Automatic backup: when an Admin opens this page and there is no backup, or the newest one is older than 7 days, one backup
+   is started by itself (once per page open). The tick box above switches it off for this browser. */
+var AUTO_BACKUP_DONE = false;
+function autoBackupEnabled(){ try{ return localStorage.getItem("cmpAutoBackup") !== "0"; }catch(e){ return true; } }
+(function(){
+  var cb = document.getElementById("autoBackupOn"); if(!cb) return;
+  cb.checked = autoBackupEnabled();
+  cb.addEventListener("change", function(){ try{ localStorage.setItem("cmpAutoBackup", cb.checked ? "1" : "0"); }catch(e){} });
+})();
+function maybeAutoBackup(stale){
+  if(AUTO_BACKUP_DONE || !stale || !autoBackupEnabled()) return;
+  var btn = document.getElementById("btnRunBackup");
+  if(!btn || btn.disabled || document.getElementById("mainApp").classList.contains("hidden")) return;
+  AUTO_BACKUP_DONE = true;
+  btn.click();
+  var note = document.getElementById("backupProgress");
+  if(note){ setTimeout(function(){ note.textContent = I18N[currentLang].autoBackupStarted; note.classList.remove("hidden"); }, 0); }
+}
 function renderLastBackupLine(){
   var el = document.getElementById("lastBackupLine");
   if(!el || document.getElementById("mainApp").classList.contains("hidden")) return;
@@ -458,6 +481,7 @@ function renderLastBackupLine(){
     if(!d){
       el.textContent = I18N[currentLang].lastBackupNone;
       el.style.color = "";
+      maybeAutoBackup(true);
       return;
     }
     var when = d.timestamp && d.timestamp.toDate ? d.timestamp.toDate() : null;
@@ -473,6 +497,7 @@ function renderLastBackupLine(){
     el.textContent = line + (stale ? "  " + I18N[currentLang].backupStaleWarn : "");
     el.style.color = stale ? "#b3261e" : "";
     el.style.fontWeight = stale ? "700" : "";
+    maybeAutoBackup(stale);
   }).catch(function(err){
     // appData_backupmeta collection may not exist yet (no backup taken) — treat like "none".
     el.textContent = I18N[currentLang].lastBackupNone;

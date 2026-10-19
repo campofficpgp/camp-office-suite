@@ -343,6 +343,22 @@ html,body{overflow-x:hidden;}
 .ms-clear{ background:none; border:0; color:var(--navy); cursor:pointer; font-size:12px; text-decoration:underline; }
 .cols-wrap{ position:relative; display:inline-block; }
 .cols-panel{ min-width:190px; }
+.sv-panel{ min-width:250px; max-width:min(340px,calc(100vw - 32px)); }
+.sv-list{ display:flex; flex-direction:column; gap:2px; max-height:240px; overflow:auto; }
+.sv-row{ display:flex; gap:4px; align-items:stretch; }
+.sv-apply{ flex:1; min-width:0; text-align:start; background:none; border:0; border-radius:6px; padding:6px 8px; cursor:pointer; color:var(--text); font-family:inherit; display:flex; flex-direction:column; gap:1px; }
+.sv-apply:hover, .sv-apply:focus-visible{ background:rgba(128,128,128,.14); }
+.sv-nm{ font-size:13px; font-weight:600; color:var(--navy); overflow-wrap:anywhere; }
+.sv-ds{ font-size:11.5px; color:var(--muted); overflow-wrap:anywhere; }
+.sv-del{ background:none; border:0; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; padding:0 9px; border-radius:6px; min-width:32px; font-family:inherit; }
+.sv-del:hover, .sv-del:focus-visible{ background:rgba(128,128,128,.14); }
+.sv-del.ask{ font-size:12px; color:#b3261e; font-weight:600; }
+.sv-empty{ font-size:12.5px; color:var(--muted); padding:8px; }
+.sv-save{ border-top:1px solid var(--border); margin-top:8px; padding-top:8px; }
+.sv-lab{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+.sv-line{ display:flex; gap:6px; }
+.sv-name{ flex:1; min-width:0; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-family:inherit; font-size:13px; }
+.sv-msg{ min-height:16px; font-size:12px; color:var(--muted); margin-top:4px; }
 .lk-pager{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 2px; font-size:12.5px; color:var(--muted); }
 .lk-pager select{ padding:5px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); }
 .lk-pager .lk-btn{ padding:5px 12px; }
@@ -470,6 +486,7 @@ html,body{overflow-x:hidden;}
       <div class="lk-bar">
         <span class="lk-count" id="cCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('cases')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
+        <span class="cols-wrap" id="cSaved"></span>
         <span class="cols-wrap" id="cCols"></span>
         <button class="lk-btn ghost" id="cSumBtn" type="button" aria-expanded="true" aria-controls="cSum"></button>
         <button class="lk-btn" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
@@ -492,6 +509,7 @@ html,body{overflow-x:hidden;}
       <div class="lk-bar">
         <span class="lk-count" id="nCount"></span>
         <button class="lk-btn ghost" onclick="lkClear('notices')" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
+        <span class="cols-wrap" id="nSaved"></span>
         <span class="cols-wrap" id="nCols"></span>
         <button class="lk-btn" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
         <button class="lk-btn" type="button" data-exp="notices:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
@@ -808,6 +826,7 @@ html,body{overflow-x:hidden;}
       el.addEventListener(f.type === 'date' ? 'change' : 'input', function(){ PAGER[kind].page = 1; render(kind); });
     });
     renderColsMenu(kind);
+    renderSavedMenu(kind);
   }
 
   /* quick date buttons */
@@ -1553,6 +1572,118 @@ html,body{overflow-x:hidden;}
   document.addEventListener('click', function(e){ if(!e.target.closest('.ms, .cols-wrap')) closeMs(); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeMs(); });
   initLookupEvents('cases'); initLookupEvents('notices');
+
+  /* ================= Step 3b: saved filters =================
+     A named set of filters (search words, drop-down choices, date range, sort order) that can be saved and applied
+     again with one click, separately for Daily Cases and Case Notices. Kept in this browser (like the column choice).
+     A date range that matches a quick button (This week, This month ...) is saved as that button, so "This week"
+     still means the current week when it is applied later. Nothing in the database is touched. */
+  var SAVED_MAX = 30;
+  function savedLoad(kind){
+    try{ var a = JSON.parse(lsGet('lkSaved_' + kind) || '[]'); return Array.isArray(a) ? a.filter(function(x){ return x && x.name; }) : []; }catch(e){ return []; }
+  }
+  function savedStore(kind, arr){ lsSet('lkSaved_' + kind, JSON.stringify(arr)); }
+  function savedSnapshot(kind){
+    var v = readFilters(kind), text = {}, sel = {}, from = v.from || '', to = v.to || '', chip = '';
+    DEF[kind].filters.forEach(function(f){
+      if(f.key === 'from' || f.key === 'to') return;
+      if(f.type === 'select'){ if(v[f.key] && v[f.key].length) sel[f.key] = v[f.key].slice(); }
+      else if(String(v[f.key] || '').trim() !== '') text[f.key] = String(v[f.key]);
+    });
+    if(from || to){
+      CHIPS.forEach(function(c){ if(!chip && c.id !== 'any'){ var r = chipRange(c.id); if(r[0] === from && r[1] === to) chip = c.id; } });
+    }
+    return { sel:sel, text:text, chip:chip, from: chip ? '' : from, to: chip ? '' : to, sort:{ col:SORT[kind].col, dir:SORT[kind].dir } };
+  }
+  function savedHasFilter(s){ return Object.keys(s.sel).length > 0 || Object.keys(s.text).length > 0 || !!s.chip || !!s.from || !!s.to; }
+  function savedApply(kind, item){
+    SEL[kind] = {};
+    Object.keys(item.sel || {}).forEach(function(k){ SEL[kind][k] = (item.sel[k] || []).map(String); });
+    var from = item.from || '', to = item.to || '';
+    if(item.chip){ var r = chipRange(item.chip); from = r[0]; to = r[1]; }
+    DEF[kind].filters.forEach(function(f){
+      if(f.type === 'select') return;
+      var el = document.getElementById('f_' + kind + '_' + f.key); if(!el) return;
+      el.value = f.key === 'from' ? from : f.key === 'to' ? to : ((item.text || {})[f.key] || '');
+    });
+    if(item.sort && item.sort.col && DEF[kind].cols.some(function(c){ return c.id === item.sort.col; })){ SORT[kind] = { col:item.sort.col, dir: item.sort.dir < 0 ? -1 : 1 }; }
+    PAGER[kind].page = 1;
+    buildFilters(kind); render(kind);
+  }
+  function savedDesc(item){
+    var parts = [], n = 0;
+    Object.keys(item.sel || {}).forEach(function(k){ n += (item.sel[k] || []).length; });
+    if(n) parts.push(n + (isUrdu ? ' انتخاب' : ' picks'));
+    if(Object.keys(item.text || {}).length) parts.push(isUrdu ? 'تلاش' : 'search');
+    if(item.chip){ var c = CHIPS.filter(function(x){ return x.id === item.chip; })[0]; if(c) parts.push(isUrdu ? c.ur : c.en); }
+    else if(item.from || item.to) parts.push((item.from || '…') + ' → ' + (item.to || '…'));
+    return parts.join(' · ');
+  }
+  var SAVED_MSG = { cases:'', notices:'' }, SAVED_ASK = { cases:'', notices:'' };
+  function renderSavedMenu(kind){
+    var wrap = document.getElementById(kind === 'cases' ? 'cSaved' : 'nSaved'); if(!wrap) return;
+    var open = wrap.classList.contains('open'), list = savedLoad(kind);
+    var hadFocus = wrap.contains(document.activeElement) && document.activeElement.classList.contains('sv-name');
+    var typed = (wrap.querySelector('.sv-name') || {}).value || '';
+    wrap.innerHTML = '<button type="button" class="lk-btn ghost cols-btn sv-btn" aria-haspopup="true" aria-expanded="' + open + '">' +
+        (isUrdu ? 'محفوظ فلٹرز' : 'Saved filters') + (list.length ? ' (' + list.length + ')' : '') + ' ▾</button>' +
+      '<div class="ms-panel cols-panel sv-panel"' + (open ? '' : ' hidden') + '>' +
+        '<div class="sv-list">' + (list.length ? list.map(function(it, i){
+          var asking = SAVED_ASK[kind] === it.id;
+          return '<div class="sv-row"><button type="button" class="sv-apply" data-i="' + i + '"><span class="sv-nm">' + esc(it.name) + '</span><span class="sv-ds">' + esc(savedDesc(it)) + '</span></button>' +
+            '<button type="button" class="sv-del' + (asking ? ' ask' : '') + '" data-i="' + i + '" aria-label="' + (isUrdu ? 'یہ محفوظ فلٹر مٹائیں' : 'Delete this saved filter') + '">' + (asking ? (isUrdu ? 'مٹائیں؟' : 'Sure?') : '×') + '</button></div>';
+        }).join('') : '<div class="sv-empty">' + (isUrdu ? 'ابھی کوئی فلٹر محفوظ نہیں' : 'No saved filters yet') + '</div>') + '</div>' +
+        '<div class="sv-save"><label class="sv-lab">' + (isUrdu ? 'موجودہ فلٹر کو نام دے کر محفوظ کریں' : 'Save the current filters as') + '</label>' +
+          '<div class="sv-line"><input type="text" class="sv-name" maxlength="40" placeholder="' + (isUrdu ? 'مثلاً: اس ہفتے کے Writ' : 'e.g. This week writs') + '" aria-label="' + (isUrdu ? 'محفوظ فلٹر کا نام' : 'Name of the saved filter') + '">' +
+          '<button type="button" class="lk-btn sv-go">' + (isUrdu ? 'محفوظ' : 'Save') + '</button></div>' +
+          '<div class="sv-msg" role="status" aria-live="polite">' + esc(SAVED_MSG[kind]) + '</div></div>' +
+      '</div>';
+    var inp = wrap.querySelector('.sv-name'); if(inp){ inp.value = typed; if(hadFocus) inp.focus(); }
+  }
+  function savedFit(wrap){
+    var p = wrap.querySelector('.sv-panel'); if(!p) return;
+    p.style.insetInlineStart = ''; p.style.insetInlineEnd = '';
+    var r = p.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    if(r.right > vw - 8 || r.left < 8){ p.style.insetInlineStart = 'auto'; p.style.insetInlineEnd = '0'; }
+  }
+  function savedSave(kind){
+    var wrap = document.getElementById(kind === 'cases' ? 'cSaved' : 'nSaved');
+    var inp = wrap.querySelector('.sv-name'), name = (inp.value || '').replace(/\s+/g, ' ').trim();
+    var snap = savedSnapshot(kind);
+    if(!name){ SAVED_MSG[kind] = isUrdu ? 'پہلے نام لکھیں' : 'Type a name first'; renderSavedMenu(kind); wrap.querySelector('.sv-name').focus(); return; }
+    if(!savedHasFilter(snap)){ SAVED_MSG[kind] = isUrdu ? 'پہلے کوئی فلٹر لگائیں، پھر محفوظ کریں' : 'Set some filters first, then save'; renderSavedMenu(kind); return; }
+    var list = savedLoad(kind), low = name.toLowerCase(), at = -1;
+    list.forEach(function(x, i){ if(String(x.name).toLowerCase() === low) at = i; });
+    if(at < 0 && list.length >= SAVED_MAX){ SAVED_MSG[kind] = isUrdu ? 'زیادہ سے زیادہ ' + SAVED_MAX + ' فلٹر محفوظ ہو سکتے ہیں، پہلے کوئی مٹائیں' : 'Up to ' + SAVED_MAX + ' saved filters - delete one first'; renderSavedMenu(kind); return; }
+    snap.name = name; snap.id = at >= 0 ? list[at].id : ('s' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
+    if(at >= 0) list[at] = snap; else list.push(snap);
+    savedStore(kind, list);
+    SAVED_MSG[kind] = (at >= 0 ? (isUrdu ? 'اسی نام کا فلٹر اپ ڈیٹ ہو گیا' : 'Updated the filter with that name') : (isUrdu ? 'محفوظ ہو گیا' : 'Saved'));
+    inp.value = '';
+    renderSavedMenu(kind);
+  }
+  function initSavedEvents(kind){
+    var wrap = document.getElementById(kind === 'cases' ? 'cSaved' : 'nSaved');
+    wrap.addEventListener('click', function(e){
+      e.stopPropagation(); /* the menu is re-drawn on some clicks; keep the page-level 'click outside closes' from seeing a detached target */
+      if(e.target.closest('.sv-btn')){ if(wrap.classList.contains('open')) closeMs(); else { SAVED_MSG[kind] = ''; SAVED_ASK[kind] = ''; renderSavedMenu(kind); openMs(wrap); savedFit(wrap); } return; }
+      var ap = e.target.closest('.sv-apply');
+      if(ap){ var it = savedLoad(kind)[+ap.getAttribute('data-i')]; if(it){ SAVED_ASK[kind] = ''; closeMs(); savedApply(kind, it); } return; }
+      var dl = e.target.closest('.sv-del');
+      if(dl){
+        var list = savedLoad(kind), i = +dl.getAttribute('data-i'), item = list[i]; if(!item) return;
+        if(SAVED_ASK[kind] !== item.id){ SAVED_ASK[kind] = item.id; renderSavedMenu(kind); }
+        else { list.splice(i, 1); savedStore(kind, list); SAVED_ASK[kind] = ''; SAVED_MSG[kind] = isUrdu ? 'مٹا دیا' : 'Deleted'; renderSavedMenu(kind); }
+        return;
+      }
+      if(e.target.closest('.sv-go')){ savedSave(kind); return; }
+      if(SAVED_ASK[kind] && !e.target.closest('.sv-del')){ SAVED_ASK[kind] = ''; renderSavedMenu(kind); }
+    });
+    wrap.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && e.target.classList && e.target.classList.contains('sv-name')){ e.preventDefault(); savedSave(kind); }
+    });
+  }
+  initSavedEvents('cases'); initSavedEvents('notices');
 
   /* ================= Step 2: summary counts + case history ================= */
   function caseIdent(r){ return String(r.type || '').toLowerCase() + '|' + normNo(r.caseNo) + '|' + String(r.year || ''); }

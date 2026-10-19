@@ -172,6 +172,9 @@ html,body{overflow-x:hidden;}
   [data-theme="night"] .welcome-banner{ background:linear-gradient(120deg,#232a42 0%, #12141c 100%); }
   .welcome-banner h1{ color:#fff; font-size:20px; margin-bottom:4px; }
   .welcome-banner p{ margin:0; font-size:12.5px; color:#cfd8ea; }
+  .backup-reminder{ margin-top:12px; background:#fdf0d0; color:#5a3d00; border:1px solid #d9a21b; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; display:flex; gap:8px 12px; flex-wrap:wrap; align-items:center; }
+  .backup-reminder a{ color:#5a3d00; text-decoration:underline; }
+  .backup-reminder.hidden{ display:none; }
   .summary-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:18px; }
   .summary-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; box-shadow:var(--shadow); }
   .summary-card.link-card{ cursor:pointer; text-decoration:none; display:block; color:inherit; }
@@ -586,6 +589,7 @@ html,body{overflow-x:hidden;}
         <div class="welcome-banner">
           <h1><span data-i18n="welcomeTitle2">Welcome back</span>, <span id="welcomeName"></span> 👋</h1>
           <p id="welcomeDateLine"></p>
+          <div id="backupReminder" class="backup-reminder hidden" role="status"></div>
         </div>
 
         <div class="summary-grid">
@@ -884,7 +888,7 @@ function setTheme(id){
   renderThemeMenu();
 }
 document.getElementById("langSelect").addEventListener("change", function(e){
-  currentLang = e.target.value; applyI18n(); if(CURRENT_DOC) renderAdminPanel();
+  currentLang = e.target.value; applyI18n(); if(CURRENT_DOC) renderAdminPanel(); renderBackupReminder();
 });
 document.getElementById("themeSelect").addEventListener("change", function(e){ setTheme(e.target.value); });
 (function(){
@@ -1098,7 +1102,7 @@ function enterApp(user, data){
   document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
   document.getElementById("masterDataLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("resultListLink").classList.toggle("hidden", role !== "super_admin");
-  if(isAdminUp){ renderAdminPanel(); }
+  if(isAdminUp){ renderAdminPanel(); checkBackupReminder(); } else { BACKUP_STATE = null; renderBackupReminder(); }
   loadDashboardData();
   loadNotifications();
   if(NOTIF_POLL_TIMER) clearInterval(NOTIF_POLL_TIMER);
@@ -1961,6 +1965,34 @@ var NOTIF_SYSTEMS = [
 ];
 var LATEST_TOTALS = {};
 var LATEST_NOTIF_DATA = { pendingUsers: [], systemDeltas: [] };
+/* Backup reminder (Admin / Super Admin only): the newest real backup taken from the Backup Center is read once per sign-in.
+   If there is none, or it is older than 7 days, a yellow strip shows under the welcome line and an item appears in the bell.
+   Read-only - nothing is written. state = null (unknown / not an admin) or { days: number|null }. */
+var BACKUP_STATE = null;
+function checkBackupReminder(){
+  BACKUP_STATE = null; renderBackupReminder();
+  db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(25).get().then(function(qs){
+    var d = null;
+    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore") d = v; });
+    var when = d && d.timestamp && d.timestamp.toDate ? d.timestamp.toDate() : null;
+    var days = when ? Math.max(0, Math.floor((Date.now() - when.getTime()) / 86400000)) : null;
+    BACKUP_STATE = (days === null || days > 7) ? { days: days } : null;
+    renderBackupReminder();
+  }).catch(function(){ BACKUP_STATE = null; renderBackupReminder(); });
+}
+function backupReminderText(){
+  var isUr = currentLang === "ur", d = BACKUP_STATE.days;
+  if(d === null) return isUr ? "⚠ ابھی تک Backup Center سے کوئی بیک اپ نہیں لیا گیا۔" : "⚠ No backup has been taken from the Backup Center yet.";
+  return isUr ? ("⚠ آخری بیک اپ " + d + " دن پرانا ہے۔") : ("⚠ The last backup is " + d + " days old.");
+}
+function renderBackupReminder(){
+  var el = document.getElementById("backupReminder"); if(!el) return;
+  if(!BACKUP_STATE){ el.classList.add("hidden"); el.innerHTML = ""; if(typeof renderNotifDot === "function") renderNotifDot(); return; }
+  var isUr = currentLang === "ur";
+  el.innerHTML = "<span>" + backupReminderText() + "</span><a href='backup-center.html'>" + (isUr ? "ابھی بیک اپ لیں (Backup Center)" : "Take a backup now (Backup Center)") + "</a>";
+  el.classList.remove("hidden");
+  if(typeof renderNotifDot === "function") renderNotifDot();
+}
 function notifSeenKey(){ return "notifSeenCounts_" + (CURRENT_UID || "anon"); }
 function loadSeenCounts(){
   try{ return JSON.parse(localStorage.getItem(notifSeenKey())) || {}; }catch(e){ return {}; }
@@ -2031,13 +2063,19 @@ function markSystemNotifsRead(){
   renderNotifPanel();
 }
 function renderNotifDot(){
-  var has = (LATEST_NOTIF_DATA.pendingUsers.length > 0) || (LATEST_NOTIF_DATA.systemDeltas.length > 0);
+  var has = (LATEST_NOTIF_DATA.pendingUsers.length > 0) || (LATEST_NOTIF_DATA.systemDeltas.length > 0) || !!BACKUP_STATE;
   document.getElementById("notifDot").classList.toggle("hidden", !has);
 }
 function renderNotifPanel(){
   var isUr = currentLang === "ur";
   var list = document.getElementById("notifList");
   var html = "";
+  if(BACKUP_STATE){
+    html += "<div class='notif-item'>"+
+      "<span class='ni-title'>"+backupReminderText()+"</span>"+
+      "<span class='ni-sub'><a href='backup-center.html'>"+(isUr? "Backup Center کھولیں" : "Open Backup Center")+"</a></span>"+
+      "</div>";
+  }
   LATEST_NOTIF_DATA.pendingUsers.forEach(function(u){
     html += "<div class='notif-item'>"+
       "<span class='ni-title'>"+(isUr? "نیا اکاؤنٹ درخواست — " : "New account request — ")+u.email+"</span>"+

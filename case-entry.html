@@ -220,6 +220,17 @@ html,body{overflow-x:hidden;}
   table.report-table tr.grand-total-row td{background:#efe9d8; font-weight:700;}
   table.report-table tr:hover td{background:#faf8f2;}
   table.report-table td.edited-cell{background:#fdf0d0;}
+  table.report-table td.drill-total{cursor:pointer;}
+  table.report-table td.drill-total:hover, table.report-table td.drill-total:focus-visible{ text-decoration:underline; outline:2px solid var(--gold-deep,#8a660a); outline-offset:-2px; }
+  table.report-table td.drill-cell{cursor:pointer;}
+  table.report-table td.drill-cell:hover{ outline:2px solid var(--gold-deep,#8a660a); outline-offset:-2px; }
+  table.report-table td.drill-cell input, table.report-table td.nature-cell input[readonly]{ cursor:pointer; }
+  .drill-hint{ font-size:12px; color:var(--muted); margin:0 0 10px; }
+  .drill-count{ font-size:13px; margin-bottom:8px; } .drill-count b{ color:var(--navy); }
+  .drill-note{ font-size:12.5px; border:1px solid var(--gold-deep,#8a660a); background:rgba(184,134,11,.12); color:var(--text); border-radius:8px; padding:8px 10px; margin-bottom:10px; }
+  .drill-empty{ padding:18px; text-align:center; color:var(--muted); border:1px dashed var(--border); border-radius:8px; }
+  .drill-sub2{ margin:14px 0 6px; font-size:13px; font-weight:700; color:#b3261e; }
+  #drillToggle[aria-pressed="true"]{ color:#fff; }
   .cell-input{width:42px; text-align:center; border:1px solid var(--border); border-radius:4px; padding:3px 2px; font-size:11.5px; background:#fff;}
   .cell-input:focus{outline:2px solid var(--gold); border-color:var(--gold);}
   .nature-input{width:150px; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:4px 6px; font-size:11.5px; font-weight:600; background:#fff;}
@@ -494,8 +505,10 @@ html.embedded .app-shell{ min-height:0; }
           <div class="report-meta" id="reportMeta"></div>
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
             <div class="btn ghost" onclick="addReportRow()" data-en="+ Add Row (Nature of Case)" data-ur="+ نئی قطار (کیس کی نوعیت)">+ Add Row (Nature of Case)</div>
+            <button type="button" class="btn ghost" id="drillToggle" aria-pressed="false" onclick="toggleDrill()" data-en="🔍 Show cases behind the numbers" data-ur="🔍 نمبر کے پیچھے کے کیسز دیکھیں">🔍 Show cases behind the numbers</button>
             <span class="manage-link" style="font-size:11.5px;" onclick="openListManage('result')" data-en="(+ Add/Edit Result Columns)" data-ur="(+ نتیجہ کے کالمز شامل/ترمیم)">(+ Add/Edit Result Columns)</span>
           </div>
+          <div id="drillHint" class="drill-hint" style="display:none;" data-en="Click any number to see the cases counted in it. Typing in the cells is switched off while this is on. Totals can always be clicked." data-ur="کسی بھی نمبر پر کلک کریں تو اس میں گنے گئے کیسز کھل جائیں گے۔ اس دوران خانوں میں لکھنا بند رہتا ہے۔ کل (Totals) پر ہر وقت کلک ہو سکتا ہے۔">Click any number to see the cases counted in it. Typing in the cells is switched off while this is on. Totals can always be clicked.</div>
           <div class="table-scroll">
             <table class="report-table" id="reportTable"></table>
           </div>
@@ -513,6 +526,18 @@ html.embedded .app-shell{ min-height:0; }
 
     </div>
 
+  </div>
+
+  <!-- Monthly report drill-down (placed before the Add/Edit modal so that modal opens on top of it) -->
+  <div class="modal-overlay" id="drillModal">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="drillTitle" style="max-width:980px;">
+      <div class="modal-close"><span id="drillClose" role="button" tabindex="0" onclick="closeDrill()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();closeDrill();}">✕</span></div>
+      <div style="padding:4px 18px 18px;">
+        <h3 id="drillTitle" style="margin:0 0 4px; font-size:16px; color:var(--navy);"></h3>
+        <p id="drillSub" style="margin:0 0 10px; font-size:13px; color:var(--muted);"></p>
+        <div id="drillBody"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Add / Edit Case Modal -->
@@ -1647,16 +1672,18 @@ html.embedded .app-shell{ min-height:0; }
     function resKey(v){ var k = String(v || '').trim().toLowerCase(); if(k === 'adjurned') k = 'adjourned'; if(k === 'converted into lessor sentence') k = 'converted into lesser sentence'; return k; }
     cols.forEach(function(col){ colByKey[resKey(col)] = col; });
 
-    var natureMap = {}, names = {}, uncounted = [];
+    var natureMap = {}, names = {}, uncounted = [], cellCases = {}, uncountedCases = [];
     filtered.forEach(function(c){
       var nat = natureLabel(c), key = nat.toLowerCase();
       var col = colByKey[resKey(c.result)];
       if(!col){   // a result that is blank or not among the report's columns can't be placed in the table
         uncounted.push((c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || '') + ' (' + (c.result ? c.result : (isUrdu ? 'نتیجہ خالی' : 'no result')) + ')');
+        uncountedCases.push(c);
         return;
       }
       if(!natureMap[key]){ natureMap[key] = {}; names[key] = nat; }
       natureMap[key][col] = (natureMap[key][col] || 0) + 1;
+      (cellCases[key] = cellCases[key] || {}); (cellCases[key][col] = cellCases[key][col] || []).push(c);   /* for the drill-down; never saved with the report */
     });
 
     var keys = Object.keys(natureMap).sort(function(a, b){ return names[a].localeCompare(names[b], 'en', {sensitivity:'base', numeric:true}); });
@@ -1680,7 +1707,7 @@ html.embedded .app-shell{ min-height:0; }
       grandTotal += r.total;
     });
 
-    return { cols: cols, rows: rows, grand: grand, grandTotal: grandTotal, caseCount: filtered.length, uncounted: uncounted };
+    return { cols: cols, rows: rows, grand: grand, grandTotal: grandTotal, caseCount: filtered.length, uncounted: uncounted, cellCases: cellCases, uncountedCases: uncountedCases };
   }
 
   // Turns a fresh buildReportData() result into the editable shape used by currentReport
@@ -1709,20 +1736,20 @@ html.embedded .app-shell{ min-height:0; }
     } else {
       data.rows.forEach(function(r, ri){
         html += '<tr><td class="nature-cell">' +
-          '<input type="text" class="nature-input" data-ri="'+ri+'" value="'+escapeAttr(r.nature)+'" placeholder="'+(isUrdu?'کیس کی نوعیت':'Nature of Case')+'">' +
+          '<input type="text" class="nature-input" data-ri="'+ri+'" value="'+escapeAttr(r.nature)+'" placeholder="'+(isUrdu?'کیس کی نوعیت':'Nature of Case')+'"'+(DRILL_ON?' readonly':'')+'>' +
           '<span class="row-del" data-ri="'+ri+'" title="'+(isUrdu?'یہ قطار حذف کریں':'Remove this row')+'">✕</span></td>';
         data.cols.forEach(function(col, ci){
           var val = r.counts[col] || 0;
           var isEdited = r.autoCounts && val !== (r.autoCounts[col] || 0);
-          html += '<td class="'+(isEdited?'edited-cell':'')+'" data-ri="'+ri+'" data-ci="'+ci+'">' +
-            '<input type="number" min="0" class="cell-input" data-ri="'+ri+'" data-ci="'+ci+'" value="'+(val || 0)+'">' +
+          html += '<td class="'+(isEdited?'edited-cell':'')+(DRILL_ON?' drill-cell':'')+'" data-ri="'+ri+'" data-ci="'+ci+'">' +
+            '<input type="number" min="0" class="cell-input" data-ri="'+ri+'" data-ci="'+ci+'" value="'+(val || 0)+'"'+(DRILL_ON?' readonly aria-label="'+(isUrdu?'اس نمبر کے کیسز دیکھیں':'Show the cases in this number')+'"':'')+'>' +
             '</td>';
         });
-        html += '<td class="row-total" data-ri="'+ri+'"><b>'+r.total+'</b></td></tr>';
+        html += '<td class="row-total drill-total" data-ri="'+ri+'" tabindex="0" role="button" title="'+(isUrdu?'اس قطار کے کیسز دیکھیں':'Show the cases in this row')+'"><b>'+r.total+'</b></td></tr>';
       });
-      html += '<tr class="grand-total-row"><td class="nature-cell">'+(isUrdu?gTotalUr:gTotalEn)+'</td>';
-      data.cols.forEach(function(col, ci){ html += '<td class="grand-cell" data-ci="'+ci+'">'+(data.grand[col] || '')+'</td>'; });
-      html += '<td id="grandTotalCell">'+data.grandTotal+'</td></tr>';
+      html += '<tr class="grand-total-row"><td class="nature-cell grand-label drill-total" tabindex="0" role="button" title="'+(isUrdu?'تمام کیسز دیکھیں':'Show every case in the table')+'">'+(isUrdu?gTotalUr:gTotalEn)+'</td>';
+      data.cols.forEach(function(col, ci){ html += '<td class="grand-cell drill-total" data-ci="'+ci+'" tabindex="0" role="button" title="'+(isUrdu?'اس کالم کے کیسز دیکھیں':'Show the cases in this column')+'">'+(data.grand[col] || '')+'</td>'; });
+      html += '<td id="grandTotalCell" class="drill-total" tabindex="0" role="button" title="'+(isUrdu?'تمام کیسز دیکھیں':'Show every case in the table')+'">'+data.grandTotal+'</td></tr>';
     }
     html += '</tbody>';
     t.innerHTML = html;
@@ -1807,8 +1834,9 @@ html.embedded .app-shell{ min-height:0; }
     var metaUr = '<div><b>آفیسر:</b> '+r.officer+'</div><div><b>مہینہ:</b> '+r.monthName+' '+r.year+'</div><div><b>ترتیب دہندہ:</b> '+r.clerk+'</div><div><b>کل کیسز (Case List سے):</b> '+r.caseCount+'</div>';
     if(r.uncounted && r.uncounted.length){
       var un = r.uncounted.slice(0, 6).join('، ') + (r.uncounted.length > 6 ? ' …' : '');
-      metaEn += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' case(s) are NOT in the table below because their Result is blank or not one of the columns: '+escapeAttr(un)+'</div>';
-      metaUr += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' کیس نیچے میز میں شامل نہیں کیونکہ ان کا نتیجہ خالی ہے یا کالموں میں نہیں: '+escapeAttr(un)+'</div>';
+      var viewBtn = ' <button type="button" class="btn ghost" style="padding:3px 10px; font-size:11.5px;" onclick="openDrill({kind:\'uncounted\'}, this)">';
+      metaEn += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' case(s) are NOT in the table below because their Result is blank or not one of the columns: '+escapeAttr(un)+viewBtn+'View list</button></div>';
+      metaUr += '<div style="flex-basis:100%; color:#b3261e; font-weight:700;">⚠ '+r.uncounted.length+' کیس نیچے میز میں شامل نہیں کیونکہ ان کا نتیجہ خالی ہے یا کالموں میں نہیں: '+escapeAttr(un)+viewBtn+'فہرست دیکھیں</button></div>';
     }
     if(savedNote){
       metaEn += '<div style="color:var(--gold-deep); font-weight:700;">(Saved report — '+savedNote+')</div>';
@@ -1854,6 +1882,130 @@ html.embedded .app-shell{ min-height:0; }
     renderReportMeta(currentReport);
     renderReportTable(currentReport);
   }
+
+
+  /* ================= Drill-down: the cases behind a number of the Monthly Progress Report =================
+     Switch "Show cases behind the numbers" on, then click any number (a cell, a row total, a column total or the
+     G. Total) and the list of Daily Cases that were counted in it opens. The row totals / column totals / G. Total can
+     also be clicked without the switch (they are not editable). The list is rebuilt from the Case List with exactly the
+     same rules the report uses (buildReportData), so it always matches the automatic count. Nothing is changed. */
+  var DRILL_ON = false;
+  var DRILL = { open:false, sel:null };
+  function drillEsc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function toggleDrill(){
+    DRILL_ON = !DRILL_ON;
+    var b = document.getElementById('drillToggle');
+    if(b){ b.setAttribute('aria-pressed', DRILL_ON ? 'true' : 'false'); b.classList.toggle('primary', DRILL_ON); b.classList.toggle('ghost', !DRILL_ON); }
+    var h = document.getElementById('drillHint'); if(h) h.style.display = DRILL_ON ? '' : 'none';
+    if(currentReport) renderReportTable(currentReport);
+  }
+  function drillCases(sel){
+    /* returns { list:[cases], shown:number shown in the table (or null), uncounted:[cases] } for a selection */
+    var r = currentReport; if(!r) return { list:[], shown:null, uncounted:[] };
+    var data = buildReportData(r.officer, String(r.month), r.year);
+    var rowKey = function(i){ return String((r.rows[i] && r.rows[i].nature) || '').replace(/\s+/g,' ').trim().toLowerCase(); };
+    var list = [], shown = null, cols = r.cols, byRow = function(key, col){ var m = data.cellCases[key] || {}; return col ? (m[col] || []) : [].concat.apply([], Object.keys(m).map(function(k){ return m[k]; })); };
+    if(sel.kind === 'uncounted'){ return { list:data.uncountedCases.slice(), shown:null, uncounted:[] }; }
+    if(sel.kind === 'cell'){ list = byRow(rowKey(sel.ri), cols[sel.ci]); shown = (r.rows[sel.ri] && r.rows[sel.ri].counts[cols[sel.ci]]) || 0; }
+    else if(sel.kind === 'row'){ list = byRow(rowKey(sel.ri), ''); shown = r.rows[sel.ri] ? r.rows[sel.ri].total : 0; }
+    else if(sel.kind === 'col'){ Object.keys(data.cellCases).forEach(function(k){ list = list.concat(byRow(k, cols[sel.ci])); }); shown = r.grand[cols[sel.ci]] || 0; }
+    else { Object.keys(data.cellCases).forEach(function(k){ list = list.concat(byRow(k, '')); }); shown = r.grandTotal; }
+    return { list:list, shown:shown, uncounted: sel.kind === 'all' ? data.uncountedCases.slice() : [] };
+  }
+  function drillLabel(sel){
+    var r = currentReport, parts = [];
+    if(sel.kind === 'uncounted') return isUrdu ? 'جدول میں شامل نہ ہونے والے کیسز (نتیجہ خالی یا کالموں میں نہیں)' : 'Cases NOT in the table (Result blank or not one of the columns)';
+    if(sel.kind === 'cell' || sel.kind === 'row') parts.push((isUrdu ? 'نوعیت: ' : 'Nature: ') + ((r.rows[sel.ri] && r.rows[sel.ri].nature) || '—'));
+    if(sel.kind === 'cell' || sel.kind === 'col') parts.push((isUrdu ? 'نتیجہ: ' : 'Result: ') + r.cols[sel.ci]);
+    if(sel.kind === 'row') parts.push(isUrdu ? 'تمام نتائج' : 'all results');
+    if(sel.kind === 'col') parts.push(isUrdu ? 'تمام نوعیتیں' : 'all natures');
+    if(sel.kind === 'all') parts.push(isUrdu ? 'مجموعی کل — جدول کے تمام کیسز' : 'G. Total — every case in the table');
+    return parts.join(' · ');
+  }
+  function renderDrill(){
+    var r = currentReport, sel = DRILL.sel; if(!r || !sel) return;
+    var D = drillCases(sel);
+    var rows = D.list.slice().sort(function(a, b){ return String(a.date || '').localeCompare(String(b.date || '')) || String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric:true }); });
+    var months = isUrdu ? MONTHS_UR : MONTHS_EN;
+    document.getElementById('drillTitle').textContent = isUrdu ? 'اس نمبر کے پیچھے کے کیسز' : 'Cases behind this number';
+    document.getElementById('drillSub').textContent = r.officer + ' · ' + months[(parseInt(r.month, 10) || 1) - 1] + ' ' + r.year + ' — ' + drillLabel(sel);
+    var note = '';
+    if(D.shown != null && D.shown !== rows.length){
+      note = isUrdu
+        ? 'رپورٹ کے جدول میں یہ نمبر ' + D.shown + ' ہے مگر Case List میں ' + rows.length + ' کیس ملے۔ وجہ: کوئی خانہ ہاتھ سے بدلا گیا ہے، یا رپورٹ محفوظ کرنے کے بعد Case List بدل گئی ہے۔ درست کرنے کے لیے "Case List سے دوبارہ شمار کریں" دبائیں۔'
+        : 'The report table shows ' + D.shown + ' here, but the Case List has ' + rows.length + ' case(s). Either a cell was edited by hand, or the Case List changed after this report was saved. Press "Recalculate from Case List" to bring them together.';
+    }
+    var head = [isUrdu ? 'تاریخ' : 'Date', isUrdu ? 'کیس نمبر' : 'Case No', isUrdu ? 'عنوان' : 'Title', isUrdu ? 'جج' : 'Judge', isUrdu ? 'بینچ' : 'Bench', isUrdu ? 'سیریل' : 'Sr. No', isUrdu ? 'نتیجہ' : 'Result', isUrdu ? 'زمرہ' : 'Category'];
+    function table(list){
+      return '<div class="table-scroll"><table class="case-table drill-table" style="min-width:820px"><thead><tr>' + head.map(function(h){ return '<th>' + drillEsc(h) + '</th>'; }).join('') + '<th class="needs-write">' + (isUrdu ? 'ترمیم' : 'Edit') + '</th></tr></thead><tbody>' +
+        list.map(function(c){
+          return '<tr><td>' + drillEsc(c.date || '—') + '</td><td>' + drillEsc(((c.type || '') + ' ' + (c.caseNo || '') + (c.year ? '/' + c.year : '')).trim() || '—') + '</td>' +
+            '<td class="wrap-cell">' + drillEsc((c.title || '') + (c.versus && c.versus !== '—' ? ' vs ' + c.versus : '')) + '</td>' +
+            '<td>' + drillEsc(c.judge || '') + '</td><td>' + drillEsc(c.bench || '') + '</td><td>' + drillEsc(c.serial || '') + '</td>' +
+            '<td>' + drillEsc(c.result || '—') + '</td><td>' + drillEsc(canonRelief(c.relief) || '') + '</td>' +
+            '<td class="needs-write"><div class="btn ghost" role="button" tabindex="0" data-drill-edit="' + drillEsc(c.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    var html = '<div class="drill-count"><b>' + rows.length + '</b> ' + (isUrdu ? 'کیس' : (rows.length === 1 ? 'case' : 'cases')) + '</div>' +
+      (note ? '<div class="drill-note" role="status">' + drillEsc(note) + '</div>' : '') +
+      (rows.length ? table(rows) : '<div class="drill-empty">' + (isUrdu ? 'اس نمبر میں Case List کا کوئی کیس نہیں (ہاتھ سے لکھا ہوا نمبر ہو سکتا ہے)' : 'No case from the Case List is counted here (the number may have been typed by hand).') + '</div>');
+    if(D.uncounted.length){
+      html += '<div class="drill-sub2">' + (isUrdu ? 'یہ کیسز جدول میں شامل نہیں (نتیجہ خالی یا کالموں میں نہیں): ' : 'Not in the table (Result blank or not one of the columns): ') + D.uncounted.length + '</div>' + table(D.uncounted.slice().sort(function(a, b){ return String(a.date || '').localeCompare(String(b.date || '')); }));
+    }
+    document.getElementById('drillBody').innerHTML = html;
+    document.getElementById('drillClose').setAttribute('aria-label', isUrdu ? 'بند کریں' : 'Close');
+  }
+  function openDrill(sel, from){
+    if(!currentReport) return;
+    DRILL.sel = sel; DRILL.open = true; DRILL.from = from || null;
+    renderDrill();
+    document.getElementById('drillModal').classList.add('open');
+    document.getElementById('drillClose').focus();
+  }
+  function closeDrill(){
+    if(!DRILL.open) return;
+    DRILL.open = false;
+    document.getElementById('drillModal').classList.remove('open');
+    if(DRILL.from && DRILL.from.focus && document.body.contains(DRILL.from)) DRILL.from.focus();
+    DRILL.from = null;
+  }
+  (function(){
+    var rt = document.getElementById('reportTable');
+    function selFor(td, target){
+      if(!td) return null;
+      var ri = parseInt(td.getAttribute('data-ri'), 10), ci = parseInt(td.getAttribute('data-ci'), 10);
+      if(td.id === 'grandTotalCell' || td.classList.contains('grand-label')) return { kind:'all' };
+      if(td.classList.contains('grand-cell')) return { kind:'col', ci:ci };
+      if(td.classList.contains('row-total')) return { kind:'row', ri:ri };
+      if(!DRILL_ON) return null;
+      if(td.classList.contains('nature-cell') && !td.classList.contains('grand-label')) { var ni = target.closest('.nature-input'); return ni ? { kind:'row', ri:parseInt(ni.getAttribute('data-ri'), 10) } : null; }
+      if(!isNaN(ri) && !isNaN(ci)) return { kind:'cell', ri:ri, ci:ci };
+      return null;
+    }
+    rt.addEventListener('click', function(e){
+      if(!currentReport || e.target.classList.contains('row-del')) return;
+      var td = e.target.closest('td'); var sel = selFor(td, e.target);
+      if(sel) openDrill(sel, td.querySelector('input') || td);
+    });
+    rt.addEventListener('keydown', function(e){
+      if(!currentReport || (e.key !== 'Enter' && e.key !== ' ')) return;
+      var td = e.target.closest('td'); if(!td) return;
+      if(e.target.tagName === 'INPUT' && !(DRILL_ON && e.key === 'Enter')) return;
+      var sel = selFor(td, e.target); if(!sel) return;
+      e.preventDefault(); openDrill(sel, e.target);
+    });
+    document.getElementById('drillModal').addEventListener('click', function(e){
+      if(e.target === this){ closeDrill(); return; }
+      var ed = e.target.closest('[data-drill-edit]'); if(ed) openEditForm(ed.getAttribute('data-drill-edit'));
+    });
+    document.getElementById('drillModal').addEventListener('keydown', function(e){
+      var ed = e.target.closest && e.target.closest('[data-drill-edit]');
+      if(ed && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); openEditForm(ed.getAttribute('data-drill-edit')); }
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && DRILL.open && !document.getElementById('caseForm').classList.contains('open')) closeDrill();
+    });
+  })();
 
   function saveCurrentReport(){
     if(!currentReport){ return; }
@@ -2761,6 +2913,7 @@ html.embedded .app-shell{ min-height:0; }
       arr.sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
       CASES = arr;
       populateFilters();
+      if(DRILL.open) renderDrill();   /* a case edited from the drill-down list: refresh the list */
       document.getElementById('authGate').style.display = 'none';
       openEditFromLink();
     }, function(err){

@@ -233,6 +233,10 @@ html,body{overflow-x:hidden;}
     #printArea, #printArea *{visibility:visible;}
     #printArea{position:absolute; top:0; left:0; width:100%;}
     #printArea .heading-icon{display:none;}
+    /* The ♿ "text spacing" option adds letter/word spacing to the whole page. The PDF/image maker (html2canvas)
+       then draws every letter separately, which breaks the joined Urdu letters into overlapping pieces. The
+       notice itself is always drawn with normal spacing (this rule also applies while the PDF/image is made). */
+    #printArea, #printArea *{letter-spacing:normal !important; word-spacing:normal !important;}
     /* If someone prints (Ctrl+P / browser print icon) without first opening a notice's own
        "Preview" button, #printArea is still empty and the sheet would otherwise print
        completely blank with no explanation. Show a plain message instead. */
@@ -1354,13 +1358,22 @@ html,body{overflow-x:hidden;}
     return 'Notice_' + safeType + '_' + n.caseNo + '_' + n.year + (noticeLang === 'en' ? '_EN' : '') + '.' + ext;
   }
 
-  function buildNoticeShareText(n){
+  function buildNoticeShareText(n, withParagraph){
+    if(withParagraph === undefined) withParagraph = true;
     return (n.diaryNo ? ('No. ' + NOTICE_REF_PREFIX + n.diaryNo + '\n') : '') + (n.type + ' No. ' + n.caseNo + '/' + n.year + ' — ' + n.title + ' Vs ' + n.versus) + '\n' +
       'Nature: ' + n.relief + '\n' +
       'FIR No: ' + n.firNo + '/' + n.firYear + '\n' +
       'Police Station: ' + n.station + ', Tehsil: ' + (n.tehsil || '—') + ', District: ' + n.district + '\n' +
       'Bench: ' + n.bench + (n.srNo && n.srNo !== '—' ? ('  |  Sr. No. of Cause List: ' + n.srNo) : '') + '\n' +
-      'Hearing Date: ' + formatDateUr(n.hearing) + '\n\n' + noticeBodyText(n.hearing, noticeLang);
+      'Hearing Date: ' + formatDateUr(n.hearing) + (withParagraph ? '\n\n' + noticeBodyText(n.hearing, noticeLang) : '');
+  }
+  /* WhatsApp / mailto links must stay short or they get cut off (Outlook stops at about 2000 characters, and
+     Urdu letters take 6 characters each once encoded). If the full text — details plus the notice paragraph —
+     would be too long, only the case details are sent as text; the notice itself is in the attached image. */
+  var SHARE_MAX_ENCODED = { whatsapp: 3500, email: 1800 };
+  function shareTextFor(n, channel){
+    var full = buildNoticeShareText(n, true);
+    return (encodeURIComponent(full).length <= SHARE_MAX_ENCODED[channel === 'whatsapp' ? 'whatsapp' : 'email']) ? full : buildNoticeShareText(n, false);
   }
 
   /* Temporarily flips every "@media print" stylesheet rule to "@media all" for the instant
@@ -1387,9 +1400,14 @@ html,body{overflow-x:hidden;}
       });
     });
   }
+  /* The notice is captured at a fixed A4-like width (704 px = A4 page width minus the 12 mm margins, the same
+     width the real Print uses) instead of the width of whatever window it happens to be open in. Without this,
+     a wide monitor produced a very wide, short picture (tiny text on the top third of the PDF page) and a phone
+     produced a very narrow one. windowWidth also makes the phone-only CSS stay out of the exported file. */
+  var NOTICE_CAPTURE_WIDTH = 704;
   function generateNoticeCanvas(){
     return withPrintRulesActive(function(){
-      return html2canvas(document.getElementById('printArea'), { backgroundColor: '#ffffff', scale: 2 });
+      return html2canvas(document.getElementById('printArea'), { backgroundColor: '#ffffff', scale: 2, windowWidth: NOTICE_CAPTURE_WIDTH });
     });
   }
   /* Builds and saves a PDF from `target` using html2canvas + jsPDF directly instead of
@@ -1435,7 +1453,7 @@ html,body{overflow-x:hidden;}
     }
     var target = document.getElementById('printArea');
     withPrintRulesActive(function(){
-      return buildPdfFromElement(target, noticeFileName(currentPreviewNotice, 'pdf'), 12, "a4", "portrait");
+      return buildPdfFromElement(target, noticeFileName(currentPreviewNotice, 'pdf'), 12, "a4", "portrait", { windowWidth: NOTICE_CAPTURE_WIDTH });
     }).catch(function(err){
       console.error("PDF export failed:", err);
       alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');
@@ -1460,7 +1478,8 @@ html,body{overflow-x:hidden;}
   function shareNotice(channel){
     if(!currentPreviewNotice) return;
     var n = currentPreviewNotice;
-    var text = buildNoticeShareText(n);
+    var fullText = buildNoticeShareText(n);                 // used when the phone's own share sheet opens
+    var text = shareTextFor(n, channel);                    // used for the WhatsApp / mailto links (length-limited)
 
     if(typeof html2canvas === 'undefined'){
       openShareFallback(channel, text);
@@ -1474,7 +1493,7 @@ html,body{overflow-x:hidden;}
         try{ file = new File([blob], noticeFileName(n, 'png'), { type: 'image/png' }); }catch(e){ file = null; }
 
         if(file && navigator.canShare && navigator.canShare({ files: [file] })){
-          navigator.share({ files: [file], title: (isUrdu ? 'کیس نوٹس' : 'Case Notice'), text: text }).catch(function(){ /* user cancelled — no error needed */ });
+          navigator.share({ files: [file], title: (isUrdu ? 'کیس نوٹس' : 'Case Notice'), text: fullText }).catch(function(){ /* user cancelled — no error needed */ });
           return;
         }
 

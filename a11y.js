@@ -72,6 +72,12 @@
     s += 'html.a11y-font body,html.a11y-font body *:not(svg):not(svg *){font-family:Verdana,Tahoma,"Segoe UI",Arial,"Noto Naskh Arabic","Noto Sans Arabic",sans-serif !important;}';
     // spacing
     s += 'html.a11y-space body,html.a11y-space body *{line-height:1.8 !important;letter-spacing:.03em !important;word-spacing:.12em !important;}';
+    // The PDF/image makers (html2canvas) draw text letter-by-letter whenever letter-spacing is not "normal", which
+    // breaks the joined Urdu letters into overlapping pieces. So the spacing option is switched off (a) while a page
+    // is printed or captured — every export in the suite flips its "@media print" rules on for the capture, which
+    // includes this one — and (b) inside the Daily Case Entry report sheet (.print-sheet), which is captured as a copy.
+    s += '@media print{html.a11y-space body,html.a11y-space body *{letter-spacing:normal !important;word-spacing:normal !important;}}';
+    s += 'html.a11y-space body .print-sheet,html.a11y-space body .print-sheet *{letter-spacing:normal !important;word-spacing:normal !important;}';
     // motion
     s += 'html.a11y-motion *,html.a11y-motion *::before,html.a11y-motion *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}';
     // toolbar

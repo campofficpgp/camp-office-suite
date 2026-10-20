@@ -169,6 +169,7 @@ html,body{overflow-x:hidden;}
     .notice-sheet .meta-row{gap:6px; font-size:12.5px;} .notice-sheet .meta-row .k{min-width:0 !important; flex:0 0 104px; width:104px;} .notice-sheet .meta-row > :not(.k){min-width:0; overflow-wrap:anywhere;}
     .notice-sheet .ref-row{font-size:12px; gap:4px 8px; flex-wrap:wrap;} .notice-sheet .ref-blank{min-width:56px !important;} .notice-sheet .ref-blank-date{min-width:70px !important;}
     .notice-sheet .print-heading-input{min-width:0; width:100%;}
+    .notice-sheet .body-text.body-en{text-align:left;}
   }
   .notice-sheet .p-logo{height:60px; margin:0; display:block; text-align:left; direction:ltr; flex:0 0 76px; width:76px;}
   .notice-sheet .p-logo img{height:60px; width:auto; max-width:76px; object-fit:contain; display:block; margin:0;}
@@ -179,6 +180,18 @@ html,body{overflow-x:hidden;}
   .notice-sheet .meta-row{display:flex; gap:10px; margin-bottom:4px; direction:ltr; text-align:left; font-size:13px;}
   .notice-sheet .meta-row .k{font-weight:700; min-width:190px;}
   .notice-sheet .body-text{margin:18px 0; font-size:14.5px;}
+  .notice-sheet .body-text.body-en{direction:ltr; text-align:justify; font-size:14px; line-height:1.8;}
+  /* Notice-language picker (Urdu / English) above the preview sheet — screen only, never printed or captured. */
+  .lang-pick{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; font-size:12.5px; font-weight:600; color:var(--navy);}
+  .lang-pick .btn{padding:6px 16px;}
+  .lang-pick .btn.on{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .body-edit-bar{margin:0 0 10px;}
+  .body-edit-bar .btn{padding:6px 14px; font-size:12.5px;}
+  .body-editor{margin:0 0 12px; padding:12px; border:1px solid var(--gold-deep); border-radius:var(--radius-sm); background:#fbf8ee;}
+  .body-editor .be-hint{font-size:12px; line-height:1.7; color:#4a3d12; margin:0 0 8px;}
+  .body-editor textarea{width:100%; box-sizing:border-box; min-height:130px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; line-height:1.9; resize:vertical;}
+  .body-editor .be-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+  .body-editor .be-actions .btn{padding:6px 14px; font-size:12.5px;}
   .notice-sheet .sign-block{direction:ltr; text-align:left; margin-top:26px; font-size:13px; line-height:1.7;}
   .notice-sheet hr{border:none; border-top:1px dashed var(--border); margin:18px 0;}
   .notice-sheet .ref-row{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; direction:ltr; text-align:left; font-size:13px; margin:0 0 14px; line-height:1.5;}
@@ -253,7 +266,7 @@ html,body{overflow-x:hidden;}
 .userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
 .readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
 .no-delete .needs-delete{ display:none !important; }
-.no-lists .manage-link{ display:none !important; }
+.no-lists .manage-link, .no-lists .needs-lists{ display:none !important; }
 
   /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
   .app-shell{ display:flex; min-height:100vh; }
@@ -456,6 +469,21 @@ html,body{overflow-x:hidden;}
       <div class="modal-close"><span onclick="closePreview()">✕</span></div>
       <div style="padding:0 20px 20px;">
         <div id="previewWarn" class="preview-warn" role="alert" style="display:none;"></div>
+        <div class="lang-pick" id="langPick">
+          <span data-en="Notice language:" data-ur="نوٹس کی زبان:">Notice language:</span>
+          <div class="btn ghost on" id="nlUr" onclick="setNoticeLang('ur')" role="button" tabindex="0">اردو</div>
+          <div class="btn ghost" id="nlEn" onclick="setNoticeLang('en')" role="button" tabindex="0">English</div>
+        </div>
+        <div class="body-edit-bar needs-lists" id="bodyEditBar"><div class="btn ghost" onclick="openBodyEditor()" role="button" tabindex="0" data-en="✎ Edit notice paragraph" data-ur="✎ نوٹس کی عبارت میں ترمیم">✎ Edit notice paragraph</div></div>
+        <div class="body-editor needs-lists" id="bodyEditor" style="display:none;">
+          <div class="be-hint" id="bodyEditHint"></div>
+          <textarea id="bodyEditText" spellcheck="false" oninput="bodyEditorLive()"></textarea>
+          <div class="be-actions">
+            <div class="btn primary" onclick="saveBodyEditor()" role="button" tabindex="0" data-en="✓ Save" data-ur="✓ محفوظ کریں">✓ Save</div>
+            <div class="btn ghost" onclick="fillDefaultBody()" role="button" tabindex="0" data-en="↺ Default text" data-ur="↺ اصل عبارت">↺ Default text</div>
+            <div class="btn ghost" onclick="closeBodyEditor()" role="button" tabindex="0" data-en="✕ Cancel" data-ur="✕ منسوخ">✕ Cancel</div>
+          </div>
+        </div>
         <div id="printArea" class="notice-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
@@ -1106,12 +1134,82 @@ html,body{overflow-x:hidden;}
       '<span class="heading-icon print-reset" data-field="'+fieldKey+'" title="'+(isUrdu?'ڈیفالٹ پر واپس':'Reset to default')+'">↺</span>' +
       '</div>';
   }
+  // Notice language: 'ur' (default, the original Urdu paragraph) or 'en' (word-for-word English version).
+  // Chosen with the Urdu/English buttons above the preview; applies to the preview, Print, PDF, image
+  // and the WhatsApp/Email text. Resets to Urdu whenever the preview is closed.
+  var noticeLang = 'ur';
+  // The notice paragraph is a template: "{date}" is replaced by the notice's hearing date (Date of Fixation).
+  // DEFAULT_BODY is what is printed unless an admin has saved their own wording (stored once for the whole
+  // office in Firestore lookupLists/caseNoticeText; "✎ Edit notice paragraph" in the preview).
+  var DEFAULT_BODY = {
+    ur: 'مقدمہ بالا کیس مورخہ {date} کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے کیمپ آفس پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔',
+    en: 'The above-mentioned case is fixed for hearing before the Supreme Court of Pakistan, Islamabad on {date}. Therefore, the Investigation Officer is directed to bring the complete police record of this case and to appear at the Camp Office Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad at 8:00 a.m., and also to ensure that the complainant of the case is served in person.'
+  };
+  var customBody = { ur: '', en: '' };
+  var editingBody = false;
+  function bodyTemplate(lang){ var c = (customBody[lang] || '').trim(); return c ? customBody[lang] : DEFAULT_BODY[lang]; }
+  function noticeBodyText(hearingIso, lang, tpl){
+    var t = (tpl != null) ? tpl : bodyTemplate(lang);
+    return t.split('{date}').join(formatDateUr(hearingIso));
+  }
+  function bodyToHtml(text){ return escapeHtml(text).replace(/\n/g, '<br>'); }
+  function bodyEditorLive(){
+    var el = document.querySelector('#printArea .body-text'), ta = document.getElementById('bodyEditText');
+    if(el && ta && currentPreviewNotice) el.innerHTML = bodyToHtml(noticeBodyText(currentPreviewNotice.hearing, noticeLang, ta.value));
+  }
+  function showBodyEditorState(){
+    var ed = document.getElementById('bodyEditor'), bar = document.getElementById('bodyEditBar');
+    if(ed) ed.style.display = editingBody ? '' : 'none';
+    if(bar) bar.style.display = editingBody ? 'none' : '';
+  }
+  function openBodyEditor(){
+    if(!CAN_LISTS || !currentPreviewNotice) return;
+    editingBody = true;
+    var ta = document.getElementById('bodyEditText');
+    ta.value = bodyTemplate(noticeLang);
+    ta.dir = (noticeLang === 'en') ? 'ltr' : 'rtl';
+    document.getElementById('bodyEditHint').textContent = (isUrdu
+      ? ('آپ ' + (noticeLang === 'en' ? 'انگریزی' : 'اردو') + ' عبارت بدل رہے ہیں۔ {date} کی جگہ نوٹس کی تاریخ سماعت خود لگ جاتی ہے، اسے نہ مٹائیں۔ محفوظ کرنے پر یہ عبارت پورے دفتر کے ہر نوٹس میں آئے گی۔')
+      : ('You are editing the ' + (noticeLang === 'en' ? 'English' : 'Urdu') + ' paragraph. {date} is replaced automatically by the notice\'s hearing date — do not delete it. Once saved, this wording is used for every notice in the office.'));
+    showBodyEditorState();
+    ta.focus();
+  }
+  function closeBodyEditor(){
+    editingBody = false;
+    showBodyEditorState();
+    if(currentPreviewNotice) openPreview(currentPreviewNotice.id);
+  }
+  function fillDefaultBody(){
+    var ta = document.getElementById('bodyEditText');
+    if(ta){ ta.value = DEFAULT_BODY[noticeLang]; bodyEditorLive(); }
+  }
+  function saveBodyEditor(){
+    if(!CAN_LISTS) return;
+    var ta = document.getElementById('bodyEditText');
+    var v = (ta.value || '').trim();
+    if(!v){ alert(isUrdu ? 'عبارت خالی نہیں ہو سکتی' : 'The paragraph cannot be empty'); return; }
+    if(v.length > 1500){ alert(isUrdu ? 'عبارت بہت لمبی ہے (زیادہ سے زیادہ 1500 حروف)' : 'Paragraph is too long (max 1500 characters)'); return; }
+    if(v.indexOf('{date}') < 0 && !confirm(isUrdu ? 'عبارت میں {date} نہیں ہے، اس لیے تاریخ سماعت عبارت میں نہیں آئے گی۔ پھر بھی محفوظ کریں؟' : 'The paragraph has no {date}, so the hearing date will not appear in it. Save anyway?')) return;
+    var lang = noticeLang, data = { updatedBy: CURRENT_USER ? CURRENT_USER.email : '', updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    data[lang === 'en' ? 'bodyEn' : 'bodyUr'] = v;
+    db.collection('lookupLists').doc('caseNoticeText').set(data, { merge: true }).then(function(){
+      customBody[lang] = (v === DEFAULT_BODY[lang]) ? '' : v;
+      closeBodyEditor();
+    }).catch(function(err){ alert((isUrdu ? 'عبارت محفوظ نہیں ہو سکی: ' : 'Could not save the paragraph: ') + err.message); });
+  }
+  function setNoticeLang(l){
+    if(editingBody){ alert(isUrdu ? 'پہلے عبارت محفوظ کریں یا منسوخ کریں' : 'Please save or cancel the paragraph edit first'); return; }
+    noticeLang = (l === 'en') ? 'en' : 'ur';
+    editingPrintField = null;
+    if(currentPreviewNotice) openPreview(currentPreviewNotice.id);
+  }
   function buildNoticeLetterheadHtml(){
     // Show only the currently active language's heading line (not both stacked) — matches
     // whichever language the page is toggled to (اردو/English). The notice body text itself
     // stays fixed Urdu (a legal notice format), independent of this heading.
-    var fieldKey = isUrdu ? 'ur' : 'en';
-    var value = isUrdu ? headingUr : headingEn;
+    var useUr = isUrdu && noticeLang !== 'en';   // English notice always gets the English heading
+    var fieldKey = useUr ? 'ur' : 'en';
+    var value = useUr ? headingUr : headingEn;
     return '<div class="lh-row"><div class="p-logo">'+PUNJAB_LOGO_HTML+'</div>' + printHeaderRowHtml(fieldKey, value, 'office-head') + '</div>';
   }
 
@@ -1156,8 +1254,9 @@ html,body{overflow-x:hidden;}
       '<div class="meta-row"><span class="k">U/S</span><span>'+n.sections+'</span></div>' +
       '<div class="meta-row"><span class="k">Police Station &amp; District</span><span>'+n.station+', Tehsil '+(n.tehsil||'—')+', District '+n.district+'</span></div>' +
       '<div class="meta-row"><span class="k">Bench</span><span>'+n.bench+'&nbsp;&nbsp;&nbsp;Sr. No. of Cause List: '+(n.srNo||'—')+'</span></div>' +
+      '<div class="meta-row"><span class="k">Date of Fixation</span><span><b>'+formatDateUr(n.hearing)+'</b></span></div>' +
       '<hr>' +
-      '<div class="body-text">مقدمہ بالا کیس مورخہ ' + formatDateUr(n.hearing) + ' کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے پراسیکیوٹر جنرل پنجاب آفس اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔</div>' +
+      '<div class="body-text' + (noticeLang === 'en' ? ' body-en' : '') + '">' + bodyToHtml(noticeBodyText(raw.hearing, noticeLang)) + '</div>' +
       '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>';
     /* The extra "Prepared by / Approved by" stamp blocks (Iftikhar Ahmed / Prosecutor) are no longer printed on a notice —
        the notice already carries its own signatory block, so the stamps showed up as a second, double signature. */
@@ -1167,6 +1266,9 @@ html,body{overflow-x:hidden;}
       if(!raw.hearing){ pw.textContent = isUrdu ? '⚠ اس نوٹس میں تاریخ سماعت درج نہیں۔ پرنٹ سے پہلے ترمیم کر کے تاریخ سماعت لکھ لیں۔' : '⚠ This notice has no Hearing Date. Edit the notice and add it before printing.'; pw.style.display = ''; }
       else { pw.textContent = ''; pw.style.display = 'none'; }
     }
+    showBodyEditorState();
+    var bu = document.getElementById('nlUr'), be = document.getElementById('nlEn');
+    if(bu && be){ bu.classList.toggle('on', noticeLang !== 'en'); be.classList.toggle('on', noticeLang === 'en'); }
     document.getElementById('previewModal').classList.add('open');
     var activePrintInput = document.querySelector('.print-heading-input') || document.querySelector('.stamp-input');
     if(activePrintInput){ activePrintInput.focus(); activePrintInput.select(); }
@@ -1240,6 +1342,8 @@ html,body{overflow-x:hidden;}
   });
 
   function closePreview(){
+    noticeLang = 'ur';
+    editingBody = false;
     editingStamp = null;
     editingPrintField = null;
     document.getElementById('previewModal').classList.remove('open');
@@ -1247,7 +1351,7 @@ html,body{overflow-x:hidden;}
 
   function noticeFileName(n, ext){
     var safeType = n.type.replace(/[^A-Za-z0-9]/g, '');
-    return 'Notice_' + safeType + '_' + n.caseNo + '_' + n.year + '.' + ext;
+    return 'Notice_' + safeType + '_' + n.caseNo + '_' + n.year + (noticeLang === 'en' ? '_EN' : '') + '.' + ext;
   }
 
   function buildNoticeShareText(n){
@@ -1256,7 +1360,7 @@ html,body{overflow-x:hidden;}
       'FIR No: ' + n.firNo + '/' + n.firYear + '\n' +
       'Police Station: ' + n.station + ', Tehsil: ' + (n.tehsil || '—') + ', District: ' + n.district + '\n' +
       'Bench: ' + n.bench + (n.srNo && n.srNo !== '—' ? ('  |  Sr. No. of Cause List: ' + n.srNo) : '') + '\n' +
-      'Hearing Date: ' + formatDateUr(n.hearing);
+      'Hearing Date: ' + formatDateUr(n.hearing) + '\n\n' + noticeBodyText(n.hearing, noticeLang);
   }
 
   /* Temporarily flips every "@media print" stylesheet rule to "@media all" for the instant
@@ -1514,6 +1618,13 @@ html,body{overflow-x:hidden;}
     db.collection('lookupLists').doc('caseNotice').onSnapshot(function(doc){
       if(doc.exists) applyLists(doc.data());
     }, function(err){ console.error('lists', err); });
+
+    db.collection('lookupLists').doc('caseNoticeText').onSnapshot(function(doc){
+      var d = doc.exists ? doc.data() : {};
+      customBody.ur = (typeof d.bodyUr === 'string') ? d.bodyUr : '';
+      customBody.en = (typeof d.bodyEn === 'string') ? d.bodyEn : '';
+      if(currentPreviewNotice && !editingBody && document.getElementById('previewModal').classList.contains('open')) openPreview(currentPreviewNotice.id);
+    }, function(err){ console.error('notice text', err); });
 
     db.collection('caseNotices').onSnapshot(function(qs){
       var arr = [];

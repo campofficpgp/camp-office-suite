@@ -651,7 +651,8 @@ body.is-super .super-only{ display:inline-block !important; }
     var name = (document.getElementById('pName').textContent || 'Employee').replace(/[^A-Za-z0-9]+/g,'-');
     var target = document.querySelector('.sheet');
     withPrintRulesActive(function(){
-      return buildPdfFromElement(target, "CampOffice-Employee-"+name+"-"+pers.replace(/[^A-Za-z0-9]+/g,'-')+".pdf", 12, "a4", "portrait");
+      /* windowWidth 1100 = the same desktop layout on every device. Without it a phone captured its own narrow 335 px sheet: the profile came out as 3 pages with huge text instead of 1 page. */
+      return buildPdfFromElement(target, "CampOffice-Employee-"+name+"-"+pers.replace(/[^A-Za-z0-9]+/g,'-')+".pdf", 12, "a4", "portrait", { windowWidth: 1100 });
     }).catch(function(err){
       console.error("PDF export failed:", err);
       alert('PDF بنانے میں خرابی — دوبارہ کوشش کریں۔ / Could not build the PDF — please try again.');

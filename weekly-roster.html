@@ -1362,7 +1362,8 @@ html,body{overflow-x:hidden;}
     var target = document.getElementById('rosterPrintArea');
     var wk = String(currentRoster.weekStart || 'Roster').replace(/[^A-Za-z0-9]+/g,'-');
     withPrintRulesActive(function(){
-      return buildPdfFromElement(target, "CampOffice-WeeklyRoster-"+wk+".pdf", 10, "a4", "landscape", {windowWidth: target.scrollWidth});
+      /* Fixed capture width 900 = the same layout on every device. It used to follow the screen (scrollWidth): a phone gave a narrow sheet, so the roster came out as 4 pages with huge text instead of 1 landscape page. */
+      return buildPdfFromElement(target, "CampOffice-WeeklyRoster-"+wk+".pdf", 10, "a4", "landscape", {windowWidth: 900});
     }).catch(function(err){
       console.error("PDF export failed:", err);
       alert(isUrdu ? 'PDF بنانے میں خرابی — دوبارہ کوشش کریں۔' : 'Could not build the PDF — please try again.');

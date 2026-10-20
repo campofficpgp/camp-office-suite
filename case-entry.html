@@ -454,6 +454,8 @@ html.embedded .app-shell{ min-height:0; }
   </div>
 <div class="wrap">
 
+    <div id="officerBanner" role="status" style="display:none; margin:0 0 12px; padding:9px 14px; border-radius:10px; font-size:13px; line-height:1.7; border:1px solid var(--border,#c5d6e6); background:var(--card,#eef4fa); color:var(--text,inherit);"></div>
+
     <div class="tab-switch">
       <div class="btn primary" id="tabCaseListBtn" onclick="switchTab('list')" data-en="Case List" data-ur="کیسز کی فہرست">Case List</div>
       <div class="btn ghost" id="tabReportBtn" onclick="switchTab('report')" data-en="📊 Monthly Progress Report" data-ur="📊 ماہانہ پیش رفت رپورٹ">📊 Monthly Progress Report</div>
@@ -1133,8 +1135,9 @@ html.embedded .app-shell{ min-height:0; }
           return '<td' + (col.w ? ' class="wrap-cell"' : '') + '>' + esc(show) + '</td>';
         }).join('') +
         '<td><div class="row-actions">' +
-          '<div class="btn ghost needs-write" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' +
-          '<div class="btn danger needs-delete" onclick="deleteCase(' + idq + ')">' + (isUrdu ? 'حذف کریں' : 'Delete') + '</div>' +
+          (canTouchCase(c) ? '<div class="btn ghost needs-write" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : '') +
+          (canDeleteCase(c) ? '<div class="btn danger" onclick="deleteCase(' + idq + ')">' + (isUrdu ? 'حذف کریں' : 'Delete') + '</div>' : '') +
+          ((OFFICER_RESTRICTED && CAN_WRITE && !canTouchCase(c)) ? viewOnlyMark() : '') +
         '</div></td></tr>';
       }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + 1) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
       document.getElementById('count').textContent = (isUrdu ? 'ملے: ' : 'Found: ') + total + (isUrdu ? ' از ' : ' of ') + all.length;
@@ -1427,6 +1430,8 @@ html.embedded .app-shell{ min-height:0; }
       document.getElementById(id).value = '';
     });
     document.getElementById('cOfficer').selectedIndex = 0;
+    if(OFFICER_RESTRICTED && MY_OFFICER) document.getElementById('cOfficer').value = MY_OFFICER;
+    document.getElementById('cOfficer').disabled = OFFICER_RESTRICTED;
     document.getElementById('cJudge').selectedIndex = 0;
     document.getElementById('cBench').selectedIndex = 0;
     document.getElementById('cType').selectedIndex = 0;
@@ -1509,9 +1514,11 @@ html.embedded .app-shell{ min-height:0; }
   function openEditForm(id){
     var c = CASES.find(function(x){ return x.id === id; });
     if(!c) return;
+    if(!canTouchCase(c)){ alert(isUrdu ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'This case belongs to another officer — you can only view it.'); return; }
     document.getElementById('cId').value = c.id;
     document.getElementById('formTitle').textContent = isUrdu ? 'کیس میں ترمیم' : 'Edit Case';
     document.getElementById('cOfficer').value = c.officer || '';
+    document.getElementById('cOfficer').disabled = OFFICER_RESTRICTED;
     document.getElementById('cJudge').value = c.judge;
     document.getElementById('cBench').value = c.bench;
     document.getElementById('cSerial').value = c.serial || '';
@@ -1559,7 +1566,7 @@ html.embedded .app-shell{ min-height:0; }
     }
 
     var data = {
-      officer: document.getElementById('cOfficer').value,
+      officer: OFFICER_RESTRICTED ? MY_OFFICER : document.getElementById('cOfficer').value,
       judge: document.getElementById('cJudge').value,
       bench: document.getElementById('cBench').value,
       serial: document.getElementById('cSerial').value.trim(),
@@ -1576,6 +1583,7 @@ html.embedded .app-shell{ min-height:0; }
     };
 
     if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit cases'); return; }
+    if(oldRec && !canTouchCase(oldRec)){ alert(isUrdu ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'This case belongs to another officer — you can only view it.'); return; }
     /* The same case may legitimately be listed again (e.g. adjourned and fixed for next week),
        so only an entry for the SAME case on the SAME date is blocked as a repeat. */
     var catUnchanged = oldRec && oldRec.type === data.type && (oldRec.relief || '') === (data.relief || '');
@@ -1615,6 +1623,8 @@ html.embedded .app-shell{ min-height:0; }
   }
 
   function deleteCase(id){
+    var dc = CASES.find(function(x){ return x.id === String(id); });
+    if(!dc || !canDeleteCase(dc)){ alert(isUrdu ? 'آپ صرف اپنے آفیسر کا کیس حذف کر سکتے ہیں۔' : 'You can delete only your own officer\'s cases.'); return; }
     if(!confirm(isUrdu ? 'کیا آپ واقعی اس کیس کو حذف کرنا چاہتے ہیں؟' : 'Are you sure you want to delete this case?')) return;
     db.collection('cases').doc(String(id)).delete()
       .catch(function(err){ alert((isUrdu ? 'حذف نہیں ہو سکا: ' : 'Could not delete: ') + err.message); });
@@ -1943,7 +1953,7 @@ html.embedded .app-shell{ min-height:0; }
             '<td class="wrap-cell">' + drillEsc((c.title || '') + (c.versus && c.versus !== '—' ? ' vs ' + c.versus : '')) + '</td>' +
             '<td>' + drillEsc(c.judge || '') + '</td><td>' + drillEsc(c.bench || '') + '</td><td>' + drillEsc(c.serial || '') + '</td>' +
             '<td>' + drillEsc(c.result || '—') + '</td><td>' + drillEsc(canonRelief(c.relief) || '') + '</td>' +
-            '<td class="needs-write"><div class="btn ghost" role="button" tabindex="0" data-drill-edit="' + drillEsc(c.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div></td></tr>';
+            '<td class="needs-write">' + (canTouchCase(c) ? '<div class="btn ghost" role="button" tabindex="0" data-drill-edit="' + drillEsc(c.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : viewOnlyMark()) + '</td></tr>';
         }).join('') + '</tbody></table></div>';
     }
     var html = '<div class="drill-count"><b>' + rows.length + '</b> ' + (isUrdu ? 'کیس' : (rows.length === 1 ? 'case' : 'cases')) + '</div>' +
@@ -2009,6 +2019,7 @@ html.embedded .app-shell{ min-height:0; }
 
   function saveCurrentReport(){
     if(!currentReport){ return; }
+    if(!canTouchOfficer(currentReport.officer)){ alert(isUrdu ? 'آپ صرف اپنے آفیسر کی رپورٹ محفوظ کر سکتے ہیں۔ دوسرے آفیسر کی رپورٹ دیکھ اور پرنٹ کر سکتے ہیں۔' : 'You can save only your own officer\'s report. You can still view and print other officers\' reports.'); return; }
     var existingIdx = SAVED_REPORTS.findIndex(function(r){
       return r.officer === currentReport.officer && r.month === currentReport.month && r.year === currentReport.year;
     });
@@ -2043,11 +2054,11 @@ html.embedded .app-shell{ min-height:0; }
         viewBtn.textContent = isUrdu ? 'دیکھیں' : 'View';
         viewBtn.onclick = function(){ viewSavedReport(r.id); };
         var delBtn = document.createElement('div');
-        delBtn.className = 'btn danger needs-delete';
+        delBtn.className = 'btn danger';
         delBtn.textContent = isUrdu ? 'حذف کریں' : 'Delete';
         delBtn.onclick = function(){ deleteSavedReport(r.id); };
         actions.appendChild(viewBtn);
-        actions.appendChild(delBtn);
+        if(CAN_WRITE && (CAN_DELETE || canTouchOfficer(r.officer))) actions.appendChild(delBtn);
         box.appendChild(row);
       });
     }
@@ -2074,6 +2085,8 @@ html.embedded .app-shell{ min-height:0; }
   }
 
   function deleteSavedReport(id){
+    var sr = SAVED_REPORTS.find(function(x){ return x.id === String(id); });
+    if(!sr || !CAN_WRITE || !(CAN_DELETE || canTouchOfficer(sr.officer))){ alert(isUrdu ? 'آپ صرف اپنے آفیسر کی رپورٹ حذف کر سکتے ہیں۔' : 'You can delete only your own officer\'s reports.'); return; }
     if(!confirm(isUrdu ? 'کیا آپ واقعی یہ محفوظ شدہ رپورٹ حذف کرنا چاہتے ہیں؟' : 'Delete this saved report?')) return;
     db.collection('monthlyReports').doc(String(id)).delete().then(function(){ setTimeout(openSavedReports, 300); })
       .catch(function(err){ alert((isUrdu ? 'حذف نہیں ہو سکا: ' : 'Could not delete: ') + err.message); });
@@ -2850,6 +2863,7 @@ html.embedded .app-shell{ min-height:0; }
     fillMonthSelect();
     populateFilters();
     renderThemePicker();
+    renderOfficerBanner();
     if(currentReport){
       currentReport.monthName = (isUrdu ? MONTHS_UR : MONTHS_EN)[currentReport.month-1];
       renderReportMeta(currentReport, currentReport.savedAt);
@@ -2876,6 +2890,28 @@ html.embedded .app-shell{ min-height:0; }
   var db = firebase.firestore();
   CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  /* Officer-wise permission (20 Oct 2026): a Data Entry user is tied to ONE officer (users/{uid}.officer, set by an Admin in the portal's Users panel).
+     Such a user can add / edit / delete only that officer's cases and reports, and can only VIEW everyone else's. Admin / Super Admin are not restricted.
+     A Data Entry user with no officer assigned is view-only until an Admin assigns one. The Firestore rules enforce the same thing on the server. */
+  var MY_OFFICER = '', OFFICER_RESTRICTED = false;
+  function canTouchOfficer(o){ return !OFFICER_RESTRICTED || (!!MY_OFFICER && String(o || '') === MY_OFFICER); }
+  function canTouchCase(c){ return CAN_WRITE && canTouchOfficer(c && c.officer); }
+  function canDeleteCase(c){ return CAN_WRITE && (CAN_DELETE || canTouchOfficer(c && c.officer)); }
+  function renderOfficerBanner(){
+    var b = document.getElementById('officerBanner'); if(!b) return;
+    if(!OFFICER_RESTRICTED){ b.style.display = 'none'; return; }
+    b.style.display = '';
+    if(MY_OFFICER){
+      b.textContent = isUrdu
+        ? ('آپ ' + MY_OFFICER + ' کا ڈیٹا شامل، ترمیم اور حذف کر سکتے ہیں۔ دوسرے آفیسرز کا ڈیٹا آپ صرف دیکھ سکتے ہیں۔')
+        : ('You can add, edit and delete data of ' + MY_OFFICER + ' only. You can view other officers\' data but not change it.');
+    } else {
+      b.textContent = isUrdu
+        ? 'آپ کے اکاؤنٹ کے ساتھ ابھی کوئی آفیسر منسلک نہیں، اس لیے آپ صرف دیکھ سکتے ہیں۔ Admin سے کہیں کہ آپ کا آفیسر مقرر کر دے۔'
+        : 'No officer is assigned to your account yet, so you can only view. Ask an Admin to assign your officer.';
+    }
+  }
+  function viewOnlyMark(){ return '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>'; }
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
   function gate(titleUr, titleEn, bodyUr, showLink){
@@ -2943,7 +2979,9 @@ html.embedded .app-shell{ min-height:0; }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
       CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
-      CAN_WRITE = isAdm || r2 === 'data_entry';
+      OFFICER_RESTRICTED = !isAdm && r2 === 'data_entry';
+      MY_OFFICER = OFFICER_RESTRICTED ? String(u.officer || '') : '';
+      CAN_WRITE = isAdm || (r2 === 'data_entry' && !!MY_OFFICER);
       CAN_DELETE = isAdm;
       CAN_LISTS = isAdm;
       CAN_AI = isAdm;
@@ -2951,6 +2989,7 @@ html.embedded .app-shell{ min-height:0; }
       document.body.classList.toggle('no-delete', !CAN_DELETE);
       document.body.classList.toggle('no-lists', !CAN_LISTS);
       document.body.classList.toggle('no-ai', !CAN_AI);
+      renderOfficerBanner();
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

@@ -549,6 +549,8 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
     <div id="readMsg" class="cl-msg" style="display:none"></div>
   </div>
 
+  <div class="cl-msg no-print" id="officerNote" style="display:none"></div>
+
   <div class="cl-card no-print" id="toolCard" style="display:none">
     <div class="cl-bar">
       <button class="cl-btn" onclick="openAdd()">＋ Add / شامل</button>
@@ -943,7 +945,11 @@ var ST = { meta:null, rows:[], fileName:'', offDay:{}, offBench:{} };
 var HIST = [], FUT = [];
 var VIEW = {day:'', bench:'', supp:false};
 var RID = 0, EDIT_ID = null, ADD_MODE = false;
-var CTX = { user:null, canWrite:false, canLists:false };
+var CTX = { user:null, canWrite:false, canLists:false, restricted:false, myOfficer:'' };
+/* Officer-wise permission (20 Oct 2026): a Data Entry user is tied to ONE officer (users/{uid}.officer). Every case such a user saves
+   gets that officer, and an already-saved case of another officer is never changed. Admin / Super Admin are not restricted.
+   The Firestore rules enforce the same thing on the server. */
+function mayChange(c){ return !CTX.restricted || (!!CTX.myOfficer && String((c && c.officer) || '') === CTX.myOfficer); }
 
 function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function $(id){ return document.getElementById(id); }
@@ -1099,9 +1105,10 @@ function rowsFromParsed(list){
 /* ---------- officer: chosen per case, per bench, per day, or one for everything (most specific wins) ---------- */
 function benchKey(r){ return r.iso + '|' + r.bench + '|' + r.hid; }
 function inheritedOfficer(r){ return ST.offBench[benchKey(r)] || ST.offDay[r.iso] || ($('officerSel') ? $('officerSel').value : '') || ''; }
-function effOfficer(r){ return r.officer || inheritedOfficer(r); }
+function effOfficer(r){ if(CTX.restricted) return CTX.myOfficer; return r.officer || inheritedOfficer(r); }
 function officerOptions(sel, blankLabel){
   var list = LISTS.officers.slice(); if(sel && list.indexOf(sel) < 0) list.push(sel);
+  if(CTX.restricted) list = CTX.myOfficer ? [CTX.myOfficer] : [];
   return '<option value="">' + esc(blankLabel) + '</option>' + list.map(function(o){ return '<option' + (o === sel ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
 }
 function shortOff(o){ return String(o || '').replace(/\s+—.*$/, ''); }
@@ -1361,7 +1368,7 @@ function render(){
   $('printTitle').innerHTML = '<h1>' + esc(pt) + ' — Punjab Prosecution Cases</h1><div>' + esc(rng) + ' &nbsp;|&nbsp; Punjab cases: ' + mineN + ' &nbsp;|&nbsp; Printed: ' + esc(dmyFromIso(new Date().toISOString().slice(0,10))) + '</div>';
 }
 function computeCounts(){
-  var c = {found:0, sel:0, exists:0, unc:0, nores:0, save:0, upd:0, hist:0};
+  var c = {found:0, sel:0, exists:0, unc:0, nores:0, save:0, upd:0, hist:0, foreign:0};
   ST.rows.forEach(function(r){
     if(!r.mine) return;
     c.found++;
@@ -1369,7 +1376,7 @@ function computeCounts(){
     if(!r.include) return;
     c.sel++;
     var st = rowStatus(r);
-    if(st.ex && !r.force){ c.exists++; if(emptyRes(st.ex.result) && r.result) c.upd++; }
+    if(st.ex && !r.force){ c.exists++; if(emptyRes(st.ex.result) && r.result){ if(mayChange(st.ex)) c.upd++; else c.foreign++; } }
     else c.save++;
     if(r.unc.length && !r.confirmed) c.unc++;
     if(!r.result) c.nores++;
@@ -1704,6 +1711,7 @@ function startSave(){
   h += bi2('<b>' + c.save + '</b> نئے کیس محفوظ ہوں گے۔', '<b>' + c.save + '</b> new cases will be saved.');
   if(c.upd) h += bi2('<b>' + c.upd + '</b> موجود کیسوں میں نتیجہ بھرا جائے گا۔', '<b>' + c.upd + '</b> existing cases will get a result.');
   if(c.exists - c.upd > 0) h += bi2((c.exists - c.upd) + ' پہلے سے درج ہیں، چھوڑ دیے جائیں گے۔', (c.exists - c.upd) + ' already saved — skipped.');
+  if(c.foreign) h += '<div style="color:#8a5a00;margin-top:6px">' + bi2('<b>' + c.foreign + '</b> پہلے سے درج کیس دوسرے آفیسر کے ہیں — ان میں نتیجہ نہیں بھرا جائے گا۔', '<b>' + c.foreign + '</b> already-saved case(s) belong to another officer — their result will not be filled.') + '</div>';
   var noOff = ST.rows.filter(function(r){ return r.mine && r.include && inView(r) && !(rowStatus(r).ex && !r.force) && !effOfficer(r); }).length;
   if(noOff) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + noOff + '</b> کیسوں کا آفیسر منتخب نہیں — بغیر آفیسر محفوظ ہوں گے۔', '<b>' + noOff + '</b> cases have no officer — they will be saved without an officer.') + '</div>';
   if(c.nores) h += '<div style="color:#b3261e;margin-top:6px">' + bi2('<b>' + c.nores + '</b> کا نتیجہ ابھی منتخب نہیں — خالی محفوظ ہوں گے؛ بعد میں یہیں نتیجہ بھر کر دوبارہ Save کر سکتے ہیں۔', '<b>' + c.nores + '</b> have no result yet — they will be saved blank; fill them later here and press Save again.') + '</div>';
@@ -1722,7 +1730,7 @@ async function doSave(newTypes, newJudges, only){
   (only ? [only] : ST.rows).forEach(function(r){
     if(!only && (!r.mine || !r.include || !inView(r))) return;
     var st = rowStatus(r);
-    if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
+    if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result && mayChange(st.ex)) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
     else create.push(r);
   });
   if(SAVING) return; SAVING = true;
@@ -2137,7 +2145,20 @@ function applyLists(d){
 }
 function fillOfficers(){
   var cur = $('officerSel').value;
+  if(CTX.restricted){
+    $('officerSel').innerHTML = CTX.myOfficer ? '<option selected>' + esc(CTX.myOfficer) + '</option>' : '<option value="">— none / کوئی نہیں —</option>';
+    $('officerSel').disabled = true; return;
+  }
+  $('officerSel').disabled = false;
   $('officerSel').innerHTML = '<option value="">— none / کوئی نہیں —</option>' + LISTS.officers.map(function(o){ return '<option' + (o === cur ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('');
+}
+function showOfficerNote(){
+  var el = $('officerNote'); if(!el) return;
+  if(!CTX.restricted){ el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = CTX.myOfficer
+    ? bi('آپ کے محفوظ کیے ہوئے تمام کیس <b>' + esc(CTX.myOfficer) + '</b> کے نام سے بنیں گے۔ دوسرے آفیسر کے پہلے سے درج کیس میں تبدیلی نہیں ہو گی۔', 'Every case you save is recorded for <b>' + esc(CTX.myOfficer) + '</b>. Cases already saved for another officer are never changed.')
+    : bi('آپ کے اکاؤنٹ کے ساتھ ابھی کوئی آفیسر منسلک نہیں، اس لیے آپ محفوظ نہیں کر سکتے۔ Admin سے کہیں کہ آپ کا آفیسر مقرر کر دے۔', 'No officer is assigned to your account yet, so you cannot save. Ask an Admin to assign your officer.');
 }
 function startLiveData(){
   startSavedListener();
@@ -2267,8 +2288,12 @@ auth.onAuthStateChanged(function(user){
     var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
     var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
     CTX.user = {uid:user.uid, email:user.email, role:r2};
-    CTX.canWrite = isAdm || r2 === 'data_entry';
+    CTX.restricted = !isAdm && r2 === 'data_entry';
+    CTX.myOfficer = CTX.restricted ? String(u.officer || '') : '';
+    CTX.canWrite = isAdm || (r2 === 'data_entry' && !!CTX.myOfficer);
     CTX.canLists = isAdm;
+    fillOfficers();
+    showOfficerNote();
     $('ceUserEmail').textContent = user.email;
     var rn = ROLE_NAMES[r2] || [r2, r2];
     $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

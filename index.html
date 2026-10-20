@@ -89,6 +89,7 @@ html,body{overflow-x:hidden;}
   th,td{ text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
   th{ background:var(--navy); color:#fff; }
   .row-actions{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  #usersTableBody select{ min-width:120px; }
   .count-chip{ background:var(--navy-tint); color:var(--navy-dark); padding:4px 10px; border-radius:20px; font-size:12.5px; font-weight:700; }
   .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
   .hidden{ display:none !important; }
@@ -703,15 +704,17 @@ html,body{overflow-x:hidden;}
             <div style="margin-top:14px"><button type="button" class="btn primary" id="cu_submit"><span id="cu_submitText" data-i18n="btnCreateUser">Create account</span></button></div>
             <div id="cu_msg" class="msg-box hidden" role="status"></div>
           </div>
-          <table>
+          <p class="field-hint" data-i18n="officerHint">A Data Entry user is tied to one officer: they can add, edit and delete only that officer's data and can only view everyone else's. Choose the officer in the Officer column. A Data Entry user with no officer can only view. Admin / Super Admin are not restricted.</p>
+          <div class="users-scroll" style="overflow-x:auto;max-width:100%"><table style="min-width:780px">
             <thead><tr>
               <th data-i18n="thEmail">Email</th>
               <th data-i18n="thStatus">Status</th>
               <th data-i18n="thRole">Role</th>
+              <th data-i18n="thOfficer">Officer</th>
               <th data-i18n="thActions">Actions</th>
             </tr></thead>
             <tbody id="usersTableBody"></tbody>
-          </table>
+          </table></div>
         </div>
       </div>
 
@@ -761,7 +764,7 @@ var I18N = {
     welcomeTitle2:"Welcome back",
     adminControls:"Admin Controls",
     adminHint:"Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.",
-    thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions",
+    thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions", thOfficer:"Officer", officerHint:"A Data Entry user is tied to one officer: they can add, edit and delete only that officer's data and can only view everyone else's. Choose the officer in the Officer column. A Data Entry user with no officer can only view. Admin / Super Admin are not restricted.", officerNone:"— not assigned (view only) —", officerAll:"All officers",
     authLoadErrorTitle:"Could Not Load Your Profile",
     authLoadErrorBody:"You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.",
     btnRetry:"Retry",
@@ -792,7 +795,7 @@ var I18N = {
     welcomeTitle2:"خوش آمدید",
     adminControls:"انتظامی کنٹرولز",
     adminHint:"یہاں نئے اکاؤنٹس منظور کریں اور ان کا کردار مقرر کریں۔ صرف Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ صرف Super Admin کسی کو Super Admin بنا سکتا ہے۔",
-    thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال",
+    thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال", thOfficer:"آفیسر", officerHint:"ڈیٹا انٹری یوزر ایک آفیسر سے منسلک ہوتا ہے: وہ صرف اسی آفیسر کا ڈیٹا شامل، ایڈٹ اور ڈیلیٹ کر سکتا ہے اور باقی سب کا ڈیٹا صرف دیکھ سکتا ہے۔ آفیسر کے خانے میں آفیسر منتخب کریں۔ جس ڈیٹا انٹری یوزر کا آفیسر مقرر نہ ہو وہ صرف دیکھ سکتا ہے۔ Admin / Super Admin پر کوئی پابندی نہیں۔", officerNone:"— مقرر نہیں (صرف دیکھ سکتا ہے) —", officerAll:"تمام آفیسرز",
     authLoadErrorTitle:"پروفائل لوڈ نہیں ہو سکا",
     authLoadErrorBody:"آپ کامیابی سے سائن اِن ہو گئے ہیں، مگر آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ عام طور پر یہ عارضی کنکشن کا مسئلہ ہوتا ہے۔",
     btnRetry:"دوبارہ کوشش کریں",
@@ -1799,6 +1802,18 @@ document.getElementById("openAdminPanelBtn").addEventListener("click", function(
   if(!panel.classList.contains("hidden")){ renderAdminPanel(); panel.scrollIntoView({behavior:"smooth", block:"start"}); }
 });
 
+/* Officer column: only a Data Entry user is tied to an officer (the others are not restricted). */
+function officerCell(u, role, canEdit, list){
+  if(role !== "data_entry") return "<span class='field-hint'>"+esc(role === "viewer" ? "—" : I18N[currentLang].officerAll)+"</span>";
+  var cur = u.officer || "";
+  if(!canEdit) return esc(cur || I18N[currentLang].officerNone);
+  var opts = "<option value=''>"+esc(I18N[currentLang].officerNone)+"</option>";
+  var seen = false;
+  list.forEach(function(o){ if(o === cur) seen = true; opts += "<option value=\""+esc(o)+"\""+(o===cur?" selected":"")+">"+esc(o)+"</option>"; });
+  if(cur && !seen) opts += "<option value=\""+esc(cur)+"\" selected>⚠ "+esc(cur)+"</option>";
+  return "<select data-officer-uid='"+u.uid+"'>"+opts+"</select>" + ((cur && !seen) ? "<div class='field-hint' style='color:#b3261e'>"+(currentLang==="ur" ? "یہ نام آفیسرز کی فہرست میں نہیں" : "Not in the officer list")+"</div>" : "");
+}
+
 /* ---------- Admin panel: list users, approve, set role, activate/suspend ---------- */
 function renderAdminPanel(){
   var body = document.getElementById("usersTableBody");
@@ -1807,7 +1822,10 @@ function renderAdminPanel(){
   if(myRole !== "admin" && myRole !== "super_admin") return;
   fillCreateRoles();
   renderRequests();
-  db.collection("users").get().then(function(qs){
+  /* Officer list (same list Daily Case Entry uses) for the Officer column */
+  var officerListP = db.collection("lookupLists").doc("caseEntry").get().then(function(d){ var a = d.exists && d.data().officers; return Array.isArray(a) ? a : []; }).catch(function(){ return []; });
+  Promise.all([db.collection("users").get(), officerListP]).then(function(res){
+    var qs = res[0], OFFICER_LIST = res[1];
     var rows = [];
     qs.forEach(function(d){ rows.push(Object.assign({uid:d.id}, d.data())); });
     document.getElementById("userCountChip").textContent = rows.length + (currentLang==="ur" ? " صارفین" : " users");
@@ -1827,14 +1845,15 @@ function renderAdminPanel(){
         "<td><span class='badge "+status+"'>"+(STATUS_LABELS[currentLang][status]||status)+"</span>"+
           (u.isActive===false ? " <span class='badge inactive'>"+(currentLang==='ur'?'معطل':'suspended')+"</span>" : "")+"</td>"+
         "<td>"+(canEditRole ? "<select data-role-uid='"+u.uid+"' "+(isMe?"disabled":"")+">"+roleOptions+"</select>" : "<span class='badge "+role+"'>"+(ROLE_LABELS[currentLang][role])+"</span>")+"</td>"+
-        "<td class='row-actions'>"+
+        "<td>"+officerCell(u, role, canEditRole, OFFICER_LIST)+"</td>"+
+        "<td><div class='row-actions'>"+
           (status!=="approved" ? "<button class='btn small secondary' data-approve-uid='"+u.uid+"'>"+(currentLang==='ur'?'منظور کریں':'Approve')+"</button>" : "")+
           (status==="pending" ? "<button class='btn small danger' data-reject-uid='"+u.uid+"'>"+(currentLang==='ur'?'مسترد کریں':'Reject')+"</button>" : "")+
           (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
             (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
           (!isMe ? "<button class='btn small' data-reset-email='"+esc(u.email)+"'>"+(currentLang==='ur'?'پاس ورڈ ری سیٹ بھیجیں':'Send password reset')+"</button>" : "")+
           ((!isMe && myRole === "super_admin") ? "<button class='btn small danger' data-delete-uid='"+u.uid+"' data-email='"+esc(u.email)+"'>🗑 "+(currentLang==='ur'?'حذف کریں':'Delete')+"</button>" : "")+
-        "</td>";
+        "</div></td>";
       body.appendChild(tr);
     });
     body.querySelectorAll("[data-approve-uid]").forEach(function(btn){
@@ -1871,6 +1890,15 @@ function renderAdminPanel(){
         if(!confirm(msg)) return;
         deleteAccountEverywhere(btn.dataset.deleteUid, em).then(function(res){ renderAdminPanel(); var sm = document.getElementById("adminStatusMsg"); if(res && res.authDeleted){ showMsg(sm, "یوزر مکمل طور پر مٹا دیا گیا (لاگ اِن سمیت)۔", "The user was deleted completely (including the login).", "ok"); } else { showMsg(sm, "پروفائل مٹا دیا گیا مگر سرور نہ مل سکا، اس لیے لاگ اِن Firebase میں رہ گیا ہے (اس سے کچھ نہیں کھلتا)۔ بعد میں دوبارہ ڈیلیٹ کریں یا Firebase Console سے مٹائیں۔", "The profile was deleted but the server could not be reached, so the login remains in Firebase (it opens nothing). Delete again later or remove it in the Firebase Console.", "error"); } }).catch(function(err){
           alert((currentLang==='ur' ? "حذف نہیں ہو سکا: " : "Could not delete: ") + err.message);
+        });
+      });
+    });
+    body.querySelectorAll("[data-officer-uid]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        sel.disabled = true;
+        db.collection("users").doc(sel.dataset.officerUid).update({officer: sel.value}).then(renderAdminPanel).catch(function(err){
+          sel.disabled = false;
+          showMsg(document.getElementById("adminStatusMsg"), "آفیسر محفوظ نہیں ہو سکا: " + err.message, "Could not save the officer: " + err.message);
         });
       });
     });

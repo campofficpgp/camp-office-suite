@@ -648,6 +648,9 @@ html,body{overflow-x:hidden;}
   CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   CaseMaster.onChange(function(){ try { buildFilters('cases'); buildFilters('notices'); } catch(e){} });
   var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  /* Officer-wise permission: a Data Entry user is tied to one officer and may edit only that officer's cases (others are view-only). */
+  var MY_OFFICER = '', OFFICER_RESTRICTED = false;
+  function canEditRec(kind, r){ return CAN_WRITE && (kind !== 'cases' || !OFFICER_RESTRICTED || (!!MY_OFFICER && String((r && r.officer) || '') === MY_OFFICER)); }
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
   function gate(titleUr, titleEn, bodyUr, showLink){
@@ -963,7 +966,7 @@ html,body{overflow-x:hidden;}
 
     document.getElementById(d.b).innerHTML = shown.length ? shown.map(function(r){
       return '<tr>' + cols.map(function(c){ return (kind === 'cases' && c.id === 'no') ? '<td><button type="button" class="lk-hist" data-id="' + esc(r.id) + '" title="' + (isUrdu ? 'پوری ہسٹری دیکھیں' : 'Show full history') + '">' + esc(c.f(r)) + '</button></td>' : '<td>' + esc(c.f(r)) + '</td>'; }).join('') +
-        (canEditRows ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
+        (canEditRows ? '<td>' + (canEditRec(kind, r) ? '<a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>') + '</td>' : '') + '</tr>';
     }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + (canEditRows ? 1 : 0)) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
     document.getElementById(d.c).textContent = (isUrdu ? 'ملے: ' : 'Found: ') + rows.length + (isUrdu ? ' از ' : ' of ') + DATA[kind].length;
     document.getElementById(d.n).textContent = '';
@@ -1848,7 +1851,7 @@ html,body{overflow-x:hidden;}
         shown.map(function(it){
           var r = it.r;
           return '<tr><td>' + esc(((r.type || '') + ' ' + (r.caseNo || '') + (r.year ? '/' + r.year : '')).trim() || '—') +
-            (CAN_WRITE ? '<br><a class="lk-btn ghost dq-edit" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '') + '</td>' +
+            (canEditRec(kind, r) ? '<br><a class="lk-btn ghost dq-edit" href="' + editPage + '?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '') + '</td>' +
             '<td class="dq-pr">' + it.ids.map(function(id){ var d = dqDef(kind, id); return '<span class="dq-tag"><span class="dq-dot ' + d.sev + '" aria-hidden="true"></span>' + esc(isUrdu ? d.ur : d.en) + '</span>'; }).join('') + '</td>' +
             '<td>' + esc((r.title || '') + (r.versus && r.versus !== '—' ? ' vs ' + r.versus : '') || '—') + '</td>' +
             '<td style="white-space:nowrap">' + esc(r.date || '—') + '</td>' + '</tr>';
@@ -1950,7 +1953,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('histBody').innerHTML = '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + (CAN_WRITE ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr></thead><tbody>' +
       rows.map(function(r, i){
         return '<tr' + (String(r.id) === String(id) ? ' class="cur"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(dash(r.date)) + '</td><td>' + esc(dash(r.bench)) + '</td><td>' + esc(dash(r.judge)) + '</td><td>' + esc(dash(r.serial)) + '</td><td>' + esc(dash(r.officer)) + '</td><td>' + esc(dash(r.result)) + '</td><td>' + esc(dash(r.relief)) + '</td><td>' + esc(r.remarks && r.remarks !== '—' ? r.remarks : '—') + '</td>' +
-          (CAN_WRITE ? '<td><a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a></td>' : '') + '</tr>';
+          (CAN_WRITE ? '<td>' + (canEditRec('cases', r) ? '<a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
     HIST_FROM = from || document.activeElement;
     document.getElementById('histBack').hidden = false;
@@ -2039,7 +2042,10 @@ html,body{overflow-x:hidden;}
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       /* Edit button on each case row is for people who may add/edit cases only (same rule as Daily Case Entry). */
-      CAN_WRITE = legacyAdmin || r2 === 'admin' || r2 === 'super_admin' || r2 === 'data_entry';
+      var isAdmL = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      OFFICER_RESTRICTED = !isAdmL && r2 === 'data_entry';
+      MY_OFFICER = OFFICER_RESTRICTED ? String(u.officer || '') : '';
+      CAN_WRITE = isAdmL || r2 === 'data_entry';
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

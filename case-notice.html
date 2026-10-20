@@ -106,6 +106,8 @@ html,body{overflow-x:hidden;}
   .field select, .field input, .field textarea{width:100%; padding:8px 9px; border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12.5px; background:#fbfbf9;}
   .field textarea{resize:vertical; min-height:56px;}
   .count{font-size:11px; color:var(--muted); margin-top:10px;}
+  .old-toggle{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--muted); cursor:pointer;}
+  .old-toggle input{width:16px; height:16px;}
   .manage-link{color:var(--gold-deep); font-weight:700; font-size:10.5px; cursor:pointer; margin-left:4px;}
   [dir="rtl"] .manage-link{margin-left:0; margin-right:4px;}
 
@@ -384,6 +386,7 @@ html,body{overflow-x:hidden;}
         <div class="field"><label data-en="By Bench No" data-ur="بینچ نمبر سے">By Bench No</label><select id="byBench"></select></div>
       </div>
       <div class="count" id="count"></div>
+      <label class="old-toggle"><input type="checkbox" id="showOld"> <span data-en="Show older notices (hearing date more than 7 days ago)" data-ur="پرانے نوٹس بھی دکھائیں (تاریخ سماعت کو 7 دن سے زیادہ ہو گئے)">Show older notices (hearing date more than 7 days ago)</span></label>
       <div style="margin-top:12px;">
         <div class="btn primary needs-write" onclick="openAddForm()" data-en="+ Add New Notice" data-ur="+ نیا نوٹس شامل کریں">+ Add New Notice</div>
       </div>
@@ -832,9 +835,23 @@ html,body{overflow-x:hidden;}
     fillSelect(document.getElementById('byBench'), uniqueSorted(NOTICES.map(function(n){return n.bench;})), true);
     updateCount();
   }
+  /* Notices whose hearing date (or, if none, notice date) is more than 7 days in the past are hidden from this list by default.
+     Nothing is deleted — they stay saved, searchable in Lookup, and the tick box below shows them here again. */
+  var OLD_DAYS = 7;
+  function isoDaysAgo(days){ var d = new Date(); d.setDate(d.getDate() - days); function z(n){ return (n < 10 ? '0' : '') + n; } return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
+  function isOldNotice(n){
+    var ref = String(n.hearing || n.date || '').slice(0, 10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(ref)) return false;   /* no usable date: never hide */
+    return ref < isoDaysAgo(OLD_DAYS);
+  }
+  function showOldOn(){ var cb = document.getElementById('showOld'); return !!(cb && cb.checked); }
   function updateCount(){
     var c = document.getElementById('count'); if(!c) return;
-    c.textContent = isUrdu ? (NOTICES.length + ' نوٹس لوڈ ہوئے') : (NOTICES.length + ' notice(s) loaded');
+    var hidden = showOldOn() ? 0 : NOTICES.filter(isOldNotice).length;
+    var shown = NOTICES.length - hidden;
+    c.textContent = isUrdu
+      ? (shown + ' نوٹس' + (hidden ? ' — ' + hidden + ' پرانے نوٹس چھپے ہیں (محفوظ ہیں، نیچے ٹک کر کے دیکھیں)' : ''))
+      : (shown + ' notice(s)' + (hidden ? ' — ' + hidden + ' older notice(s) hidden (still saved; tick the box below to show)' : ''));
   }
 
   function renderTable(){
@@ -844,6 +861,7 @@ html,body{overflow-x:hidden;}
     var benchF = document.getElementById('byBench').value;
 
     var list = NOTICES.filter(function(n){
+      if(!caseNoF && !showOldOn() && isOldNotice(n)) return false;
       if(caseNoF && String(n.id) !== caseNoF) return false;
       if(districtF && n.district !== districtF) return false;
       if(stationF && n.station !== stationF) return false;
@@ -876,6 +894,7 @@ html,body{overflow-x:hidden;}
     });
   }
 
+  document.getElementById('showOld').addEventListener('change', function(){ updateCount(); renderTable(); });
   ['byCaseNo','byDistrict','byStation','byBench'].forEach(function(id){
     document.getElementById(id).addEventListener('change', renderTable);
   });

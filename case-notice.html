@@ -128,6 +128,14 @@ html,body{overflow-x:hidden;}
   table.notice-table tr:hover td{background:#faf8f2;}
   .row-actions{display:flex; gap:6px; flex-wrap:wrap;}
   .row-actions .btn{padding:5px 10px; font-size:11px;}
+  /* Phone: the Actions column sits off-screen at the far right, so on a narrow screen the same buttons are shown
+     under the Case No (first column, always visible) and the far-right Actions column is hidden. */
+  .row-actions-m{display:none;}
+  @media (max-width:700px){
+    .row-actions-m{display:flex; margin-top:6px; max-width:150px;}
+    th.act-col, td.act-col{display:none;}
+    table.notice-table{min-width:760px;}
+  }
 
   .modal-overlay{position:fixed; inset:0; background:rgba(10,15,30,.62); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; overflow-y:auto;}
   .modal-overlay.open{display:flex;}
@@ -157,6 +165,7 @@ html,body{overflow-x:hidden;}
   .notice-sheet .body-text{margin:18px 0; font-size:14.5px;}
   .notice-sheet .sign-block{direction:ltr; text-align:left; margin-top:26px; font-size:13px; line-height:1.7;}
   .notice-sheet hr{border:none; border-top:1px dashed var(--border); margin:18px 0;}
+  .preview-warn{margin:0 0 12px; padding:9px 12px; border-radius:var(--radius-sm); background:#fdf0d0; border:1px solid #d9a21b; color:#5a3d00; font-size:12.5px; font-weight:600; line-height:1.6;}
 
   /* Prepared by / Approved by sign-off stamps — added alongside the notice's own signatory
      block above. Each is a small editable (✎ edit, ✕ clear) Name/Designation/Office-Address
@@ -345,7 +354,7 @@ html,body{overflow-x:hidden;}
             <th data-en="District" data-ur="ضلع">District</th>
             <th data-en="Bench" data-ur="بینچ">Bench</th>
             <th data-en="Hearing Date" data-ur="تاریخ سماعت">Hearing Date</th>
-            <th data-en="Actions" data-ur="اعمال">Actions</th>
+            <th class="act-col" data-en="Actions" data-ur="اعمال">Actions</th>
           </tr>
         </thead>
         <tbody id="noticeTableBody"></tbody>
@@ -363,7 +372,7 @@ html,body{overflow-x:hidden;}
         <input type="hidden" id="nId">
         <div class="search-grid">
           <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type</label><select id="nType"></select></div>
-          <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="number" id="nCaseNo" placeholder="e.g. 869"></div>
+          <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="text" id="nCaseNo" autocomplete="off" maxlength="14" placeholder="e.g. 869 or 12345-L"></div>
           <div class="field"><label data-en="Year" data-ur="سال">Year <span class="manage-link" onclick="openListManage('year')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nYear"></select></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Title of Case" data-ur="کیس کا عنوان">Title of Case</label><input type="text" id="nTitle" placeholder="e.g. The State"></div>
           <div class="field" style="grid-column:1 / -1;"><label data-en="Versus" data-ur="بمقابلہ">Versus</label><input type="text" id="nVersus" placeholder="e.g. Salman Azam"></div>
@@ -414,6 +423,7 @@ html,body{overflow-x:hidden;}
     <div class="modal-panel" style="max-width:720px;">
       <div class="modal-close"><span onclick="closePreview()">✕</span></div>
       <div style="padding:0 20px 20px;">
+        <div id="previewWarn" class="preview-warn" role="alert" style="display:none;"></div>
         <div id="printArea" class="notice-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
@@ -548,7 +558,19 @@ html,body{overflow-x:hidden;}
 
   function fillSelect(sel, options, withBlank){
     sel.innerHTML = withBlank ? '<option value="">—</option>' : '';
-    options.forEach(function(o){ sel.innerHTML += '<option value="'+o+'">'+o+'</option>'; });
+    options.forEach(function(o){ sel.innerHTML += '<option value="'+escapeAttr(o)+'">'+escapeAttr(o)+'</option>'; });
+  }
+
+  /* Puts a SAVED value back into a drop-down when a notice is opened for Edit. If that value is no longer in the list
+     (an old year, a bench or district that was later removed from the list ...) it is added as one extra choice, so
+     opening and saving a notice can never silently blank that field. */
+  function setSelectKeep(id, val){
+    var sel = document.getElementById(id); if(!sel) return;
+    val = (val == null) ? '' : String(val);
+    if(val && !Array.prototype.some.call(sel.options, function(o){ return o.value === val; })){
+      var o = document.createElement('option'); o.value = val; o.textContent = val; sel.appendChild(o);
+    }
+    sel.value = val;
   }
 
   function uniqueSorted(arr){ return Array.from(new Set(arr)).filter(Boolean).sort(); }
@@ -744,7 +766,11 @@ html,body{overflow-x:hidden;}
     fillSelect(document.getElementById('byDistrict'), uniqueSorted(NOTICES.map(function(n){return n.district;})), true);
     fillSelect(document.getElementById('byStation'), uniqueSorted(NOTICES.map(function(n){return n.station;})), true);
     fillSelect(document.getElementById('byBench'), uniqueSorted(NOTICES.map(function(n){return n.bench;})), true);
-    document.getElementById('count').textContent = NOTICES.length + ' notice(s) loaded';
+    updateCount();
+  }
+  function updateCount(){
+    var c = document.getElementById('count'); if(!c) return;
+    c.textContent = isUrdu ? (NOTICES.length + ' نوٹس لوڈ ہوئے') : (NOTICES.length + ' notice(s) loaded');
   }
 
   function renderTable(){
@@ -767,8 +793,12 @@ html,body{overflow-x:hidden;}
       var tr = document.createElement('tr');
       var E = escapeAttr;
       var idq = "'" + String(n.id).replace(/[^A-Za-z0-9_-]/g,'') + "'";
+      var acts =
+          '<div class="btn primary" onclick="openPreview('+idq+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
+          '<div class="btn ghost needs-write" onclick="openEditForm('+idq+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
+          '<div class="btn danger needs-delete" onclick="deleteNotice('+idq+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>';
       tr.innerHTML =
-        '<td>'+E(n.type)+' '+E(n.caseNo)+'/'+E(n.year)+'</td>' +
+        '<td>'+E(n.type)+' '+E(n.caseNo)+'/'+E(n.year)+'<div class="row-actions row-actions-m">'+acts+'</div></td>' +
         '<td class="wrap-cell">'+E(n.title)+' Vs '+E(n.versus)+'</td>' +
         '<td class="wrap-cell">'+E(n.relief)+'</td>' +
         '<td>'+E(n.firNo)+'/'+E(n.firYear)+'</td>' +
@@ -776,11 +806,7 @@ html,body{overflow-x:hidden;}
         '<td>'+E(n.district)+'</td>' +
         '<td>'+E(n.bench)+'</td>' +
         '<td>'+E(n.hearing || '—')+'</td>' +
-        '<td><div class="row-actions">' +
-          '<div class="btn primary" onclick="openPreview('+idq+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
-          '<div class="btn ghost needs-write" onclick="openEditForm('+idq+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
-          '<div class="btn danger needs-delete" onclick="deleteNotice('+idq+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>' +
-        '</div></td>';
+        '<td class="act-col"><div class="row-actions">' + acts + '</div></td>';
       body.appendChild(tr);
     });
   }
@@ -828,21 +854,21 @@ html,body{overflow-x:hidden;}
     document.getElementById('formTitle').textContent = isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice';
     refreshTypeOptions(n.type);
     document.getElementById('nCaseNo').value = n.caseNo;
-    document.getElementById('nYear').value = n.year;
+    setSelectKeep('nYear', n.year);
     document.getElementById('nTitle').value = n.title;
     document.getElementById('nVersus').value = n.versus;
     refreshCategoryOptions(n.relief);
     document.getElementById('nRelief').value = n.relief;
     document.getElementById('nFirNo').value = n.firNo;
-    document.getElementById('nFirYear').value = n.firYear;
+    setSelectKeep('nFirYear', n.firYear);
     document.getElementById('nSections').value = n.sections;
-    document.getElementById('nDistrict').value = n.district;
-    document.getElementById('nBench').value = n.bench;
+    setSelectKeep('nDistrict', n.district);
+    setSelectKeep('nBench', n.bench);
     document.getElementById('nSerialNo').value = n.srNo || '';
     refreshTehsilStationOptions(n.tehsil, n.station);
     document.getElementById('nHearing').value = n.hearing;
     document.getElementById('nDate').value = n.date;
-    document.getElementById('nSignatory').value = n.signatory;
+    setSelectKeep('nSignatory', n.signatory);
     document.getElementById('nDesig').value = n.desig;
     document.getElementById('nMobile').value = n.mobile;
     document.getElementById('nOffice').value = n.office;
@@ -853,13 +879,24 @@ html,body{overflow-x:hidden;}
     document.getElementById('noticeForm').classList.remove('open');
   }
 
+  function normCaseNo(v){ return String(v == null ? '' : v).replace(/\s+/g,'').toUpperCase(); }
+
   function saveNotice(){
     var idVal = document.getElementById('nId').value;
-    var caseNo = document.getElementById('nCaseNo').value.trim();
+    var caseNo = normCaseNo(document.getElementById('nCaseNo').value);
     var title = document.getElementById('nTitle').value.trim();
     var versus = document.getElementById('nVersus').value.trim();
     if(!caseNo || !title || !versus){
       alert(isUrdu ? 'کیس نمبر، عنوان اور بمقابلہ ضروری ہیں' : 'Case No, Title and Versus are required');
+      return;
+    }
+    /* Case No is a number, optionally followed by a short letter suffix such as "-L" (142 or 12345-L) — the same rule
+       as Daily Case Entry. A notice saved earlier in some other shape can still be edited while its Case No is left unchanged. */
+    var prevN = idVal ? NOTICES.find(function(x){ return x.id === idVal; }) : null;
+    if(prevN && normCaseNo(prevN.caseNo) === caseNo){
+      caseNo = String(prevN.caseNo);
+    } else if(!/^\d{1,8}(-[A-Z]{1,2})?$/.test(caseNo)){
+      alert(isUrdu ? 'کیس نمبر ایسا ہونا چاہیے: 142 یا 12345-L' : 'Case No should look like 142 or 12345-L');
       return;
     }
 
@@ -887,6 +924,9 @@ html,body{overflow-x:hidden;}
     };
 
     if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit notices'); return; }
+    if(!data.hearing && !confirm(isUrdu
+        ? 'تاریخ سماعت درج نہیں۔ نوٹس کے متن میں تاریخ کی جگہ "—" آئے گی۔ پھر بھی محفوظ کریں؟'
+        : 'The Hearing Date is empty, so the notice text will show "—" in place of the date. Save anyway?')) return;
     var oldN = idVal ? NOTICES.find(function(x){ return x.id === idVal; }) : null;
     var catUnchanged = oldN && oldN.type === data.type && (oldN.relief || '') === (data.relief || '');
     if(!catUnchanged && !CaseMaster.allows(data.type, data.relief)){
@@ -1013,6 +1053,11 @@ html,body{overflow-x:hidden;}
       '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>' +
       buildSignHtml();
     document.getElementById('printArea').innerHTML = html;
+    var pw = document.getElementById('previewWarn');
+    if(pw){
+      if(!raw.hearing){ pw.textContent = isUrdu ? '⚠ اس نوٹس میں تاریخ سماعت درج نہیں۔ پرنٹ سے پہلے ترمیم کر کے تاریخ سماعت لکھ لیں۔' : '⚠ This notice has no Hearing Date. Edit the notice and add it before printing.'; pw.style.display = ''; }
+      else { pw.textContent = ''; pw.style.display = 'none'; }
+    }
     document.getElementById('previewModal').classList.add('open');
     var activePrintInput = document.querySelector('.print-heading-input') || document.querySelector('.stamp-input');
     if(activePrintInput){ activePrintInput.focus(); activePrintInput.select(); }
@@ -1302,6 +1347,10 @@ html,body{overflow-x:hidden;}
     document.body.setAttribute('dir', isUrdu ? 'rtl' : 'ltr');
     renderTable();
     renderThemePicker();
+    var ft = document.getElementById('formTitle');
+    if(ft) ft.textContent = document.getElementById('nId').value ? (isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice') : (isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice');
+    refreshTehsilStationOptions(document.getElementById('nTehsil').value, document.getElementById('nStation').value);
+    updateCount();
   }
 
   populateStaticDropdowns();

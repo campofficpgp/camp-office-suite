@@ -165,6 +165,11 @@ html,body{overflow-x:hidden;}
   .notice-sheet .body-text{margin:18px 0; font-size:14.5px;}
   .notice-sheet .sign-block{direction:ltr; text-align:left; margin-top:26px; font-size:13px; line-height:1.7;}
   .notice-sheet hr{border:none; border-top:1px dashed var(--border); margin:18px 0;}
+  .notice-sheet .ref-row{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; direction:ltr; text-align:left; font-size:13px; margin:0 0 14px; line-height:1.5;}
+  .notice-sheet .ref-no, .notice-sheet .ref-date{display:inline-flex; align-items:flex-end; white-space:nowrap;}
+  .notice-sheet .ref-no b{font-weight:700;}
+  .notice-sheet .ref-blank{display:inline-block; min-width:90px; border-bottom:1px solid #333; margin-left:4px;}
+  .notice-sheet .ref-blank-date{min-width:110px;}
   .preview-warn{margin:0 0 12px; padding:9px 12px; border-radius:var(--radius-sm); background:#fdf0d0; border:1px solid #d9a21b; color:#5a3d00; font-size:12.5px; font-weight:600; line-height:1.6;}
 
   /* Prepared by / Approved by sign-off stamps — added alongside the notice's own signatory
@@ -388,6 +393,7 @@ html,body{overflow-x:hidden;}
           <div class="field"><label data-en="Serial No. of Cause List" data-ur="کاز لسٹ سیریل نمبر">Serial No. of Cause List <span style="font-weight:400; color:var(--muted); font-size:10.5px;" data-en="(optional)" data-ur="(اختیاری)">(optional)</span></label><input type="text" id="nSerialNo" placeholder="e.g. 12"></div>
           <div class="field"><label data-en="Hearing Date (Supreme Court)" data-ur="تاریخ سماعت (سپریم کورٹ)">Hearing Date (Supreme Court)</label><input type="date" id="nHearing"></div>
           <div class="field"><label data-en="Notice Date" data-ur="نوٹس کی تاریخ">Notice Date</label><input type="date" id="nDate"></div>
+          <div class="field"><label data-en="Diary No." data-ur="ڈائری نمبر">Diary No. <span style="font-weight:400; color:var(--muted); font-size:10.5px;" data-en="(optional — printed after the notice number)" data-ur="(اختیاری — نوٹس نمبر کے آخر میں چھپے گا)">(optional — printed after the notice number)</span></label><input type="text" id="nDiaryNo" autocomplete="off" maxlength="20" placeholder="e.g. 12345"></div>
           <div class="field"><label data-en="Signatory Name" data-ur="دستخط کنندہ کا نام">Signatory Name <span class="manage-link" onclick="openListManage('signatory')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nSignatory"></select></div>
           <div class="field"><label data-en="Signatory Designation" data-ur="دستخط کنندہ کا عہدہ">Signatory Designation</label><input type="text" id="nDesig" placeholder="e.g. Focal Person Punjab Police, Supreme Court Islamabad"></div>
           <div class="field"><label data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</label><input type="text" id="nMobile" placeholder="e.g. 03009769052"></div>
@@ -848,7 +854,7 @@ html,body{overflow-x:hidden;}
   document.getElementById('nSignatory').addEventListener('change', autoFillSignatory);
 
   /* "Copy": a new notice for the same case (e.g. adjourned and fixed for another date). Everything is copied except the
-     Hearing Date, Cause List Serial No and Notice Date, which belong to the new hearing. Nothing is saved until Save is pressed. */
+     Hearing Date, Cause List Serial No, Notice Date and Diary No., which belong to the new hearing/notice. Nothing is saved until Save is pressed. */
   function openCopyForm(id){
     var n = NOTICES.find(function(x){ return x.id === id; });
     if(!n) return;
@@ -869,6 +875,7 @@ html,body{overflow-x:hidden;}
     document.getElementById('nSerialNo').value = '';
     document.getElementById('nHearing').value = '';
     document.getElementById('nDate').value = todayIso();
+    document.getElementById('nDiaryNo').value = '';
     setSelectKeep('nSignatory', n.signatory);
     document.getElementById('nDesig').value = blankDash(n.desig);
     document.getElementById('nMobile').value = blankDash(n.mobile);
@@ -882,7 +889,7 @@ html,body{overflow-x:hidden;}
   function openAddForm(){
     document.getElementById('nId').value = '';
     document.getElementById('formTitle').textContent = isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice';
-    ['nCaseNo','nTitle','nVersus','nFirNo','nSections','nHearing','nDate','nDesig','nMobile','nOffice','nSerialNo'].forEach(function(id){
+    ['nCaseNo','nTitle','nVersus','nFirNo','nSections','nHearing','nDate','nDiaryNo','nDesig','nMobile','nOffice','nSerialNo'].forEach(function(id){
       document.getElementById(id).value = '';
     });
     ['nType','nYear','nFirYear','nRelief','nDistrict','nBench','nSignatory'].forEach(function(id){
@@ -931,6 +938,7 @@ html,body{overflow-x:hidden;}
     refreshTehsilStationOptions(n.tehsil, n.station);
     document.getElementById('nHearing').value = n.hearing;
     document.getElementById('nDate').value = n.date;
+    document.getElementById('nDiaryNo').value = n.diaryNo || '';
     setSelectKeep('nSignatory', n.signatory);
     document.getElementById('nDesig').value = blankDash(n.desig);
     document.getElementById('nMobile').value = blankDash(n.mobile);
@@ -981,6 +989,7 @@ html,body{overflow-x:hidden;}
       srNo: document.getElementById('nSerialNo').value.trim() || '—',
       hearing: document.getElementById('nHearing').value,
       date: document.getElementById('nDate').value,
+      diaryNo: document.getElementById('nDiaryNo').value.trim(),
       signatory: document.getElementById('nSignatory').value,
       desig: document.getElementById('nDesig').value.trim() || '—',
       mobile: document.getElementById('nMobile').value.trim() || '—',
@@ -1031,6 +1040,9 @@ html,body{overflow-x:hidden;}
   }
 
   var currentPreviewNotice = null;
+  /* Reference line at the top of every notice:  No. ADL/PGP/CMP/NOTICE/<Diary No.>   (left)    Dated: <Notice Date>  (right).
+     If no Diary No. / Notice Date was entered, an empty line is printed so it can be written by hand. */
+  var NOTICE_REF_PREFIX = 'ADL/PGP/CMP/NOTICE/';
 
   function escapeAttr(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1111,13 +1123,14 @@ html,body{overflow-x:hidden;}
     n.signatory = n.signatory || '';
     var html =
       buildNoticeLetterheadHtml() +
+      '<div class="ref-row"><span class="ref-no">No. ' + NOTICE_REF_PREFIX + (n.diaryNo ? '<b>' + n.diaryNo + '</b>' : '<span class="ref-blank">&nbsp;</span>') + '</span>' +
+      '<span class="ref-date">Dated: ' + (n.date ? formatDateUr(n.date) : '<span class="ref-blank ref-blank-date">&nbsp;</span>') + '</span></div>' +
       '<div class="meta-row"><span class="k">'+n.type+' No.</span><span>'+n.caseNo+'/'+n.year+'&nbsp;&nbsp;&nbsp;'+n.title+' Vs '+n.versus+'</span></div>' +
       '<div class="meta-row"><span class="k">Nature</span><span>'+n.relief+'</span></div>' +
       '<div class="meta-row"><span class="k">FIR No.</span><span>'+n.firNo+'/'+n.firYear+'</span></div>' +
       '<div class="meta-row"><span class="k">U/S</span><span>'+n.sections+'</span></div>' +
       '<div class="meta-row"><span class="k">Police Station &amp; District</span><span>'+n.station+', Tehsil '+(n.tehsil||'—')+', District '+n.district+'</span></div>' +
       '<div class="meta-row"><span class="k">Bench</span><span>'+n.bench+'&nbsp;&nbsp;&nbsp;Sr. No. of Cause List: '+(n.srNo||'—')+'</span></div>' +
-      '<div class="meta-row"><span class="k">Date</span><span>'+formatDateUr(n.date)+'</span></div>' +
       '<hr>' +
       '<div class="body-text">مقدمہ بالا کیس مورخہ ' + formatDateUr(n.hearing) + ' کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے پراسیکیوٹر جنرل پنجاب آفس اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔</div>' +
       '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>';
@@ -1213,7 +1226,7 @@ html,body{overflow-x:hidden;}
   }
 
   function buildNoticeShareText(n){
-    return (n.type + ' No. ' + n.caseNo + '/' + n.year + ' — ' + n.title + ' Vs ' + n.versus) + '\n' +
+    return (n.diaryNo ? ('No. ' + NOTICE_REF_PREFIX + n.diaryNo + '\n') : '') + (n.type + ' No. ' + n.caseNo + '/' + n.year + ' — ' + n.title + ' Vs ' + n.versus) + '\n' +
       'Nature: ' + n.relief + '\n' +
       'FIR No: ' + n.firNo + '/' + n.firYear + '\n' +
       'Police Station: ' + n.station + ', Tehsil: ' + (n.tehsil || '—') + ', District: ' + n.district + '\n' +

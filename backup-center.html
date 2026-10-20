@@ -263,6 +263,13 @@ html,body{overflow-x:hidden;}
   </div>
 
   <div class="card">
+    <h2 data-i18n="protectTitle">🛡 Automatic protection by Google (in addition to this page)</h2>
+    <p class="field-hint" data-i18n="protect1">Every Sunday the whole database is saved automatically and each copy is kept for 98 days.</p>
+    <p class="field-hint" data-i18n="protect2">Point-in-time recovery: the database can be viewed or recovered as it was at any minute in the last 7 days (for example after a wrong bulk edit).</p>
+    <p class="field-hint" data-i18n="protect3">These need the billing account to stay active. They are used by the administrator from the Firebase Console — you do not need to do anything here. This page's file backup remains your own copy.</p>
+  </div>
+
+  <div class="card">
     <h2 data-i18n="restoreTitle">Restore from Backup File</h2>
     <p class="field-hint" data-i18n="restoreIntro">Only use this if you know exactly what you are doing. Restoring replaces shared online data for everyone with the contents of the file you choose.</p>
     <ol class="restore-steps">
@@ -322,10 +329,18 @@ var I18N = {
     backupAgeToday:"(today)", backupAgeDays:"({n} days ago)",
     backupStaleWarn:"⚠ The last backup is more than 7 days old — please take a new one now.",
     dbBackupTitle:"Database Backup / Export",
-    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Daily Cases, Case Notices, Monthly Reports, Cause Lists, Inspection Desk, Scanning Desk records, Employee Directory, Bill Register, Daily Case Management, Gallery photo records, Team Chat, shared lists). Documents/photos themselves stay on Cloudinary, and the scanned PDF files of the Scanning Desk stay in Firebase Storage — this file has their records and links, not the actual files. Take a backup every week and keep the file somewhere safe (another computer or a USB drive).",
+    dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Daily Cases, Case Notices, Monthly Reports, Cause Lists, Inspection Desk (all proformas), Scanning Desk records, Employee Directory, Bill Register, Daily Case Management, Gallery photo records, Team Chat, shared lists). Documents/photos themselves stay on Cloudinary, and the scanned PDF files of the Scanning Desk stay in Firebase Storage — this file has their records and links, not the actual files. Take a backup every week and keep the file somewhere safe (another computer or a USB drive).",
     btnRunBackup:"⬇️ Download Full Backup Now",
     backupRunning:"Reading data and building backup file…",
     backupDone:"✅ Backup downloaded and logged successfully.",
+    backupPartial:"⚠ The file was downloaded, but these parts could NOT be read and are missing from it: {list}. It is not counted as a complete backup — please sign in again and take the backup again.",
+    integrityLabel:"File check", integrityOk:"✅ Counts match — the file is complete and unchanged", integrityNone:"ℹ Older file without a check code — it can be restored, but its completeness cannot be verified",
+    restoreBadIntegrity:"This file is damaged, cut short or was edited: {list}. Restore stopped — no data was changed. Use a different backup file.",
+    restoreSafetyIncomplete:"The safety backup taken just before restoring could not read: {list}. Restore stopped — no data was changed. Please try again.",
+    protectTitle:"🛡 Automatic protection by Google (in addition to this page)",
+    protect1:"Every Sunday the whole database is saved automatically and each copy is kept for 98 days.",
+    protect2:"Point-in-time recovery: the database can be viewed or recovered as it was at any minute in the last 7 days (for example after a wrong bulk edit).",
+    protect3:"These need the billing account to stay active. They are used by the administrator from the Firebase Console — you do not need to do anything here. This page's file backup remains your own copy.",
     restoreTitle:"Restore from Backup File",
     restoreIntro:"Only use this if you know exactly what you are doing. Restoring replaces shared online data for everyone with the contents of the file you choose.",
     restoreStep2:"Choose a previously downloaded backup (.json) file below.",
@@ -359,10 +374,18 @@ var I18N = {
     backupAgeToday:"(آج)", backupAgeDays:"({n} دن پہلے)",
     backupStaleWarn:"⚠ آخری بیک اپ 7 دن سے زیادہ پرانا ہے — براہ کرم ابھی نیا بیک اپ لیں۔",
     dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
-    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، یومیہ کیسز، کیس نوٹسز، ماہانہ رپورٹس، کاز لسٹس، انسپکشن ڈیسک، اسکیننگ ڈیسک کا ریکارڈ، ملازمین کی ڈائریکٹری، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، مشترکہ فہرستیں)۔ اصل دستاویزات/تصاویر Cloudinary پر اور اسکیننگ ڈیسک کی اسکین شدہ PDF فائلیں Firebase Storage میں ہی رہیں گی — اس فائل میں صرف ان کا ریکارڈ اور لنکس ہوں گے۔ ہر ہفتے ایک بیک اپ لیں اور فائل کسی محفوظ جگہ (دوسرا کمپیوٹر یا USB) رکھیں۔",
+    dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، یومیہ کیسز، کیس نوٹسز، ماہانہ رپورٹس، کاز لسٹس، انسپکشن ڈیسک (تمام پروفارمے)، اسکیننگ ڈیسک کا ریکارڈ، ملازمین کی ڈائریکٹری، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، مشترکہ فہرستیں)۔ اصل دستاویزات/تصاویر Cloudinary پر اور اسکیننگ ڈیسک کی اسکین شدہ PDF فائلیں Firebase Storage میں ہی رہیں گی — اس فائل میں صرف ان کا ریکارڈ اور لنکس ہوں گے۔ ہر ہفتے ایک بیک اپ لیں اور فائل کسی محفوظ جگہ (دوسرا کمپیوٹر یا USB) رکھیں۔",
     btnRunBackup:"⬇️ ابھی مکمل بیک اپ ڈاؤن لوڈ کریں",
     backupRunning:"ڈیٹا پڑھا جا رہا ہے اور بیک اپ فائل بنائی جا رہی ہے…",
     backupDone:"✅ بیک اپ کامیابی سے ڈاؤن لوڈ اور محفوظ ہو گیا۔",
+    backupPartial:"⚠ فائل ڈاؤن لوڈ ہو گئی، مگر یہ حصے پڑھے نہیں جا سکے اور فائل میں شامل نہیں: {list}۔ اسے مکمل بیک اپ شمار نہیں کیا گیا — براہ کرم دوبارہ لاگ اِن ہو کر بیک اپ لیں۔",
+    integrityLabel:"فائل کی جانچ", integrityOk:"✅ گنتی درست ہے — فائل مکمل اور بغیر تبدیلی کے ہے", integrityNone:"ℹ پرانی فائل جس میں جانچ کا کوڈ نہیں — Restore ہو سکتی ہے، مگر مکمل ہونے کی تصدیق نہیں ہو سکتی",
+    restoreBadIntegrity:"یہ فائل خراب، ادھوری یا ایڈٹ شدہ ہے: {list}۔ Restore روک دیا گیا — کوئی ڈیٹا نہیں بدلا۔ کوئی دوسری بیک اپ فائل استعمال کریں۔",
+    restoreSafetyIncomplete:"Restore سے پہلے لیا گیا حفاظتی بیک اپ یہ حصے نہیں پڑھ سکا: {list}۔ Restore روک دیا گیا — کوئی ڈیٹا نہیں بدلا۔ دوبارہ کوشش کریں۔",
+    protectTitle:"🛡 گوگل کی خودکار حفاظت (اس صفحے کے علاوہ)",
+    protect1:"ہر اتوار پورا ڈیٹا بیس خود بخود محفوظ ہوتا ہے اور ہر کاپی 98 دن رکھی جاتی ہے۔",
+    protect2:"Point-in-time recovery: پچھلے 7 دن میں کسی بھی منٹ کا ڈیٹا دیکھا یا واپس لیا جا سکتا ہے (مثلاً کوئی غلط بڑی تبدیلی ہو جائے تو)۔",
+    protect3:"ان کے لیے بلنگ اکاؤنٹ فعال رہنا ضروری ہے۔ انہیں ایڈمنسٹریٹر Firebase Console سے استعمال کرتا ہے — یہاں آپ کو کچھ کرنے کی ضرورت نہیں۔ اس صفحے کی فائل والا بیک اپ آپ کی اپنی کاپی ہے۔",
     restoreTitle:"بیک اپ فائل سے Restore",
     restoreIntro:"یہ صرف اس وقت استعمال کریں جب آپ کو مکمل یقین ہو کہ کیا کر رہے ہیں۔ Restore سب کے لیے مشترکہ آن لائن ڈیٹا کو منتخب کردہ فائل کے مطابق بدل دیتا ہے۔",
     restoreStep2:"نیچے پہلے سے ڈاؤن لوڈ کی گئی بیک اپ (.json) فائل منتخب کریں۔",
@@ -477,7 +500,7 @@ function renderLastBackupLine(){
   /* newest real backup (a "restore" entry is not a backup) */
   db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(25).get().then(function(qs){
     var d = null;
-    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore") d = v; });
+    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore" && v.hadErrors !== true) d = v; });
     if(!d){
       el.textContent = I18N[currentLang].lastBackupNone;
       el.style.color = "";
@@ -520,7 +543,9 @@ var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages",
   "cases","monthlyReports","caseNotices","employees","lookupLists",
   "contacts","helpArticles","advertisements",
   /* 19 Oct 2026: added the systems built after the 3 Oct review - Scanning Desk records, saved Cause Lists, Inspection Desk (inspections, references, manual sign-offs) */
-  "scans","causeLists","inspections","inspectionRefs","inspectionManual"];
+  "scans","causeLists","inspections","inspectionRefs","inspectionManual",
+  /* 20 Oct 2026: Inspection Proforma B entries and row choices were missing from the backup */
+  "inspectionB","inspectionOverrides"];
 var KNOWN_SHARED_DOCS = [
   {collection:"appData_bill", doc:"shared", label:"bill_register"},
   {collection:"appData_dcms", doc:"shared", label:"daily_case_management"},
@@ -538,7 +563,7 @@ var KNOWN_SHARED_DOCS = [
    Used both by the manual "Download Full Backup Now" button and by the
    automatic safety backup that Restore takes before writing anything. */
 function performBackup(logType){
-  var backup = { generatedAt: new Date().toISOString(), generatedBy: (auth.currentUser && auth.currentUser.email) || "?", collections: {}, sharedDocs: {} };
+  var backup = { generatedAt: new Date().toISOString(), generatedBy: (auth.currentUser && auth.currentUser.email) || "?", manifest: null, collections: {}, sharedDocs: {} };
   var recordCounts = {};
 
   var collectionReads = KNOWN_COLLECTIONS.map(function(name){
@@ -564,6 +589,11 @@ function performBackup(logType){
   });
 
   return Promise.all(collectionReads.concat(docReads)).then(function(){
+    /* Integrity manifest: how many records each part held when the file was made. Restore re-counts them, so a cut-off,
+       damaged or hand-edited file is refused instead of being restored half-way. Parts that could not be read are listed. */
+    var failed = Object.keys(recordCounts).filter(function(k){ return recordCounts[k] === "error"; });
+    var total = 0; Object.keys(recordCounts).forEach(function(k){ if(typeof recordCounts[k] === "number") total += recordCounts[k]; });
+    backup.manifest = { version: 2, counts: recordCounts, totalRecords: total, failed: failed };
     var json = JSON.stringify(backup, null, 2);
     var blob = new Blob([json], {type:"application/json"});
     var url = URL.createObjectURL(blob);
@@ -582,9 +612,11 @@ function performBackup(logType){
       performedByEmail: auth.currentUser.email,
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       recordCounts: recordCounts,
-      fileSizeApprox: json.length
+      fileSizeApprox: json.length,
+      hadErrors: failed.length > 0,
+      failed: failed
     }).then(function(ref){
-      return { recordCounts: recordCounts, json: json, logId: ref.id };
+      return { recordCounts: recordCounts, json: json, logId: ref.id, failed: failed };
     });
   });
 }
@@ -601,7 +633,13 @@ document.getElementById("btnRunBackup").addEventListener("click", function(){
   progressEl.classList.remove("hidden");
 
   performBackup("database").then(function(result){
-    progressEl.textContent = I18N[currentLang].backupDone;
+    if(result.failed && result.failed.length){
+      progressEl.classList.add("hidden");
+      errEl.textContent = I18N[currentLang].backupPartial.replace("{list}", result.failed.join(", "));
+      errEl.classList.remove("hidden");
+    } else {
+      progressEl.textContent = I18N[currentLang].backupDone;
+    }
     tableEl.innerHTML = Object.keys(result.recordCounts).map(function(k){
       return "<tr><td>"+esc(k)+"</td><td>"+esc(result.recordCounts[k])+"</td></tr>";
     }).join("");
@@ -618,6 +656,26 @@ document.getElementById("btnRunBackup").addEventListener("click", function(){
 
 /* ---------- Restore from Backup File ---------- */
 var PENDING_RESTORE_DATA = null; /* parsed + validated backup JSON, waiting for confirm click */
+
+/* Re-counts every part of a backup file against its own manifest. Returns {status:"ok"|"none"|"bad", detail:[...]}.
+   "none" = an older file made before manifests existed (still restorable, just not checkable). */
+function checkBackupIntegrity(data){
+  var m = data && data.manifest;
+  if(!m || typeof m.counts !== "object" || m.counts === null) return { status: "none", detail: [] };
+  var bad = [];
+  Object.keys(m.counts).forEach(function(k){
+    var want = m.counts[k];
+    if(typeof want !== "number") return;               /* that part failed when the backup was made */
+    var have;
+    if(Object.prototype.hasOwnProperty.call(data.collections, k)){
+      var arr = data.collections[k]; have = Array.isArray(arr) ? arr.length : -1;
+    } else if(Object.prototype.hasOwnProperty.call(data.sharedDocs, k)){
+      have = data.sharedDocs[k] && !data.sharedDocs[k].error ? 1 : 0;
+    } else { have = -1; }
+    if(have !== want) bad.push(k + " (" + want + " → " + (have < 0 ? "missing" : have) + ")");
+  });
+  return { status: bad.length ? "bad" : "ok", detail: bad, failed: Array.isArray(m.failed) ? m.failed : [] };
+}
 
 function isValidBackupFile(data){
   if(!data || typeof data !== "object") return false;
@@ -652,8 +710,19 @@ document.getElementById("restoreFileInput").addEventListener("change", function(
       errEl.classList.remove("hidden");
       return;
     }
+    var integ = checkBackupIntegrity(data);
+    if(integ.status === "bad"){
+      errEl.textContent = I18N[currentLang].restoreBadIntegrity.replace("{list}", integ.detail.join(", "));
+      errEl.classList.remove("hidden");
+      return;
+    }
     PENDING_RESTORE_DATA = data;
     var rows = [];
+    rows.push("<tr><td>"+esc(I18N[currentLang].integrityLabel)+"</td><td>"+esc(
+      integ.status === "ok" ? I18N[currentLang].integrityOk : I18N[currentLang].integrityNone)+"</td></tr>");
+    if(integ.failed && integ.failed.length){
+      rows.push("<tr><td>⚠</td><td>"+esc(I18N[currentLang].backupPartial.replace("{list}", integ.failed.join(", ")))+"</td></tr>");
+    }
     rows.push("<tr><td>"+esc(I18N[currentLang].restoreFileFromLabel)+"</td><td>"+esc(new Date(data.generatedAt).toLocaleString(currentLang==="ur"?"ur-PK":"en-GB"))+"</td></tr>");
     KNOWN_COLLECTIONS.forEach(function(name){
       if(data.collections[name]) rows.push("<tr><td>"+esc(name)+"</td><td>"+esc((data.collections[name]||[]).length||0)+"</td></tr>");
@@ -712,6 +781,9 @@ document.getElementById("btnConfirmRestore").addEventListener("click", function(
   progressEl.textContent = I18N[currentLang].restoreRunningSafety;
 
   performBackup("pre_restore_safety").then(function(safetyResult){
+    if(safetyResult.failed && safetyResult.failed.length){
+      throw new Error(I18N[currentLang].restoreSafetyIncomplete.replace("{list}", safetyResult.failed.join(", ")));
+    }
     progressEl.textContent = I18N[currentLang].restoreRunningWrite;
     var writes = [];
     var restoredCounts = {};

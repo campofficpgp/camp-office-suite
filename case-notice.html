@@ -132,7 +132,7 @@ html,body{overflow-x:hidden;}
      under the Case No (first column, always visible) and the far-right Actions column is hidden. */
   .row-actions-m{display:none;}
   @media (max-width:700px){
-    .row-actions-m{display:flex; margin-top:6px; max-width:150px;}
+    .row-actions-m{display:flex; margin-top:6px; max-width:190px;}
     th.act-col, td.act-col{display:none;}
     table.notice-table{min-width:760px;}
   }
@@ -370,6 +370,7 @@ html,body{overflow-x:hidden;}
       <div class="search-box">
         <div class="lbl" id="formTitle" data-en="Add New Notice" data-ur="نیا نوٹس شامل کریں">Add New Notice</div>
         <input type="hidden" id="nId">
+        <div id="copyHint" class="preview-warn" style="display:none; background:#e6f1fb; border-color:#7aa6d6; color:#17375a;"></div>
         <div class="search-grid">
           <div class="field"><label data-en="Case Type" data-ur="کیس کی قسم">Case Type</label><select id="nType"></select></div>
           <div class="field"><label data-en="Case No" data-ur="کیس نمبر">Case No</label><input type="text" id="nCaseNo" autocomplete="off" maxlength="14" placeholder="e.g. 869 or 12345-L"></div>
@@ -796,6 +797,7 @@ html,body{overflow-x:hidden;}
       var acts =
           '<div class="btn primary" onclick="openPreview('+idq+')">'+(isUrdu?'دیکھیں':'Preview')+'</div>' +
           '<div class="btn ghost needs-write" onclick="openEditForm('+idq+')">'+(isUrdu?'ترمیم':'Edit')+'</div>' +
+          '<div class="btn ghost needs-write" onclick="openCopyForm('+idq+')" title="'+(isUrdu?'اسی کیس کا نیا نوٹس (نئی تاریخ سماعت کے لیے)':'New notice for the same case (for a new hearing date)')+'">'+(isUrdu?'نقل':'Copy')+'</div>' +
           '<div class="btn danger needs-delete" onclick="deleteNotice('+idq+')">'+(isUrdu?'حذف کریں':'Delete')+'</div>';
       tr.innerHTML =
         '<td>'+E(n.type)+' '+E(n.caseNo)+'/'+E(n.year)+'<div class="row-actions row-actions-m">'+acts+'</div></td>' +
@@ -819,6 +821,64 @@ html,body{overflow-x:hidden;}
     refreshTehsilStationOptions();
   });
 
+  function blankDash(v){ v = (v == null) ? '' : String(v); return v.trim() === '—' ? '' : v; }
+  var COPY_MODE = false;
+  function setCopyHint(on){
+    COPY_MODE = !!on;
+    var h = document.getElementById('copyHint'); if(!h) return;
+    if(on){ h.textContent = isUrdu ? 'یہ پچھلے نوٹس کی نقل ہے۔ نئی تاریخ سماعت، بینچ اور کاز لسٹ سیریل نمبر درست کر کے محفوظ کریں۔' : 'This is a copy of an earlier notice. Set the new Hearing Date, Bench and Cause List Serial No, then save.'; h.style.display = ''; }
+    else { h.textContent = ''; h.style.display = 'none'; }
+  }
+  function todayIso(){ var d = new Date(); function z(n){ return (n < 10 ? '0' : '') + n; } return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); }
+
+  /* When a Signatory is chosen, the Designation, Mobile No and Office No are filled in for you — only the boxes that are still empty
+     (anything already typed is never overwritten). Designation comes from the signatory's own line ("Name — Designation");
+     Mobile and Office come from the most recent notice saved with the same signatory. */
+  function autoFillSignatory(){
+    var sig = document.getElementById('nSignatory').value; if(!sig) return;
+    function empty(id){ return blankDash(document.getElementById(id).value).trim() === ''; }
+    function lastWith(field){
+      for(var i = 0; i < NOTICES.length; i++){ var n = NOTICES[i]; if(n.signatory === sig && blankDash(n[field]).trim()) return n[field]; }
+      return '';
+    }
+    if(empty('nDesig')){ var parts = sig.split(' — '); var d = parts.length > 1 ? parts.slice(1).join(' — ') : lastWith('desig'); if(d) document.getElementById('nDesig').value = d; }
+    if(empty('nMobile')){ var m = lastWith('mobile'); if(m) document.getElementById('nMobile').value = m; }
+    if(empty('nOffice')){ var o = lastWith('office'); if(o) document.getElementById('nOffice').value = o; }
+  }
+  document.getElementById('nSignatory').addEventListener('change', autoFillSignatory);
+
+  /* "Copy": a new notice for the same case (e.g. adjourned and fixed for another date). Everything is copied except the
+     Hearing Date, Cause List Serial No and Notice Date, which belong to the new hearing. Nothing is saved until Save is pressed. */
+  function openCopyForm(id){
+    var n = NOTICES.find(function(x){ return x.id === id; });
+    if(!n) return;
+    openAddForm();
+    refreshTypeOptions(n.type);
+    document.getElementById('nCaseNo').value = n.caseNo;
+    setSelectKeep('nYear', n.year);
+    document.getElementById('nTitle').value = n.title;
+    document.getElementById('nVersus').value = n.versus;
+    refreshCategoryOptions(n.relief);
+    document.getElementById('nRelief').value = n.relief;
+    document.getElementById('nFirNo').value = blankDash(n.firNo);
+    setSelectKeep('nFirYear', n.firYear);
+    document.getElementById('nSections').value = blankDash(n.sections);
+    setSelectKeep('nDistrict', n.district);
+    setSelectKeep('nBench', n.bench);
+    refreshTehsilStationOptions(n.tehsil, n.station);
+    document.getElementById('nSerialNo').value = '';
+    document.getElementById('nHearing').value = '';
+    document.getElementById('nDate').value = todayIso();
+    setSelectKeep('nSignatory', n.signatory);
+    document.getElementById('nDesig').value = blankDash(n.desig);
+    document.getElementById('nMobile').value = blankDash(n.mobile);
+    document.getElementById('nOffice').value = blankDash(n.office);
+    autoFillSignatory();
+    document.getElementById('formTitle').textContent = isUrdu ? 'نوٹس کی نقل (نیا نوٹس)' : 'Copy as New Notice';
+    setCopyHint(true);
+    var h = document.getElementById('nHearing'); if(h) setTimeout(function(){ try{ h.focus(); }catch(e){} }, 50);
+  }
+
   function openAddForm(){
     document.getElementById('nId').value = '';
     document.getElementById('formTitle').textContent = isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice';
@@ -830,6 +890,8 @@ html,body{overflow-x:hidden;}
     });
     refreshCategoryOptions('');
     refreshTehsilStationOptions();
+    setCopyHint(false);
+    autoFillSignatory();
     document.getElementById('noticeForm').classList.add('open');
   }
 
@@ -851,6 +913,7 @@ html,body{overflow-x:hidden;}
     var n = NOTICES.find(function(x){ return x.id === id; });
     if(!n) return;
     document.getElementById('nId').value = n.id;
+    setCopyHint(false);
     document.getElementById('formTitle').textContent = isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice';
     refreshTypeOptions(n.type);
     document.getElementById('nCaseNo').value = n.caseNo;
@@ -859,23 +922,24 @@ html,body{overflow-x:hidden;}
     document.getElementById('nVersus').value = n.versus;
     refreshCategoryOptions(n.relief);
     document.getElementById('nRelief').value = n.relief;
-    document.getElementById('nFirNo').value = n.firNo;
+    document.getElementById('nFirNo').value = blankDash(n.firNo);
     setSelectKeep('nFirYear', n.firYear);
-    document.getElementById('nSections').value = n.sections;
+    document.getElementById('nSections').value = blankDash(n.sections);
     setSelectKeep('nDistrict', n.district);
     setSelectKeep('nBench', n.bench);
-    document.getElementById('nSerialNo').value = n.srNo || '';
+    document.getElementById('nSerialNo').value = blankDash(n.srNo);
     refreshTehsilStationOptions(n.tehsil, n.station);
     document.getElementById('nHearing').value = n.hearing;
     document.getElementById('nDate').value = n.date;
     setSelectKeep('nSignatory', n.signatory);
-    document.getElementById('nDesig').value = n.desig;
-    document.getElementById('nMobile').value = n.mobile;
-    document.getElementById('nOffice').value = n.office;
+    document.getElementById('nDesig').value = blankDash(n.desig);
+    document.getElementById('nMobile').value = blankDash(n.mobile);
+    document.getElementById('nOffice').value = blankDash(n.office);
     document.getElementById('noticeForm').classList.add('open');
   }
 
   function closeNoticeForm(){
+    setCopyHint(false);
     document.getElementById('noticeForm').classList.remove('open');
   }
 
@@ -927,6 +991,12 @@ html,body{overflow-x:hidden;}
     if(!data.hearing && !confirm(isUrdu
         ? 'تاریخ سماعت درج نہیں۔ نوٹس کے متن میں تاریخ کی جگہ "—" آئے گی۔ پھر بھی محفوظ کریں؟'
         : 'The Hearing Date is empty, so the notice text will show "—" in place of the date. Save anyway?')) return;
+    if(data.hearing){
+      var dupN = NOTICES.filter(function(x){ return x.id !== idVal && String(x.type) === String(data.type) && normCaseNo(x.caseNo) === normCaseNo(data.caseNo) && String(x.year) === String(data.year) && x.hearing === data.hearing; });
+      if(dupN.length && !confirm(isUrdu
+          ? 'اسی کیس کا اسی تاریخ سماعت کا نوٹس پہلے سے محفوظ ہے۔ پھر بھی محفوظ کریں؟'
+          : 'A notice for this same case and hearing date is already saved. Save anyway?')) return;
+    }
     var oldN = idVal ? NOTICES.find(function(x){ return x.id === idVal; }) : null;
     var catUnchanged = oldN && oldN.type === data.type && (oldN.relief || '') === (data.relief || '');
     if(!catUnchanged && !CaseMaster.allows(data.type, data.relief)){
@@ -1348,7 +1418,8 @@ html,body{overflow-x:hidden;}
     renderTable();
     renderThemePicker();
     var ft = document.getElementById('formTitle');
-    if(ft) ft.textContent = document.getElementById('nId').value ? (isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice') : (isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice');
+    if(ft) ft.textContent = document.getElementById('nId').value ? (isUrdu ? 'نوٹس میں ترمیم' : 'Edit Notice') : COPY_MODE ? (isUrdu ? 'نوٹس کی نقل (نیا نوٹس)' : 'Copy as New Notice') : (isUrdu ? 'نیا نوٹس شامل کریں' : 'Add New Notice');
+    if(COPY_MODE) setCopyHint(true);
     refreshTehsilStationOptions(document.getElementById('nTehsil').value, document.getElementById('nStation').value);
     updateCount();
   }

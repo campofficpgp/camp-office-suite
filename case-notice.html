@@ -153,9 +153,25 @@ html,body{overflow-x:hidden;}
      pattern as the office heading in the Weekly Court Roster and Daily Case Entry tools, so it
      always shows the same office address and can still be fixed right here at preview time. */
   .notice-sheet .p-head-edit-row{display:flex; align-items:center; justify-content:center; gap:6px;}
-  .notice-sheet .office-head-row{margin-bottom:18px;}
-  .notice-sheet .p-logo{height:52px; margin:0 0 8px; display:block; text-align:left; direction:ltr;}
-  .notice-sheet .p-logo img{height:52px; width:auto; display:block; margin:0;}
+  .notice-sheet .office-head-row{margin-bottom:0; flex:1 1 auto; min-width:0;}
+  /* Letterhead row: Punjab Govt logo on the left, office address centred in the remaining
+     width (an empty spacer of the logo's width on the right keeps the address truly centred). */
+  .notice-sheet .lh-row{display:flex; align-items:center; gap:12px; direction:ltr; margin:0 0 18px;}
+  .notice-sheet .lh-row::after{content:""; flex:0 0 76px;}
+  .notice-sheet .lh-row .p-head-edit-row{flex:1 1 auto; min-width:0; text-align:center;}
+  .notice-sheet .lh-row .office-head{text-align:center;}
+  /* Phone width: tighter sheet padding, address uses the full remaining width, smaller label column. */
+  @media (max-width:600px){
+    .notice-sheet{padding:18px 12px;}
+    .notice-sheet .lh-row{gap:8px;} .notice-sheet .lh-row::after{display:none;}
+    .notice-sheet .lh-row .p-logo{flex-basis:52px; width:52px; height:52px;} .notice-sheet .lh-row .p-logo img{height:52px; max-width:52px;}
+    .notice-sheet .lh-row .office-head{font-size:13.5px;}
+    .notice-sheet .meta-row{gap:6px; font-size:12.5px;} .notice-sheet .meta-row .k{min-width:0 !important; flex:0 0 104px; width:104px;} .notice-sheet .meta-row > :not(.k){min-width:0; overflow-wrap:anywhere;}
+    .notice-sheet .ref-row{font-size:12px; gap:4px 8px; flex-wrap:wrap;} .notice-sheet .ref-blank{min-width:56px !important;} .notice-sheet .ref-blank-date{min-width:70px !important;}
+    .notice-sheet .print-heading-input{min-width:0; width:100%;}
+  }
+  .notice-sheet .p-logo{height:60px; margin:0; display:block; text-align:left; direction:ltr; flex:0 0 76px; width:76px;}
+  .notice-sheet .p-logo img{height:60px; width:auto; max-width:76px; object-fit:contain; display:block; margin:0;}
   .notice-sheet .office-sub-row{margin-bottom:18px;}
   .notice-sheet .p-head-edit-row .heading-icon{cursor:pointer; color:var(--gold-deep); font-weight:700; font-size:11px; opacity:.75;}
   .notice-sheet .p-head-edit-row .heading-icon:hover{opacity:1;}
@@ -190,6 +206,15 @@ html,body{overflow-x:hidden;}
   [dir="rtl"] table.notice-table th, [dir="rtl"] table.notice-table td{text-align:right;}
   [dir="rtl"] .disclaimer{border-left:none; border-right:3px solid var(--gold);}
 
+  /* Whole-page print setup: A4 portrait with an even 12 mm margin (same margin the PDF
+     download uses), the notice sheet printed without its on-screen card border/rounding,
+     and kept together on one page. */
+  @page{size:A4 portrait; margin:12mm;}
+  @media print{
+    html, body{background:#fff !important;}
+    #printArea.notice-sheet{border:none !important; border-radius:0 !important; box-shadow:none !important; break-inside:avoid; page-break-inside:avoid;}
+    #printArea{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
   @media print{
     body *{visibility:hidden;}
     #printArea, #printArea *{visibility:visible;}
@@ -1087,7 +1112,7 @@ html,body{overflow-x:hidden;}
     // stays fixed Urdu (a legal notice format), independent of this heading.
     var fieldKey = isUrdu ? 'ur' : 'en';
     var value = isUrdu ? headingUr : headingEn;
-    return '<div class="p-logo">'+PUNJAB_LOGO_HTML+'</div>' + printHeaderRowHtml(fieldKey, value, 'office-head');
+    return '<div class="lh-row"><div class="p-logo">'+PUNJAB_LOGO_HTML+'</div>' + printHeaderRowHtml(fieldKey, value, 'office-head') + '</div>';
   }
 
   function stampBlockHtml(side, stamp){

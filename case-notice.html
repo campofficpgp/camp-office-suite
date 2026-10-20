@@ -1120,8 +1120,9 @@ html,body{overflow-x:hidden;}
       '<div class="meta-row"><span class="k">Date</span><span>'+formatDateUr(n.date)+'</span></div>' +
       '<hr>' +
       '<div class="body-text">مقدمہ بالا کیس مورخہ ' + formatDateUr(n.hearing) + ' کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے پراسیکیوٹر جنرل پنجاب آفس اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔</div>' +
-      '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>' +
-      buildSignHtml();
+      '<div class="sign-block">' + n.signatory.split(' — ')[0] + '<br>' + n.desig + '<br>' + n.mobile + '<br>Office No: ' + n.office + '</div>';
+    /* The extra "Prepared by / Approved by" stamp blocks (Iftikhar Ahmed / Prosecutor) are no longer printed on a notice —
+       the notice already carries its own signatory block, so the stamps showed up as a second, double signature. */
     document.getElementById('printArea').innerHTML = html;
     var pw = document.getElementById('previewWarn');
     if(pw){

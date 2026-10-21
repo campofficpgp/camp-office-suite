@@ -10,7 +10,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -303,6 +304,7 @@ html,body{overflow-x:hidden;}
     .user-chip-sm{ display:none; }
   }
 
+  .no-export .needs-export{ display:none !important; }
 </style>
 <style>
 .lk-tabs{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
@@ -503,9 +505,9 @@ html,body{overflow-x:hidden;}
         <button class="lk-btn ghost" type="button" data-dq="cases" data-en="Data check" data-ur="ڈیٹا کی جانچ">Data check</button>
         <span class="cols-wrap" id="cCols"></span>
         <button class="lk-btn ghost" id="cSumBtn" type="button" aria-expanded="true" aria-controls="cSum"></button>
-        <button class="lk-btn" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
-        <button class="lk-btn" type="button" data-exp="cases:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
-        <button class="lk-btn" type="button" data-exp="cases:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
+        <button class="lk-btn needs-export" onclick="lkExport('cases')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <button class="lk-btn needs-export" type="button" data-exp="cases:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
+        <button class="lk-btn needs-export" type="button" data-exp="cases:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-entry.html" data-en="Open Daily Case Entry" data-ur="یومیہ کیس انٹری کھولیں">Open Daily Case Entry</a>
       </div>
     </div>
@@ -526,9 +528,9 @@ html,body{overflow-x:hidden;}
         <span class="cols-wrap" id="nSaved"></span>
         <button class="lk-btn ghost" type="button" data-dq="notices" data-en="Data check" data-ur="ڈیٹا کی جانچ">Data check</button>
         <span class="cols-wrap" id="nCols"></span>
-        <button class="lk-btn" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
-        <button class="lk-btn" type="button" data-exp="notices:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
-        <button class="lk-btn" type="button" data-exp="notices:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
+        <button class="lk-btn needs-export" onclick="lkExport('notices')" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <button class="lk-btn needs-export" type="button" data-exp="notices:xlsx" data-en="Export Excel" data-ur="Excel ایکسپورٹ">Export Excel</button>
+        <button class="lk-btn needs-export" type="button" data-exp="notices:pdf" data-en="Export PDF" data-ur="PDF ایکسپورٹ">Export PDF</button>
         <a class="lk-btn ghost" style="text-decoration:none" href="case-notice.html" data-en="Open Case Notices" data-ur="کیس نوٹسز کھولیں">Open Case Notices</a>
       </div>
     </div>
@@ -647,10 +649,17 @@ html,body{overflow-x:hidden;}
   var db = firebase.firestore();
   CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
   CaseMaster.onChange(function(){ try { buildFilters('cases'); buildFilters('notices'); } catch(e){} });
-  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  var CURRENT_USER = null, CAN_EDIT_REC = {cases:false, notices:false}, CAN_EXPORT = false;   /* from the user's ticks (camp-perm.js) */
   /* Officer-wise permission: a Data Entry user is tied to one officer and may edit only that officer's cases (others are view-only). */
   var MY_OFFICER = '', OFFICER_RESTRICTED = false;
-  function canEditRec(kind, r){ return CAN_WRITE && (kind !== 'cases' || !OFFICER_RESTRICTED || (!!MY_OFFICER && String((r && r.officer) || '') === MY_OFFICER)); }
+  /* May this user open the edit form of this record?  Needs the Edit tick of that page, and (non-admin) his own officer.
+     Old notices that have no officer yet can be edited by anyone who has the Edit tick. */
+  function canEditRec(kind, r){
+    if(!CAN_EDIT_REC[kind]) return false;
+    if(!OFFICER_RESTRICTED) return true;
+    var o = String((r && r.officer) || '');
+    return !!MY_OFFICER && (o === MY_OFFICER || (kind === 'notices' && o === ''));
+  }
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
   function gate(titleUr, titleEn, bodyUr, showLink){
@@ -947,7 +956,7 @@ html,body{overflow-x:hidden;}
     var d = ids(kind);
     var rows = sorted(kind, filtered(kind));
     var cols = visCols(kind);
-    var canEditRows = CAN_WRITE;
+    var canEditRows = !!CAN_EDIT_REC[kind];
     var editPage = kind === 'cases' ? 'case-entry.html' : 'case-notice.html';
     var st = SORT[kind];
     document.getElementById(d.h).innerHTML = '<tr>' + cols.map(function(c){
@@ -1001,6 +1010,7 @@ html,body{overflow-x:hidden;}
   }
 
   function lkExport(kind){
+    if(!CAN_EXPORT) return;
     /* exports every matching row (not just the page on screen), in the order on screen, with the columns that are switched on */
     var rows = sorted(kind, filtered(kind)), cols = visCols(kind);
     function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }
@@ -1472,6 +1482,7 @@ html,body{overflow-x:hidden;}
   var EXP = { kind:'cases', fmt:'pdf', from:null };
   function expField(side, key){ return document.getElementById('exp_' + side + '_' + key); }
   function openExport(kind, fmt, from){
+    if(!CAN_EXPORT) return;
     EXP.kind = kind; EXP.fmt = fmt; EXP.from = from || null;
     var X = lkExportModel(kind);
     document.getElementById('expTitle').textContent = (isUrdu ? 'ایکسپورٹ — ' : 'Export — ') + (fmt === 'pdf' ? 'PDF' : 'Excel');
@@ -1492,6 +1503,7 @@ html,body{overflow-x:hidden;}
   }
   function expToggle(){ document.getElementById('expFields').style.opacity = document.getElementById('exp_on').checked ? '1' : '.45'; }
   async function expGo(){
+    if(!CAN_EXPORT) return;
     var btn = document.getElementById('expGo'), err = document.getElementById('expErr');
     ['left','right'].forEach(function(s){ ['name','designation','address'].forEach(function(k){ LK_STAMP[s][k] = expField(s, k).value.trim(); }); });
     LK_STAMP.on = document.getElementById('exp_on').checked;
@@ -1950,10 +1962,10 @@ html,body{overflow-x:hidden;}
       '<span>' + (isUrdu ? 'تازہ نتیجہ: ' : 'Latest result: ') + '<b>' + esc(dash(last.result)) + '</b></span>' +
       '<span>' + (isUrdu ? 'زمرہ: ' : 'Category: ') + '<b>' + esc(dash(last.relief)) + '</b></span>';
     var H = isUrdu ? ['#','تاریخ','بینچ','جج','سیریل','آفیسر','نتیجہ','زمرہ','ریمارکس'] : ['#','Date','Bench','Judge','Sr. No','Officer','Result','Category','Remarks'];
-    document.getElementById('histBody').innerHTML = '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + (CAN_WRITE ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr></thead><tbody>' +
+    document.getElementById('histBody').innerHTML = '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + (CAN_EDIT_REC.cases ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr></thead><tbody>' +
       rows.map(function(r, i){
         return '<tr' + (String(r.id) === String(id) ? ' class="cur"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(dash(r.date)) + '</td><td>' + esc(dash(r.bench)) + '</td><td>' + esc(dash(r.judge)) + '</td><td>' + esc(dash(r.serial)) + '</td><td>' + esc(dash(r.officer)) + '</td><td>' + esc(dash(r.result)) + '</td><td>' + esc(dash(r.relief)) + '</td><td>' + esc(r.remarks && r.remarks !== '—' ? r.remarks : '—') + '</td>' +
-          (CAN_WRITE ? '<td>' + (canEditRec('cases', r) ? '<a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>') + '</td>' : '') + '</tr>';
+          (CAN_EDIT_REC.cases ? '<td>' + (canEditRec('cases', r) ? '<a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>') + '</td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
     HIST_FROM = from || document.activeElement;
     document.getElementById('histBack').hidden = false;
@@ -2043,9 +2055,13 @@ html,body{overflow-x:hidden;}
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       /* Edit button on each case row is for people who may add/edit cases only (same rule as Daily Case Entry). */
       var isAdmL = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
-      OFFICER_RESTRICTED = !isAdmL && r2 === 'data_entry';
+      if(window.CampPerm && !CampPerm.init(u, 'lookup')){ return; }   /* no View tick: the page stays closed */
+      OFFICER_RESTRICTED = !isAdmL;
       MY_OFFICER = OFFICER_RESTRICTED ? String(u.officer || '') : '';
-      CAN_WRITE = isAdmL || r2 === 'data_entry';
+      CAN_EDIT_REC.cases = window.CampPerm ? CampPerm.can(u, 'case-entry', 'e') : isAdmL;
+      CAN_EDIT_REC.notices = window.CampPerm ? CampPerm.can(u, 'case-notice', 'e') : isAdmL;
+      CAN_EXPORT = window.CampPerm ? CampPerm.can(u, 'lookup', 'x') : true;
+      document.body.classList.toggle('no-export', !CAN_EXPORT);
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

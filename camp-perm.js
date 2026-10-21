@@ -1,0 +1,142 @@
+/* ============================================================================
+   Camp Office — per-user permission ticks   (camp-perm.js)
+   ----------------------------------------------------------------------------
+   Super Admin ticks, for every user and every page, what that user may do:
+     v = View (open the page)      a = Add        e = Edit        d = Delete
+     x = Export / Print            l = Manage lists               ai = AI helper
+   The ticks live in  users/{uid}.perms  = { "<page>": { v:true, a:true, ... }, ... }.
+
+   * A user whose profile has no  perms  (never edited) behaves exactly like his role did before:
+     DEFAULTS below (and the Firestore rules carry the same table).
+   * Super Admin can always do everything; ticks never lock him out.
+   * If  perms["<page>"]  exists it replaces the defaults for that page completely.
+   * This file only decides what the SCREEN shows. The Firestore rules are the real lock.
+   * The officer rule (a Data Entry user works only on his own officer's data) is separate and stays.
+   ========================================================================== */
+(function () {
+  'use strict';
+  if (window.CampPerm) { return; }
+
+  /* ---- the pages that have ticks (Phase 1) -------------------------------------------------- */
+  var PAGES = [
+    { key: 'case-entry',  href: 'case-entry.html',  ur: 'یومیہ کیس انٹری',   en: 'Daily Cases',        acts: ['v', 'a', 'e', 'd', 'x', 'ai'] },
+    { key: 'cause-list',  href: 'cause-list.html',  ur: 'کاز لسٹ امپورٹ',    en: 'Cause List Import',  acts: ['v', 'a', 'e', 'd', 'x'] },
+    { key: 'lookup',      href: 'lookup.html',      ur: 'تلاش (Lookup)',      en: 'Lookup',             acts: ['v', 'x'] },
+    { key: 'case-notice', href: 'case-notice.html', ur: 'کیس نوٹسز',          en: 'Case Notices',       acts: ['v', 'a', 'e', 'd', 'x'] },
+    { key: 'lists',       href: '',                 ur: 'فہرستیں سنبھالنا (جج، آفیسر، اقسام…)', en: 'Manage lists (judges, officers, types…)', acts: ['l'] }
+  ];
+  var ACT_LABEL = {
+    v: ['دیکھنا', 'View'], a: ['شامل', 'Add'], e: ['ایڈٹ', 'Edit'], d: ['ڈیلیٹ', 'Delete'],
+    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper']
+  };
+
+  /* ---- what a user can do when his profile has no ticks (same as before the ticks existed) --- */
+  var DEFAULTS = {
+    'case-entry':  { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'd', 'x'], admin: ['v', 'a', 'e', 'd', 'x', 'ai'] },
+    'cause-list':  { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
+    'lookup':      { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'x'] },
+    'case-notice': { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
+    'lists':       { viewer: [],         data_entry: [],                         admin: ['l'] }
+  };
+
+  function roleOf(u) {
+    if (!u) { return 'viewer'; }
+    return u.roleV2 || (u.role === 'admin' ? 'admin' : 'viewer');
+  }
+  function isOwner(u) { return roleOf(u) === 'super_admin'; }
+  function defaultsFor(role, page) {
+    var d = DEFAULTS[page];
+    if (!d) { return []; }
+    return d[role] || d.viewer || [];
+  }
+  /* can user u do act on page ?  (u = the users/{uid} data) */
+  function can(u, page, act) {
+    if (isOwner(u)) { return true; }
+    var p = u && u.perms && u.perms[page];
+    if (p && typeof p === 'object') { return p[act] === true; }
+    return defaultsFor(roleOf(u), page).indexOf(act) !== -1;
+  }
+  /* the full table of ticks a user has right now (defaults filled in) */
+  function effective(u) {
+    var out = {};
+    PAGES.forEach(function (pg) {
+      out[pg.key] = {};
+      pg.acts.forEach(function (a) { out[pg.key][a] = can(u, pg.key, a); });
+    });
+    return out;
+  }
+  /* turn a table of booleans into what is stored (only known pages/acts, only real booleans) */
+  function clean(table) {
+    var out = {};
+    PAGES.forEach(function (pg) {
+      var row = table && table[pg.key];
+      if (!row) { return; }
+      out[pg.key] = {};
+      pg.acts.forEach(function (a) { out[pg.key][a] = row[a] === true; });
+    });
+    return out;
+  }
+  function pageInfo(key) {
+    for (var i = 0; i < PAGES.length; i++) { if (PAGES[i].key === key) { return PAGES[i]; } }
+    return null;
+  }
+
+  /* ---- screen part ------------------------------------------------------------------------- */
+  var state = { user: null, page: null };
+  function isUr() {
+    try { return (window.currentLang || window.lang || (document.documentElement.getAttribute('lang') || '')).toString().indexOf('ur') === 0 || window.isUrdu === true; } catch (e) { return false; }
+  }
+  function lastSeg(h) {
+    h = String(h || '').split('#')[0].split('?')[0];
+    return h.split('/').pop();
+  }
+  function hideNav(u) {
+    PAGES.forEach(function (pg) {
+      if (!pg.href || can(u, pg.key, 'v')) { return; }
+      var links = document.querySelectorAll('#sidebar a[href], .quick-tile[href]');
+      Array.prototype.forEach.call(links, function (a) {
+        if (a.getAttribute('href') && /^https?:/i.test(a.getAttribute('href'))) { return; }
+        if (lastSeg(a.getAttribute('href')) === pg.href) { a.style.display = 'none'; a.setAttribute('data-perm-hidden', pg.key); }
+      });
+    });
+  }
+  function showBlock(pg) {
+    if (document.getElementById('cp-block')) { return; }
+    var st = document.createElement('style');
+    st.textContent = '.cp-block{position:fixed;inset:0;z-index:2147483645;background:rgba(15,25,45,.96);color:#fff;display:flex;align-items:center;justify-content:center;padding:16px;font-family:"Segoe UI",Tahoma,Arial,sans-serif}' +
+      '.cp-card{max-width:460px;width:100%;background:#17294a;border:1px solid #3a4f7d;border-radius:14px;padding:26px 24px;text-align:center}' +
+      '.cp-card h2{margin:0 0 8px;font-size:20px;color:#ffd77a}.cp-ur{direction:rtl;font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif;font-size:15px;line-height:2}.cp-en{font-size:12.5px;opacity:.88}' +
+      '.cp-btn{display:inline-block;margin-top:14px;border:1px solid #d4a13d;background:#d4a13d;color:#17294a;border-radius:8px;padding:9px 16px;font-weight:700;font-size:14px;text-decoration:none}';
+    document.head.appendChild(st);
+    var d = document.createElement('div');
+    d.id = 'cp-block'; d.className = 'cp-block'; d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-modal', 'true');
+    d.innerHTML = '<div class="cp-card"><h2>رسائی کی اجازت نہیں / No access</h2>' +
+      '<div class="cp-ur">آپ کو اس صفحے (' + (pg ? pg.ur : '') + ') کو کھولنے کی اجازت نہیں دی گئی۔ ضرورت ہو تو سپر ایڈمن سے رابطہ کریں۔</div>' +
+      '<div class="cp-en">You have not been given permission to open this page (' + (pg ? pg.en : '') + '). Ask the Super Admin if you need it.</div>' +
+      '<a class="cp-btn" href="index.html">پورٹل پر جائیں / Go to portal</a></div>';
+    document.documentElement.appendChild(d);
+    try { document.body.setAttribute('inert', ''); } catch (e) {}
+  }
+  function hideBlock() {
+    var d = document.getElementById('cp-block');
+    if (d && d.parentNode) { d.parentNode.removeChild(d); }
+    try { document.body.removeAttribute('inert'); } catch (e) {}
+  }
+  /* call once the user's profile is known.  pageKey = the page being shown (omit on the hub). */
+  function init(u, pageKey) {
+    state.user = u || null; state.page = pageKey || null;
+    hideNav(u || {});
+    var pg = pageKey ? pageInfo(pageKey) : null;
+    if (pg && !can(u, pageKey, 'v')) { showBlock(pg); return false; }
+    hideBlock();
+    return true;
+  }
+  /* the logged-in user's right (after init) */
+  function canMe(page, act) { return can(state.user, page, act); }
+
+  window.CampPerm = {
+    PAGES: PAGES, ACT_LABEL: ACT_LABEL, DEFAULTS: DEFAULTS,
+    roleOf: roleOf, can: can, canMe: canMe, effective: effective, clean: clean, pageInfo: pageInfo,
+    init: init, isUr: isUr
+  };
+})();

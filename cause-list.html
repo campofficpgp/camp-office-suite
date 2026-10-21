@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -458,6 +458,8 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 .sl-empty{ font-size:13px; color:var(--muted); padding:6px 2px; }
 .sl-input{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font:inherit; background:var(--card); color:var(--text); box-sizing:border-box; }
 .sl-chk{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; }
+  .no-export .needs-export{ display:none !important; }
+  .no-lbtn{ display:none !important; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -568,10 +570,10 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
       <button class="cl-btn gold" id="btnSave" onclick="startSave()">💾 Save to Daily Case Entry / محفوظ کریں</button>
       <button class="cl-btn" id="btnSaveList" onclick="saveList()" title="Keep this whole list (all dates, officers, results) so it can be opened again later from Saved lists">📁 Save this list / فہرست محفوظ کریں</button>
       <span class="cl-sep"></span>
-      <button class="cl-btn ghost" onclick="doPrint()">🖨 Print / پرنٹ</button>
-      <button class="cl-btn ghost" onclick="exportFile('pdf')">⬇ PDF</button>
-      <button class="cl-btn ghost" onclick="exportFile('xlsx')">⬇ Excel</button>
-      <button class="cl-btn ghost" onclick="exportFile('docx')">⬇ Word</button>
+      <button class="cl-btn ghost needs-export" onclick="doPrint()">🖨 Print / پرنٹ</button>
+      <button class="cl-btn ghost needs-export" onclick="exportFile('pdf')">⬇ PDF</button>
+      <button class="cl-btn ghost needs-export" onclick="exportFile('xlsx')">⬇ Excel</button>
+      <button class="cl-btn ghost needs-export" onclick="exportFile('docx')">⬇ Word</button>
       <span class="cl-sep"></span>
       <button class="cl-btn" onclick="document.getElementById('suppFile').click()" title="Supplementary list PDF">➕ Supplementary شامل کریں</button>
       <input type="file" id="suppFile" accept="application/pdf,.pdf" style="display:none">
@@ -945,7 +947,8 @@ var ST = { meta:null, rows:[], fileName:'', offDay:{}, offBench:{} };
 var HIST = [], FUT = [];
 var VIEW = {day:'', bench:'', supp:false};
 var RID = 0, EDIT_ID = null, ADD_MODE = false;
-var CTX = { user:null, canWrite:false, canLists:false, restricted:false, myOfficer:'' };
+var CTX = { user:null, canWrite:false, canFill:false, canLists:false, restricted:false, myOfficer:'',
+            canListAdd:false, canListEdit:false, canListDel:false, canExport:false };   /* all set from the user's ticks (camp-perm.js) */
 /* Officer-wise permission (20 Oct 2026): a Data Entry user is tied to ONE officer (users/{uid}.officer). Every case such a user saves
    gets that officer, and an already-saved case of another officer is never changed. Admin / Super Admin are not restricted.
    The Firestore rules enforce the same thing on the server. */
@@ -1333,7 +1336,7 @@ function rowHtml(r, first){
     h += '<select class="cl-res' + (!r.result ? ' empty' : '') + '" data-act="res">' + resultOptions(r.result) + '</select><div class="res-print">' + esc(r.result) + '</div>';
   } else h += '<span class="cl-sub">—</span>';
   h += '</td>';
-  h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit / ترمیم">✎</button> <button data-act="del" title="Remove from this import / اس لسٹ سے ہٹائیں">🗑</button> ' + (CTX.canWrite ? '<button data-act="savone" class="cl-save1" title="Save only this case / صرف یہی کیس محفوظ کریں">💾</button>' : '') + (r.fromOther ? ' <button data-act="unmine" title="Back to white (not ours) / واپس سفید">↩</button>' : '') : '<button data-act="mkmine" class="cl-incl" title="Include this case as ours (officer, result, save) / اس کیس کو اپنے کیسوں میں شامل کریں">➕ شامل</button>') + '</td>';
+  h += '<td class="cl-act cl-col-act">' + (r.mine ? '<button data-act="edit" title="Edit / ترمیم">✎</button> <button data-act="del" title="Remove from this import / اس لسٹ سے ہٹائیں">🗑</button> ' + ((CTX.canWrite || CTX.canFill) ? '<button data-act="savone" class="cl-save1" title="Save only this case / صرف یہی کیس محفوظ کریں">💾</button>' : '') + (r.fromOther ? ' <button data-act="unmine" title="Back to white (not ours) / واپس سفید">↩</button>' : '') : '<button data-act="mkmine" class="cl-incl" title="Include this case as ours (officer, result, save) / اس کیس کو اپنے کیسوں میں شامل کریں">➕ شامل</button>') + '</td>';
   return h + '</tr>';
 }
 function listTitle(){
@@ -1376,8 +1379,8 @@ function computeCounts(){
     if(!r.include) return;
     c.sel++;
     var st = rowStatus(r);
-    if(st.ex && !r.force){ c.exists++; if(emptyRes(st.ex.result) && r.result){ if(mayChange(st.ex)) c.upd++; else c.foreign++; } }
-    else c.save++;
+    if(st.ex && !r.force){ c.exists++; if(CTX.canFill && emptyRes(st.ex.result) && r.result){ if(mayChange(st.ex)) c.upd++; else c.foreign++; } }
+    else if(CTX.canWrite) c.save++;
     if(r.unc.length && !r.confirmed) c.unc++;
     if(!r.result) c.nores++;
     var hi = histInfo(r); if(hi && (hi.after.length || hi.mism.length)) c.hist++;
@@ -1674,10 +1677,12 @@ function buildDoc(r, officer, withExtras){
 }
 var SAVING = false;
 function saveOne(r){
-  if(!CTX.canWrite){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
+  if(!CTX.canWrite && !CTX.canFill){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
   if(SAVING) return;
   var st = rowStatus(r), isUpd = false;
+  if(!(st.ex && !r.force) && !CTX.canWrite){ showAct(bi('آپ کو نیا کیس درج کرنے (Add) کی اجازت نہیں۔', 'You do not have permission to add new cases.'), 'err'); return; }
   if(st.ex && !r.force){
+    if(emptyRes(st.ex.result) && r.result && !CTX.canFill){ showAct(bi('آپ کو موجود کیس میں نتیجہ بھرنے (Edit) کی اجازت نہیں۔', 'You do not have permission to fill a result on an existing case.'), 'err'); return; }
     if(emptyRes(st.ex.result) && r.result) isUpd = true;
     else { showAct('ℹ️ ' + bi('یہ کیس اس تاریخ کے لیے پہلے سے درج ہے (' + caseText(r) + ')۔ دوبارہ درج کرنا ہو تو «Force entry» دبائیں۔', 'This case is already saved for this date (' + caseText(r) + '). Press “Force entry” to enter it again.'), ''); return; }
   }
@@ -1696,7 +1701,7 @@ function saveOne(r){
   confirmBox('Save this case / یہ کیس محفوظ کریں', h, function(){ doSave(newTypes, newJudges, r); });
 }
 function startSave(){
-  if(!CTX.canWrite){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
+  if(!CTX.canWrite && !CTX.canFill){ showAct(bi('آپ کو اندراج کی اجازت نہیں۔', 'You do not have permission to add cases.'), 'err'); return; }
   var c = computeCounts();
   if(!c.save && !c.upd){ showAct(bi('محفوظ کرنے کے لیے کوئی نیا کیس نہیں۔', 'Nothing new to save.'), ''); return; }
   var newTypes = [], newJudges = [];
@@ -1730,9 +1735,10 @@ async function doSave(newTypes, newJudges, only){
   (only ? [only] : ST.rows).forEach(function(r){
     if(!only && (!r.mine || !r.include || !inView(r))) return;
     var st = rowStatus(r);
-    if(st.ex && !r.force){ if(emptyRes(st.ex.result) && r.result && mayChange(st.ex)) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
-    else create.push(r);
+    if(st.ex && !r.force){ if(CTX.canFill && emptyRes(st.ex.result) && r.result && mayChange(st.ex)) update.push({id:st.ex.id, result:r.result, relief:emptyRes(st.ex.relief) ? r.relief : '', officer:emptyRes(st.ex.officer) ? effOfficer(r) : ''}); }
+    else if(CTX.canWrite) create.push(r);
   });
+  if(!create.length && !update.length){ showAct(bi('کچھ محفوظ کرنے کی اجازت یا کیس نہیں۔', 'Nothing to save (or not permitted).'), ''); return; }
   if(SAVING) return; SAVING = true;
   showAct('⏳ ' + bi('محفوظ ہو رہا ہے…', 'Saving…'));
   $('btnSave').disabled = true;
@@ -1784,7 +1790,7 @@ async function doSave(newTypes, newJudges, only){
 }
 
 /* ---------- printing ---------- */
-function doPrint(){ window.print(); }
+function doPrint(){ if(!CTX.canExport) return; window.print(); }
 
 
 /* =====================  DOWNLOADS: PDF / EXCEL / WORD  ===================== */
@@ -1824,6 +1830,7 @@ function downloadBlob(blob, name){
   setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
 }
 async function exportFile(kind){
+  if(!CTX.canExport) return;
   var days = exportModel();
   if(!days.length){ showAct(bi('ڈاؤن لوڈ کے لیے کوئی کیس منتخب نہیں۔', 'No selected cases to download.'), 'err'); return; }
   showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
@@ -2200,7 +2207,7 @@ function renderSaved(){
       '<div class="sl-info"><b dir="auto">' + esc(x.name || '(no name)') + (SL_CUR === x.id ? ' &nbsp;✔' : '') + '</b>' +
       '<span>' + esc(rg) + (rg ? ' · ' : '') + esc(x.caseCount || 0) + ' ' + bi('کیس', 'cases') + (when ? ' · ' + esc(when) : '') + (who ? ' · ' + esc(who) : '') + '</span></div>' +
       '<button class="cl-btn sm" onclick="openSaved(\'' + esc(x.id) + '\')">📂 ' + bi('کھولیں', 'Open') + '</button>' +
-      (CTX.canLists ? '<button class="cl-btn ghost sm" onclick="deleteSaved(\'' + esc(x.id) + '\')">🗑 ' + bi('حذف', 'Delete') + '</button>' : '') +
+      (CTX.canListDel ? '<button class="cl-btn ghost sm" onclick="deleteSaved(\'' + esc(x.id) + '\')">🗑 ' + bi('حذف', 'Delete') + '</button>' : '') +
       '</div>';
   }).join('');
 }
@@ -2217,7 +2224,7 @@ function startSavedListener(){
 }
 function saveList(){
   if(!ST.rows.length){ return; }
-  if(!CTX.canWrite){ showAct('❌ ' + bi('آپ کو فہرست محفوظ کرنے کی اجازت نہیں۔', 'You are not allowed to save lists.'), 'err'); return; }
+  if(!CTX.canListAdd && !CTX.canListEdit){ showAct('❌ ' + bi('آپ کو فہرست محفوظ کرنے کی اجازت نہیں۔', 'You are not allowed to save lists.'), 'err'); return; }
   var curItem = SL_CUR ? SAVED.filter(function(x){ return x.id === SL_CUR; })[0] : null;
   var body = '<div dir="rtl" style="text-align:right">' + bi('پوری فہرست (سب تاریخیں، منتخب آفیسر اور نتیجے) محفوظ ہو گی تاکہ بعد میں کسی بھی کمپیوٹر سے دوبارہ کھولی جا سکے۔ نام بدل سکتے ہیں:', 'The whole list (all dates, chosen officers and results) will be kept so it can be opened later from any computer. You can change the name:') + '</div>' +
     '<input class="sl-input" id="slName" dir="auto" maxlength="160" value="' + esc(curItem ? curItem.name : slDefaultName()) + '" style="margin-top:10px">' +
@@ -2225,6 +2232,8 @@ function saveList(){
   confirmBox('Save list / فہرست محفوظ کریں', body, function(){
     var name = ($('slName').value || '').trim() || slDefaultName();
     var asNew = !curItem || ($('slNew') && $('slNew').checked);
+    if(asNew && !CTX.canListAdd){ showAct('❌ ' + bi('آپ کو نئی فہرست بنانے (Add) کی اجازت نہیں۔', 'You are not allowed to create a new saved list (Add).'), 'err'); return; }
+    if(!asNew && !CTX.canListEdit){ showAct('❌ ' + bi('آپ کو محفوظ فہرست میں تبدیلی (Edit) کی اجازت نہیں۔', 'You are not allowed to change a saved list (Edit).'), 'err'); return; }
     doSaveList(name, asNew);
   }, {yesLabel:'💾 Save / محفوظ کریں'});
 }
@@ -2288,16 +2297,25 @@ auth.onAuthStateChanged(function(user){
     var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
     var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
     CTX.user = {uid:user.uid, email:user.email, role:r2};
-    CTX.restricted = !isAdm && r2 === 'data_entry';
+    if(window.CampPerm && !CampPerm.init(u, 'cause-list')){ return; }   /* no View tick: the page stays closed */
+    var P = function(pg, act){ return window.CampPerm ? CampPerm.can(u, pg, act) : isAdm; };
+    CTX.restricted = !isAdm;
     CTX.myOfficer = CTX.restricted ? String(u.officer || '') : '';
-    CTX.canWrite = isAdm || (r2 === 'data_entry' && !!CTX.myOfficer);
-    CTX.canLists = isAdm;
+    /* saving cases into Daily Cases needs the Add tick on BOTH pages, and (non-admin) an officer of his own */
+    CTX.canWrite = P('cause-list','a') && P('case-entry','a') && (isAdm || !!CTX.myOfficer);
+    CTX.canFill = P('case-entry','e') && (isAdm || !!CTX.myOfficer);
+    CTX.canLists = P('lists','l');
+    CTX.canListAdd = P('cause-list','a'); CTX.canListEdit = P('cause-list','e'); CTX.canListDel = P('cause-list','d');
+    CTX.canExport = P('cause-list','x');
+    document.body.classList.toggle('no-export', !CTX.canExport);
+    $('btnSave').classList.toggle('no-lbtn', !(CTX.canWrite || CTX.canFill));
+    $('btnSaveList').classList.toggle('no-lbtn', !(CTX.canListAdd || CTX.canListEdit));
     fillOfficers();
     showOfficerNote();
     $('ceUserEmail').textContent = user.email;
     var rn = ROLE_NAMES[r2] || [r2, r2];
     $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
-    if(!CTX.canWrite) $('btnSave').title = 'Viewer: save is not allowed';
+    if(!CTX.canWrite) $('btnSave').title = 'Save is not allowed for your account';
     startLiveData();
   }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
 });

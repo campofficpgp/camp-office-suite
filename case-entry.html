@@ -336,8 +336,9 @@ html,body{overflow-x:hidden;}
 .userbar-ce{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; max-width:1400px; margin:10px auto 0; padding:8px 14px; background:var(--card); border:1px solid var(--border); border-radius:8px; font-size:12.5px; color:var(--muted); }
 .userbar-ce a{ color:var(--navy); text-decoration:none; font-weight:600; }
 .userbar-ce .role-chip{ background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:2px 10px; margin-inline-start:6px; color:var(--text); }
-.readonly-mode .manage-link, .readonly-mode .needs-write{ display:none !important; }
+.no-add .needs-add, .no-edit .needs-edit, .no-save .needs-save{ display:none !important; }
 .no-delete .needs-delete{ display:none !important; }
+.no-export .needs-export{ display:none !important; }
 .no-lists .manage-link{ display:none !important; }
 .no-ai .needs-ai{ display:none !important; }
 
@@ -398,6 +399,7 @@ html.embedded .app-shell{ min-height:0; }
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
 <script src="case-master.js"></script>
+<script src="camp-perm.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head>
@@ -469,7 +471,7 @@ html.embedded .app-shell{ min-height:0; }
         <div class="lk-grid" id="ceFilters"></div>
         <div class="count" id="count"></div>
         <div class="ce-actions">
-          <div class="btn primary needs-write" onclick="openAddForm()" data-en="+ Add New Case" data-ur="+ نیا کیس شامل کریں">+ Add New Case</div>
+          <div class="btn primary needs-add" onclick="openAddForm()" data-en="+ Add New Case" data-ur="+ نیا کیس شامل کریں">+ Add New Case</div>
           <span class="cols-wrap" id="ceCols"></span>
           <button type="button" class="btn ghost" id="ceClear" data-en="Clear filters" data-ur="فلٹر صاف کریں">Clear filters</button>
           <button type="button" class="btn ghost" id="ceExport" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
@@ -516,11 +518,11 @@ html.embedded .app-shell{ min-height:0; }
           </div>
           <div class="report-legend"><span class="swatch"></span><span data-en="= manually edited value (may no longer match the Case List count for that cell)" data-ur="= دستی طور پر تبدیل شدہ نمبر (اس خانے کا Case List کے شمار سے فرق ہو سکتا ہے)">= manually edited value (may no longer match the Case List count for that cell)</span></div>
           <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="btn gold" onclick="saveCurrentReport()" data-en="💾 Save This Month's Report" data-ur="💾 اس مہینے کی رپورٹ محفوظ کریں">💾 Save This Month's Report</div>
-            <div class="btn ghost" onclick="printCurrentReport()" data-en="🖨️ Print / Preview" data-ur="🖨️ پرنٹ / پیش منظر">🖨️ Print / Preview</div>
-            <div class="btn ghost" onclick="downloadReportPdf()" data-en="📄 PDF" data-ur="📄 PDF">📄 PDF</div>
-            <div class="btn ghost" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
-            <div class="btn ghost" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
+            <div class="btn gold needs-save" onclick="saveCurrentReport()" data-en="💾 Save This Month's Report" data-ur="💾 اس مہینے کی رپورٹ محفوظ کریں">💾 Save This Month's Report</div>
+            <div class="btn ghost needs-export" onclick="printCurrentReport()" data-en="🖨️ Print / Preview" data-ur="🖨️ پرنٹ / پیش منظر">🖨️ Print / Preview</div>
+            <div class="btn ghost needs-export" onclick="downloadReportPdf()" data-en="📄 PDF" data-ur="📄 PDF">📄 PDF</div>
+            <div class="btn ghost needs-export" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
+            <div class="btn ghost needs-export" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
             <div class="btn ghost" onclick="recalcCurrentReport()" data-en="🔄 Recalculate from Case List" data-ur="🔄 Case List سے دوبارہ شمار کریں">🔄 Recalculate from Case List</div>
           </div>
         </div>
@@ -638,9 +640,9 @@ html.embedded .app-shell{ min-height:0; }
         <div id="reportPrintArea" class="print-sheet"></div>
         <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-          <div class="btn ghost" onclick="downloadReportPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
-          <div class="btn ghost" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
-          <div class="btn ghost" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
+          <div class="btn ghost needs-export" onclick="downloadReportPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+          <div class="btn ghost needs-export" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
+          <div class="btn ghost needs-export" onclick="downloadReportDocx()" data-en="📝 Word" data-ur="📝 Word">📝 Word</div>
           <div class="btn ghost" onclick="closeReportPrint()" data-en="Close" data-ur="بند کریں">Close</div>
         </div>
       </div>
@@ -1135,9 +1137,9 @@ html.embedded .app-shell{ min-height:0; }
           return '<td' + (col.w ? ' class="wrap-cell"' : '') + '>' + esc(show) + '</td>';
         }).join('') +
         '<td><div class="row-actions">' +
-          (canTouchCase(c) ? '<div class="btn ghost needs-write" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : '') +
+          (canEditCase(c) ? '<div class="btn ghost needs-edit" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : '') +
           (canDeleteCase(c) ? '<div class="btn danger" onclick="deleteCase(' + idq + ')">' + (isUrdu ? 'حذف کریں' : 'Delete') + '</div>' : '') +
-          ((OFFICER_RESTRICTED && CAN_WRITE && !canTouchCase(c)) ? viewOnlyMark() : '') +
+          (((CAN_EDIT || CAN_DEL) && !(canEditCase(c) || canDeleteCase(c))) ? viewOnlyMark() : '') +
         '</div></td></tr>';
       }).join('') : '<tr><td class="lk-empty" colspan="' + (cols.length + 1) + '">' + (isUrdu ? 'کوئی ریکارڈ نہیں ملا' : 'No records found') + '</td></tr>';
       document.getElementById('count').textContent = (isUrdu ? 'ملے: ' : 'Found: ') + total + (isUrdu ? ' از ' : ' of ') + all.length;
@@ -1501,7 +1503,7 @@ html.embedded .app-shell{ min-height:0; }
      edit form once the cases have loaded. Only for people who may edit (same rule as the Edit button). */
   var EDIT_FROM_LINK = (function(){ try { return new URLSearchParams(location.search).get('edit') || ''; } catch(e){ return ''; } })();
   function openEditFromLink(){
-    if(!EDIT_FROM_LINK || !CAN_WRITE) return;
+    if(!EDIT_FROM_LINK || !CAN_EDIT) return;
     var id = EDIT_FROM_LINK; EDIT_FROM_LINK = '';
     try {
       var p = new URLSearchParams(location.search); p.delete('edit');
@@ -1514,7 +1516,7 @@ html.embedded .app-shell{ min-height:0; }
   function openEditForm(id){
     var c = CASES.find(function(x){ return x.id === id; });
     if(!c) return;
-    if(!canTouchCase(c)){ alert(isUrdu ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'This case belongs to another officer — you can only view it.'); return; }
+    if(!canEditCase(c)){ alert(isUrdu ? (CAN_EDIT ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'آپ کو کیس میں ترمیم کی اجازت نہیں۔') : (CAN_EDIT ? 'This case belongs to another officer — you can only view it.' : 'You do not have permission to edit cases.')); return; }
     document.getElementById('cId').value = c.id;
     document.getElementById('formTitle').textContent = isUrdu ? 'کیس میں ترمیم' : 'Edit Case';
     document.getElementById('cOfficer').value = c.officer || '';
@@ -1582,8 +1584,8 @@ html.embedded .app-shell{ min-height:0; }
       remarks: document.getElementById('cRemarks').value.trim() || '—'
     };
 
-    if(!CAN_WRITE){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit cases'); return; }
-    if(oldRec && !canTouchCase(oldRec)){ alert(isUrdu ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'This case belongs to another officer — you can only view it.'); return; }
+    if(idVal ? !CAN_EDIT : !CAN_ADD){ alert(isUrdu ? 'آپ کو اندراج کی اجازت نہیں' : 'You do not have permission to add/edit cases'); return; }
+    if(oldRec && !canEditCase(oldRec)){ alert(isUrdu ? 'یہ کیس دوسرے آفیسر کا ہے — آپ اسے صرف دیکھ سکتے ہیں۔' : 'This case belongs to another officer — you can only view it.'); return; }
     /* The same case may legitimately be listed again (e.g. adjourned and fixed for next week),
        so only an entry for the SAME case on the SAME date is blocked as a repeat. */
     var catUnchanged = oldRec && oldRec.type === data.type && (oldRec.relief || '') === (data.relief || '');
@@ -1947,13 +1949,13 @@ html.embedded .app-shell{ min-height:0; }
     }
     var head = [isUrdu ? 'تاریخ' : 'Date', isUrdu ? 'کیس نمبر' : 'Case No', isUrdu ? 'عنوان' : 'Title', isUrdu ? 'جج' : 'Judge', isUrdu ? 'بینچ' : 'Bench', isUrdu ? 'سیریل' : 'Sr. No', isUrdu ? 'نتیجہ' : 'Result', isUrdu ? 'زمرہ' : 'Category'];
     function table(list){
-      return '<div class="table-scroll"><table class="case-table drill-table" style="min-width:820px"><thead><tr>' + head.map(function(h){ return '<th>' + drillEsc(h) + '</th>'; }).join('') + '<th class="needs-write">' + (isUrdu ? 'ترمیم' : 'Edit') + '</th></tr></thead><tbody>' +
+      return '<div class="table-scroll"><table class="case-table drill-table" style="min-width:820px"><thead><tr>' + head.map(function(h){ return '<th>' + drillEsc(h) + '</th>'; }).join('') + '<th class="needs-edit">' + (isUrdu ? 'ترمیم' : 'Edit') + '</th></tr></thead><tbody>' +
         list.map(function(c){
           return '<tr><td>' + drillEsc(c.date || '—') + '</td><td>' + drillEsc(((c.type || '') + ' ' + (c.caseNo || '') + (c.year ? '/' + c.year : '')).trim() || '—') + '</td>' +
             '<td class="wrap-cell">' + drillEsc((c.title || '') + (c.versus && c.versus !== '—' ? ' vs ' + c.versus : '')) + '</td>' +
             '<td>' + drillEsc(c.judge || '') + '</td><td>' + drillEsc(c.bench || '') + '</td><td>' + drillEsc(c.serial || '') + '</td>' +
             '<td>' + drillEsc(c.result || '—') + '</td><td>' + drillEsc(canonRelief(c.relief) || '') + '</td>' +
-            '<td class="needs-write">' + (canTouchCase(c) ? '<div class="btn ghost" role="button" tabindex="0" data-drill-edit="' + drillEsc(c.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : viewOnlyMark()) + '</td></tr>';
+            '<td class="needs-edit">' + (canEditCase(c) ? '<div class="btn ghost" role="button" tabindex="0" data-drill-edit="' + drillEsc(c.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : viewOnlyMark()) + '</td></tr>';
         }).join('') + '</tbody></table></div>';
     }
     var html = '<div class="drill-count"><b>' + rows.length + '</b> ' + (isUrdu ? 'کیس' : (rows.length === 1 ? 'case' : 'cases')) + '</div>' +
@@ -2029,6 +2031,7 @@ html.embedded .app-shell{ min-height:0; }
     delete snapshot.id;
     var key = (String(currentReport.year)+'-'+String(currentReport.month).padStart(2,'0')+'-'+currentReport.officer).replace(/[\/\.#\[\]$]/g,'_');
     var existed = existingIdx !== -1;
+    if(existed ? !CAN_EDIT : !CAN_ADD){ alert(isUrdu ? 'آپ کو رپورٹ محفوظ کرنے کی اجازت نہیں۔' : 'You do not have permission to save this report.'); return; }
     db.collection('monthlyReports').doc(key).set(snapshot).then(function(){
       currentReport.savedAt = snapshot.savedAt;
       alert(existed ? (isUrdu ? 'اس مہینے کی رپورٹ پہلے سے موجود تھی — اپڈیٹ کر دی گئی' : 'A report for this month already existed — it has been updated')
@@ -2058,7 +2061,7 @@ html.embedded .app-shell{ min-height:0; }
         delBtn.textContent = isUrdu ? 'حذف کریں' : 'Delete';
         delBtn.onclick = function(){ deleteSavedReport(r.id); };
         actions.appendChild(viewBtn);
-        if(CAN_WRITE && (CAN_DELETE || canTouchOfficer(r.officer))) actions.appendChild(delBtn);
+        if(CAN_DEL && canTouchOfficer(r.officer)) actions.appendChild(delBtn);
         box.appendChild(row);
       });
     }
@@ -2086,7 +2089,7 @@ html.embedded .app-shell{ min-height:0; }
 
   function deleteSavedReport(id){
     var sr = SAVED_REPORTS.find(function(x){ return x.id === String(id); });
-    if(!sr || !CAN_WRITE || !(CAN_DELETE || canTouchOfficer(sr.officer))){ alert(isUrdu ? 'آپ صرف اپنے آفیسر کی رپورٹ حذف کر سکتے ہیں۔' : 'You can delete only your own officer\'s reports.'); return; }
+    if(!sr || !CAN_DEL || !canTouchOfficer(sr.officer)){ alert(isUrdu ? 'آپ صرف اپنے آفیسر کی رپورٹ حذف کر سکتے ہیں۔' : 'You can delete only your own officer\'s reports.'); return; }
     if(!confirm(isUrdu ? 'کیا آپ واقعی یہ محفوظ شدہ رپورٹ حذف کرنا چاہتے ہیں؟' : 'Delete this saved report?')) return;
     db.collection('monthlyReports').doc(String(id)).delete().then(function(){ setTimeout(openSavedReports, 300); })
       .catch(function(err){ alert((isUrdu ? 'حذف نہیں ہو سکا: ' : 'Could not delete: ') + err.message); });
@@ -2889,17 +2892,17 @@ html.embedded .app-shell{ min-height:0; }
   var auth = firebase.auth();
   var db = firebase.firestore();
   CaseMaster.connect(db);   // live copy of the shared Case Type -> Category table
-  var CURRENT_USER = null, CAN_WRITE = false, CAN_DELETE = false, CAN_LISTS = false, CAN_AI = false;
+  var CURRENT_USER = null, CAN_ADD = false, CAN_EDIT = false, CAN_DEL = false, CAN_EXPORT = false, CAN_LISTS = false, CAN_AI = false;   /* set from the user's ticks (camp-perm.js) */
   /* Officer-wise permission (20 Oct 2026): a Data Entry user is tied to ONE officer (users/{uid}.officer, set by an Admin in the portal's Users panel).
      Such a user can add / edit / delete only that officer's cases and reports, and can only VIEW everyone else's. Admin / Super Admin are not restricted.
      A Data Entry user with no officer assigned is view-only until an Admin assigns one. The Firestore rules enforce the same thing on the server. */
-  var MY_OFFICER = '', OFFICER_RESTRICTED = false;
+  var MY_OFFICER = '', OFFICER_RESTRICTED = false, WRITE_TICKS = false;
   function canTouchOfficer(o){ return !OFFICER_RESTRICTED || (!!MY_OFFICER && String(o || '') === MY_OFFICER); }
-  function canTouchCase(c){ return CAN_WRITE && canTouchOfficer(c && c.officer); }
-  function canDeleteCase(c){ return CAN_WRITE && (CAN_DELETE || canTouchOfficer(c && c.officer)); }
+  function canEditCase(c){ return CAN_EDIT && canTouchOfficer(c && c.officer); }
+  function canDeleteCase(c){ return CAN_DEL && canTouchOfficer(c && c.officer); }
   function renderOfficerBanner(){
     var b = document.getElementById('officerBanner'); if(!b) return;
-    if(!OFFICER_RESTRICTED){ b.style.display = 'none'; return; }
+    if(!OFFICER_RESTRICTED || !WRITE_TICKS){ b.style.display = 'none'; return; }
     b.style.display = '';
     if(MY_OFFICER){
       b.textContent = isUrdu
@@ -2920,6 +2923,15 @@ html.embedded .app-shell{ min-height:0; }
     document.getElementById('gateLink').style.display = showLink ? 'inline-block' : 'none';
     document.getElementById('authGate').style.display = 'flex';
   }
+
+  /* Export / print only for users with the Export tick */
+  ['printCurrentReport','downloadReportPdf','downloadReportXlsx','downloadReportDocx','downloadReportPdfImage'].forEach(function(n){
+    var f = window[n]; if(typeof f !== 'function') return;
+    window[n] = function(){
+      if(!CAN_EXPORT){ alert(isUrdu ? 'آپ کو ایکسپورٹ / پرنٹ کی اجازت نہیں۔' : 'You do not have permission to export or print.'); return; }
+      return f.apply(this, arguments);
+    };
+  });
 
   function saveListsToDb(){
     if(!CAN_LISTS) return;
@@ -2979,14 +2991,23 @@ html.embedded .app-shell{ min-height:0; }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
       CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
-      OFFICER_RESTRICTED = !isAdm && r2 === 'data_entry';
+      if(window.CampPerm && !CampPerm.init(u, 'case-entry')){ return; }   /* no View tick: the page stays closed */
+      var PM = function(act){ return window.CampPerm ? CampPerm.can(u, 'case-entry', act) : isAdm; };
+      OFFICER_RESTRICTED = !isAdm;
       MY_OFFICER = OFFICER_RESTRICTED ? String(u.officer || '') : '';
-      CAN_WRITE = isAdm || (r2 === 'data_entry' && !!MY_OFFICER);
-      CAN_DELETE = isAdm;
-      CAN_LISTS = isAdm;
-      CAN_AI = isAdm;
-      document.body.classList.toggle('readonly-mode', !CAN_WRITE);
-      document.body.classList.toggle('no-delete', !CAN_DELETE);
+      var officerOk = !OFFICER_RESTRICTED || !!MY_OFFICER;   /* a non-admin user also needs an officer to change anything */
+      CAN_ADD = PM('a') && officerOk;
+      CAN_EDIT = PM('e') && officerOk;
+      CAN_DEL = PM('d') && officerOk;
+      WRITE_TICKS = PM('a') || PM('e') || PM('d');
+      CAN_EXPORT = PM('x');
+      CAN_LISTS = window.CampPerm ? CampPerm.can(u, 'lists', 'l') : isAdm;
+      CAN_AI = PM('ai');
+      document.body.classList.toggle('no-add', !CAN_ADD);
+      document.body.classList.toggle('no-edit', !CAN_EDIT);
+      document.body.classList.toggle('no-save', !(CAN_ADD || CAN_EDIT));
+      document.body.classList.toggle('no-delete', !CAN_DEL);
+      document.body.classList.toggle('no-export', !CAN_EXPORT);
       document.body.classList.toggle('no-lists', !CAN_LISTS);
       document.body.classList.toggle('no-ai', !CAN_AI);
       renderOfficerBanner();

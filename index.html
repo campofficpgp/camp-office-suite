@@ -325,6 +325,7 @@ html,body{overflow-x:hidden;}
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17294a">
 <meta name="mobile-web-app-capable" content="yes">
+<script src="camp-perm.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 </head>
@@ -715,6 +716,17 @@ html,body{overflow-x:hidden;}
             </tr></thead>
             <tbody id="usersTableBody"></tbody>
           </table></div>
+          <div id="permPanel" class="hidden" style="margin-top:16px;border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--bg);">
+            <h3 id="permTitle" style="margin:0 0 4px;font-size:16px;"></h3>
+            <p class="field-hint" id="permHint" style="margin:0 0 10px;"></p>
+            <div style="overflow-x:auto;max-width:100%"><table id="permTable" style="min-width:520px"></table></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+              <button type="button" class="btn primary small" id="permSave"></button>
+              <button type="button" class="btn small" id="permReset"></button>
+              <button type="button" class="btn small" id="permClose"></button>
+            </div>
+            <div id="permMsg" class="msg-box hidden" role="status"></div>
+          </div>
         </div>
       </div>
 
@@ -1103,6 +1115,7 @@ function enterApp(user, data){
   roleBadge.className = "badge " + role;
   var isAdminUp = (role === "admin" || role === "super_admin");
   document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
+  if(window.CampPerm) CampPerm.init(data);   /* hide menu entries the user has no View tick for */
   document.getElementById("masterDataLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("resultListLink").classList.toggle("hidden", role !== "super_admin");
   if(isAdminUp){ renderAdminPanel(); checkBackupReminder(); } else { BACKUP_STATE = null; renderBackupReminder(); }
@@ -1804,7 +1817,7 @@ document.getElementById("openAdminPanelBtn").addEventListener("click", function(
 
 /* Officer column: only a Data Entry user is tied to an officer (the others are not restricted). */
 function officerCell(u, role, canEdit, list){
-  if(role !== "data_entry") return "<span class='field-hint'>"+esc(role === "viewer" ? "—" : I18N[currentLang].officerAll)+"</span>";
+  if(role === "admin" || role === "super_admin") return "<span class='field-hint'>"+esc(I18N[currentLang].officerAll)+"</span>";
   var cur = u.officer || "";
   if(!canEdit) return esc(cur || I18N[currentLang].officerNone);
   var opts = "<option value=''>"+esc(I18N[currentLang].officerNone)+"</option>";
@@ -1813,6 +1826,58 @@ function officerCell(u, role, canEdit, list){
   if(cur && !seen) opts += "<option value=\""+esc(cur)+"\" selected>⚠ "+esc(cur)+"</option>";
   return "<select data-officer-uid='"+u.uid+"'>"+opts+"</select>" + ((cur && !seen) ? "<div class='field-hint' style='color:#b3261e'>"+(currentLang==="ur" ? "یہ نام آفیسرز کی فہرست میں نہیں" : "Not in the officer list")+"</div>" : "");
 }
+
+/* ---------- Permission ticks (Super Admin only): what one user may do on each page ---------- */
+var USERS_BY_UID = {};
+function ptt(ur, en){ return currentLang === "ur" ? ur : en; }
+function openPermPanel(uid){
+  var u = USERS_BY_UID[uid]; if(!u || !window.CampPerm) return;
+  var panel = document.getElementById("permPanel"), tbl = document.getElementById("permTable");
+  var eff = CampPerm.effective(u);
+  var acts = ["v","a","e","d","x","l","ai"];
+  var h = "<thead><tr><th>"+ptt("صفحہ","Page")+"</th>" + acts.map(function(a){ return "<th>"+esc(CampPerm.ACT_LABEL[a][currentLang==="ur"?0:1])+"</th>"; }).join("") + "</tr></thead><tbody>";
+  CampPerm.PAGES.forEach(function(pg){
+    h += "<tr><td>"+esc(currentLang==="ur" ? pg.ur : pg.en)+"</td>" + acts.map(function(a){
+      if(pg.acts.indexOf(a) === -1) return "<td style='text-align:center;color:var(--muted,#888)'>—</td>";
+      return "<td style='text-align:center'><input type='checkbox' data-perm-page='"+pg.key+"' data-perm-act='"+a+"'"+(eff[pg.key][a] ? " checked" : "")+" aria-label='"+esc(pg.en+" "+CampPerm.ACT_LABEL[a][1])+"'></td>";
+    }).join("") + "</tr>";
+  });
+  tbl.innerHTML = h + "</tbody>";
+  panel.dataset.uid = uid;
+  document.getElementById("permTitle").textContent = ptt("اجازتیں: ", "Permissions: ") + (u.email || uid) + "  (" + (ROLE_LABELS[currentLang][u.roleV2||"viewer"] || "") + ")";
+  document.getElementById("permHint").textContent = u.perms
+    ? ptt("اس یوزر کے ٹِک آپ نے خود طے کیے ہیں۔ 'ڈیفالٹ پر واپس' دبائیں تو رول کے مطابق پرانی اجازتیں لوٹ آئیں گی۔", "This user has custom ticks. 'Back to default' returns the permissions of his role.")
+    : ptt("ابھی اس یوزر کے ٹِک نہیں بدلے گئے، اس لیے رول کے مطابق ڈیفالٹ اجازتیں چل رہی ہیں (وہی نیچے ٹِک نظر آ رہی ہیں)۔ آفیسر کی پابندی الگ سے ساتھ چلتی ہے۔", "No custom ticks yet: the role defaults apply (shown below). The officer rule works on top of these.");
+  document.getElementById("permSave").textContent = ptt("محفوظ کریں","Save");
+  document.getElementById("permReset").textContent = ptt("ڈیفالٹ پر واپس","Back to default");
+  document.getElementById("permClose").textContent = ptt("بند کریں","Close");
+  var pm = document.getElementById("permMsg"); pm.classList.add("hidden");
+  panel.classList.remove("hidden");
+  panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+(function wirePermPanel(){
+  function msg(ur, en, kind){ showMsg(document.getElementById("permMsg"), ur, en, kind); }
+  document.getElementById("permClose").addEventListener("click", function(){ document.getElementById("permPanel").classList.add("hidden"); });
+  document.getElementById("permSave").addEventListener("click", function(){
+    var panel = document.getElementById("permPanel"), uid = panel.dataset.uid; if(!uid) return;
+    var table = {};
+    panel.querySelectorAll("input[data-perm-page]").forEach(function(c){ var p = c.dataset.permPage; (table[p] = table[p] || {})[c.dataset.permAct] = c.checked; });
+    /* View off means the user cannot open the page, so the other ticks of that page make no sense */
+    Object.keys(table).forEach(function(p){ if(table[p].v === false){ Object.keys(table[p]).forEach(function(a){ table[p][a] = false; }); } });
+    var perms = CampPerm.clean(table);
+    var btn = document.getElementById("permSave"); btn.disabled = true;
+    db.collection("users").doc(uid).update({perms: perms, permsUpdatedBy: (CURRENT_DOC && CURRENT_DOC.email) || "", permsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+      btn.disabled = false; msg("اجازتیں محفوظ ہو گئیں۔", "Permissions saved.", "ok"); renderAdminPanel();
+    }).catch(function(err){ btn.disabled = false; msg("محفوظ نہیں ہو سکیں: " + err.message, "Could not save: " + err.message, "error"); });
+  });
+  document.getElementById("permReset").addEventListener("click", function(){
+    var uid = document.getElementById("permPanel").dataset.uid; if(!uid) return;
+    db.collection("users").doc(uid).update({perms: firebase.firestore.FieldValue.delete(), permsUpdatedBy: (CURRENT_DOC && CURRENT_DOC.email) || "", permsUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()}).then(function(){
+      msg("ڈیفالٹ اجازتیں لوٹ آئیں۔", "Back to the role defaults.", "ok"); renderAdminPanel(); openPermPanelAfter(uid);
+    }).catch(function(err){ msg("نہیں ہو سکا: " + err.message, "Could not do it: " + err.message, "error"); });
+  });
+})();
+function openPermPanelAfter(uid){ setTimeout(function(){ if(USERS_BY_UID[uid]){ var u = USERS_BY_UID[uid]; delete u.perms; openPermPanel(uid); } }, 600); }
 
 /* ---------- Admin panel: list users, approve, set role, activate/suspend ---------- */
 function renderAdminPanel(){
@@ -1830,11 +1895,12 @@ function renderAdminPanel(){
     qs.forEach(function(d){ rows.push(Object.assign({uid:d.id}, d.data())); });
     document.getElementById("userCountChip").textContent = rows.length + (currentLang==="ur" ? " صارفین" : " users");
     body.innerHTML = "";
+    USERS_BY_UID = {}; rows.forEach(function(u){ USERS_BY_UID[u.uid] = u; });
     rows.forEach(function(u){
       var role = u.roleV2 || "viewer";
       var status = u.approvalStatus || "pending";
       var isMe = u.uid === CURRENT_UID;
-      var canEditRole = myRole === "super_admin" || (myRole === "admin" && role !== "super_admin");
+      var canEditRole = myRole === "super_admin";   /* roles, officers and ticks: Super Admin only */
       var tr = document.createElement("tr");
       var roleOptions = ["viewer","data_entry","admin","super_admin"].map(function(r){
         if(r === "super_admin" && myRole !== "super_admin") return "";
@@ -1851,6 +1917,7 @@ function renderAdminPanel(){
           (status==="pending" ? "<button class='btn small danger' data-reject-uid='"+u.uid+"'>"+(currentLang==='ur'?'مسترد کریں':'Reject')+"</button>" : "")+
           (!isMe ? "<button class='btn small "+(u.isActive===false?"":"danger")+"' data-toggle-active='"+u.uid+"' data-next='"+(u.isActive===false?"true":"false")+"'>"+
             (u.isActive===false ? (currentLang==='ur'?'فعال کریں':'Reactivate') : (currentLang==='ur'?'معطل کریں':'Suspend')) + "</button>" : "")+
+          ((canEditRole && !isMe && role !== "super_admin") ? "<button class='btn small' data-perm-uid='"+u.uid+"'>🔐 "+(currentLang==='ur'?'اجازتیں':'Permissions')+(u.perms ? " ●" : "")+"</button>" : "")+
           (!isMe ? "<button class='btn small' data-reset-email='"+esc(u.email)+"'>"+(currentLang==='ur'?'پاس ورڈ ری سیٹ بھیجیں':'Send password reset')+"</button>" : "")+
           ((!isMe && myRole === "super_admin") ? "<button class='btn small danger' data-delete-uid='"+u.uid+"' data-email='"+esc(u.email)+"'>🗑 "+(currentLang==='ur'?'حذف کریں':'Delete')+"</button>" : "")+
         "</div></td>";
@@ -1901,6 +1968,9 @@ function renderAdminPanel(){
           showMsg(document.getElementById("adminStatusMsg"), "آفیسر محفوظ نہیں ہو سکا: " + err.message, "Could not save the officer: " + err.message);
         });
       });
+    });
+    body.querySelectorAll("[data-perm-uid]").forEach(function(btn){
+      btn.addEventListener("click", function(){ openPermPanel(btn.dataset.permUid); });
     });
     body.querySelectorAll("[data-role-uid]").forEach(function(sel){
       sel.addEventListener("change", function(){

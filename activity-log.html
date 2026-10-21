@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Activity Log</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+
+  :root{ --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0; --font-head:"Segoe UI",Tahoma,Arial,sans-serif; }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.5; }
+  body.lang-ur, body.lang-ur input, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:20px; min-width:0; width:100%; }
+  .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=email],input[type=password]{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn.block{ width:100%; margin-top:16px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .toggle-row{ text-align:center; margin-top:16px; font-size:13px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .pending-screen{ text-align:center; padding:40px 20px; }
+  .pending-screen .icon{ font-size:48px; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .info-banner{ background:var(--navy-tint); border:1px solid var(--navy); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .last-backup-box{ display:flex; align-items:center; gap:10px; background:var(--navy-tint); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+  .last-backup-box .emoji{ font-size:22px; }
+  ol.restore-steps li{ margin-bottom:8px; }
+  .row-count-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+  .row-count-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
+  .row-count-table td:last-child{ text-align:right; font-weight:700; }
+  .danger-banner{ background:var(--danger-tint); border:1px solid var(--danger); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--danger); margin-top:14px; font-weight:600; }
+  input[type=file]{ display:block; margin-top:6px; font-size:13px; }
+  .restore-confirm-box{ margin-top:14px; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-foot a.active{ background:rgba(255,255,255,0.16); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+
+  #mobileMenuBtn{ display:inline-flex !important; align-items:center; justify-content:center; }
+  /* ---- unified header (identical to every other page) ---- */
+  :root{ --navy2:#3d6f9c; --gold:#B8860B; }
+  [data-theme="green"]{ --navy2:#2f8a5c; --gold:#C9A227; }
+  [data-theme="teal"]{ --navy2:#26a89f; --gold:#96762a; }
+  [data-theme="night"]{ --navy2:#7391c4; --gold:#d4a13d; }
+  .topbar{ background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; direction:ltr; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
+  .topbar .right-controls{ display:flex; align-items:center; gap:10px; }
+  .brand-logo-img{ height:30px; width:auto; flex-shrink:0; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .lang-btn{ background:var(--gold); color:#1B3F63; border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .theme-switch-wrap{ position:relative; }
+  .theme-btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1; }
+  .theme-btn:hover{ background:rgba(255,255,255,.24); }
+  .theme-picker{ position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #E1DDD3; border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60; }
+  .theme-picker.open{ display:flex; }
+  .theme-swatch{ width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); }
+  .theme-swatch:hover{ transform:scale(1.08); }
+  .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
+  @media (min-width: 961px){ #mobileMenuBtn{ display:none !important; } }
+
+  /* ---- Activity Log page ---- */
+  .wrap.wide{ max-width:1180px; }
+  .cards-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px 14px; min-width:0; }
+  .stat .n{ font-size:24px; overflow-wrap:anywhere; font-weight:800; color:var(--navy-dark); line-height:1.1; font-variant-numeric:tabular-nums; }
+  [data-theme="night"] .stat .n{ color:#fff; }
+  .stat .l{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .filters{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; align-items:end; }
+  .filters label{ margin:0 0 4px; }
+  .filters select, .filters input[type=date], .filters input[type=search]{ width:100%; padding:8px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; background:var(--surface); color:var(--text); }
+  .quick{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .quick .btn.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .tbl-wrap{ overflow-x:auto; margin-top:10px; border:1px solid var(--border); border-radius:8px; }
+  table.al{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  table.al th{ background:var(--navy); color:#fff; text-align:start; padding:8px 10px; font-weight:700; font-size:12.5px; white-space:nowrap; }
+  table.al td{ padding:7px 10px; border-top:1px solid var(--border); vertical-align:top; }
+  table.al tbody tr:nth-child(even) td{ background:var(--navy-tint); }
+  [data-theme="night"] table.al tbody tr:nth-child(even) td{ background:rgba(255,255,255,0.04); }
+  table.al tr.clickable{ cursor:pointer; }
+  table.al tr.clickable:hover td{ background:var(--amber-tint); }
+  td.num, th.num{ text-align:end; font-variant-numeric:tabular-nums; }
+  .chip{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .chip.in{ background:var(--success-tint); color:var(--success); }
+  .chip.out{ background:var(--warn-tint); color:var(--warn); }
+  .chip.never{ background:var(--danger-tint); color:var(--danger); }
+  .chip.today{ background:var(--navy-tint); color:var(--navy-dark); }
+  .muted{ color:var(--muted); }
+  .tools{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin-top:14px; }
+  .empty{ padding:22px; text-align:center; color:var(--muted); }
+  .print-only{ display:none; }
+  .bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  @media (max-width:600px){ .wrap{ padding:12px; } .card{ padding:16px; } }
+  @media print{
+    @page{ size:A4 landscape; margin:12mm; }
+    .sidebar, .sidebar-backdrop, .topbar, .no-print, #a11yBtn, .a11y-fab, [id^="a11y"]{ display:none !important; }
+    .app-shell{ display:block; }
+    body{ background:#fff; color:#000; font-size:11px; }
+    .wrap{ max-width:none; padding:0; }
+    .card{ border:none; box-shadow:none; padding:0; }
+    .print-only{ display:block; }
+    .tbl-wrap{ overflow:visible; border:none; }
+    table.al{ min-width:0; font-size:10px; }
+    table.al th{ background:#2A5A84 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    table.al tbody tr:nth-child(even) td{ background:#F4F7FB !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    table.al thead{ display:table-header-group; }
+    table.al tr{ page-break-inside:avoid; }
+    .stat{ box-shadow:none; }
+  }
+</style>
+<!-- PWA: installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17294a">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="/pwa.js" defer></script>
+<script src="/auth-guard.js" defer></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <div class="nav-group" id="navGroupCase">
+          <button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button>
+          <div class="nav-submenu">
+            <a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a>
+            <a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a>
+            
+            <a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a>
+          </div>
+        </div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="activity-log.html" class="active"><span class="ico">📜</span><span class="label">Activity Log</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+<div class="topbar">
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Camp Office Digital Portal — Activity Log</span></div>
+  <div class="right-controls">
+    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    <div class="theme-switch-wrap">
+      <button class="theme-btn" id="themeBtn" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+      <div class="theme-picker" id="themePicker"></div>
+    </div>
+    <button class="lang-btn" id="langBtn">اردو</button>
+    <select id="langSelect" hidden>
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect" hidden>
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+    <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+  </div>
+</div>
+
+<div id="authScreen" class="center-wrap">
+  <div class="card">
+    <h2 data-i18n="signInTitle">Redirecting…</h2>
+    <p class="field-hint" data-i18n="signInSub">براہ کرم پہلے مرکزی پورٹل سے سائن اِن کریں — Redirecting to the main portal sign-in…</p>
+  </div>
+</div>
+
+<!-- ===================== NOT SUPER ADMIN SCREEN ===================== -->
+<div id="notAdminScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🔒</div>
+    <h2 data-i18n="notAdminTitle">Super Admin only</h2>
+    <p data-i18n="notAdminBody">The Activity Log can only be opened by the Super Admin account.</p>
+    <a class="btn block" href="index.html"><span data-i18n="btnPortal">Back to the portal</span></a>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP (Super Admin only) ===================== -->
+<div id="mainApp" class="wrap wide hidden">
+  <div class="userbar no-print">
+    <div>
+      <span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong>
+      <span id="curRoleBadge" class="badge"></span>
+    </div>
+    <button class="btn small" id="mainSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+
+  <div class="print-only" id="printHead">
+    <h2 style="margin:0">Camp Office Prosecutor General Punjab — <span data-i18n="pageTitle">User Activity Log</span></h2>
+    <div id="printSub" style="margin:4px 0 10px;font-size:11px"></div>
+  </div>
+
+  <div class="info-banner no-print">
+    <strong data-i18n="infoTitle">What this page shows</strong><br>
+    <span data-i18n="infoBody">Every time a user signs in to, or signs out of, the portal, one line is recorded here (who, when, and from which browser). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.</span>
+    <div class="field-hint" style="margin-top:6px" data-i18n="infoLimits">Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, and what a user did inside a page. Recording started on the day the portal was updated, so earlier sign-ins are not here.</div>
+  </div>
+
+  <div id="loadError" class="error-box hidden"></div>
+
+  <div class="cards-row" id="stats"></div>
+
+  <div class="card">
+    <div class="bar" style="justify-content:space-between">
+      <h2 data-i18n="usersTitle">Users — last sign-in</h2>
+      <span class="field-hint no-print" data-i18n="usersHint">Click a user to see only that user's lines below.</span>
+    </div>
+    <div class="tbl-wrap"><table class="al" id="userTable"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="bar" style="justify-content:space-between">
+      <h2 data-i18n="eventsTitle">Sign-in and sign-out lines</h2>
+      <span class="field-hint" id="countLine"></span>
+    </div>
+    <div class="filters no-print">
+      <div><label for="fUser" data-i18n="fUser">User</label><select id="fUser"></select></div>
+      <div><label for="fType" data-i18n="fType">Event</label><select id="fType">
+        <option value="" data-i18n="fAll">All</option><option value="login" data-i18n="evLogin">Sign-in</option><option value="logout" data-i18n="evLogout">Sign-out</option></select></div>
+      <div><label for="fFrom" data-i18n="fFrom">From date</label><input type="date" id="fFrom"></div>
+      <div><label for="fTo" data-i18n="fTo">To date</label><input type="date" id="fTo"></div>
+      <div><label for="fText" data-i18n="fText">Search</label><input type="search" id="fText" placeholder="e-mail / device"></div>
+    </div>
+    <div class="quick no-print" id="quick">
+      <button class="btn small" type="button" data-q="today" data-i18n="qToday">Today</button>
+      <button class="btn small" type="button" data-q="7" data-i18n="q7">Last 7 days</button>
+      <button class="btn small" type="button" data-q="30" data-i18n="q30">Last 30 days</button>
+      <button class="btn small on" type="button" data-q="all" data-i18n="qAll">All (90 days)</button>
+    </div>
+    <div class="tbl-wrap"><table class="al" id="evTable"></table></div>
+    <div class="tools no-print">
+      <button class="btn small" id="btnMore" type="button"></button>
+      <span class="bar">
+        <button class="btn small" id="btnPrint" type="button">🖨 <span data-i18n="btnPrint">Print / Save as PDF</span></button>
+        <button class="btn small primary" id="btnExcel" type="button">📊 <span data-i18n="btnExcel">Excel</span></button>
+        <button class="btn small" id="btnReload" type="button">↻ <span data-i18n="btnReload">Reload</span></button>
+      </span>
+    </div>
+    <div id="expMsg" class="field-hint no-print"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Activity Log — Super Admin only. Reads the collection "activityLog" (written by camp-activity.js when someone signs in
+   or out of the portal) and the list of users. Nothing is written or changed from this page.
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+
+var KEEP_DAYS = 90, PAGE_STEP = 100, TZ = "Asia/Karachi";
+
+var I18N = {
+  en: {
+    brandTitle:"Camp Office Digital Portal — Activity Log",
+    pageTitle:"User Activity Log",
+    signInTitle:"Redirecting…", signInSub:"Please sign in from the main portal first — redirecting…",
+    notAdminTitle:"Super Admin only", notAdminBody:"The Activity Log can only be opened by the Super Admin account.", btnPortal:"Back to the portal",
+    btnSignOut:"Sign Out", signedInAs:"Signed in as",
+    infoTitle:"What this page shows",
+    infoBody:"Every time a user signs in to, or signs out of, the portal, one line is recorded here (who, when, and from which browser). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.",
+    infoLimits:"Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, and what a user did inside a page. Recording started on the day the portal was updated, so earlier sign-ins are not here.",
+    usersTitle:"Users — last sign-in", usersHint:"Click a user to see only that user's lines below.",
+    eventsTitle:"Sign-in and sign-out lines",
+    fUser:"User", fType:"Event", fFrom:"From date", fTo:"To date", fText:"Search", fAll:"All",
+    evLogin:"Sign-in", evLogout:"Sign-out",
+    qToday:"Today", q7:"Last 7 days", q30:"Last 30 days", qAll:"All (90 days)",
+    btnPrint:"Print / Save as PDF", btnExcel:"Excel", btnReload:"Reload",
+    thUser:"User", thRole:"Role", thLast:"Last sign-in", thIn30:"Sign-ins (30 days)", thInAll:"Sign-ins (shown)", thDevice:"Last device",
+    thNo:"#", thWhen:"Date & time (Pakistan)", thEvent:"Event", thPage:"Page", thDev:"Device",
+    never:"Never recorded", today:"Today", yesterday:"Yesterday", daysAgo:"{n} days ago",
+    allUsers:"All users",
+    sLoginsToday:"Sign-ins today", sLogins7:"Sign-ins (7 days)", sActive7:"Users active (7 days)", sNever:"Active users never recorded", sTotal:"Lines recorded", sSince:"Recording since",
+    noEvents:"No lines match.", noneYet:"Nothing has been recorded yet.",
+    countLine:"{shown} of {n} lines", more:"Show {n} more", moreDone:"All lines shown",
+    loadErr:"The log could not be read.", loadErrPerm:"The log could not be read: permission denied. The new database rules may not be switched on yet, or you must verify your Super Admin code again.",
+    xlsBuilding:"Building the Excel file…", xlsDone:"Excel file downloaded.", xlsFail:"The Excel file could not be built: ",
+    printFilters:"Filters: ", printAt:"Printed: ", none:"none",
+    roleSuper:"Super Admin", roleAdmin:"Admin", roleDE:"Data Entry", roleViewer:"Viewer"
+  },
+  ur: {
+    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — سرگرمی لاگ",
+    pageTitle:"یوزرز کی سرگرمی کا لاگ",
+    signInTitle:"منتقل کیا جا رہا ہے…", signInSub:"پہلے مرکزی پورٹل سے سائن اِن کریں — منتقل کیا جا رہا ہے…",
+    notAdminTitle:"صرف سپر ایڈمن", notAdminBody:"سرگرمی لاگ صرف سپر ایڈمن اکاؤنٹ ہی کھول سکتا ہے۔", btnPortal:"پورٹل پر واپس",
+    btnSignOut:"سائن آؤٹ", signedInAs:"سائن اِن:",
+    infoTitle:"یہ صفحہ کیا دکھاتا ہے",
+    infoBody:"جب بھی کوئی یوزر پورٹل میں سائن اِن یا سائن آؤٹ ہوتا ہے تو یہاں ایک سطر درج ہوتی ہے (کون، کب، اور کس براؤزر سے)۔ صرف آپ (سپر ایڈمن) اسے پڑھ سکتے ہیں، اور ویب سائٹ سے کوئی بھی سطر بدلی یا مٹائی نہیں جا سکتی۔ 90 دن سے پرانی سطریں نہیں دکھائی جاتیں۔",
+    infoLimits:"درج نہیں ہوتا: غلط پاس ورڈ کی کوششیں، IP پتہ، بے کار رہنے پر خودکار سائن آؤٹ، اور صفحے کے اندر یوزر نے کیا کیا۔ ریکارڈنگ پورٹل اپ ڈیٹ ہونے کے دن سے شروع ہوئی، اس لیے اس سے پہلے کے سائن اِن یہاں نہیں ہیں۔",
+    usersTitle:"یوزرز — آخری سائن اِن", usersHint:"کسی یوزر پر کلک کریں تو نیچے صرف اسی کی سطریں دکھیں گی۔",
+    eventsTitle:"سائن اِن اور سائن آؤٹ کی سطریں",
+    fUser:"یوزر", fType:"واقعہ", fFrom:"تاریخ سے", fTo:"تاریخ تک", fText:"تلاش", fAll:"سب",
+    evLogin:"سائن اِن", evLogout:"سائن آؤٹ",
+    qToday:"آج", q7:"پچھلے 7 دن", q30:"پچھلے 30 دن", qAll:"سب (90 دن)",
+    btnPrint:"پرنٹ / PDF محفوظ کریں", btnExcel:"ایکسل", btnReload:"دوبارہ لوڈ",
+    thUser:"یوزر", thRole:"کردار", thLast:"آخری سائن اِن", thIn30:"سائن اِن (30 دن)", thInAll:"سائن اِن (دکھائے گئے)", thDevice:"آخری ڈیوائس",
+    thNo:"نمبر", thWhen:"تاریخ و وقت (پاکستان)", thEvent:"واقعہ", thPage:"صفحہ", thDev:"ڈیوائس",
+    never:"کبھی درج نہیں", today:"آج", yesterday:"کل", daysAgo:"{n} دن پہلے",
+    allUsers:"تمام یوزرز",
+    sLoginsToday:"آج کے سائن اِن", sLogins7:"سائن اِن (7 دن)", sActive7:"فعال یوزرز (7 دن)", sNever:"فعال یوزرز جو درج نہیں", sTotal:"درج شدہ سطریں", sSince:"ریکارڈنگ کب سے",
+    noEvents:"کوئی سطر نہیں ملی۔", noneYet:"ابھی تک کچھ درج نہیں ہوا۔",
+    countLine:"{n} میں سے {shown} سطریں", more:"{n} اور دکھائیں", moreDone:"تمام سطریں دکھائی جا چکی ہیں",
+    loadErr:"لاگ پڑھا نہیں جا سکا۔", loadErrPerm:"لاگ پڑھا نہیں جا سکا: اجازت نہیں۔ ہو سکتا ہے نئے قواعد ابھی لگے نہ ہوں، یا سپر ایڈمن کوڈ دوبارہ تصدیق کرنا ہو۔",
+    xlsBuilding:"ایکسل فائل بن رہی ہے…", xlsDone:"ایکسل فائل ڈاؤن لوڈ ہو گئی۔", xlsFail:"ایکسل فائل نہیں بن سکی: ",
+    printFilters:"فلٹر: ", printAt:"پرنٹ کا وقت: ", none:"کوئی نہیں",
+    roleSuper:"سپر ایڈمن", roleAdmin:"ایڈمن", roleDE:"ڈیٹا انٹری", roleViewer:"ناظر"
+  }
+};
+var currentLang = "en";
+function t(k){ return (I18N[currentLang] && I18N[currentLang][k]) || I18N.en[k] || k; }
+function roleName(r){ return r === "super_admin" ? t("roleSuper") : r === "admin" ? t("roleAdmin") : r === "data_entry" ? t("roleDE") : r === "viewer" ? t("roleViewer") : (r || ""); }
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang === "ur");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key]) el.textContent = I18N[currentLang][key];
+  });
+  if(MAIN_SHOWN) renderAll();
+}
+document.getElementById("langSelect").addEventListener("change", function(e){ currentLang = e.target.value; applyI18n(); });
+document.getElementById("themeSelect").addEventListener("change", function(e){
+  document.documentElement.setAttribute("data-theme", e.target.value);
+  try{ localStorage.setItem("cmpTheme", e.target.value); }catch(err){}
+});
+(function(){
+  var saved = null;
+  try{ saved = localStorage.getItem("cmpTheme"); }catch(e){}
+  if(saved && ["navy","green","teal","night"].indexOf(saved) !== -1){
+    document.documentElement.setAttribute("data-theme", saved);
+    var ts = document.getElementById("themeSelect"); if(ts) ts.value = saved;
+  }
+})();
+
+/* ---------- time helpers (always Pakistan time) ---------- */
+var FMT_DT = new Intl.DateTimeFormat("en-GB", { timeZone:TZ, day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true });
+var FMT_D = new Intl.DateTimeFormat("en-GB", { timeZone:TZ, day:"2-digit", month:"short", year:"numeric" });
+var FMT_DAY = new Intl.DateTimeFormat("en-CA", { timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit" });
+function fmtDT(d){ return FMT_DT.format(d).replace(",", ""); }
+function dayKey(d){ return FMT_DAY.format(d); }
+function dayNum(key){ var p = key.split("-"); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }
+function daysBetween(d){ return dayNum(dayKey(new Date())) - dayNum(dayKey(d)); }
+function agoText(d){
+  var n = daysBetween(d);
+  if(n <= 0) return t("today");
+  if(n === 1) return t("yesterday");
+  return t("daysAgo").replace("{n}", n);
+}
+
+/* ---------- state ---------- */
+var MAIN_SHOWN = false, EVENTS = [], USERS = {}, SHOW = PAGE_STEP, SHOW_ALL = false;
+var F = { uid:"", type:"", from:"", to:"", text:"", quick:"all" };
+
+function showOnly(id){
+  ["authScreen","notAdminScreen","mainApp"].forEach(function(s){ document.getElementById(s).classList.toggle("hidden", s !== id); });
+  MAIN_SHOWN = (id === "mainApp");
+}
+document.getElementById("mainSignOut").addEventListener("click", function(){ auth.signOut(); });
+
+auth.onAuthStateChanged(function(user){
+  if(!user){ showOnly("authScreen"); window.location.replace("index.html"); return; }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var data = doc.exists ? (doc.data() || {}) : {};
+    var ok = data.roleV2 === "super_admin" && data.isActive !== false && data.approvalStatus === "approved";
+    if(!ok){ showOnly("notAdminScreen"); return; }
+    showOnly("mainApp");
+    document.getElementById("curEmail").textContent = user.email;
+    var rb = document.getElementById("curRoleBadge");
+    rb.textContent = roleName("super_admin"); rb.className = "badge super_admin";
+    loadData();
+  }).catch(function(err){ console.error(err); showOnly("notAdminScreen"); });
+});
+
+/* ---------- loading ---------- */
+function loadData(){
+  var err = document.getElementById("loadError");
+  err.classList.add("hidden");
+  var cutoff = new Date(Date.now() - KEEP_DAYS * 86400000);
+  var pEv = db.collection("activityLog").where("at", ">=", cutoff).orderBy("at", "desc").limit(5000).get();
+  var pUs = db.collection("users").get().catch(function(){ return null; });
+  return Promise.all([pEv, pUs]).then(function(res){
+    EVENTS = [];
+    res[0].forEach(function(d){
+      var v = d.data() || {};
+      var at = v.at && v.at.toDate ? v.at.toDate() : null;
+      if(!at) return;
+      EVENTS.push({ id:d.id, uid:v.uid || "", email:v.email || "", name:v.name || "", role:v.role || "", type:v.type === "logout" ? "logout" : "login", at:at, device:v.device || "", page:v.page || "" });
+    });
+    EVENTS.sort(function(a, b){ return b.at - a.at; });
+    USERS = {};
+    if(res[1]){
+      res[1].forEach(function(d){
+        var v = d.data() || {};
+        USERS[d.id] = { uid:d.id, email:v.email || "", name:v.name || v.fullName || "", role:v.roleV2 || "", active:(v.approvalStatus === "approved" && v.isActive !== false) };
+      });
+    }
+    EVENTS.forEach(function(e){
+      if(!USERS[e.uid]) USERS[e.uid] = { uid:e.uid, email:e.email, name:e.name, role:e.role, active:null };
+    });
+    SHOW = PAGE_STEP;
+    fillUserSelect();
+    renderAll();
+  }).catch(function(e){
+    console.error(e);
+    err.textContent = (e && e.code === "permission-denied") ? t("loadErrPerm") : (t("loadErr") + " " + (e && e.message ? e.message : ""));
+    err.classList.remove("hidden");
+  });
+}
+document.getElementById("btnReload").addEventListener("click", loadData);
+
+/* ---------- filters ---------- */
+function userLabel(u){ return u.email + (u.name ? " — " + u.name : ""); }
+function fillUserSelect(){
+  var sel = document.getElementById("fUser"), keep = F.uid;
+  var list = Object.keys(USERS).map(function(k){ return USERS[k]; }).sort(function(a, b){ return a.email.localeCompare(b.email); });
+  sel.innerHTML = '<option value="">' + esc(t("allUsers")) + '</option>' + list.map(function(u){ return '<option value="' + esc(u.uid) + '">' + esc(userLabel(u)) + '</option>'; }).join("");
+  sel.value = keep;
+  if(sel.value !== keep){ F.uid = ""; sel.value = ""; }
+}
+function filtered(){
+  var txt = F.text.trim().toLowerCase();
+  return EVENTS.filter(function(e){
+    if(F.uid && e.uid !== F.uid) return false;
+    if(F.type && e.type !== F.type) return false;
+    var k = dayKey(e.at);
+    if(F.from && k < F.from) return false;
+    if(F.to && k > F.to) return false;
+    if(txt && (e.email + " " + e.name + " " + e.device + " " + e.page).toLowerCase().indexOf(txt) === -1) return false;
+    return true;
+  });
+}
+function setQuick(q){
+  F.quick = q;
+  var today = dayKey(new Date());
+  if(q === "today"){ F.from = today; F.to = today; }
+  else if(q === "7"){ F.from = dayKey(new Date(Date.now() - 6 * 86400000)); F.to = ""; }
+  else if(q === "30"){ F.from = dayKey(new Date(Date.now() - 29 * 86400000)); F.to = ""; }
+  else { F.from = ""; F.to = ""; }
+  document.getElementById("fFrom").value = F.from; document.getElementById("fTo").value = F.to;
+  syncQuick(); SHOW = PAGE_STEP; renderEvents();
+}
+function syncQuick(){
+  Array.prototype.forEach.call(document.querySelectorAll("#quick .btn"), function(b){ b.classList.toggle("on", b.getAttribute("data-q") === F.quick); });
+}
+document.getElementById("quick").addEventListener("click", function(e){ var b = e.target.closest("[data-q]"); if(b) setQuick(b.getAttribute("data-q")); });
+document.getElementById("fUser").addEventListener("change", function(){ F.uid = this.value; SHOW = PAGE_STEP; renderEvents(); });
+document.getElementById("fType").addEventListener("change", function(){ F.type = this.value; SHOW = PAGE_STEP; renderEvents(); });
+document.getElementById("fFrom").addEventListener("change", function(){ F.from = this.value; F.quick = ""; syncQuick(); SHOW = PAGE_STEP; renderEvents(); });
+document.getElementById("fTo").addEventListener("change", function(){ F.to = this.value; F.quick = ""; syncQuick(); SHOW = PAGE_STEP; renderEvents(); });
+document.getElementById("fText").addEventListener("input", function(){ F.text = this.value; SHOW = PAGE_STEP; renderEvents(); });
+document.getElementById("btnMore").addEventListener("click", function(){ SHOW += PAGE_STEP; renderEvents(); });
+
+/* ---------- rendering ---------- */
+function renderAll(){ fillUserSelectLabels(); renderStats(); renderUsers(); renderEvents(); }
+function fillUserSelectLabels(){ fillUserSelect(); }
+
+function renderStats(){
+  var today = dayKey(new Date()), n7 = dayNum(today) - 6;
+  var loginsToday = 0, logins7 = 0, act7 = {}, anyLogin = {};
+  EVENTS.forEach(function(e){
+    if(e.type !== "login") return;
+    anyLogin[e.uid] = true;
+    var dn = dayNum(dayKey(e.at));
+    if(dayKey(e.at) === today) loginsToday++;
+    if(dn >= n7){ logins7++; act7[e.uid] = true; }
+  });
+  var never = 0;
+  Object.keys(USERS).forEach(function(k){ if(USERS[k].active === true && !anyLogin[k]) never++; });
+  var since = EVENTS.length ? FMT_D.format(EVENTS[EVENTS.length - 1].at) : "—";
+  var cards = [
+    [loginsToday, "sLoginsToday"], [logins7, "sLogins7"], [Object.keys(act7).length, "sActive7"],
+    [never, "sNever"], [EVENTS.length, "sTotal"], [since, "sSince"]
+  ];
+  document.getElementById("stats").innerHTML = cards.map(function(c){
+    return '<div class="stat"><div class="n">' + esc(c[0]) + '</div><div class="l">' + esc(t(c[1])) + '</div></div>';
+  }).join("");
+}
+
+function userRows(){
+  var rows = Object.keys(USERS).map(function(k){
+    var u = USERS[k], last = null, lastDev = "", n30 = 0, nAll = 0;
+    EVENTS.forEach(function(e){
+      if(e.uid !== k || e.type !== "login") return;
+      nAll++;
+      if(!last){ last = e.at; lastDev = e.device; }
+      if(daysBetween(e.at) <= 29) n30++;
+    });
+    return { u:u, last:last, lastDev:lastDev, n30:n30, nAll:nAll };
+  });
+  rows = rows.filter(function(r){ return r.u.active !== false || r.last; });   /* hide rejected / suspended accounts that never signed in */
+  rows.sort(function(a, b){
+    if(a.last && b.last) return b.last - a.last;
+    if(a.last) return -1;
+    if(b.last) return 1;
+    return a.u.email.localeCompare(b.u.email);
+  });
+  return rows;
+}
+function renderUsers(){
+  var rows = userRows();
+  var h = '<thead><tr><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thLast")) + '</th><th class="num">' + esc(t("thIn30")) + '</th><th class="num">' + esc(t("thInAll")) + '</th><th>' + esc(t("thDevice")) + '</th></tr></thead><tbody>';
+  if(!rows.length){ h += '<tr><td colspan="6" class="empty">' + esc(t("noneYet")) + '</td></tr>'; }
+  rows.forEach(function(r){
+    var last = r.last ? esc(fmtDT(r.last)) + ' <span class="chip ' + (daysBetween(r.last) <= 0 ? "today" : "in") + '">' + esc(agoText(r.last)) + '</span>' : '<span class="chip never">' + esc(t("never")) + '</span>';
+    h += '<tr class="clickable" data-uid="' + esc(r.u.uid) + '"><td>' + esc(r.u.email) + (r.u.name ? '<div class="muted">' + esc(r.u.name) + '</div>' : '') + '</td><td>' + esc(roleName(r.u.role)) + '</td><td>' + last + '</td><td class="num">' + r.n30 + '</td><td class="num">' + r.nAll + '</td><td class="muted">' + esc(r.lastDev) + '</td></tr>';
+  });
+  document.getElementById("userTable").innerHTML = h + '</tbody>';
+}
+document.getElementById("userTable").addEventListener("click", function(e){
+  var tr = e.target.closest("tr[data-uid]"); if(!tr) return;
+  F.uid = tr.getAttribute("data-uid"); document.getElementById("fUser").value = F.uid; SHOW = PAGE_STEP; renderEvents();
+  var el = document.getElementById("evTable"); if(el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"start" });
+});
+
+function renderEvents(){
+  var list = filtered(), limit = SHOW_ALL ? list.length : Math.min(SHOW, list.length);
+  var h = '<thead><tr><th class="num">' + esc(t("thNo")) + '</th><th>' + esc(t("thWhen")) + '</th><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thEvent")) + '</th><th>' + esc(t("thDev")) + '</th><th>' + esc(t("thPage")) + '</th></tr></thead><tbody>';
+  if(!list.length){ h += '<tr><td colspan="7" class="empty">' + esc(EVENTS.length ? t("noEvents") : t("noneYet")) + '</td></tr>'; }
+  for(var i = 0; i < limit; i++){
+    var e = list[i];
+    h += '<tr><td class="num">' + (i + 1) + '</td><td style="white-space:nowrap">' + esc(fmtDT(e.at)) + '</td><td>' + esc(e.email) + (e.name ? '<div class="muted">' + esc(e.name) + '</div>' : '') + '</td><td>' + esc(roleName(e.role)) + '</td><td><span class="chip ' + (e.type === "login" ? "in" : "out") + '">' + esc(t(e.type === "login" ? "evLogin" : "evLogout")) + '</span></td><td class="muted">' + esc(e.device) + '</td><td class="muted">' + esc(e.page) + '</td></tr>';
+  }
+  document.getElementById("evTable").innerHTML = h + '</tbody>';
+  document.getElementById("countLine").textContent = t("countLine").replace("{shown}", limit).replace("{n}", list.length);
+  var more = document.getElementById("btnMore"), left = list.length - limit;
+  more.disabled = left <= 0;
+  more.textContent = left > 0 ? t("more").replace("{n}", Math.min(PAGE_STEP, left)) : t("moreDone");
+  document.getElementById("printSub").textContent = t("printFilters") + filterText() + "   |   " + t("printAt") + fmtDT(new Date());
+}
+function filterText(){
+  var p = [];
+  if(F.uid && USERS[F.uid]) p.push(t("fUser") + ": " + USERS[F.uid].email);
+  if(F.type) p.push(t("fType") + ": " + t(F.type === "login" ? "evLogin" : "evLogout"));
+  if(F.from) p.push(t("fFrom") + ": " + F.from);
+  if(F.to) p.push(t("fTo") + ": " + F.to);
+  if(F.text.trim()) p.push(t("fText") + ": " + F.text.trim());
+  return p.length ? p.join(" ; ") : t("none");
+}
+
+/* ---------- Print ---------- */
+document.getElementById("btnPrint").addEventListener("click", function(){
+  SHOW_ALL = true; renderEvents();
+  setTimeout(function(){ try{ window.print(); }catch(e){} }, 60);
+});
+window.addEventListener("afterprint", function(){ if(SHOW_ALL){ SHOW_ALL = false; renderEvents(); } });
+
+/* ---------- Excel (.xlsx) ---------- */
+var JSZIP_SRC = ["https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js", "https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"];
+function addScript(src){ return new Promise(function(res, rej){ var el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = function(){ rej(new Error("load " + src)); }; document.head.appendChild(el); }); }
+async function loadJsZip(){
+  if(window.JSZip) return;
+  var err = null;
+  for(var i = 0; i < JSZIP_SRC.length; i++){ try{ await addScript(JSZIP_SRC[i]); if(window.JSZip) return; }catch(e){ err = e; } }
+  throw err || new Error("JSZip");
+}
+function xmlEsc(v){ return String(v == null ? "" : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function colL(i){ var s = ""; i++; while(i > 0){ var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+async function buildXlsx(rows){
+  var heads = ["#", "Date & time (Pakistan)", "User (e-mail)", "Name", "Role", "Event", "Device", "Page"];
+  var widths = [6, 24, 34, 24, 14, 12, 34, 16];
+  var nC = heads.length, L = colL(nC - 1);
+  function cell(ref, text, st){ return '<c r="' + ref + '" s="' + st + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(text) + '</t></is></c>'; }
+  var out = "", merges = [], rn = 0;
+  function row(cells, ht){ rn++; out += '<row r="' + rn + '"' + (ht ? ' ht="' + ht + '" customHeight="1"' : "") + ">" + cells(rn) + "</row>"; return rn; }
+  function merged(text, st, ht){ return row(function(r){ merges.push("A" + r + ":" + L + r); return cell("A" + r, text, st); }, ht); }
+  merged("Camp Office Prosecutor General Punjab", 1, 24);
+  merged("Supreme Court Of Pakistan, Islamabad", 2, 16);
+  merged("USER ACTIVITY LOG — SIGN-INS AND SIGN-OUTS", 3, 22);
+  merged("Generated " + fmtDT(new Date()) + "   |   Filters: " + filterTextEn(), 2, 18);
+  row(function(){ return ""; }, 6);
+  var headRow = row(function(r){ return heads.map(function(h, i){ return cell(colL(i) + r, h, 4); }).join(""); }, 22);
+  rows.forEach(function(e, i){
+    var st = (i % 2) ? 6 : 5;
+    row(function(r){
+      var vals = [String(i + 1), fmtDT(e.at), e.email, e.name, roleNameEn(e.role), e.type === "login" ? "Sign-in" : "Sign-out", e.device, e.page];
+      return vals.map(function(v, c){ return cell(colL(c) + r, v, st); }).join("");
+    }, 16);
+  });
+  if(!rows.length) merged("No lines match the filters.", 2, 20);
+  var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<fonts count="5"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="14"/><color rgb="FF1B3F63"/><name val="Arial"/></font><font><sz val="9.5"/><color rgb="FF555555"/><name val="Arial"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><sz val="9.5"/><color rgb="FF1C3363"/><name val="Arial"/></font></fonts>' +
+    '<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF4F7FB"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFCAD9"/></left><right style="thin"><color rgb="FFBFCAD9"/></right><top style="thin"><color rgb="FFBFCAD9"/></top><bottom style="thin"><color rgb="FFBFCAD9"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="7">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="center" vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  var NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main", NSR = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="' + NS + '" xmlns:r="' + NSR + '"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
+    '<sheetViews><sheetView workbookViewId="0" showGridLines="0" tabSelected="1"><pane ySplit="' + headRow + '" topLeftCell="A' + (headRow + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+    '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join("") + '</cols>' +
+    '<sheetData>' + out + '</sheetData>' + (rows.length ? '<autoFilter ref="A' + headRow + ':' + L + (headRow + rows.length) + '"/>' : "") +
+    '<mergeCells count="' + merges.length + '">' + merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join("") + '</mergeCells>' +
+    '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.6" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+  var zip = new JSZip();
+  zip.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+  zip.file("_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  var dn = '<definedName name="_xlnm.Print_Titles" localSheetId="0">\'Activity Log\'!$' + headRow + ':$' + headRow + '</definedName>' +
+    (rows.length ? '<definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'Activity Log\'!$A$' + headRow + ':$' + L + '$' + (headRow + rows.length) + '</definedName>' : "");
+  zip.file("xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="' + NS + '" xmlns:r="' + NSR + '"><bookViews><workbookView/></bookViews><sheets><sheet name="Activity Log" sheetId="1" r:id="rId1"/></sheets><definedNames>' + dn + '</definedNames></workbook>');
+  zip.file("xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>');
+  zip.file("xl/styles.xml", styles);
+  zip.file("xl/worksheets/sheet1.xml", sheet);
+  return await zip.generateAsync({ type:"blob", mimeType:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function roleNameEn(r){ return r === "super_admin" ? "Super Admin" : r === "admin" ? "Admin" : r === "data_entry" ? "Data Entry" : r === "viewer" ? "Viewer" : (r || ""); }
+function filterTextEn(){
+  var p = [];
+  if(F.uid && USERS[F.uid]) p.push("User: " + USERS[F.uid].email);
+  if(F.type) p.push("Event: " + (F.type === "login" ? "Sign-in" : "Sign-out"));
+  if(F.from) p.push("From: " + F.from);
+  if(F.to) p.push("To: " + F.to);
+  if(F.text.trim()) p.push("Search: " + F.text.trim());
+  return p.length ? p.join(" ; ") : "none";
+}
+function downloadBlob(blob, name){
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+window.__lastXlsx = null;
+document.getElementById("btnExcel").addEventListener("click", async function(){
+  var msg = document.getElementById("expMsg"), btn = this;
+  btn.disabled = true; msg.textContent = t("xlsBuilding");
+  try{
+    await loadJsZip();
+    var blob = await buildXlsx(filtered());
+    window.__lastXlsx = blob;
+    downloadBlob(blob, "Activity-Log_" + dayKey(new Date()) + ".xlsx");
+    msg.textContent = t("xlsDone");
+  }catch(e){
+    console.error(e);
+    msg.textContent = t("xlsFail") + (e && e.message ? e.message : e);
+  }
+  btn.disabled = false;
+});
+
+</script>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+<script>
+/* header buttons (same look as other pages) drive the page's existing language / theme selectors */
+(function(){
+  var ls=document.getElementById('langSelect'), ts=document.getElementById('themeSelect');
+  var lb=document.getElementById('langBtn'), tb=document.getElementById('themeBtn'), tp=document.getElementById('themePicker');
+  if(!ls||!ts||!lb||!tb||!tp) return;
+  var COL={navy:['#2A5A84','#B8860B'],green:['#1a6b45','#C9A227'],teal:['#128f89','#96762a'],night:['#5b7bb0','#d4a13d']};
+  function syncLang(){ lb.textContent = ls.value==='ur' ? 'English' : 'اردو'; }
+  lb.addEventListener('click',function(){ ls.value = (ls.value==='ur') ? 'en' : 'ur'; ls.dispatchEvent(new Event('change')); syncLang(); });
+  function renderT(){
+    var cur=ts.value;
+    tp.innerHTML=Array.prototype.map.call(ts.options,function(o){
+      var c=COL[o.value]||['#2A5A84','#B8860B'];
+      return '<div class="theme-swatch'+(o.value===cur?' active':'')+'" data-id="'+o.value+'" title="'+o.text.replace(/"/g,'')+'" style="background:linear-gradient(135deg,'+c[1]+' 50%,'+c[0]+' 50%);"></div>';
+    }).join('');
+  }
+  tb.addEventListener('click',function(e){ e.stopPropagation(); renderT(); tp.classList.toggle('open'); });
+  tp.addEventListener('click',function(e){ var sw=e.target.closest('.theme-swatch'); if(!sw) return; ts.value=sw.getAttribute('data-id'); ts.dispatchEvent(new Event('change')); tp.classList.remove('open'); renderT(); });
+  document.addEventListener('click',function(e){ if(!tp.contains(e.target)) tp.classList.remove('open'); });
+  syncLang(); renderT();
+})();
+
+</script>
+</body>
+</html>

@@ -166,6 +166,9 @@ html,body{overflow-x:hidden;}
   .chip{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
   .chip.in{ background:var(--success-tint); color:var(--success); }
   .chip.out{ background:var(--warn-tint); color:var(--warn); }
+  .chip.visit{ background:var(--navy-tint); color:var(--navy-dark); }
+  .chip.data{ background:var(--warn-tint); color:var(--text); border:1px solid var(--warn); }
+  td.what{ min-width:180px; max-width:420px; overflow-wrap:anywhere; }
   .chip.never{ background:var(--danger-tint); color:var(--danger); }
   .chip.today{ background:var(--navy-tint); color:var(--navy-dark); }
   .muted{ color:var(--muted); }
@@ -290,8 +293,8 @@ html,body{overflow-x:hidden;}
 
   <div class="info-banner no-print">
     <strong data-i18n="infoTitle">What this page shows</strong><br>
-    <span data-i18n="infoBody">Every time a user signs in to, or signs out of, the portal, one line is recorded here (who, when, and from which browser). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.</span>
-    <div class="field-hint" style="margin-top:6px" data-i18n="infoLimits">Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, and what a user did inside a page. Recording started on the day the portal was updated, so earlier sign-ins are not here.</div>
+    <span data-i18n="infoBody">One line is recorded here for every sign-in and sign-out, for every page a user opens, and for every record a user adds, saves, edits or deletes (who, when, which page, which record). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.</span>
+    <div class="field-hint" style="margin-top:6px" data-i18n="infoLimits">Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, chat messages, and the contents of a record (only its name/number and the names of the fields changed). Several saves made within 3 seconds are shown as one line with a count. Page visits and data changes are recorded from the day this update went live.</div>
   </div>
 
   <div id="loadError" class="error-box hidden"></div>
@@ -308,16 +311,16 @@ html,body{overflow-x:hidden;}
 
   <div class="card">
     <div class="bar" style="justify-content:space-between">
-      <h2 data-i18n="eventsTitle">Sign-in and sign-out lines</h2>
+      <h2 data-i18n="eventsTitle">Activity lines</h2>
       <span class="field-hint" id="countLine"></span>
     </div>
     <div class="filters no-print">
       <div><label for="fUser" data-i18n="fUser">User</label><select id="fUser"></select></div>
       <div><label for="fType" data-i18n="fType">Event</label><select id="fType">
-        <option value="" data-i18n="fAll">All</option><option value="login" data-i18n="evLogin">Sign-in</option><option value="logout" data-i18n="evLogout">Sign-out</option></select></div>
+        <option value="" data-i18n="fAll">All</option><option value="login" data-i18n="evLogin">Sign-in</option><option value="logout" data-i18n="evLogout">Sign-out</option><option value="visit" data-i18n="evVisit">Page visit</option><option value="data" data-i18n="evData">Data change</option></select></div>
       <div><label for="fFrom" data-i18n="fFrom">From date</label><input type="date" id="fFrom"></div>
       <div><label for="fTo" data-i18n="fTo">To date</label><input type="date" id="fTo"></div>
-      <div><label for="fText" data-i18n="fText">Search</label><input type="search" id="fText" placeholder="e-mail / device"></div>
+      <div><label for="fText" data-i18n="fText">Search</label><input type="search" id="fText" placeholder="e-mail / page / record"></div>
     </div>
     <div class="quick no-print" id="quick">
       <button class="btn small" type="button" data-q="today" data-i18n="qToday">Today</button>
@@ -362,12 +365,13 @@ var I18N = {
     notAdminTitle:"Super Admin only", notAdminBody:"The Activity Log can only be opened by the Super Admin account.", btnPortal:"Back to the portal",
     btnSignOut:"Sign Out", signedInAs:"Signed in as",
     infoTitle:"What this page shows",
-    infoBody:"Every time a user signs in to, or signs out of, the portal, one line is recorded here (who, when, and from which browser). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.",
-    infoLimits:"Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, and what a user did inside a page. Recording started on the day the portal was updated, so earlier sign-ins are not here.",
+    infoBody:"One line is recorded here for every sign-in and sign-out, for every page a user opens, and for every record a user adds, saves, edits or deletes (who, when, which page, which record). Only you (Super Admin) can read it, and nobody can change or delete a line from the website. Lines older than 90 days are not shown.",
+    infoLimits:"Not recorded: wrong-password attempts, IP addresses, automatic sign-outs after inactivity, chat messages, and the contents of a record (only its name/number and the names of the fields changed). Several saves made within 3 seconds are shown as one line with a count. Page visits and data changes are recorded from the day this update went live.",
     usersTitle:"Users — last sign-in", usersHint:"Click a user to see only that user's lines below.",
-    eventsTitle:"Sign-in and sign-out lines",
+    eventsTitle:"Activity lines",
     fUser:"User", fType:"Event", fFrom:"From date", fTo:"To date", fText:"Search", fAll:"All",
-    evLogin:"Sign-in", evLogout:"Sign-out",
+    evLogin:"Sign-in", evLogout:"Sign-out", evVisit:"Page visit", evData:"Data change",
+    opAdd:"Added", opSet:"Saved", opEdit:"Edited", opDelete:"Deleted", thWhat:"Details", thChg30:"Changes (30 days)", sChanges7:"Data changes (7 days)", sVisits7:"Page visits (7 days)", userRec:"user", opened:"opened",
     qToday:"Today", q7:"Last 7 days", q30:"Last 30 days", qAll:"All (90 days)",
     btnPrint:"Print / Save as PDF", btnExcel:"Excel", btnReload:"Reload",
     thUser:"User", thRole:"Role", thLast:"Last sign-in", thIn30:"Sign-ins (30 days)", thInAll:"Sign-ins (shown)", thDevice:"Last device",
@@ -389,12 +393,13 @@ var I18N = {
     notAdminTitle:"صرف سپر ایڈمن", notAdminBody:"سرگرمی لاگ صرف سپر ایڈمن اکاؤنٹ ہی کھول سکتا ہے۔", btnPortal:"پورٹل پر واپس",
     btnSignOut:"سائن آؤٹ", signedInAs:"سائن اِن:",
     infoTitle:"یہ صفحہ کیا دکھاتا ہے",
-    infoBody:"جب بھی کوئی یوزر پورٹل میں سائن اِن یا سائن آؤٹ ہوتا ہے تو یہاں ایک سطر درج ہوتی ہے (کون، کب، اور کس براؤزر سے)۔ صرف آپ (سپر ایڈمن) اسے پڑھ سکتے ہیں، اور ویب سائٹ سے کوئی بھی سطر بدلی یا مٹائی نہیں جا سکتی۔ 90 دن سے پرانی سطریں نہیں دکھائی جاتیں۔",
-    infoLimits:"درج نہیں ہوتا: غلط پاس ورڈ کی کوششیں، IP پتہ، بے کار رہنے پر خودکار سائن آؤٹ، اور صفحے کے اندر یوزر نے کیا کیا۔ ریکارڈنگ پورٹل اپ ڈیٹ ہونے کے دن سے شروع ہوئی، اس لیے اس سے پہلے کے سائن اِن یہاں نہیں ہیں۔",
+    infoBody:"ہر سائن اِن/سائن آؤٹ، ہر کھولے گئے صفحے، اور ہر ریکارڈ کے شامل/محفوظ/ترمیم/حذف ہونے پر یہاں ایک سطر درج ہوتی ہے (کون، کب، کون سا صفحہ، کون سا ریکارڈ)۔ صرف آپ (سپر ایڈمن) اسے پڑھ سکتے ہیں اور ویب سائٹ سے کوئی سطر بدلی یا مٹائی نہیں جا سکتی۔ 90 دن سے پرانی سطریں نہیں دکھائی جاتیں۔",
+    infoLimits:"درج نہیں ہوتا: غلط پاس ورڈ کی کوششیں، IP پتہ، بے کار رہنے پر خودکار سائن آؤٹ، چیٹ کے پیغامات، اور ریکارڈ کا مواد (صرف اس کا نام/نمبر اور بدلے گئے خانوں کے نام)۔ 3 سیکنڈ کے اندر ہونے والے کئی محفوظ عمل ایک سطر میں گنتی کے ساتھ دکھتے ہیں۔ صفحات کی visit اور ڈیٹا کی تبدیلیاں اس اپ ڈیٹ کے دن سے درج ہو رہی ہیں۔",
     usersTitle:"یوزرز — آخری سائن اِن", usersHint:"کسی یوزر پر کلک کریں تو نیچے صرف اسی کی سطریں دکھیں گی۔",
-    eventsTitle:"سائن اِن اور سائن آؤٹ کی سطریں",
+    eventsTitle:"سرگرمی کی سطریں",
     fUser:"یوزر", fType:"واقعہ", fFrom:"تاریخ سے", fTo:"تاریخ تک", fText:"تلاش", fAll:"سب",
-    evLogin:"سائن اِن", evLogout:"سائن آؤٹ",
+    evLogin:"سائن اِن", evLogout:"سائن آؤٹ", evVisit:"صفحہ کھولا", evData:"ڈیٹا کی تبدیلی",
+    opAdd:"شامل کیا", opSet:"محفوظ کیا", opEdit:"ترمیم", opDelete:"حذف کیا", thWhat:"تفصیل", thChg30:"تبدیلیاں (30 دن)", sChanges7:"ڈیٹا کی تبدیلیاں (7 دن)", sVisits7:"صفحات کھولے گئے (7 دن)", userRec:"یوزر", opened:"کھولا",
     qToday:"آج", q7:"پچھلے 7 دن", q30:"پچھلے 30 دن", qAll:"سب (90 دن)",
     btnPrint:"پرنٹ / PDF محفوظ کریں", btnExcel:"ایکسل", btnReload:"دوبارہ لوڈ",
     thUser:"یوزر", thRole:"کردار", thLast:"آخری سائن اِن", thIn30:"سائن اِن (30 دن)", thInAll:"سائن اِن (دکھائے گئے)", thDevice:"آخری ڈیوائس",
@@ -489,7 +494,8 @@ function loadData(){
       var v = d.data() || {};
       var at = v.at && v.at.toDate ? v.at.toDate() : null;
       if(!at) return;
-      EVENTS.push({ id:d.id, uid:v.uid || "", email:v.email || "", name:v.name || "", role:v.role || "", type:v.type === "logout" ? "logout" : "login", at:at, device:v.device || "", page:v.page || "" });
+      EVENTS.push({ id:d.id, uid:v.uid || "", email:v.email || "", name:v.name || "", role:v.role || "", type:(["login","logout","visit","data"].indexOf(v.type) >= 0 ? v.type : "login"), at:at, device:v.device || "", page:v.page || "",
+        target:v.target || "", op:v.op || "", docId:v.docId || "", label:v.label || "", count:(typeof v.count === "number" ? v.count : 1), fields:v.fields || "", detail:v.detail || "" });
     });
     EVENTS.sort(function(a, b){ return b.at - a.at; });
     USERS = {};
@@ -522,6 +528,35 @@ function fillUserSelect(){
   sel.value = keep;
   if(sel.value !== keep){ F.uid = ""; sel.value = ""; }
 }
+
+/* one readable sentence for a line: e.g. "Edited · cases · WP 12-L/2026 — A vs B (3 records)" */
+function whatText(e){
+  if(e.type === "login") return t("evLogin");
+  if(e.type === "logout") return t("evLogout");
+  if(e.type === "visit") return t("opened") + " " + e.page;
+  var op = t("op" + (e.op ? e.op.charAt(0).toUpperCase() + e.op.slice(1) : "Set"));
+  var what = e.label;
+  if(e.target === "users" && e.docId){ var u = USERS[e.docId]; what = u ? (t("userRec") + ": " + u.email) : (t("userRec") + " " + e.docId); }
+  else if(!what && e.docId){ what = e.docId; }
+  var s = op + " · " + e.target + (what ? " · " + what : "");
+  if(e.count > 1) s += "  ×" + e.count;
+  return s;
+}
+function whatTextEn(e){
+  if(e.type === "visit") return "Opened " + e.page;
+  var ops = { add:"Added", set:"Saved", edit:"Edited", "delete":"Deleted" };
+  var what = e.label;
+  if(e.target === "users" && e.docId){ var u = USERS[e.docId]; what = u ? ("user: " + u.email) : ("user " + e.docId); }
+  else if(!what && e.docId){ what = e.docId; }
+  return (ops[e.op] || "Saved") + " · " + e.target + (what ? " · " + what : "") + (e.count > 1 ? "  x" + e.count : "");
+}
+function whatMore(e){
+  if(e.type !== "data") return "";
+  var m = [];
+  if(e.fields) m.push(e.fields);
+  if(e.detail) m.push(e.detail);
+  return m.join("  —  ");
+}
 function filtered(){
   var txt = F.text.trim().toLowerCase();
   return EVENTS.filter(function(e){
@@ -530,7 +565,7 @@ function filtered(){
     var k = dayKey(e.at);
     if(F.from && k < F.from) return false;
     if(F.to && k > F.to) return false;
-    if(txt && (e.email + " " + e.name + " " + e.device + " " + e.page).toLowerCase().indexOf(txt) === -1) return false;
+    if(txt && (e.email + " " + e.name + " " + e.device + " " + e.page + " " + e.target + " " + e.label + " " + e.docId + " " + e.fields + " " + e.detail).toLowerCase().indexOf(txt) === -1) return false;
     return true;
   });
 }
@@ -561,8 +596,10 @@ function fillUserSelectLabels(){ fillUserSelect(); }
 
 function renderStats(){
   var today = dayKey(new Date()), n7 = dayNum(today) - 6;
-  var loginsToday = 0, logins7 = 0, act7 = {}, anyLogin = {};
+  var loginsToday = 0, logins7 = 0, act7 = {}, anyLogin = {}, chg7 = 0, vis7 = 0;
   EVENTS.forEach(function(e){
+    if(e.type === "data" && dayNum(dayKey(e.at)) >= n7){ chg7 += e.count; act7[e.uid] = true; }
+    if(e.type === "visit" && dayNum(dayKey(e.at)) >= n7){ vis7++; act7[e.uid] = true; }
     if(e.type !== "login") return;
     anyLogin[e.uid] = true;
     var dn = dayNum(dayKey(e.at));
@@ -574,7 +611,7 @@ function renderStats(){
   var since = EVENTS.length ? FMT_D.format(EVENTS[EVENTS.length - 1].at) : "—";
   var cards = [
     [loginsToday, "sLoginsToday"], [logins7, "sLogins7"], [Object.keys(act7).length, "sActive7"],
-    [never, "sNever"], [EVENTS.length, "sTotal"], [since, "sSince"]
+    [chg7, "sChanges7"], [vis7, "sVisits7"], [never, "sNever"], [EVENTS.length, "sTotal"], [since, "sSince"]
   ];
   document.getElementById("stats").innerHTML = cards.map(function(c){
     return '<div class="stat"><div class="n">' + esc(c[0]) + '</div><div class="l">' + esc(t(c[1])) + '</div></div>';
@@ -583,14 +620,15 @@ function renderStats(){
 
 function userRows(){
   var rows = Object.keys(USERS).map(function(k){
-    var u = USERS[k], last = null, lastDev = "", n30 = 0, nAll = 0;
+    var u = USERS[k], last = null, lastDev = "", n30 = 0, nAll = 0, c30 = 0;
     EVENTS.forEach(function(e){
+      if(e.uid === k && e.type === "data" && daysBetween(e.at) <= 29) c30 += e.count;
       if(e.uid !== k || e.type !== "login") return;
       nAll++;
       if(!last){ last = e.at; lastDev = e.device; }
       if(daysBetween(e.at) <= 29) n30++;
     });
-    return { u:u, last:last, lastDev:lastDev, n30:n30, nAll:nAll };
+    return { u:u, last:last, lastDev:lastDev, n30:n30, nAll:nAll, c30:c30 };
   });
   rows = rows.filter(function(r){ return r.u.active !== false || r.last; });   /* hide rejected / suspended accounts that never signed in */
   rows.sort(function(a, b){
@@ -603,11 +641,11 @@ function userRows(){
 }
 function renderUsers(){
   var rows = userRows();
-  var h = '<thead><tr><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thLast")) + '</th><th class="num">' + esc(t("thIn30")) + '</th><th class="num">' + esc(t("thInAll")) + '</th><th>' + esc(t("thDevice")) + '</th></tr></thead><tbody>';
-  if(!rows.length){ h += '<tr><td colspan="6" class="empty">' + esc(t("noneYet")) + '</td></tr>'; }
+  var h = '<thead><tr><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thLast")) + '</th><th class="num">' + esc(t("thIn30")) + '</th><th class="num">' + esc(t("thInAll")) + '</th><th class="num">' + esc(t("thChg30")) + '</th><th>' + esc(t("thDevice")) + '</th></tr></thead><tbody>';
+  if(!rows.length){ h += '<tr><td colspan="7" class="empty">' + esc(t("noneYet")) + '</td></tr>'; }
   rows.forEach(function(r){
     var last = r.last ? esc(fmtDT(r.last)) + ' <span class="chip ' + (daysBetween(r.last) <= 0 ? "today" : "in") + '">' + esc(agoText(r.last)) + '</span>' : '<span class="chip never">' + esc(t("never")) + '</span>';
-    h += '<tr class="clickable" data-uid="' + esc(r.u.uid) + '"><td>' + esc(r.u.email) + (r.u.name ? '<div class="muted">' + esc(r.u.name) + '</div>' : '') + '</td><td>' + esc(roleName(r.u.role)) + '</td><td>' + last + '</td><td class="num">' + r.n30 + '</td><td class="num">' + r.nAll + '</td><td class="muted">' + esc(r.lastDev) + '</td></tr>';
+    h += '<tr class="clickable" data-uid="' + esc(r.u.uid) + '"><td>' + esc(r.u.email) + (r.u.name ? '<div class="muted">' + esc(r.u.name) + '</div>' : '') + '</td><td>' + esc(roleName(r.u.role)) + '</td><td>' + last + '</td><td class="num">' + r.n30 + '</td><td class="num">' + r.nAll + '</td><td class="num">' + r.c30 + '</td><td class="muted">' + esc(r.lastDev) + '</td></tr>';
   });
   document.getElementById("userTable").innerHTML = h + '</tbody>';
 }
@@ -617,13 +655,16 @@ document.getElementById("userTable").addEventListener("click", function(e){
   var el = document.getElementById("evTable"); if(el && el.scrollIntoView) el.scrollIntoView({ behavior:"smooth", block:"start" });
 });
 
+function chipClass(ty){ return ty === "login" ? "in" : ty === "logout" ? "out" : ty === "visit" ? "visit" : "data"; }
+function evName(ty){ return t(ty === "login" ? "evLogin" : ty === "logout" ? "evLogout" : ty === "visit" ? "evVisit" : "evData"); }
+function evNameEn(ty){ return ty === "login" ? "Sign-in" : ty === "logout" ? "Sign-out" : ty === "visit" ? "Page visit" : "Data change"; }
 function renderEvents(){
   var list = filtered(), limit = SHOW_ALL ? list.length : Math.min(SHOW, list.length);
-  var h = '<thead><tr><th class="num">' + esc(t("thNo")) + '</th><th>' + esc(t("thWhen")) + '</th><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thEvent")) + '</th><th>' + esc(t("thDev")) + '</th><th>' + esc(t("thPage")) + '</th></tr></thead><tbody>';
-  if(!list.length){ h += '<tr><td colspan="7" class="empty">' + esc(EVENTS.length ? t("noEvents") : t("noneYet")) + '</td></tr>'; }
+  var h = '<thead><tr><th class="num">' + esc(t("thNo")) + '</th><th>' + esc(t("thWhen")) + '</th><th>' + esc(t("thUser")) + '</th><th>' + esc(t("thRole")) + '</th><th>' + esc(t("thEvent")) + '</th><th>' + esc(t("thWhat")) + '</th><th>' + esc(t("thDev")) + '</th><th>' + esc(t("thPage")) + '</th></tr></thead><tbody>';
+  if(!list.length){ h += '<tr><td colspan="8" class="empty">' + esc(EVENTS.length ? t("noEvents") : t("noneYet")) + '</td></tr>'; }
   for(var i = 0; i < limit; i++){
     var e = list[i];
-    h += '<tr><td class="num">' + (i + 1) + '</td><td style="white-space:nowrap">' + esc(fmtDT(e.at)) + '</td><td>' + esc(e.email) + (e.name ? '<div class="muted">' + esc(e.name) + '</div>' : '') + '</td><td>' + esc(roleName(e.role)) + '</td><td><span class="chip ' + (e.type === "login" ? "in" : "out") + '">' + esc(t(e.type === "login" ? "evLogin" : "evLogout")) + '</span></td><td class="muted">' + esc(e.device) + '</td><td class="muted">' + esc(e.page) + '</td></tr>';
+    h += '<tr><td class="num">' + (i + 1) + '</td><td style="white-space:nowrap">' + esc(fmtDT(e.at)) + '</td><td>' + esc(e.email) + (e.name ? '<div class="muted">' + esc(e.name) + '</div>' : '') + '</td><td>' + esc(roleName(e.role)) + '</td><td><span class="chip ' + chipClass(e.type) + '">' + esc(evName(e.type)) + '</span></td><td class="what">' + (e.type === "data" || e.type === "visit" ? esc(whatText(e)) + (whatMore(e) ? '<div class="muted">' + esc(whatMore(e)) + '</div>' : '') : '') + '</td><td class="muted">' + esc(e.device) + '</td><td class="muted">' + esc(e.page) + '</td></tr>';
   }
   document.getElementById("evTable").innerHTML = h + '</tbody>';
   document.getElementById("countLine").textContent = t("countLine").replace("{shown}", limit).replace("{n}", list.length);
@@ -635,7 +676,7 @@ function renderEvents(){
 function filterText(){
   var p = [];
   if(F.uid && USERS[F.uid]) p.push(t("fUser") + ": " + USERS[F.uid].email);
-  if(F.type) p.push(t("fType") + ": " + t(F.type === "login" ? "evLogin" : "evLogout"));
+  if(F.type) p.push(t("fType") + ": " + evName(F.type));
   if(F.from) p.push(t("fFrom") + ": " + F.from);
   if(F.to) p.push(t("fTo") + ": " + F.to);
   if(F.text.trim()) p.push(t("fText") + ": " + F.text.trim());
@@ -661,8 +702,8 @@ async function loadJsZip(){
 function xmlEsc(v){ return String(v == null ? "" : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 function colL(i){ var s = ""; i++; while(i > 0){ var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
 async function buildXlsx(rows){
-  var heads = ["#", "Date & time (Pakistan)", "User (e-mail)", "Name", "Role", "Event", "Device", "Page"];
-  var widths = [6, 24, 34, 24, 14, 12, 34, 16];
+  var heads = ["#", "Date & time (Pakistan)", "User (e-mail)", "Name", "Role", "Event", "Details", "Changed fields", "Device", "Page"];
+  var widths = [6, 24, 34, 24, 14, 14, 46, 34, 34, 16];
   var nC = heads.length, L = colL(nC - 1);
   function cell(ref, text, st){ return '<c r="' + ref + '" s="' + st + '" t="inlineStr"><is><t xml:space="preserve">' + xmlEsc(text) + '</t></is></c>'; }
   var out = "", merges = [], rn = 0;
@@ -670,14 +711,14 @@ async function buildXlsx(rows){
   function merged(text, st, ht){ return row(function(r){ merges.push("A" + r + ":" + L + r); return cell("A" + r, text, st); }, ht); }
   merged("Camp Office Prosecutor General Punjab", 1, 24);
   merged("Supreme Court Of Pakistan, Islamabad", 2, 16);
-  merged("USER ACTIVITY LOG — SIGN-INS AND SIGN-OUTS", 3, 22);
+  merged("USER ACTIVITY LOG — SIGN-INS, PAGE VISITS AND DATA CHANGES", 3, 22);
   merged("Generated " + fmtDT(new Date()) + "   |   Filters: " + filterTextEn(), 2, 18);
   row(function(){ return ""; }, 6);
   var headRow = row(function(r){ return heads.map(function(h, i){ return cell(colL(i) + r, h, 4); }).join(""); }, 22);
   rows.forEach(function(e, i){
     var st = (i % 2) ? 6 : 5;
     row(function(r){
-      var vals = [String(i + 1), fmtDT(e.at), e.email, e.name, roleNameEn(e.role), e.type === "login" ? "Sign-in" : "Sign-out", e.device, e.page];
+      var vals = [String(i + 1), fmtDT(e.at), e.email, e.name, roleNameEn(e.role), evNameEn(e.type), (e.type === "data" || e.type === "visit") ? whatTextEn(e) : "", e.type === "data" ? whatMore(e) : "", e.device, e.page];
       return vals.map(function(v, c){ return cell(colL(c) + r, v, st); }).join("");
     }, 16);
   });
@@ -718,7 +759,7 @@ function roleNameEn(r){ return r === "super_admin" ? "Super Admin" : r === "admi
 function filterTextEn(){
   var p = [];
   if(F.uid && USERS[F.uid]) p.push("User: " + USERS[F.uid].email);
-  if(F.type) p.push("Event: " + (F.type === "login" ? "Sign-in" : "Sign-out"));
+  if(F.type) p.push("Event: " + evNameEn(F.type));
   if(F.from) p.push("From: " + F.from);
   if(F.to) p.push("To: " + F.to);
   if(F.text.trim()) p.push("Search: " + F.text.trim());

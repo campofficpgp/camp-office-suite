@@ -34,6 +34,7 @@
     { key: 'about',       href: 'about.html',       ur: 'ہمارے بارے میں', en: 'About Us', acts: ['v', 'e'] },
     { key: 'chat',        href: 'chat-system.html', ur: 'ٹیم چیٹ (a = پیغام بھیجنا، d = پیغام حذف)', en: 'Team Chat (Add = send, Delete = remove messages)', acts: ['v', 'a', 'd'] },
     { key: 'ai-assistant', href: 'ai-assistant.html', ur: 'AI اسسٹنٹ', en: 'AI Assistant', acts: ['v', 'ai'] },
+    { key: 'roster',      href: '',                 urlPart: 'weekly-court-roster', ur: 'ویکلی کورٹ روسٹر (ایڈٹ = روسٹر محفوظ کرنا)', en: 'Weekly Court Roster (Edit = save a week)', acts: ['v', 'e', 'd', 'x'] },
     { key: 'lists',       href: '',                 ur: 'فہرستیں سنبھالنا (جج، آفیسر، اقسام…)', en: 'Manage lists (judges, officers, types…)', acts: ['l'] }
   ];
   var ACT_LABEL = {
@@ -58,6 +59,7 @@
     'about':       { viewer: ['v'],      data_entry: ['v'],                      admin: ['v', 'e'] },
     'chat':        { viewer: ['v', 'a'], data_entry: ['v', 'a'],                 admin: ['v', 'a', 'd'] },
     'ai-assistant': { viewer: [],        data_entry: [],                         admin: ['v', 'ai'] },
+    'roster':      { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'e', 'd', 'x'] },
     'lists':       { viewer: [],         data_entry: [],                         admin: ['l'] }
   };
 
@@ -114,11 +116,16 @@
   }
   function hideNav(u) {
     PAGES.forEach(function (pg) {
-      if (!pg.href || can(u, pg.key, 'v')) { return; }
+      if ((!pg.href && !pg.urlPart) || can(u, pg.key, 'v')) { return; }
       var links = document.querySelectorAll('#sidebar a[href], .quick-tile[href]');
       Array.prototype.forEach.call(links, function (a) {
-        if (a.getAttribute('href') && /^https?:/i.test(a.getAttribute('href'))) { return; }
-        if (lastSeg(a.getAttribute('href')) === pg.href) { a.style.display = 'none'; a.setAttribute('data-perm-hidden', pg.key); }
+        var hr = a.getAttribute('href') || '';
+        if (pg.urlPart) {
+          if (hr.indexOf('/' + pg.urlPart + '/') !== -1) { a.style.display = 'none'; a.setAttribute('data-perm-hidden', pg.key); }
+          return;
+        }
+        if (/^https?:/i.test(hr)) { return; }
+        if (lastSeg(hr) === pg.href) { a.style.display = 'none'; a.setAttribute('data-perm-hidden', pg.key); }
       });
     });
   }

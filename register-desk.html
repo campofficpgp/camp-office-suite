@@ -249,6 +249,14 @@ html,body{overflow-x:hidden;}
     .editor .wide2{ grid-column:1 / -1; }
   }
   @media (max-width:600px){ .wrap{ padding:12px; } .card{ padding:14px; } }
+
+  .modal.wide{ max-width:760px; }
+  .thumbs{ display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:10px; max-height:300px; overflow:auto; }
+  .thumb{ border:1px solid var(--border); border-radius:8px; padding:5px; background:var(--surface); text-align:center; min-width:0; }
+  .thumb img{ width:100%; height:120px; object-fit:contain; background:#222; border-radius:4px; }
+  .thumb .tn{ font-size:12px; font-weight:700; margin-top:3px; }
+  .thumb .tb{ display:flex; gap:4px; justify-content:center; margin-top:4px; }
+  .thumb .tb .btn{ padding:2px 8px; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -368,6 +376,11 @@ html,body{overflow-x:hidden;}
       </div>
       <div id="loadPreview"></div>
     </div>
+    <div class="card" id="photoCard">
+      <div class="rd-head"><h2 data-i18n="phTitle">New register from photos or a PDF</h2>
+        <button class="btn primary" id="btnNewPhotos" type="button">📷 <span data-i18n="phNewBtn">New register from photos / PDF</span></button></div>
+      <div class="hint" data-i18n="phHint"></div>
+    </div>
     <div class="card">
       <div class="rd-head">
         <h2 data-i18n="listTitle">Registers loaded</h2>
@@ -387,6 +400,7 @@ html,body{overflow-x:hidden;}
       <div class="rd-head">
         <h2 id="revTitle"></h2>
         <div class="bar">
+          <button class="btn small hidden" id="btnAddPages" type="button">📷 <span data-i18n="phAddBtn">Add page photos</span></button>
           <button class="btn small" id="btnTogglePhoto" type="button">🖼 <span data-i18n="btnPhoto">Page photo</span></button>
           <button class="btn small" id="btnReloadRows" type="button">↻ <span data-i18n="btnReload">Reload</span></button>
         </div>
@@ -797,6 +811,7 @@ function renderAll(){
   renderList();
   if(CUR){ if(VIEW === "review") renderReview(); if(VIEW === "import") renderImport(); }
   $("loadCard").classList.toggle("hidden", !CAN.add);
+  $("photoCard").classList.toggle("hidden", !CAN.add);
   if(PVW) renderPreview();
 }
 
@@ -946,7 +961,7 @@ function renderPreview(){
   var rows = previewRows(c), v = validateAll(rows, PORTAL);
   var nErr = rows.filter(function(r){ return v[r.id].errs.length; }).length;
   var nDoubt = rows.filter(function(r){ return r.note; }).length;
-  var dup = BATCHES.some(function(b){ return b.name === c.name && b.rowCount === c.rows.length && b.status !== "archived"; });
+  var dup = BATCHES.some(function(b){ return b.name === c.name && b.status !== "archived"; });
   var pgs = {}; c.rows.forEach(function(r){ pgs[r.pg] = 1; });
   var h = '<div class="card" style="margin-top:12px"><h3>' + esc(t("pvTitle")) + "</h3><div class=\"kv\">" +
     "<b>" + esc(t("pvName")) + "</b><span>" + esc(c.name) + "</span>" +
@@ -1012,6 +1027,9 @@ async function doLoad(){
   }
 }
 
+$("btnNewPhotos").addEventListener("click", function(){ openPhotoPanel("new"); });
+$("btnAddPages").addEventListener("click", function(){ openPhotoPanel("add"); });
+
 /* ============================================================
    Review: rows grouped by register page / date / bench, page photo beside them, per-row actions
    ============================================================ */
@@ -1027,7 +1045,7 @@ async function openBatch(id){
     res[0].forEach(function(d){ var r = d.data() || {}; r.id = d.id; r.seq = +r.seq || 0; r.pg = +r.pg || 0; ROWS.push(r); });
     ROWS.sort(function(a, c){ return a.seq - c.seq; });
     PORTAL = []; res[1].forEach(function(d){ var c = d.data() || {}; c.id = d.id; PORTAL.push(c); });
-    FLT = { f:"all", pg:"", text:"" }; SEL = null; EDIT = null; PHOTO = { pg:ROWS.length ? ROWS[0].pg : 0, zoom:100, hidden:PHOTO.hidden };
+    FLT = { f:"all", pg:"", text:"" }; SEL = null; EDIT = null; PHOTO = { pg:0, zoom:100, hidden:PHOTO.hidden }; { var ap0 = allPages(); PHOTO.pg = ap0.length ? ap0[0] : 0; }
     $("fText").value = "";
     VAL = validateAll(ROWS, PORTAL);
     setView("review");
@@ -1084,14 +1102,15 @@ function renderReview(){
     return '<button type="button" class="stat ' + c[3] + (FLT.f === c[0] ? " on" : "") + '" data-f="' + c[0] + '"><div class="n">' + c[1] + '</div><div class="l">' + esc(t(c[2])) + "</div></button>";
   }).join("");
   document.querySelectorAll("#revFilters button[data-f]").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-f") === FLT.f); });
-  var pgs = []; ROWS.forEach(function(r){ if(pgs.indexOf(r.pg) < 0) pgs.push(r.pg); });
+  var pgs = allPages();
+  $("btnAddPages").classList.toggle("hidden", !CAN.add);
   var sel = $("fPage"), cur = FLT.pg;
   sel.innerHTML = '<option value="">' + esc(t("fPageAll")) + "</option>" + pgs.map(function(p){ return '<option value="' + p + '">' + esc(t("pageWord")) + " " + p + "</option>"; }).join("");
   sel.value = cur;
   $("kbdHint").textContent = CAN.edit ? t("kbd") : "";
   var list = ROWS.filter(matches);
   var box = $("rowsBox");
-  if(!list.length){ box.innerHTML = '<div class="card empty">' + esc(t("noRows")) + "</div>"; }
+  if(!list.length){ box.innerHTML = '<div class="card empty">' + esc(t(ROWS.length ? "noRows" : "noRowsTyped")) + "</div>"; }
   else {
     var h = "", prev = null;
     list.forEach(function(r){
@@ -1101,7 +1120,8 @@ function renderReview(){
         var all = ROWS.filter(function(x){ return x.pg + "|" + x.date + "|" + x.bench === gk; });
         var done = all.filter(function(x){ return x.status !== "new"; }).length;
         h += '<div class="grp" data-grp="' + esc(gk) + '"><div class="grp-head"><span>' + esc(t("pageWord")) + " " + r.pg + "</span><span>" + esc(fmtDate(r.date)) + "</span><span>Bench " + esc(r.bench || "—") + "</span><span>" + done + "/" + all.length + '</span><span class="sp"></span>';
-        if(CAN.edit) h += '<button class="btn small" type="button" data-act="checkpage" data-gk="' + esc(gk) + '">' + esc(t("bCheckPage")) + '</button><button class="btn small" type="button" data-act="addrow" data-gk="' + esc(gk) + '">' + esc(t("bAddRow")) + "</button>";
+        if(CAN.edit) h += '<button class="btn small" type="button" data-act="checkpage" data-gk="' + esc(gk) + '">' + esc(t("bCheckPage")) + "</button>";
+        if(CAN.add) h += '<button class="btn small" type="button" data-act="addrow" data-gk="' + esc(gk) + '">' + esc(t("bAddRow")) + "</button>";
         h += "</div>";
         prev = gk;
       }
@@ -1173,7 +1193,7 @@ function editorHtml(r){
   h += f("officer", "fOfficer", '<select id="ed_officer" data-fld="officer">' + opt(LISTS.officers, d.officer, true) + "</select>");
   if(r.note) h += '<div class="wide2 note-box" style="grid-column:1/-1">' + esc(t("doubtNote")) + '<span dir="auto" style="unicode-bidi:plaintext">' + esc(r.note) + "</span></div>";
   h += '<div id="edIssues" style="grid-column:1/-1"></div>';
-  h += '<div class="fbar"><button class="btn primary" type="button" data-act="save" data-id="' + esc(r.id) + '">' + esc(t("bSave")) + '</button><button class="btn" type="button" data-act="cancel">' + esc(t("bCancel")) + "</button></div></div>";
+  h += '<div class="fbar"><button class="btn primary" type="button" data-act="save" data-id="' + esc(r.id) + '">' + esc(t("bSave")) + '</button>' + (CAN.add ? '<button class="btn" type="button" data-act="savenew" data-id="' + esc(r.id) + '">' + esc(t("bSaveNew")) + '</button>' : "") + '<button class="btn" type="button" data-act="cancel">' + esc(t("bCancel")) + "</button></div></div>";
   return h;
 }
 var edTimer = null;
@@ -1258,9 +1278,10 @@ function startEdit(r){
   SEL = r.id; PHOTO.pg = r.pg;
   renderReview();
   var el = document.querySelector('[data-editor="' + r.id + '"]'); if(el) el.scrollIntoView({ block:"center" });
+  if(r.manual && !r.type){ var fe = $("ed_type"); if(fe) fe.focus(); }
   draftIssues();
 }
-async function saveEdit(){
+async function saveEdit(thenNew){
   if(!EDIT || !guard()) return;
   var r = rowById(EDIT.id); if(!r) return;
   var patch = {}, d = EDIT.draft;
@@ -1272,31 +1293,20 @@ async function saveEdit(){
     if(v !== (r[k] || "")) patch[k] = v;
   });
   if(!Object.keys(patch).length){ EDIT = null; renderReview(); return; }
-  patch.edited = true;
+  if(!r.manual) patch.edited = true;
   if(r.status === "checked"){ patch.status = "new"; patch.checkedBy = ""; }
   setBusy(true);
-  try{ await updateRow(r, patch); EDIT = null; afterChange(); toast(t("toSaved")); }
+  var okSave = false;
+  try{ await updateRow(r, patch); EDIT = null; afterChange(); toast(t("toSaved")); okSave = true; }
   catch(e){ toast(t("toFail") + (e && e.message || "")); }
   setBusy(false);
+  if(okSave && thenNew) addRowOnPage(r.pg, r);
 }
 async function addRow(gk){
-  if(!CAN.add){ toast(t("noEditRight")); return; }
-  if(!guard()) return;
   var idxs = []; ROWS.forEach(function(x, i){ if(x.pg + "|" + x.date + "|" + x.bench === gk) idxs.push(i); });
   if(!idxs.length) return;
-  var li = idxs[idxs.length - 1], last = ROWS[li], next = ROWS[li + 1];
-  var seq = next ? (last.seq + next.seq) / 2 : last.seq + 1;
-  var key = "m" + Date.now().toString(36);
-  var d = { batchId:CUR.id, key:key, seq:seq, pg:last.pg, date:last.date, bench:last.bench, serial:"", type:"Crl.P.L.A.", caseNo:"", year:"", title:"", versus:"The State", relief:"", result:"", remarks:"", nature:CUR.nature || "Criminal", officer:CUR.officer, note:"", status:"new", manual:true, createdBy:ME.email, createdAt:TS_(), updatedAt:TS_() };
-  setBusy(true);
-  try{
-    await db.collection(C_ROW).doc(CUR.id + "__" + key).set(d);
-    var r = {}; Object.keys(d).forEach(function(k){ r[k] = d[k]; }); r.id = CUR.id + "__" + key;
-    ROWS.splice(li + 1, 0, r);
-    VAL = validateAll(ROWS, PORTAL);
-    setBusy(false);
-    startEdit(r);
-  }catch(e){ setBusy(false); toast(t("toFail") + (e && e.message || "")); }
+  var last = ROWS[idxs[idxs.length - 1]];
+  return addRowOnPage(last.pg, last);
 }
 
 /* ---------- events ---------- */
@@ -1309,6 +1319,7 @@ $("rowsBox").addEventListener("click", function(e){
     else if(a === "undo") setStatus(r, "new");
     else if(a === "edit") startEdit(r);
     else if(a === "save") saveEdit();
+    else if(a === "savenew") saveEdit(true);
     else if(a === "cancel"){ EDIT = null; renderReview(); }
     else if(a === "checkpage") checkPage(b.getAttribute("data-gk"));
     else if(a === "addrow") addRow(b.getAttribute("data-gk"));
@@ -1316,6 +1327,9 @@ $("rowsBox").addEventListener("click", function(e){
   }
   if(e.target.closest("input,select,textarea,.editor")) return;
   var c = e.target.closest(".rowc"); if(c) selectRow(c.getAttribute("data-id"));
+});
+$("rowsBox").addEventListener("keydown", function(e){
+  if(e.key === "Enter" && (e.ctrlKey || e.metaKey) && EDIT && e.target.closest && e.target.closest(".editor")){ e.preventDefault(); readDraftField(e.target); saveEdit(!!CAN.add); }
 });
 $("rowsBox").addEventListener("input", function(e){ if(e.target.matches("[data-fld]")) readDraftField(e.target); });
 $("rowsBox").addEventListener("change", function(e){ if(e.target.matches("[data-fld]")) readDraftField(e.target); });
@@ -1349,13 +1363,13 @@ document.addEventListener("keydown", function(e){
 });
 
 /* ---------- page photo ---------- */
-function pagesWithRows(){ var o = []; ROWS.forEach(function(r){ if(o.indexOf(r.pg) < 0) o.push(r.pg); }); return o.sort(function(a, b){ return a - b; }); }
+function pagesWithRows(){ return allPages(); }
 function photoKey(pg){ return CUR.id + "|" + pg; }
 function renderPhotoPane(){
   if(!CUR || PHOTO.hidden) return;
   var pane = $("photoPane"), pg = PHOTO.pg, pgs = pagesWithRows(), i = pgs.indexOf(pg);
   var bar = '<div class="photo-bar"><button class="btn small" type="button" data-p="prev" title="' + esc(t("pgPrev")) + '"' + (i <= 0 ? " disabled" : "") + '>‹</button><span class="grow">' + esc(t("pageWord")) + " " + pg + '</span><button class="btn small" type="button" data-p="next" title="' + esc(t("pgNext")) + '"' + (i >= pgs.length - 1 ? " disabled" : "") + '>›</button>' +
-    '<button class="btn small" type="button" data-p="out" title="' + esc(t("zOut")) + '">−</button><button class="btn small" type="button" data-p="in" title="' + esc(t("zIn")) + '">+</button><button class="btn small" type="button" data-p="fit" title="' + esc(t("zFit")) + '">↔</button><button class="btn small" type="button" data-p="full" title="' + esc(t("zFull")) + '">⛶</button></div>';
+    '<button class="btn small" type="button" data-p="out" title="' + esc(t("zOut")) + '">−</button><button class="btn small" type="button" data-p="in" title="' + esc(t("zIn")) + '">+</button><button class="btn small" type="button" data-p="fit" title="' + esc(t("zFit")) + '">↔</button><button class="btn small" type="button" data-p="full" title="' + esc(t("zFull")) + '">⛶</button>' + (CAN.add && pg > 0 ? '<button class="btn small primary" type="button" data-p="addrow">' + esc(t("bRowHere")) + "</button>" : "") + "</div>";
   var k = photoKey(pg), cached = PIMG[k];
   var body;
   if(cached === undefined){
@@ -1379,6 +1393,7 @@ $("photoPane").addEventListener("click", function(e){
   else if(a === "out") PHOTO.zoom = Math.max(50, PHOTO.zoom - 25);
   else if(a === "fit") PHOTO.zoom = 100;
   else if(a === "full"){ openLightbox(); return; }
+  else if(a === "addrow"){ addRowOnPage(PHOTO.pg); return; }
   renderPhotoPane();
 });
 function openLightbox(){
@@ -1495,6 +1510,310 @@ async function runImport(rows){
     res.innerHTML = '<div class="msg err">' + esc(t("impStopped", { x:(e && e.message || ""), a:added })) + "</div>";
   }
   setBusy(false);
+}
+
+/* ============================================================
+   Register from photos / PDF: no JSON file needed.
+   - "New register from photos": choose photos or a PDF, name it, pick the officer -> a register with page photos and no rows.
+   - "Add page photos" inside an open register.
+   - rows are then typed beside the page photo (+ Row on this page / Save and next row), checked and added like any other register.
+   ============================================================ */
+Object.assign(I18N.en, {
+  phTitle:"New register from photos or a PDF", phHint:"No file to prepare: choose the photos (or the PDF) of the register pages, then type the rows beside the page photo. The same checks and the same final step apply.",
+  phNewBtn:"New register from photos / PDF", phAddBtn:"Add page photos", phPanelNew:"New register from photos / PDF", phPanelAdd:"Add page photos to this register",
+  phName:"Register name", phNamePh:"e.g. Mirza Abid Majeed Register — June 2026", phOfficer:"Officer", phNature:"Nature of cases", phStart:"First new page number",
+  phChoose:"Choose photos or a PDF (several allowed)", phChooseHint:"Photos (JPG/PNG) and PDF files. They are shrunk to a readable size on this computer. Turn a sideways page with the ⟲ button before saving.",
+  phNone:"No page yet.", phPages:"{n} pages ready", phReading:"Reading… {a}", phPageN:"Page {n}", phRotate:"Rotate", phRemove:"Remove",
+  phSave:"Save register", phSaveAdd:"Save these pages", phClose:"Close", phCancel:"Cancel",
+  phErrName:"Type a name for the register.", phErrOfficer:"Choose the officer.", phErrNoPages:"Add at least one page.", phErrStart:"Page number {n} already has a photo. Use {m} or higher.",
+  phErrTooMany:"At most {n} pages can be added at a time to one register.", phErrFile:"Could not read: {f}", phErrBig:"This page photo is too detailed to store: {f}",
+  phUploading:"Saving page {a} of {n}…", phDone:"Saved.", phFail:"Stopped: {x}. Pages saved so far: {a}.", phPdfLib:"The PDF reader could not be loaded (internet needed). Try again, or use photos.",
+  bRowHere:"+ Row on this page", bSaveNew:"Save + next row", noRowsTyped:"No rows yet. Open a page photo and press “+ Row on this page”.", finishEdit:"Save or cancel the row you are editing first.",
+  kbd2:"Ctrl+Enter = save and start the next row."
+});
+Object.assign(I18N.ur, {
+  phTitle:"تصویروں یا PDF سے نیا رجسٹر", phHint:"کوئی فائل بنانے کی ضرورت نہیں: رجسٹر کے صفحوں کی تصویریں (یا PDF) چنیں، پھر صفحے کی تصویر کے ساتھ بیٹھ کر قطاریں ٹائپ کریں۔ وہی جانچیں اور وہی آخری مرحلہ لاگو ہوں گے۔",
+  phNewBtn:"تصویروں / PDF سے نیا رجسٹر", phAddBtn:"صفحوں کی تصویریں شامل کریں", phPanelNew:"تصویروں / PDF سے نیا رجسٹر", phPanelAdd:"اس رجسٹر میں صفحوں کی تصویریں شامل کریں",
+  phName:"رجسٹر کا نام", phNamePh:"مثلاً مرزا عابد مجید رجسٹر — جون 2026", phOfficer:"افسر", phNature:"مقدمات کی نوعیت", phStart:"پہلے نئے صفحے کا نمبر",
+  phChoose:"تصویریں یا PDF چنیں (کئی ایک ساتھ)", phChooseHint:"تصویریں (JPG/PNG) اور PDF۔ یہ اسی کمپیوٹر پر پڑھنے لائق سائز میں چھوٹی کی جاتی ہیں۔ الٹا صفحہ محفوظ کرنے سے پہلے ⟲ بٹن سے سیدھا کریں۔",
+  phNone:"ابھی کوئی صفحہ نہیں۔", phPages:"{n} صفحے تیار", phReading:"پڑھ رہا ہے… {a}", phPageN:"صفحہ {n}", phRotate:"گھمائیں", phRemove:"ہٹائیں",
+  phSave:"رجسٹر محفوظ کریں", phSaveAdd:"یہ صفحے محفوظ کریں", phClose:"بند کریں", phCancel:"منسوخ",
+  phErrName:"رجسٹر کا نام لکھیں۔", phErrOfficer:"افسر چنیں۔", phErrNoPages:"کم از کم ایک صفحہ شامل کریں۔", phErrStart:"صفحہ نمبر {n} کی تصویر پہلے سے ہے۔ {m} یا اس سے بڑا نمبر لیں۔",
+  phErrTooMany:"ایک رجسٹر میں ایک بار میں زیادہ سے زیادہ {n} صفحے شامل ہو سکتے ہیں۔", phErrFile:"پڑھی نہیں جا سکی: {f}", phErrBig:"اس صفحے کی تصویر محفوظ کرنے کے لیے بہت بھاری ہے: {f}",
+  phUploading:"صفحہ {a} / {n} محفوظ ہو رہا ہے…", phDone:"محفوظ ہو گیا۔", phFail:"رک گیا: {x}۔ اب تک محفوظ صفحے: {a}۔", phPdfLib:"PDF پڑھنے والا حصہ لوڈ نہیں ہو سکا (انٹرنیٹ چاہیے)۔ دوبارہ کوشش کریں یا تصویریں استعمال کریں۔",
+  bRowHere:"+ اس صفحے پر قطار", bSaveNew:"محفوظ + اگلی قطار", noRowsTyped:"ابھی کوئی قطار نہیں۔ صفحے کی تصویر کھول کر “+ اس صفحے پر قطار” دبائیں۔", finishEdit:"پہلے زیرِ ایڈٹ قطار محفوظ یا منسوخ کریں۔",
+  kbd2:"Ctrl+Enter = محفوظ کر کے اگلی قطار شروع۔"
+});
+
+/* pdf.js 6 uses Map.getOrInsertComputed, which older browsers do not have yet */
+(function(){ [Map, WeakMap].forEach(function(C){ var p = C.prototype;
+  if(!p.getOrInsert) p.getOrInsert = function(k, v){ if(!this.has(k)) this.set(k, v); return this.get(k); };
+  if(!p.getOrInsertComputed) p.getOrInsertComputed = function(k, f){ if(!this.has(k)) this.set(k, f(k)); return this.get(k); }; }); })();
+
+var PH = { mode:"new", list:[], busy:false, msgs:[], name:"", officer:"", nature:"Criminal", start:1, reading:0 };
+
+/* ---------- reading images / PDF pages ---------- */
+function newCanvas(w, h){ var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+function encodeSource(src, w0, h0){
+  var longs = [2000, 1800, 1600, 1400, 1200, 1000], qs = [0.82, 0.72, 0.62];
+  for(var i = 0; i < longs.length; i++){
+    var s = Math.min(1, longs[i] / Math.max(w0, h0)), w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
+    var c = newCanvas(w, h), x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, w, h); x.drawImage(src, 0, 0, w, h);
+    for(var j = 0; j < qs.length; j++){
+      var url = c.toDataURL("image/jpeg", qs[j]);
+      if(url.length <= MAX_IMG - 5000) return { img:url, w:w, h:h, th:thumbOf(c) };
+    }
+  }
+  return null;
+}
+function thumbOf(c){
+  var s = Math.min(1, 200 / Math.max(c.width, c.height)), w = Math.max(1, Math.round(c.width * s)), h = Math.max(1, Math.round(c.height * s));
+  var t = newCanvas(w, h); t.getContext("2d").drawImage(c, 0, 0, w, h); return t.toDataURL("image/jpeg", 0.6);
+}
+function readImageFile(f){
+  return new Promise(function(res, rej){
+    var u = URL.createObjectURL(f), im = new Image();
+    im.onload = function(){ try{ var r = encodeSource(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(u); r ? res(r) : rej(new Error("big")); }catch(e){ URL.revokeObjectURL(u); rej(e); } };
+    im.onerror = function(){ URL.revokeObjectURL(u); rej(new Error("image")); };
+    im.src = u;
+  });
+}
+var PDFJS_BASES = ["https://cdn.jsdelivr.net/npm/pdfjs-dist@6.2.108/build/", "https://unpkg.com/pdfjs-dist@6.2.108/build/"];
+async function loadPdfjs(){
+  if(window.__pdfjsMod) return window.__pdfjsMod;
+  var err = null;
+  for(var i = 0; i < PDFJS_BASES.length; i++){
+    try{
+      var mod = await import(PDFJS_BASES[i] + "pdf.min.mjs");
+      var txt = await (await fetch(PDFJS_BASES[i] + "pdf.worker.min.mjs")).text();
+      mod.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([txt], { type:"text/javascript" }));
+      window.__pdfjsMod = mod; return mod;
+    }catch(e){ err = e; }
+  }
+  throw err || new Error("pdf.js");
+}
+async function readPdfFile(f, onPage){
+  var pdfjs; try{ pdfjs = await loadPdfjs(); }catch(e){ var er = new Error("pdflib"); er.pdflib = true; throw er; }
+  var buf = new Uint8Array(await f.arrayBuffer());
+  var doc = await pdfjs.getDocument({ data:buf }).promise;
+  for(var i = 1; i <= doc.numPages; i++){
+    if(!onPage.room()) { break; }
+    var pg = await doc.getPage(i), v1 = pg.getViewport({ scale:1 }), sc = 2000 / Math.max(v1.width, v1.height), vp = pg.getViewport({ scale:sc });
+    var c = newCanvas(Math.round(vp.width), Math.round(vp.height)), x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+    await pg.render({ canvasContext:x, viewport:vp }).promise;
+    var r = encodeSource(c, c.width, c.height); if(!r) throw new Error("big");
+    onPage.add(r); try{ pg.cleanup(); }catch(e){}
+  }
+  try{ doc.destroy(); }catch(e){}
+}
+function phRoom(){ var used = PH.mode === "add" ? (CUR && CUR.pagesWithPhoto ? CUR.pagesWithPhoto.length : 0) : 0; return MAX_PAGES - used - PH.list.length; }
+
+async function phReadFiles(files){
+  var arr = [].slice.call(files).sort(function(a, b){ return a.name.localeCompare(b.name, undefined, { numeric:true }); });
+  PH.busy = true; PH.msgs = []; phRefresh();
+  for(var i = 0; i < arr.length; i++){
+    var f = arr[i];
+    if(phRoom() <= 0){ PH.msgs.push(t("phErrTooMany", { n:MAX_PAGES })); break; }
+    try{
+      if(/\.pdf$/i.test(f.name) || f.type === "application/pdf"){
+        await readPdfFile(f, { room:function(){ return phRoom() > 0; }, add:function(r){ r.name = f.name; PH.list.push(r); PH.reading = PH.list.length; phRefresh(); } });
+        if(phRoom() <= 0) PH.msgs.push(t("phErrTooMany", { n:MAX_PAGES }));
+      } else if(/^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name)){
+        var r = await readImageFile(f); r.name = f.name; PH.list.push(r);
+      } else PH.msgs.push(t("phErrFile", { f:f.name }));
+    }catch(e){
+      PH.msgs.push(e && e.pdflib ? t("phPdfLib") : (e && e.message === "big" ? t("phErrBig", { f:f.name }) : t("phErrFile", { f:f.name })));
+    }
+    phRefresh();
+    await new Promise(function(r){ setTimeout(r, 0); });
+  }
+  PH.busy = false; phRefresh();
+}
+function rotateItem(i){
+  var it = PH.list[i]; if(!it) return;
+  return new Promise(function(res){
+    var im = new Image();
+    im.onload = function(){
+      var c = newCanvas(im.naturalHeight, im.naturalWidth), x = c.getContext("2d");
+      x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(im, 0, 0);
+      var r = encodeSource(c, c.width, c.height); if(r){ r.name = it.name; PH.list[i] = r; }
+      res();
+    };
+    im.onerror = function(){ res(); };
+    im.src = it.img;
+  });
+}
+
+/* ---------- the panel ---------- */
+function nextFreePage(){ var ap = allPages(); return (ap.length ? ap[ap.length - 1] : 0) + 1; }
+function openPhotoPanel(mode){
+  if(!CAN.add){ toast(t("loadNoPerm")); return; }
+  if(mode === "add" && !CUR) return;
+  PH = { mode:mode, list:[], busy:false, msgs:[], name:"", officer:(CAN.restricted ? CAN.restrictedOfficer : ""), nature:"Criminal", start:(mode === "add" ? nextFreePage() : 1), reading:0, saving:false };
+  var h = '<div class="modal-bg" id="phBg"><div class="modal wide" role="dialog" aria-modal="true"><h3>' + esc(t(mode === "add" ? "phPanelAdd" : "phPanelNew")) + "</h3>";
+  if(mode === "new"){
+    h += '<div class="editor" style="padding:0 0 8px"><div class="wide2"><label for="phName">' + esc(t("phName")) + '</label><input id="phName" maxlength="120" placeholder="' + esc(t("phNamePh")) + '"></div>' +
+      '<div><label for="phOfficer">' + esc(t("phOfficer")) + '</label><select id="phOfficer">' + opt(LISTS.officers, PH.officer, true) + "</select></div>" +
+      '<div><label for="phNature">' + esc(t("phNature")) + '</label><select id="phNature">' + opt(LISTS.natures, "Criminal", false) + "</select></div></div>";
+  } else {
+    h += '<div class="editor" style="padding:0 0 8px"><div><label for="phStart">' + esc(t("phStart")) + '</label><input id="phStart" type="number" min="1" max="999" value="' + PH.start + '"></div></div>';
+  }
+  h += '<label for="phFiles" style="font-weight:700">' + esc(t("phChoose")) + '</label><input type="file" id="phFiles" multiple accept="image/*,.pdf,application/pdf" style="display:block;margin:6px 0;max-width:100%"><div class="hint">' + esc(t("phChooseHint")) + "</div>" +
+    '<div id="phStat" class="hint" style="margin-top:8px"></div><div id="phMsgs"></div><div class="thumbs" id="phThumbs"></div><div id="phProg" class="hint" style="margin-top:6px"></div>' +
+    '<div class="fbar"><button class="btn" type="button" id="phCancel">' + esc(t("phCancel")) + '</button><button class="btn primary" type="button" id="phSave" disabled>' + esc(t(mode === "add" ? "phSaveAdd" : "phSave")) + "</button></div></div></div>";
+  $("modalHost").innerHTML = h;
+  $("phCancel").addEventListener("click", function(){ if(!PH.busy && !PH.saving) $("modalHost").innerHTML = ""; });
+  $("phFiles").addEventListener("change", function(e){ var fs = e.target.files; if(fs && fs.length) phReadFiles(fs).then(function(){ try{ e.target.value = ""; }catch(x){} }); });
+  $("phSave").addEventListener("click", phSave);
+  $("phThumbs").addEventListener("click", function(e){
+    var b = e.target.closest("button[data-th]"); if(!b || PH.busy || PH.saving) return;
+    var i = +b.getAttribute("data-i");
+    if(b.getAttribute("data-th") === "rm"){ PH.list.splice(i, 1); phRefresh(); }
+    else if(b.getAttribute("data-th") === "rot"){ PH.busy = true; phRefresh(); rotateItem(i).then(function(){ PH.busy = false; phRefresh(); }); }
+  });
+  if($("phName")) $("phName").addEventListener("input", function(e){ PH.name = e.target.value; phRefresh(true); });
+  if($("phOfficer")) $("phOfficer").addEventListener("change", function(e){ PH.officer = e.target.value; phRefresh(true); });
+  if($("phNature")) $("phNature").addEventListener("change", function(e){ PH.nature = e.target.value; });
+  if($("phStart")) $("phStart").addEventListener("input", function(e){ PH.start = parseInt(e.target.value, 10) || 0; phRefresh(true); });
+  if(CAN.restricted && $("phOfficer")){ $("phOfficer").disabled = true; }
+  phRefresh();
+}
+function phStartNum(){ return PH.mode === "add" ? PH.start : 1; }
+function phProblem(){
+  if(PH.mode === "new"){
+    if(!str(PH.name, 120)) return t("phErrName");
+    if(!PH.officer) return t("phErrOfficer");
+  } else {
+    var n = PH.start;
+    if(!(n >= 1 && n + Math.max(PH.list.length, 1) - 1 <= 999)) return t("phErrStart", { n:n, m:nextFreePage() });
+    var have = (CUR && CUR.pagesWithPhoto) || [];
+    for(var i = 0; i < PH.list.length; i++) if(have.indexOf(n + i) >= 0) return t("phErrStart", { n:n + i, m:nextFreePage() });
+  }
+  if(!PH.list.length) return t("phErrNoPages");
+  return "";
+}
+function phRefresh(keepThumbs){
+  if(!$("phThumbs")) return;
+  var st = $("phStat"), prob = phProblem();
+  st.textContent = PH.busy ? t("phReading", { a:PH.list.length }) : (PH.list.length ? t("phPages", { n:PH.list.length }) : t("phNone"));
+  $("phMsgs").innerHTML = PH.msgs.map(function(m){ return '<div class="msg err">' + esc(m) + "</div>"; }).join("") + (!PH.busy && PH.list.length && prob ? '<div class="msg warn">' + esc(prob) + "</div>" : "");
+  if(!keepThumbs){
+    var s0 = phStartNum();
+    $("phThumbs").innerHTML = PH.list.map(function(it, i){
+      return '<div class="thumb"><img alt="" src="' + it.th + '"><div class="tn">' + esc(t("phPageN", { n:s0 + i })) + '</div><div class="tb"><button class="btn small" type="button" data-th="rot" data-i="' + i + '" title="' + esc(t("phRotate")) + '">⟲</button><button class="btn small dng" type="button" data-th="rm" data-i="' + i + '" title="' + esc(t("phRemove")) + '">✖</button></div></div>';
+    }).join("");
+  }
+  var sv = $("phSave"); if(sv) sv.disabled = PH.busy || PH.saving || !!prob;
+}
+/* writes the pages in chunks of at most 5.5M characters; returns the list of page numbers that were written */
+async function uploadPages(id, items, startNo, prog, done){
+  var chunk = [], size = 0, by = ME.email, TS = TS_ ? TS_() : firebase.firestore.FieldValue.serverTimestamp();
+  async function flush(){
+    if(!chunk.length) return;
+    var b = db.batch();
+    chunk.forEach(function(p){ b.set(db.collection(C_PAGE).doc(id + "__p" + p.pg), { batchId:id, pg:p.pg, img:p.img, w:p.w, h:p.h, createdBy:by, createdAt:TS }); });
+    await b.commit();
+    chunk.forEach(function(p){ done.push(p.pg); }); chunk = []; size = 0;
+    prog.textContent = t("phUploading", { a:done.length, n:items.length });
+  }
+  for(var i = 0; i < items.length; i++){
+    var p = { pg:startNo + i, img:items[i].img, w:items[i].w, h:items[i].h };
+    if(size + p.img.length > 5500000) await flush();
+    chunk.push(p); size += p.img.length;
+  }
+  await flush();
+  return done;
+}
+async function phSave(){
+  if(PH.busy || PH.saving || phProblem()) return;
+  PH.saving = true; phRefresh(true);
+  var prog = $("phProg"), by = ME.email, items = PH.list.slice(), done = [], id;
+  try{
+    if(PH.mode === "new"){
+      id = newBatchId(); var TS = firebase.firestore.FieldValue.serverTimestamp(), n = items.length;
+      await db.collection(C_BATCH).doc(id).set({ name:str(PH.name, 120), officer:PH.officer, nature:PH.nature || "Criminal", note:"", sourceFile:"photos", formatVersion:1,
+        rowCount:0, pageCount:n, photoCount:n, pagesWithPhoto:[], importedCount:0, status:"loading", createdBy:by, createdAt:TS, updatedBy:by, updatedAt:TS });
+      await uploadPages(id, items, 1, prog, done);
+      done.sort(function(a, b){ return a - b; });
+      await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, updatedBy:by, updatedAt:TS_() });
+      $("modalHost").innerHTML = "";
+      items.forEach(function(it, i){ PIMG[id + "|" + (i + 1)] = it.img; });
+      await loadBatches(); await openBatch(id); toast(t("phDone"));
+    } else {
+      id = CUR.id; var s0 = PH.start;
+      try{ await uploadPages(id, items, s0, prog, done); }
+      catch(err){
+        if(done.length){ try{ await phRecordPages(id, done); }catch(e2){} }
+        throw err;
+      }
+      await phRecordPages(id, done);
+      items.forEach(function(it, i){ PIMG[id + "|" + (s0 + i)] = it.img; });
+      $("modalHost").innerHTML = "";
+      PHOTO.pg = s0; renderReview(); toast(t("phDone"));
+    }
+    PH.saving = false;
+  }catch(err){
+    PH.saving = false;
+    if($("phProg")) $("phProg").innerHTML = '<span style="color:var(--danger)">' + esc(t("phFail", { x:(err && err.message || ""), a:done.length })) + "</span>";
+    phRefresh(true);
+    if(PH.mode === "new") loadBatches();
+  }
+}
+/* keep the register's own list of pages with photos (and the counts) up to date */
+function phRecordPages(id, done){
+  var have = (CUR && CUR.pagesWithPhoto ? CUR.pagesWithPhoto.slice() : []);
+  done.forEach(function(p){ if(have.indexOf(p) < 0) have.push(p); });
+  have.sort(function(a, b){ return a - b; });
+  return db.collection(C_BATCH).doc(id).update({ pagesWithPhoto:have, photoCount:have.length, updatedBy:ME.email, updatedAt:TS_() }).then(function(){
+    CUR.pagesWithPhoto = have; CUR.photoCount = have.length;
+    return syncBatchCounts();
+  });
+}
+function allPages(){
+  var o = []; ROWS.forEach(function(r){ if(o.indexOf(r.pg) < 0) o.push(r.pg); });
+  ((CUR && CUR.pagesWithPhoto) || []).forEach(function(p){ if(o.indexOf(p) < 0) o.push(p); });
+  return o.sort(function(a, b){ return a - b; });
+}
+/* counts shown in the registers list follow rows and pages added later */
+function syncBatchCounts(){
+  if(!CUR || !(CAN.add || CAN.edit)) return Promise.resolve();
+  var upd = {}, np = allPages().length;
+  if(CUR.rowCount !== ROWS.length) upd.rowCount = ROWS.length;
+  if(CUR.pageCount !== np) upd.pageCount = np;
+  if(CUR.status === "imported" && ROWS.some(function(r){ return r.status === "new" || r.status === "checked"; })) upd.status = "open";
+  if(!Object.keys(upd).length) return Promise.resolve();
+  var d = {}; Object.keys(upd).forEach(function(k){ d[k] = upd[k]; }); d.updatedBy = ME.email; d.updatedAt = TS_();
+  return db.collection(C_BATCH).doc(CUR.id).update(d).then(function(){ Object.keys(upd).forEach(function(k){ CUR[k] = upd[k]; }); }).catch(function(e){ console.warn("counts", e); });
+}
+
+/* ---------- typing rows beside the photo ---------- */
+async function addRowOnPage(pg, afterRow){
+  if(!CAN.add){ toast(t("noEditRight")); return; }
+  if(!CUR || !(pg >= 1)) return;
+  if(EDIT){ toast(t("finishEdit")); return; }
+  if(!guard()) return;
+  var li = -1;
+  if(afterRow){ li = ROWS.indexOf(afterRow); }
+  else ROWS.forEach(function(x, i){ if(x.pg <= pg) li = i; });
+  var last = li >= 0 ? ROWS[li] : null, next = ROWS[li + 1] || null;
+  var seq = last ? (next ? (last.seq + next.seq) / 2 : last.seq + 1) : (next ? next.seq - 1 : 1);
+  var onPage = ROWS.filter(function(x){ return x.pg === pg; });
+  var ref = afterRow || (onPage.length ? onPage[onPage.length - 1] : last);
+  var serial = ref && ref.pg === pg && /^\d+$/.test(String(ref.serial)) ? String(+ref.serial + 1) : "";
+  var key = "m" + Date.now().toString(36) + Math.random().toString(36).slice(2, 4);
+  var d = { batchId:CUR.id, key:key, seq:seq, pg:pg, date:ref ? ref.date : "", bench:ref ? ref.bench : "", serial:serial, type:"", caseNo:"", year:"", title:"", versus:(ref && ref.versus) || "The State",
+    relief:"", result:"", remarks:"", nature:CUR.nature || "Criminal", officer:CUR.officer, note:"", status:"new", manual:true, createdBy:ME.email, createdAt:TS_(), updatedAt:TS_() };
+  setBusy(true);
+  try{
+    await db.collection(C_ROW).doc(CUR.id + "__" + key).set(d);
+    var r = {}; Object.keys(d).forEach(function(k){ r[k] = d[k]; }); r.id = CUR.id + "__" + key;
+    ROWS.splice(li + 1, 0, r);
+    VAL = validateAll(ROWS, PORTAL);
+    setBusy(false);
+    syncBatchCounts();
+    PHOTO.pg = pg;
+    startEdit(r);
+  }catch(e){ setBusy(false); toast(t("toFail") + (e && e.message || "")); }
 }
 
 

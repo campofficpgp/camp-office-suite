@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <style>
 html,body{overflow-x:hidden;}
@@ -456,6 +456,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 .sl-empty{ font-size:13px; color:var(--muted); padding:6px 2px; }
 .sl-input{ width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font:inherit; background:var(--card); color:var(--text); box-sizing:border-box; }
 .sl-chk{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:13px; }
+  .no-add .needs-add, .no-edit .needs-edit, .no-export .needs-export, .no-ai .needs-ai{ display:none !important; }
 </style>
 <style>
 .userbar-ce .user-chip-sm{display:flex;align-items:center;gap:6px;color:var(--text);background:transparent;border:0;padding:0;font-size:12.5px}
@@ -607,14 +608,14 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 
   <div class="cl-card no-print">
     <div class="cl-bar">
-      <button class="cl-btn gold" id="btnAdd" onclick="openAddScan()">＋ New scan / نئی اسکین</button>
-      <button class="cl-btn ghost" id="btnUndo" onclick="histUndo()" title="Undo last saved change / آخری محفوظ تبدیلی واپس">↶ Undo</button>
-      <button class="cl-btn ghost" id="btnRedo" onclick="histRedo()" title="Redo / دوبارہ">↷ Redo</button>
+      <button class="cl-btn gold needs-add" id="btnAdd" onclick="openAddScan()">＋ New scan / نئی اسکین</button>
+      <button class="cl-btn ghost needs-edit" id="btnUndo" onclick="histUndo()" title="Undo last saved change / آخری محفوظ تبدیلی واپس">↶ Undo</button>
+      <button class="cl-btn ghost needs-edit" id="btnRedo" onclick="histRedo()" title="Redo / دوبارہ">↷ Redo</button>
       <span class="cl-sep"></span>
-      <button class="cl-btn ghost" onclick="doPrint()">🖨 Print / پرنٹ</button>
-      <button class="cl-btn ghost" onclick="exportList('pdf')">⬇ PDF</button>
-      <button class="cl-btn ghost" onclick="exportList('xlsx')">⬇ Excel</button>
-      <button class="cl-btn ghost" onclick="exportList('docx')">⬇ Word</button>
+      <button class="cl-btn ghost needs-export" onclick="doPrint()">🖨 Print / پرنٹ</button>
+      <button class="cl-btn ghost needs-export" onclick="exportList('pdf')">⬇ PDF</button>
+      <button class="cl-btn ghost needs-export" onclick="exportList('xlsx')">⬇ Excel</button>
+      <button class="cl-btn ghost needs-export" onclick="exportList('docx')">⬇ Word</button>
     </div>
     <div id="actMsg" class="cl-msg" style="display:none"></div>
   </div>
@@ -707,7 +708,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
         <div class="cl-field full"><label for="fOpText">Opinion details / رائے کی تفصیل</label><textarea id="fOpText" rows="2" placeholder="Reasons / گراؤنڈز" dir="auto"></textarea><input type="hidden" id="fOpAi"></div>
         <div class="cl-field full" id="aiRow">
           <div class="sc-ai">
-            <button type="button" class="cl-btn gold" id="btnAi" onclick="aiDraft()">✨ AI short opinion draft / AI سے مختصر رائے کا مسودہ</button>
+            <button type="button" class="cl-btn gold needs-ai" id="btnAi" onclick="aiDraft()">✨ AI short opinion draft / AI سے مختصر رائے کا مسودہ</button>
             <label class="sc-ai-lang" for="aiLang">Language / زبان <select id="aiLang"><option value="en">English</option><option value="ur">اردو</option></select></label>
           </div>
           <div class="sc-ai-note">Uses the judgment text read above (press “Read &amp; fill the details” or OCR first). It is only a draft for the officer — it does not go anywhere until you press “Use”. / یہ صرف افسر کے لیے مسودہ ہے؛ «استعمال کریں» دبانے تک کہیں نہیں جاتا۔</div>
@@ -878,7 +879,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 var storage = null;
 try{ storage = firebase.storage(); }catch(e){ console.error('storage', e); }
 
-var CTX = { user:null, canWrite:false, canDelete:false, canLists:false };
+var CTX = { user:null, canAdd:false, canEdit:false, canDelete:false, canLists:false, canExport:false, canAi:false };   /* all from the user's ticks (camp-perm.js) */
 var SCANS = [];
 /* Built-in starter lists — used ONLY when the website's own lists (Firestore) have nothing yet.
    Real lists come from the same places as the other pages:
@@ -1122,7 +1123,7 @@ function renderList(reset){
       '<td data-l="Pages / صفحات" class="cl-c">' + (s.pages ? esc(s.pages) : '—') + '<span class="sc-sub">' + (s.fileSize ? mb(s.fileSize) : '') + '</span></td>' +
       '<td class="sc-act sc-actcol">' +
         '<button class="go" data-a="open" data-i="' + i + '" title="Open / کھولیں">👁 Open</button> ' +
-        (CTX.canWrite ? '<button data-a="edit" data-i="' + i + '" title="Edit / ترمیم">✎</button> ' : '') +
+        (CTX.canEdit ? '<button data-a="edit" data-i="' + i + '" title="Edit / ترمیم">✎</button> ' : '') +
         (CTX.canDelete ? '<button class="del" data-a="del" data-i="' + i + '" title="Delete / حذف">🗑</button>' : '') +
       '</td></tr>';
   }).join('');
@@ -1219,6 +1220,7 @@ function openListManage(key){
 function addListRow(){ var r = listRow(''); $('lmItems').appendChild(r); r.querySelector('input').focus(); }
 function closeListManage(){ $('listBg').classList.remove('show'); curList = null; }
 function saveListManage(){
+  if(!CTX.canLists) return;
   if(!curList) return;
   var def = LIST_DEFS[curList], vals = [];
   document.querySelectorAll('#lmItems input').forEach(function(i){ var v = i.value.trim(); if(v && vals.indexOf(v) === -1) vals.push(v); });
@@ -1718,7 +1720,7 @@ function setForm(d){
   showLinkRow();
 }
 function openAddScan(){
-  if(!CTX.canWrite){ showAct('❌ ' + bi('آپ کو نئی اسکین محفوظ کرنے کی اجازت نہیں (صرف ڈیٹا انٹری/ایڈمن)۔', 'You are not allowed to add scans (Data Entry / Admin only).'), 'err'); return; }
+  if(!CTX.canAdd){ showAct('❌ ' + bi('آپ کو نئی اسکین محفوظ کرنے کی اجازت نہیں (صرف ڈیٹا انٹری/ایڈمن)۔', 'You are not allowed to add scans (Data Entry / Admin only).'), 'err'); return; }
   SC.mode = 'add'; SC.editId = null; SC.builtPdf = null; SC.queue = null; SC.qi = 0; SC.src = null; SC.savedN = 0; NEWIDS = {}; qBanner('');
   clearParts(true);
   fillForm();
@@ -1734,7 +1736,7 @@ function openAddScan(){
   caseMatchHide(); caseMatchShow();
 }
 function openEditScan(s){
-  if(!CTX.canWrite) return;
+  if(!CTX.canEdit) return;
   SC.mode = 'edit'; SC.editId = s.id; SC.builtPdf = null; SC.queue = null; SC.qi = 0; SC.src = null;
   clearParts(true);
   fillForm();
@@ -2145,6 +2147,7 @@ function suggestLink(){
 /* copies the opinion into the judgment record it is linked to (this is what the Inspection proformas will read) */
 async function syncOpinion(d, opId){
   if(d.docType !== 'Opinion' || !d.linkedTo) return '';
+  if(!CTX.canEdit) return '⚠ ' + bi('رائے الگ محفوظ ہوئی؛ جڑے ہوئے فیصلے میں شامل نہیں ہوئی کیونکہ آپ کو ایڈٹ کی اجازت نہیں۔', 'The opinion was saved on its own; it was not added to the linked judgment because you do not have the Edit permission.');
   var j = SCANS.filter(function(s){ return s.id === d.linkedTo; })[0];
   if(!j) return '⚠ ' + bi('جڑا ہوا فیصلہ نہیں ملا؛ رائے الگ محفوظ ہوئی۔', 'The linked judgment was not found; the opinion was saved on its own.');
   var keys = ['opinionStatus','opinionBy','opinionDate','opinionText','acDate','scType','scNo','scYear'], patch = {}, before = {}, clash = [];
@@ -2217,6 +2220,7 @@ function aiShow(res){
   $('aiClose').onclick = function(){ box.style.display = 'none'; };
 }
 async function aiDraft(){
+  if(!CTX.canAi) return;
   if(AI.busy) return;
   var text = $('fOcr').value.trim();
   if(text.length < 300){ showModal('⚠ ' + bi('پہلے «پڑھ کر خود تفصیل بھریں» یا OCR دبائیں تاکہ فیصلے کا متن موجود ہو۔', 'First press “Read & fill the details” or OCR so the judgment text is available.'), 'err'); return; }
@@ -2335,7 +2339,7 @@ function dupNote(d){
 }
 function saveScan(){
   if(SC.busy) return;
-  if(!CTX.canWrite){ showModal('❌ ' + bi('اجازت نہیں۔', 'Not allowed.'), 'err'); return; }
+  if(SC.mode === 'add' ? !CTX.canAdd : !CTX.canEdit){ showModal('❌ ' + bi('اجازت نہیں۔', 'Not allowed.'), 'err'); return; }
   var d = getForm(), bad = validate(d);
   if(SC.mode === 'add' && !PARTS.length) bad.unshift(bi('فائل یا تصویریں', 'File or photos'));
   if(bad.length){ showModal('⚠ ' + bi('یہ درست کریں: ', 'Please fix: ') + bad.join(' · '), 'err'); return; }
@@ -2415,11 +2419,12 @@ function applyHist(h, vals, label){
   var full = Object.assign({}, vals, { updatedBy: CTX.user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
   return db.collection('scans').doc(h.id).update(full).then(function(){ showAct('✅ ' + label, 'good'); }).catch(function(err){ showAct('❌ ' + esc(err.code || err.message || err), 'err'); });
 }
-function histUndo(){ var h = HIST.pop(); if(!h) return; FUT.push(h); histBtns(); applyHist(h, h.before, bi('تبدیلی واپس کر دی گئی۔', 'Change undone.')); }
-function histRedo(){ var h = FUT.pop(); if(!h) return; HIST.push(h); histBtns(); applyHist(h, h.after, bi('تبدیلی دوبارہ لگا دی گئی۔', 'Change re-applied.')); }
+function histUndo(){ if(!CTX.canEdit) return; var h = HIST.pop(); if(!h) return; FUT.push(h); histBtns(); applyHist(h, h.before, bi('تبدیلی واپس کر دی گئی۔', 'Change undone.')); }
+function histRedo(){ if(!CTX.canEdit) return; var h = FUT.pop(); if(!h) return; HIST.push(h); histBtns(); applyHist(h, h.after, bi('تبدیلی دوبارہ لگا دی گئی۔', 'Change re-applied.')); }
 
 /* ---------- Print / PDF / Word / Excel of the list on screen ---------- */
 function doPrint(){
+  if(!CTX.canExport) return;
   if(!LIST_VIEW.length){ showAct('❌ ' + bi('پرنٹ کے لیے کوئی دستاویز نہیں۔', 'Nothing to print.'), 'err'); return; }
   window.print();
 }
@@ -2432,6 +2437,7 @@ function exModel(){
 }
 function exBase(){ return 'Scanning_Desk_List_' + todayIso(); }
 async function exportList(kind){
+  if(!CTX.canExport) return;
   if(!LIST_VIEW.length){ showAct('❌ ' + bi('ڈاؤن لوڈ کے لیے کوئی دستاویز نہیں۔', 'Nothing to download.'), 'err'); return; }
   showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
   try{
@@ -2555,14 +2561,18 @@ auth.onAuthStateChanged(function(user){
     var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
     var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
     CTX.user = {uid:user.uid, email:user.email, role:r2};
-    CTX.canWrite = isAdm || r2 === 'data_entry';
-    CTX.canDelete = isAdm;
-    CTX.canLists = isAdm;
+    if(window.CampPerm && !CampPerm.init(u, 'scanning')){ return; }   /* no View tick: the page stays closed */
+    var P = function(pg, act){ return window.CampPerm ? CampPerm.can(u, pg, act) : isAdm; };
+    CTX.canAdd = P('scanning', 'a'); CTX.canEdit = P('scanning', 'e'); CTX.canDelete = P('scanning', 'd');
+    CTX.canExport = P('scanning', 'x'); CTX.canAi = P('scanning', 'ai'); CTX.canLists = P('lists', 'l');
     document.body.classList.toggle('no-lists', !CTX.canLists);
+    document.body.classList.toggle('no-add', !CTX.canAdd);
+    document.body.classList.toggle('no-edit', !CTX.canEdit);
+    document.body.classList.toggle('no-export', !CTX.canExport);
+    document.body.classList.toggle('no-ai', !CTX.canAi);
     $('ceUserEmail').textContent = user.email;
     var rn = ROLE_NAMES[r2] || [r2, r2];
     $('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
-    if(!CTX.canWrite) $('btnAdd').title = 'Viewer: adding is not allowed';
     startLiveData();
   }).catch(function(err){ gate('خرابی', 'Error', err.message, true); });
 });

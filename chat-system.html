@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -231,6 +231,7 @@ html,body{overflow-x:hidden;}
   .theme-swatch:hover{ transform:scale(1.08); }
   .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
 
+  .no-send .needs-send{ display:none !important; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -296,7 +297,7 @@ html,body{overflow-x:hidden;}
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="upload-note" id="uploadNote"></div>
-    <div class="chat-input-bar">
+    <div class="chat-input-bar needs-send">
       <div class="chat-toolbar-row">
         <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(this)">
         <button class="icon-btn" onclick="document.getElementById('fileInput').click()" title="Attach file">📎</button>
@@ -391,7 +392,7 @@ html,body{overflow-x:hidden;}
   var db = firebase.firestore();
   var CLOUDINARY_CLOUD_NAME = "rjsudteo";
   var CLOUDINARY_UPLOAD_PRESET = "t8euf8jm";
-  var CURRENT_USER = null, IS_ADMIN = false, chatMsgs = [];
+  var CURRENT_USER = null, IS_ADMIN = false, CAN_SEND = false, chatMsgs = [];   /* IS_ADMIN = may delete messages; both from the user's ticks (camp-perm.js) */
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
   function esc(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -445,6 +446,7 @@ html,body{overflow-x:hidden;}
   });
 
   function postChatMessage(extra){
+    if(!CAN_SEND) return Promise.reject(new Error('You do not have permission to send messages'));
     if(!CURRENT_USER) return Promise.reject(new Error('not signed in'));
     var payload = {
       senderUid: CURRENT_USER.uid,
@@ -606,7 +608,10 @@ html,body{overflow-x:hidden;}
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
-      IS_ADMIN = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      if(window.CampPerm && !CampPerm.init(u, 'chat')){ return; }   /* no View tick: the page stays closed */
+      IS_ADMIN = window.CampPerm ? CampPerm.can(u, 'chat', 'd') : (legacyAdmin || r2 === 'admin' || r2 === 'super_admin');
+      CAN_SEND = window.CampPerm ? CampPerm.can(u, 'chat', 'a') : true;
+      document.body.classList.toggle('no-send', !CAN_SEND);
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

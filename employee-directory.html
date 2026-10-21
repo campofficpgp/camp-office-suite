@@ -16,7 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -206,6 +206,7 @@ body.is-super .super-only{ display:inline-block !important; }
   .theme-swatch:hover{ transform:scale(1.08); }
   .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
 
+  .no-add .needs-add, .no-edit .needs-edit, .no-export .needs-export, .no-import .needs-import{ display:none !important; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -275,8 +276,8 @@ body.is-super .super-only{ display:inline-block !important; }
       </div>
       <div class="count" id="count"></div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <div class="btn ghost" id="addToggleBtn" onclick="toggleAddForm()" style="display:inline-block; cursor:pointer;" data-en="+ Add New Employee" data-ur="+ نیا ایمپلائی شامل کریں">+ Add New Employee</div>
-        <label class="btn ghost super-only" style="cursor:pointer;"><span data-en="⬆ Import employees (file)" data-ur="⬆ ایمپلائیز فائل سے شامل کریں">⬆ Import employees (file)</span><input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importEmployeesFile(this)"></label>
+        <div class="btn ghost needs-add" id="addToggleBtn" onclick="toggleAddForm()" style="display:inline-block; cursor:pointer;" data-en="+ Add New Employee" data-ur="+ نیا ایمپلائی شامل کریں">+ Add New Employee</div>
+        <label class="btn ghost needs-import" style="cursor:pointer;"><span data-en="⬆ Import employees (file)" data-ur="⬆ ایمپلائیز فائل سے شامل کریں">⬆ Import employees (file)</span><input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importEmployeesFile(this)"></label>
       </div>
     </div>
 
@@ -426,9 +427,9 @@ body.is-super .super-only{ display:inline-block !important; }
       <div class="disclaimer" data-en="Personal data only — pay & allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in." data-ur="صرف ذاتی ڈیٹا — تنخواہ اور الاؤنسز آپ کی ہدایت کے مطابق شامل نہیں۔ والد کا نام سب کے لیے خالی ہے — یہ RI4720 پے رول فائل میں کہیں موجود نہیں؛ اگر بھرنا ہے تو الگ سے بھیج دیں۔">Personal data only — pay &amp; allowances excluded per your instruction. Father Name is blank for everyone — it is not present anywhere in the RI4720 payroll file; send it separately if you want it filled in.</div>
 
       <div class="actions">
-        <div class="btn primary" onclick="window.print()" style="cursor:pointer;" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
-        <div class="btn ghost" onclick="downloadProfilePdf()" style="cursor:pointer;" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
-        <div class="btn ghost" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
+        <div class="btn primary needs-export" onclick="window.print()" style="cursor:pointer;" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
+        <div class="btn ghost needs-export" onclick="downloadProfilePdf()" style="cursor:pointer;" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
+        <div class="btn ghost needs-edit" onclick="openEditForm()" style="cursor:pointer;" data-en="Edit Profile" data-ur="پروفائل میں تبدیلی">Edit Profile</div>
       </div>
     </div>
   </div>
@@ -643,6 +644,7 @@ body.is-super .super-only{ display:inline-block !important; }
     });
   }
   function downloadProfilePdf(){
+    if(!CAN_EXPORT) return;
     var pers = (document.getElementById('pPers').textContent || '').trim();
     if(!pers || pers === '—'){
       alert('پہلے ملازم منتخب کریں / Please select an employee first');
@@ -669,6 +671,7 @@ body.is-super .super-only{ display:inline-block !important; }
   });
 
   function toggleAddForm(){
+    if(!CAN_ADD) return;
     document.getElementById('addForm').classList.toggle('open');
   }
 
@@ -695,6 +698,7 @@ body.is-super .super-only{ display:inline-block !important; }
   }
 
   function saveNewEmployee(){
+    if(!CAN_ADD) return;
     var pers = document.getElementById('nPers').value.trim();
     var name = document.getElementById('nName').value.trim();
     if(!pers || !name){
@@ -742,6 +746,7 @@ body.is-super .super-only{ display:inline-block !important; }
   }
 
   function openEditForm(){
+    if(!CAN_EDIT) return;
     var pers = document.getElementById('pPers').textContent;
     var e = EMP.find(function(x){ return x.pers === pers; });
     if(!e){
@@ -772,6 +777,7 @@ body.is-super .super-only{ display:inline-block !important; }
   }
 
   function saveEditEmployee(){
+    if(!CAN_EDIT) return;
     var pers = document.getElementById('uPersHidden').value;
     var e = EMP.find(function(x){ return x.pers === pers; });
     if(!e) return;
@@ -816,6 +822,7 @@ body.is-super .super-only{ display:inline-block !important; }
   var auth = firebase.auth();
   var db = firebase.firestore();
   var CURRENT_USER = null, PENDING_SHOW = null, FIRST_LOAD = true;
+  var CAN_ADD = false, CAN_EDIT = false, CAN_EXPORT = false, CAN_IMPORT = false;   /* from the user's ticks (camp-perm.js) */
   var ROLE_NAMES = { super_admin:['Super Admin','سپر ایڈمن'], admin:['Admin','ایڈمن'], data_entry:['Data Entry','ڈیٹا انٹری'], viewer:['Viewer','ناظر'] };
 
   function empDocId(pers){ return String(pers).replace(/[\/\.#\[\]$\s]/g,'_'); }
@@ -829,6 +836,7 @@ body.is-super .super-only{ display:inline-block !important; }
 
   /* One-time import (Super Admin): choose the employees JSON file kept on the office computer. */
   function importEmployeesFile(input){
+    if(!CAN_IMPORT){ input.value = ''; return; }
     var f = input.files && input.files[0]; if(!f) return;
     var rd = new FileReader();
     rd.onload = function(ev){
@@ -880,12 +888,19 @@ body.is-super .super-only{ display:inline-block !important; }
       var legacyAdmin = u.role === 'admin';
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       var isAdm = legacyAdmin || ((r2 === 'admin' || r2 === 'super_admin') && approved);
-      if(!isAdm){
+      if(!approved && !legacyAdmin){ gate('رسائی ابھی منظور نہیں', 'Access not approved yet', 'آپ کا اکاؤنٹ ابھی منظور نہیں ہوا یا معطل ہے۔ Administrator سے رابطہ کریں۔', true); return; }
+      if(window.CampPerm){ if(!CampPerm.init(u, 'employees')){ return; } }   /* no View tick: the page stays closed */
+      else if(!isAdm){
         gate('صرف Admin کے لیے', 'Admin only', 'ایمپلائیز کے ریکارڈ میں ذاتی معلومات (شناختی کارڈ، بینک اکاؤنٹ) ہیں، اس لیے یہ صفحہ صرف Admin / Super Admin کھول سکتے ہیں۔', true);
         return;
       }
       CURRENT_USER = { uid: user.uid, email: user.email, role: r2 };
-      document.body.classList.toggle('is-super', r2 === 'super_admin');
+      var P = function(act){ return window.CampPerm ? CampPerm.can(u, 'employees', act) : isAdm; };
+      CAN_ADD = P('a'); CAN_EDIT = P('e'); CAN_EXPORT = P('x'); CAN_IMPORT = window.CampPerm ? P('i') : r2 === 'super_admin';
+      document.body.classList.toggle('no-add', !CAN_ADD);
+      document.body.classList.toggle('no-edit', !CAN_EDIT);
+      document.body.classList.toggle('no-export', !CAN_EXPORT);
+      document.body.classList.toggle('no-import', !CAN_IMPORT);
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

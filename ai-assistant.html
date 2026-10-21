@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -940,6 +940,10 @@ html,body{overflow-x:hidden;}
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
       var isAdm = legacyAdmin || r2 === 'admin' || r2 === 'super_admin';
+      if(window.CampPerm){
+        if(!CampPerm.init(u, 'ai-assistant')){ return; }   /* no View tick: the page stays closed */
+        isAdm = CampPerm.can(u, 'ai-assistant', 'ai');       /* the AI tick decides who may actually use it */
+      }
       if(!isAdm){
         gate('یہ صفحہ صرف ایڈمن کے لیے ہے', 'This page is Admin-only', 'AI Assistant فی الحال صرف Admin/Super Admin استعمال کر سکتے ہیں۔', true);
         return;

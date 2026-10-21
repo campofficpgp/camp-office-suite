@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -141,6 +141,7 @@ html,body{overflow-x:hidden;}
   .theme-swatch:hover{ transform:scale(1.08); }
   .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
   @media (min-width: 961px){ #mobileMenuBtn{ display:none !important; } }
+  .no-backup .needs-backup, .no-restore .needs-restore{ display:none !important; }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">
@@ -250,13 +251,13 @@ html,body{overflow-x:hidden;}
       <div>
         <div style="font-weight:700;" data-i18n="lastBackupLabel">Last successful backup:</div>
         <div id="lastBackupLine" class="field-hint" data-i18n="lastBackupNone">No backup has been taken yet from this Backup Center.</div>
-        <label class="field-hint" style="display:flex; gap:8px; align-items:flex-start; margin-top:8px; cursor:pointer;"><input type="checkbox" id="autoBackupOn" checked style="margin-top:3px;"> <span data-i18n="autoBackupLabel">Take a backup automatically when this page opens and the last one is older than 7 days</span></label>
+        <label class="field-hint needs-backup" style="display:flex; gap:8px; align-items:flex-start; margin-top:8px; cursor:pointer;"><input type="checkbox" id="autoBackupOn" checked style="margin-top:3px;"> <span data-i18n="autoBackupLabel">Take a backup automatically when this page opens and the last one is older than 7 days</span></label>
       </div>
     </div>
 
     <h2 data-i18n="dbBackupTitle">Database Backup / Export</h2>
     <p class="field-hint" data-i18n="dbBackupHint">Downloads one JSON file containing all shared office data (Users, Bill Register, Daily Case Management, Gallery photo records, Team Chat). Documents/photos themselves stay on Cloudinary — this file has their links, not the actual files.</p>
-    <button class="btn primary" id="btnRunBackup"><span data-i18n="btnRunBackup">⬇️ Download Full Backup Now</span></button>
+    <button class="btn primary needs-backup" id="btnRunBackup"><span data-i18n="btnRunBackup">⬇️ Download Full Backup Now</span></button>
     <div id="backupProgress" class="field-hint hidden"></div>
     <div id="backupError" class="error-box hidden"></div>
     <table class="row-count-table hidden" id="recordCountTable"></table>
@@ -269,7 +270,7 @@ html,body{overflow-x:hidden;}
     <p class="field-hint" data-i18n="protect3">These need the billing account to stay active. They are used by the administrator from the Firebase Console — you do not need to do anything here. This page's file backup remains your own copy.</p>
   </div>
 
-  <div class="card">
+  <div class="card needs-restore" id="restoreCard">
     <h2 data-i18n="restoreTitle">Restore from Backup File</h2>
     <p class="field-hint" data-i18n="restoreIntro">Only use this if you know exactly what you are doing. Restoring replaces shared online data for everyone with the contents of the file you choose.</p>
     <ol class="restore-steps">
@@ -451,7 +452,7 @@ function showOnly(id){
 });
 
 /* ---------- Auth state / role gating (admin/super_admin only) ---------- */
-var CURRENT_DOC = null;
+var CURRENT_DOC = null, CAN_BACKUP = false, CAN_RESTORE = false;   /* from the user's ticks (camp-perm.js); Restore is Super Admin only */
 
 auth.onAuthStateChanged(function(user){
   if(!user){ CURRENT_DOC = null; showOnly("authScreen"); window.location.replace("index.html"); return; }
@@ -460,10 +461,16 @@ auth.onAuthStateChanged(function(user){
     CURRENT_DOC = data;
     var role = data.roleV2 || "viewer";
     var isAdminUp = (role === "admin" || role === "super_admin");
-    if(data.isActive === false || data.approvalStatus === "rejected" || !isAdminUp){
+    if(window.CampPerm){ try{ CampPerm.init(data); }catch(e){} }   /* hides sidebar links the user may not open */
+    var mayView = window.CampPerm ? CampPerm.can(data, "backup", "v") : isAdminUp;
+    if(data.isActive === false || data.approvalStatus === "rejected" || data.approvalStatus === "pending" || !mayView){
       showOnly("notAdminScreen");
       return;
     }
+    CAN_BACKUP = window.CampPerm ? CampPerm.can(data, "backup", "b") : isAdminUp;
+    CAN_RESTORE = (role === "super_admin");
+    document.body.classList.toggle("no-backup", !CAN_BACKUP);
+    document.body.classList.toggle("no-restore", !CAN_RESTORE);
     showOnly("mainApp");
     document.getElementById("curEmail").textContent = user.email;
     var roleBadge = document.getElementById("curRoleBadge");
@@ -486,6 +493,7 @@ function autoBackupEnabled(){ try{ return localStorage.getItem("cmpAutoBackup") 
   cb.addEventListener("change", function(){ try{ localStorage.setItem("cmpAutoBackup", cb.checked ? "1" : "0"); }catch(e){} });
 })();
 function maybeAutoBackup(stale){
+  if(!CAN_BACKUP) return;
   if(AUTO_BACKUP_DONE || !stale || !autoBackupEnabled()) return;
   var btn = document.getElementById("btnRunBackup");
   if(!btn || btn.disabled || document.getElementById("mainApp").classList.contains("hidden")) return;
@@ -563,6 +571,7 @@ var KNOWN_SHARED_DOCS = [
    Used both by the manual "Download Full Backup Now" button and by the
    automatic safety backup that Restore takes before writing anything. */
 function performBackup(logType){
+  if(!CAN_BACKUP) return Promise.reject(new Error('Not allowed'));
   var backup = { generatedAt: new Date().toISOString(), generatedBy: (auth.currentUser && auth.currentUser.email) || "?", manifest: null, collections: {}, sharedDocs: {} };
   var recordCounts = {};
 
@@ -687,6 +696,7 @@ function isValidBackupFile(data){
 }
 
 document.getElementById("restoreFileInput").addEventListener("change", function(e){
+  if(!CAN_RESTORE){ e.target.value = ""; return; }
   var file = e.target.files && e.target.files[0];
   var errEl = document.getElementById("restoreFileError");
   var confirmBox = document.getElementById("restoreConfirmBox");
@@ -767,7 +777,7 @@ function writeCollectionBatched(name, rows){
 }
 
 document.getElementById("btnConfirmRestore").addEventListener("click", function(){
-  if(!PENDING_RESTORE_DATA) return;
+  if(!CAN_RESTORE || !PENDING_RESTORE_DATA) return;
   var data = PENDING_RESTORE_DATA;
   var btn = document.getElementById("btnConfirmRestore");
   var cancelBtn = document.getElementById("btnCancelRestore");

@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -265,7 +265,7 @@ var I18N = {
 };
 var ROLE_LABELS = { en:{ super_admin:"Super Admin", admin:"Admin" }, ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن" } };
 var currentLang = "en";
-var IS_ADMIN = false;
+var IS_ADMIN = false, CAN = {a:false, e:false, d:false};   /* from the user's ticks (camp-perm.js) */
 var CONTACTS = null; /* null = not loaded yet from Firestore */
 
 function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -308,7 +308,7 @@ function renderList(){
         (c.email ? "<div class='meta'>✉️ "+esc(c.email)+"</div>" : "")+
         (address ? "<div class='meta'>📍 "+esc(address)+"</div>" : "")+
       "</div><div class='actions'>"+
-        (IS_ADMIN && c.id ? "<button class='btn small' data-edit='"+esc(c.id)+"'>"+I18N[currentLang].btnEdit+"</button><button class='btn small danger' data-delete='"+esc(c.id)+"'>"+I18N[currentLang].btnDelete+"</button>" : "")+
+        (c.id ? ((CAN.e ? "<button class='btn small' data-edit='"+esc(c.id)+"'>"+I18N[currentLang].btnEdit+"</button>" : "")+(CAN.d ? "<button class='btn small danger' data-delete='"+esc(c.id)+"'>"+I18N[currentLang].btnDelete+"</button>" : "")) : "")+
       "</div></div>";
     el.appendChild(card);
   });
@@ -318,7 +318,7 @@ function renderList(){
   el.querySelectorAll("[data-delete]").forEach(function(btn){
     btn.addEventListener("click", function(){ deleteContact(btn.dataset.delete); });
   });
-  document.getElementById("btnShowAdd").classList.toggle("hidden", !IS_ADMIN);
+  document.getElementById("btnShowAdd").classList.toggle("hidden", !CAN.a);
 }
 
 function loadContacts(){
@@ -332,7 +332,7 @@ function loadContacts(){
 
 auth.onAuthStateChanged(function(user){
   if(!user){
-    IS_ADMIN = false;
+    IS_ADMIN = false; CAN = {a:false, e:false, d:false};
     document.getElementById("signedInBar").classList.add("hidden");
     loadContacts();
     return;
@@ -340,7 +340,12 @@ auth.onAuthStateChanged(function(user){
   db.collection("users").doc(user.uid).get().then(function(doc){
     var data = doc.exists ? (doc.data()||{}) : {};
     var role = data.roleV2 || "viewer";
-    IS_ADMIN = (role === "admin" || role === "super_admin") && data.isActive !== false && data.approvalStatus === "approved";
+    var okApp = data.isActive !== false && data.approvalStatus === "approved";
+    if(okApp && window.CampPerm && !CampPerm.init(data, "contacts")){ loadContacts(); return; }   /* no View tick: overlay shown */
+    CAN = okApp ? (window.CampPerm ? {a: CampPerm.can(data, "contacts", "a"), e: CampPerm.can(data, "contacts", "e"), d: CampPerm.can(data, "contacts", "d")}
+                                   : {a: (role === "admin" || role === "super_admin"), e: (role === "admin" || role === "super_admin"), d: (role === "admin" || role === "super_admin")})
+                : {a:false, e:false, d:false};
+    IS_ADMIN = CAN.a || CAN.e || CAN.d;
     document.getElementById("signedInBar").classList.remove("hidden");
     document.getElementById("curEmail").textContent = user.email;
     var badge = document.getElementById("curRoleBadge");
@@ -363,7 +368,7 @@ document.getElementById("btnCancelNew").addEventListener("click", function(){
   document.getElementById("btnShowAdd").classList.remove("hidden");
 });
 document.getElementById("btnSaveNew").addEventListener("click", function(){
-  if(!IS_ADMIN) return;
+  if(!(CAN.a || CAN.e)) return;
   var errEl = document.getElementById("addError");
   errEl.classList.add("hidden");
   var payload = {
@@ -381,6 +386,7 @@ document.getElementById("btnSaveNew").addEventListener("click", function(){
     return;
   }
   var editingId = document.getElementById("addCard").dataset.editingId;
+  if(editingId ? !CAN.e : !CAN.a) return;
   var promise;
   if(editingId){
     promise = db.collection("contacts").doc(editingId).set(payload, {merge:true});
@@ -416,7 +422,7 @@ function openEdit(id){
 }
 
 function deleteContact(id){
-  if(!IS_ADMIN) return;
+  if(!CAN.d) return;
   if(!confirm(I18N[currentLang].confirmDelete)) return;
   db.collection("contacts").doc(id).delete().then(function(){ loadContacts(); });
 }

@@ -719,7 +719,7 @@ html,body{overflow-x:hidden;}
           <div id="permPanel" class="hidden" style="margin-top:16px;border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:var(--bg);">
             <h3 id="permTitle" style="margin:0 0 4px;font-size:16px;"></h3>
             <p class="field-hint" id="permHint" style="margin:0 0 10px;"></p>
-            <div style="overflow-x:auto;max-width:100%"><table id="permTable" style="min-width:520px"></table></div>
+            <div style="overflow-x:auto;max-width:100%"><table id="permTable" style="min-width:320px;width:100%;border-collapse:collapse"></table></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
               <button type="button" class="btn primary small" id="permSave"></button>
               <button type="button" class="btn small" id="permReset"></button>
@@ -1834,13 +1834,11 @@ function openPermPanel(uid){
   var u = USERS_BY_UID[uid]; if(!u || !window.CampPerm) return;
   var panel = document.getElementById("permPanel"), tbl = document.getElementById("permTable");
   var eff = CampPerm.effective(u);
-  var acts = ["v","a","e","d","x","l","ai"];
-  var h = "<thead><tr><th>"+ptt("صفحہ","Page")+"</th>" + acts.map(function(a){ return "<th>"+esc(CampPerm.ACT_LABEL[a][currentLang==="ur"?0:1])+"</th>"; }).join("") + "</tr></thead><tbody>";
+  var h = "<thead><tr><th style='text-align:start'>"+ptt("صفحہ","Page")+"</th><th style='text-align:start'>"+ptt("کیا کر سکتا ہے (ٹِک کریں)","What he may do (tick)")+"</th></tr></thead><tbody>";
   CampPerm.PAGES.forEach(function(pg){
-    h += "<tr><td>"+esc(currentLang==="ur" ? pg.ur : pg.en)+"</td>" + acts.map(function(a){
-      if(pg.acts.indexOf(a) === -1) return "<td style='text-align:center;color:var(--muted,#888)'>—</td>";
-      return "<td style='text-align:center'><input type='checkbox' data-perm-page='"+pg.key+"' data-perm-act='"+a+"'"+(eff[pg.key][a] ? " checked" : "")+" aria-label='"+esc(pg.en+" "+CampPerm.ACT_LABEL[a][1])+"'></td>";
-    }).join("") + "</tr>";
+    h += "<tr style='border-top:1px solid var(--border)'><td style='padding:8px 10px;vertical-align:top;font-weight:600'>"+esc(currentLang==="ur" ? pg.ur : pg.en)+"</td><td style='padding:6px 10px'><div style='display:flex;flex-wrap:wrap;gap:6px 16px'>" + pg.acts.map(function(a){
+      return "<label style='display:inline-flex;align-items:center;gap:5px;white-space:nowrap;cursor:pointer'><input type='checkbox' data-perm-page='"+pg.key+"' data-perm-act='"+a+"'"+(eff[pg.key][a] ? " checked" : "")+" aria-label='"+esc(pg.en+" "+CampPerm.ACT_LABEL[a][1])+"'> "+esc(CampPerm.ACT_LABEL[a][currentLang==="ur"?0:1])+"</label>";
+    }).join("") + "</div></td></tr>";
   });
   tbl.innerHTML = h + "</tbody>";
   panel.dataset.uid = uid;

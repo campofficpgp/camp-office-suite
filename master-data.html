@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -958,12 +958,17 @@ html,body{overflow-x:hidden;}
         return;
       }
       var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
-      /* Master Data is for the Super Admin only (the link in Users & Settings is hidden for everyone else too) */
-      if(r2 !== 'super_admin'){
-        gate('صرف سپر ایڈمن', 'Super Admin only', 'یہ صفحہ صرف سپر ایڈمن کے لیے ہے۔', true);
-        return;
+      /* Master Data: Super Admin by default; he can tick View (read-only) and Edit for other users (camp-perm.js) */
+      if(window.CampPerm){
+        if(!CampPerm.init(u, 'master-data')){ return; }
+        CAN_EDIT = CampPerm.can(u, 'master-data', 'e');
+      } else {
+        if(r2 !== 'super_admin'){
+          gate('صرف سپر ایڈمن', 'Super Admin only', 'یہ صفحہ صرف سپر ایڈمن کے لیے ہے۔', true);
+          return;
+        }
+        CAN_EDIT = true;
       }
-      CAN_EDIT = true;
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];

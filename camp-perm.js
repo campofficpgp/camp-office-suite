@@ -23,11 +23,22 @@
     { key: 'cause-list',  href: 'cause-list.html',  ur: 'کاز لسٹ امپورٹ',    en: 'Cause List Import',  acts: ['v', 'a', 'e', 'd', 'x'] },
     { key: 'lookup',      href: 'lookup.html',      ur: 'تلاش (Lookup)',      en: 'Lookup',             acts: ['v', 'x'] },
     { key: 'case-notice', href: 'case-notice.html', ur: 'کیس نوٹسز',          en: 'Case Notices',       acts: ['v', 'a', 'e', 'd', 'x'] },
+    { key: 'scanning',    href: 'scanning.html',    ur: 'اسکیننگ ڈیسک',       en: 'Scanning Desk',      acts: ['v', 'a', 'e', 'd', 'x', 'ai'] },
+    { key: 'employees',   href: 'employee-directory.html', ur: 'ملازمین کی ڈائریکٹری', en: 'Employee Directory', acts: ['v', 'a', 'e', 'x', 'i'] },
+    { key: 'backup',      href: 'backup-center.html', ur: 'بیک اپ سینٹر (ریسٹور صرف سپر ایڈمن)', en: 'Backup Center (Restore: Super Admin only)', acts: ['v', 'b'] },
+    { key: 'inspection',  href: 'inspection.html',  ur: 'انسپیکشن ڈیسک (ایڈٹ = ڈیٹا بھرنا)', en: 'Inspection Desk (Edit = enter data)', acts: ['v', 'e', 'd', 's1', 's2', 's3', 'k', 'x'] },
+    { key: 'master-data', href: 'master-data.html', ur: 'ماسٹر ڈیٹا (کیس کی اقسام)', en: 'Master Data (case types)', acts: ['v', 'e'] },
+    { key: 'result-list', href: 'result-list.html', ur: 'رزلٹ لسٹ', en: 'Result List', acts: ['v', 'e'] },
+    { key: 'contacts',    href: 'contact-us.html',  ur: 'رابطہ (Contact)', en: 'Contact Us', acts: ['v', 'a', 'e', 'd'] },
+    { key: 'help',        href: 'help.html',        ur: 'مدد (Help)', en: 'Help', acts: ['v', 'a', 'e', 'd'] },
+    { key: 'about',       href: 'about.html',       ur: 'ہمارے بارے میں', en: 'About Us', acts: ['v', 'e'] },
+    { key: 'chat',        href: 'chat-system.html', ur: 'ٹیم چیٹ (a = پیغام بھیجنا، d = پیغام حذف)', en: 'Team Chat (Add = send, Delete = remove messages)', acts: ['v', 'a', 'd'] },
+    { key: 'ai-assistant', href: 'ai-assistant.html', ur: 'AI اسسٹنٹ', en: 'AI Assistant', acts: ['v', 'ai'] },
     { key: 'lists',       href: '',                 ur: 'فہرستیں سنبھالنا (جج، آفیسر، اقسام…)', en: 'Manage lists (judges, officers, types…)', acts: ['l'] }
   ];
   var ACT_LABEL = {
     v: ['دیکھنا', 'View'], a: ['شامل', 'Add'], e: ['ایڈٹ', 'Edit'], d: ['ڈیلیٹ', 'Delete'],
-    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper']
+    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], i: ['فائل سے امپورٹ', 'Import file'], b: ['بیک اپ بنانا', 'Make backup'], s1: ['دستخط: کلرک', 'Sign: Clerk'], s2: ['دستخط: پراسیکیوٹر', 'Sign: Prosecutor'], s3: ['دستخط: انچارج', 'Sign: In-charge'], k: ['مدت اور سیٹنگز', 'Periods & settings'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper']
   };
 
   /* ---- what a user can do when his profile has no ticks (same as before the ticks existed) --- */
@@ -36,6 +47,17 @@
     'cause-list':  { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
     'lookup':      { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'x'] },
     'case-notice': { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
+    'scanning':    { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x', 'ai'], admin: ['v', 'a', 'e', 'd', 'x', 'ai'] },
+    'employees':   { viewer: [],         data_entry: [],                         admin: ['v', 'a', 'e', 'x'] },
+    'backup':      { viewer: [],         data_entry: [],                         admin: ['v', 'b'] },
+    'inspection':  { viewer: ['v', 'x'], data_entry: ['v', 'e', 'd', 's1', 'x'], admin: ['v', 'e', 'd', 's1', 's2', 's3', 'k', 'x'] },
+    'master-data': { viewer: [],         data_entry: [],                         admin: [] },
+    'result-list': { viewer: [],         data_entry: [],                         admin: [] },
+    'contacts':    { viewer: ['v'],      data_entry: ['v'],                      admin: ['v', 'a', 'e', 'd'] },
+    'help':        { viewer: ['v'],      data_entry: ['v'],                      admin: ['v', 'a', 'e', 'd'] },
+    'about':       { viewer: ['v'],      data_entry: ['v'],                      admin: ['v', 'e'] },
+    'chat':        { viewer: ['v', 'a'], data_entry: ['v', 'a'],                 admin: ['v', 'a', 'd'] },
+    'ai-assistant': { viewer: [],        data_entry: [],                         admin: ['v', 'ai'] },
     'lists':       { viewer: [],         data_entry: [],                         admin: ['l'] }
   };
 

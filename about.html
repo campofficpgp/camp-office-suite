@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -312,7 +312,9 @@ auth.onAuthStateChanged(function(user){
   db.collection("users").doc(user.uid).get().then(function(doc){
     var data = doc.exists ? (doc.data()||{}) : {};
     var role = data.roleV2 || "viewer";
-    IS_ADMIN = (role === "admin" || role === "super_admin") && data.isActive !== false && data.approvalStatus === "approved";
+    var okApp = data.isActive !== false && data.approvalStatus === "approved";
+    if(okApp && window.CampPerm && !CampPerm.init(data, "about")){ loadContent(); return; }   /* no View tick: overlay shown */
+    IS_ADMIN = okApp && (window.CampPerm ? CampPerm.can(data, "about", "e") : (role === "admin" || role === "super_admin"));
     document.getElementById("signedInBar").classList.remove("hidden");
     document.getElementById("curEmail").textContent = user.email;
     var badge = document.getElementById("curRoleBadge");

@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -516,7 +516,7 @@ var I18N = {
 };
 var ROLE_LABELS = { en:{ super_admin:"Super Admin", admin:"Admin", data_entry:"Data Entry", viewer:"Viewer" }, ur:{ super_admin:"سپر ایڈمن", admin:"ایڈمن", data_entry:"ڈیٹا انٹری", viewer:"ویور" } };
 var currentLang = "en";
-var IS_ADMIN = false;
+var IS_ADMIN = false, CAN = {a:false, e:false, d:false};   /* from the user's ticks (camp-perm.js) */
 var FAQS = null;
 var TOPIC = "all";
 var QUERY = "";
@@ -705,7 +705,7 @@ function bodyHtml(f){
   var vs = voteState(f.id);
   h += '<div class="fq-foot"><div class="vote" data-vote="' + esc(f.id) + '">' + (vs ? '<span class="thanks">' + esc(t("thanks")) + "</span>" : "<span>" + esc(t("helpful")) + '</span><button type="button" data-v="up" aria-label="Yes">👍</button><button type="button" data-v="down" aria-label="No">👎</button>') + "</div>" +
     '<div class="acts"><button type="button" class="btn small" data-copy="' + esc(f.id) + '">' + esc(t("copyLink")) + "</button>" +
-    (IS_ADMIN && f.id ? '<button type="button" class="btn small" data-edit="' + esc(f.id) + '">' + esc(t("btnEdit")) + '</button><button type="button" class="btn small danger" data-delete="' + esc(f.id) + '">' + esc(t("btnDelete")) + "</button>" : "") + "</div></div>";
+    (f.id ? ((CAN.e ? '<button type="button" class="btn small" data-edit="' + esc(f.id) + '">' + esc(t("btnEdit")) + '</button>' : "") + (CAN.d ? '<button type="button" class="btn small danger" data-delete="' + esc(f.id) + '">' + esc(t("btnDelete")) + "</button>" : "")) : "") + "</div></div>";
   return h;
 }
 function articleHtml(f, idx, terms){
@@ -864,7 +864,7 @@ var FIRST_HASH = true;
 
 auth.onAuthStateChanged(function(user){
   if(!user){
-    IS_ADMIN = false;
+    IS_ADMIN = false; CAN = {a:false, e:false, d:false};
     document.getElementById("signedInBar").classList.add("hidden");
     loadFaqs();
     return;
@@ -872,13 +872,18 @@ auth.onAuthStateChanged(function(user){
   db.collection("users").doc(user.uid).get().then(function(doc){
     var data = doc.exists ? (doc.data()||{}) : {};
     var role = data.roleV2 || "viewer";
-    IS_ADMIN = (role === "admin" || role === "super_admin") && data.isActive !== false && data.approvalStatus === "approved";
+    var okApp = data.isActive !== false && data.approvalStatus === "approved";
+    if(okApp && window.CampPerm && !CampPerm.init(data, "help")){ loadFaqs(); return; }   /* no View tick: overlay shown */
+    CAN = okApp ? (window.CampPerm ? {a: CampPerm.can(data, "help", "a"), e: CampPerm.can(data, "help", "e"), d: CampPerm.can(data, "help", "d")}
+                                   : {a: (role === "admin" || role === "super_admin"), e: (role === "admin" || role === "super_admin"), d: (role === "admin" || role === "super_admin")})
+                : {a:false, e:false, d:false};
+    IS_ADMIN = CAN.a || CAN.e || CAN.d;
     document.getElementById("signedInBar").classList.remove("hidden");
     document.getElementById("curEmail").textContent = user.email;
     var badge = document.getElementById("curRoleBadge");
     badge.textContent = ROLE_LABELS[currentLang][role] || role;
     badge.className = "badge " + role;
-    document.getElementById("btnShowAdd").classList.toggle("hidden", !IS_ADMIN);
+    document.getElementById("btnShowAdd").classList.toggle("hidden", !CAN.a);
     loadFaqs();
   }).catch(function(){ loadFaqs(); });
 });
@@ -907,7 +912,7 @@ document.getElementById("btnCancelNew").addEventListener("click", function(){
   document.getElementById("btnShowAdd").classList.remove("hidden");
 });
 document.getElementById("btnSaveNew").addEventListener("click", function(){
-  if(!IS_ADMIN) return;
+  if(!(CAN.a || CAN.e)) return;
   var errEl = document.getElementById("addError");
   errEl.classList.add("hidden");
   var payload = { updatedByEmail: auth.currentUser.email, topic: document.getElementById("f_topic").value };
@@ -918,6 +923,7 @@ document.getElementById("btnSaveNew").addEventListener("click", function(){
     return;
   }
   var editingId = document.getElementById("addCard").dataset.editingId;
+  if(editingId ? !CAN.e : !CAN.a) return;
   var promise;
   if(editingId){
     /* merge:true keeps fields this form does not show (pictures/GIFs, order, popular flag) */
@@ -947,7 +953,7 @@ function openEdit(id){
   document.getElementById("addCard").scrollIntoView({behavior: motionOff() ? "auto" : "smooth", block:"center"});
 }
 function deleteFaq(id){
-  if(!IS_ADMIN) return;
+  if(!CAN.d) return;
   if(!confirm(t("confirmDelete"))) return;
   db.collection("helpArticles").doc(id).delete().then(function(){ delete OPEN[id]; loadFaqs(); });
 }

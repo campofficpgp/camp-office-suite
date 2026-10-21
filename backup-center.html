@@ -553,7 +553,9 @@ var KNOWN_COLLECTIONS = ["users","gallery_photos","chatMessages",
   /* 19 Oct 2026: added the systems built after the 3 Oct review - Scanning Desk records, saved Cause Lists, Inspection Desk (inspections, references, manual sign-offs) */
   "scans","causeLists","inspections","inspectionRefs","inspectionManual",
   /* 20 Oct 2026: Inspection Proforma B entries and row choices were missing from the backup */
-  "inspectionB","inspectionOverrides"];
+  "inspectionB","inspectionOverrides",
+  /* 21 Oct 2026: Register Desk - the loaded registers and their rows (the page photos are not backed up; they come from the original file) */
+  "registerBatches","registerRows"];
 var KNOWN_SHARED_DOCS = [
   {collection:"appData_bill", doc:"shared", label:"bill_register"},
   {collection:"appData_dcms", doc:"shared", label:"daily_case_management"},

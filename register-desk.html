@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Register Desk</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-activity.js"></script><script src="camp-perm.js"></script><script src="case-master.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+
+  :root{ --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0; --font-head:"Segoe UI",Tahoma,Arial,sans-serif; }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.5; }
+  body.lang-ur, body.lang-ur input, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:20px; min-width:0; width:100%; }
+  .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=email],input[type=password]{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn.block{ width:100%; margin-top:16px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .toggle-row{ text-align:center; margin-top:16px; font-size:13px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .pending-screen{ text-align:center; padding:40px 20px; }
+  .pending-screen .icon{ font-size:48px; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .info-banner{ background:var(--navy-tint); border:1px solid var(--navy); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .last-backup-box{ display:flex; align-items:center; gap:10px; background:var(--navy-tint); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+  .last-backup-box .emoji{ font-size:22px; }
+  ol.restore-steps li{ margin-bottom:8px; }
+  .row-count-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+  .row-count-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
+  .row-count-table td:last-child{ text-align:right; font-weight:700; }
+  .danger-banner{ background:var(--danger-tint); border:1px solid var(--danger); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--danger); margin-top:14px; font-weight:600; }
+  input[type=file]{ display:block; margin-top:6px; font-size:13px; }
+  .restore-confirm-box{ margin-top:14px; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-foot a.active{ background:rgba(255,255,255,0.16); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+
+  #mobileMenuBtn{ display:inline-flex !important; align-items:center; justify-content:center; }
+  /* ---- unified header (identical to every other page) ---- */
+  :root{ --navy2:#3d6f9c; --gold:#B8860B; }
+  [data-theme="green"]{ --navy2:#2f8a5c; --gold:#C9A227; }
+  [data-theme="teal"]{ --navy2:#26a89f; --gold:#96762a; }
+  [data-theme="night"]{ --navy2:#7391c4; --gold:#d4a13d; }
+  .topbar{ background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; direction:ltr; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
+  .topbar .right-controls{ display:flex; align-items:center; gap:10px; }
+  .brand-logo-img{ height:30px; width:auto; flex-shrink:0; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .lang-btn{ background:var(--gold); color:#1B3F63; border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .theme-switch-wrap{ position:relative; }
+  .theme-btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1; }
+  .theme-btn:hover{ background:rgba(255,255,255,.24); }
+  .theme-picker{ position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #E1DDD3; border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60; }
+  .theme-picker.open{ display:flex; }
+  .theme-swatch{ width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); }
+  .theme-swatch:hover{ transform:scale(1.08); }
+  .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
+  @media (min-width: 961px){ #mobileMenuBtn{ display:none !important; } }
+  /* ---- Register Desk page ---- */
+  .wrap.wide{ max-width:1500px; }
+  .hint{ font-size:12.5px; color:var(--muted); }
+  .rd-head{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .rd-head h2{ font-size:20px; }
+  .rd-tabs{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .rd-tabs .btn.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .rd-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:10px 12px; min-width:0; text-align:start; font:inherit; color:inherit; cursor:default; }
+  button.stat{ cursor:pointer; }
+  button.stat.on{ outline:2px solid var(--navy); }
+  .stat .n{ font-size:22px; font-weight:800; color:var(--navy-dark); line-height:1.1; font-variant-numeric:tabular-nums; }
+  [data-theme="night"] .stat .n{ color:#fff; }
+  .stat .l{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .stat.bad .n{ color:var(--danger); } .stat.good .n{ color:var(--success); } .stat.warn .n{ color:var(--warn); }
+  .progress{ height:10px; background:var(--border); border-radius:6px; overflow:hidden; margin:4px 0 14px; display:flex; }
+  .progress i{ display:block; height:100%; }
+  .progress .p-ok{ background:var(--success); } .progress .p-imp{ background:var(--navy); } .progress .p-skip{ background:var(--border-strong); }
+  .tbl-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+  table.rd{ width:100%; border-collapse:collapse; font-size:13px; min-width:620px; }
+  table.rd th{ background:var(--navy); color:#fff; text-align:start; padding:8px 10px; font-weight:700; font-size:12.5px; white-space:nowrap; }
+  table.rd td{ padding:7px 10px; border-top:1px solid var(--border); vertical-align:top; }
+  table.rd tbody tr:nth-child(even) td{ background:var(--navy-tint); }
+  [data-theme="night"] table.rd tbody tr:nth-child(even) td{ background:rgba(255,255,255,0.04); }
+  .chip{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .chip.ok{ background:var(--success-tint); color:var(--success); }
+  .chip.new{ background:var(--navy-tint); color:var(--navy-dark); }
+  .chip.skip{ background:var(--border); color:var(--muted); }
+  .chip.imp{ background:var(--navy); color:#fff; }
+  .chip.bad{ background:var(--danger-tint); color:var(--danger); }
+  .chip.warn{ background:var(--warn-tint); color:var(--warn); }
+  .chip.arch{ background:var(--border); color:var(--muted); }
+  .drop{ border:2px dashed var(--border-strong); border-radius:10px; padding:20px; text-align:center; background:var(--navy-tint); }
+  .drop input[type=file]{ margin-top:8px; max-width:100%; }
+  .kv{ display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:13.5px; margin:10px 0; }
+  .kv b{ color:var(--muted); font-weight:600; }
+  .msg{ margin-top:10px; padding:10px 12px; border-radius:8px; font-size:13px; }
+  .msg.err{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); }
+  .msg.ok{ background:var(--success-tint); color:var(--success); border:1px solid var(--success); }
+  .msg.info{ background:var(--navy-tint); color:var(--navy-dark); border:1px solid var(--navy); }
+  .msg.warn{ background:var(--warn-tint); color:var(--warn); border:1px solid var(--warn); }
+  .filters{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+  .filters .btn.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .filters input[type=search], .filters select{ padding:7px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; background:var(--surface); color:var(--text); min-width:0; }
+  .split{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:start; }
+  .split.nophoto{ grid-template-columns:minmax(0,1fr); }
+  .photo-pane{ position:sticky; top:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); display:flex; flex-direction:column; max-height:calc(100vh - 16px); min-width:0; }
+  .photo-bar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border); }
+  .photo-bar .grow{ flex:1; font-weight:700; }
+  .photo-view{ overflow:auto; flex:1; min-height:240px; background:#222; text-align:center; }
+  .photo-view img{ display:block; margin:0 auto; max-width:none; }
+  .photo-none{ padding:30px 16px; text-align:center; color:var(--muted); font-size:13px; }
+  .grp{ margin-top:16px; }
+  .grp-head{ display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; padding:8px 12px; background:var(--navy); color:#fff; border-radius:8px 8px 0 0; font-weight:700; font-size:13.5px; }
+  .grp-head .sp{ flex:1; }
+  .grp-head .btn{ background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.4); }
+  .rowc{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; padding:9px 12px; border:1px solid var(--border); border-top:none; background:var(--surface); cursor:pointer; }
+  .rowc:last-child{ border-radius:0 0 8px 8px; }
+  .rowc.sel{ outline:2px solid var(--navy); outline-offset:-2px; }
+  .rowc.st-ok{ border-inline-start:5px solid var(--success); }
+  .rowc.st-skip{ opacity:.65; border-inline-start:5px solid var(--border-strong); }
+  .rowc.st-imp{ border-inline-start:5px solid var(--navy); background:var(--navy-tint); }
+  .rowc.has-err{ border-inline-start:5px solid var(--danger); }
+  .rowc.has-doubt:not(.st-ok):not(.st-imp){ border-inline-start:5px solid var(--warn); }
+  .rowc .l1{ display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; font-size:14px; min-width:0; }
+  .rowc .l1 .sr{ font-weight:800; color:var(--navy-dark); min-width:34px; font-variant-numeric:tabular-nums; }
+  [data-theme="night"] .rowc .l1 .sr{ color:#fff; }
+  .rowc .l1 .cs{ font-weight:700; direction:ltr; unicode-bidi:isolate; }
+  .rowc .l1 .tt{ overflow-wrap:anywhere; min-width:0; }
+  .rowc .l2{ font-size:12.5px; color:var(--muted); margin-top:3px; overflow-wrap:anywhere; }
+  .rowc .l3{ margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; }
+  .rowc .acts{ display:flex; flex-direction:column; gap:5px; align-items:stretch; }
+  .rowc .acts .btn{ padding:5px 10px; font-size:12.5px; white-space:nowrap; }
+  .btn.good{ background:var(--success); border-color:var(--success); color:#fff; }
+  .btn.dng{ color:var(--danger); border-color:var(--danger); }
+  .note-box{ margin-top:5px; padding:5px 9px; border-radius:6px; background:var(--warn-tint); color:var(--warn); font-size:12.5px; border:1px solid var(--warn); }
+  .iss{ display:block; font-size:12px; margin-top:2px; }
+  .iss.e{ color:var(--danger); } .iss.w{ color:var(--warn); } .iss.i{ color:var(--muted); }
+  .editor{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 10px; padding:6px 0; }
+  .editor label{ margin:0 0 3px; font-size:12px; }
+  .editor input, .editor select, .editor textarea{ width:100%; padding:7px 9px; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; background:var(--surface); color:var(--text); min-width:0; }
+  .editor .wide2{ grid-column:span 2; }
+  .editor .fbar{ grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .editor .bad-f{ border-color:var(--danger); background:var(--danger-tint); }
+  .sumlist{ margin:6px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto; font-size:12.5px; border:1px solid var(--border); border-radius:6px; }
+  .sumlist li{ padding:4px 9px; border-top:1px solid var(--border); overflow-wrap:anywhere; }
+  .sumlist li:first-child{ border-top:none; }
+  .modal-bg{ position:fixed; inset:0; background:rgba(10,20,40,.7); z-index:9000; display:flex; align-items:center; justify-content:center; padding:12px; }
+  .modal{ background:var(--surface); color:var(--text); border-radius:12px; max-width:560px; width:100%; padding:20px; max-height:90vh; overflow:auto; }
+  .modal h3{ margin-bottom:8px; }
+  .modal .fbar{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:flex-end; }
+  .lightbox{ position:fixed; inset:0; background:#111; z-index:9100; display:flex; flex-direction:column; }
+  .lightbox .lb-bar{ display:flex; gap:8px; padding:8px 12px; align-items:center; background:#000; color:#fff; flex-wrap:wrap; }
+  .lightbox .lb-bar .grow{ flex:1; font-weight:700; }
+  .lightbox .lb-view{ flex:1; overflow:auto; text-align:center; }
+  .lightbox img{ max-width:none; }
+  .empty{ padding:22px; text-align:center; color:var(--muted); }
+  .bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .toast{ position:fixed; bottom:14px; inset-inline-start:14px; background:#17294a; color:#fff; padding:9px 14px; border-radius:8px; font-size:13px; z-index:9500; max-width:calc(100vw - 28px); box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  .kbd{ font-family:monospace; background:var(--navy-tint); border:1px solid var(--border-strong); border-radius:4px; padding:0 5px; font-size:12px; }
+  @media (max-width:1000px){
+    .split{ grid-template-columns:minmax(0,1fr); }
+    .photo-pane{ position:static; max-height:70vh; }
+    .rowc{ grid-template-columns:minmax(0,1fr); }
+    .rowc .acts{ flex-direction:row; flex-wrap:wrap; }
+    .editor .wide2{ grid-column:1 / -1; }
+  }
+  @media (max-width:600px){ .wrap{ padding:12px; } .card{ padding:14px; } }
+</style>
+<!-- PWA: installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17294a">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="/pwa.js" defer></script>
+<script src="/auth-guard.js" defer></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <div class="nav-group" id="navGroupCase">
+          <button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button>
+          <div class="nav-submenu">
+            <a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a>
+            <a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a>
+            <a class="nav-subitem active" href="register-desk.html"><span class="ico">📖</span><span>Register Desk</span></a>
+            
+            <a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a>
+          </div>
+        </div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+<div class="topbar">
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Camp Office Digital Portal — Register Desk</span></div>
+  <div class="right-controls">
+    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    <div class="theme-switch-wrap">
+      <button class="theme-btn" id="themeBtn" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+      <div class="theme-picker" id="themePicker"></div>
+    </div>
+    <button class="lang-btn" id="langBtn">اردو</button>
+    <select id="langSelect" hidden>
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect" hidden>
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+    <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+  </div>
+</div>
+
+<!-- ===================== AUTH SCREEN =====================
+     No independent sign-in here anymore — login happens only on the
+     main portal (index.html), which also enforces the super-admin
+     OTP step. This page just checks whether that session exists and
+     sends the browser to index.html if it doesn't. ==================== -->
+<div id="authScreen" class="center-wrap">
+  <div class="card">
+    <h2 data-i18n="signInTitle">Redirecting…</h2>
+    <p class="field-hint" data-i18n="signInSub">براہ کرم پہلے مرکزی پورٹل سے سائن اِن کریں — Redirecting to the main portal sign-in…</p>
+  </div>
+</div>
+
+<!-- ===================== NOT ALLOWED SCREEN ===================== -->
+<div id="notAdminScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🔒</div>
+    <h2 data-i18n="notAllowedTitle">No access</h2>
+    <p data-i18n="notAllowedBody">Your account is not approved for the Register Desk.</p>
+    <a class="btn block" href="index.html"><span data-i18n="btnPortal">Back to the portal</span></a>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="mainApp" class="wrap wide hidden">
+  <div class="userbar">
+    <div>
+      <span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong>
+      <span id="curRoleBadge" class="badge"></span>
+    </div>
+    <button class="btn small" id="mainSignOut"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+
+  <div class="info-banner" id="introBanner">
+    <strong data-i18n="introTitle">How the Register Desk works</strong><br>
+    <span data-i18n="introBody"></span>
+  </div>
+
+  <div class="rd-tabs" id="tabs">
+    <button class="btn on" type="button" data-tab="list" id="tabList"><span data-i18n="tabList">Registers</span></button>
+    <button class="btn" type="button" data-tab="review" id="tabReview"><span data-i18n="tabReview">Review rows</span></button>
+    <button class="btn" type="button" data-tab="import" id="tabImport"><span data-i18n="tabImport">Add to Daily Cases</span></button>
+  </div>
+
+  <!-- ---------- registers list + load ---------- -->
+  <div id="viewList">
+    <div class="card" id="loadCard">
+      <div class="rd-head"><h2 data-i18n="loadTitle">Load a new register</h2></div>
+      <div class="drop">
+        <div data-i18n="loadHint">Choose the register file you were given (a .json file).</div>
+        <input type="file" id="fileIn" accept=".json,application/json">
+      </div>
+      <div id="loadPreview"></div>
+    </div>
+    <div class="card">
+      <div class="rd-head">
+        <h2 data-i18n="listTitle">Registers loaded</h2>
+        <div class="bar">
+          <label class="hint" style="margin:0"><input type="checkbox" id="showArch"> <span data-i18n="showArch">Show archived</span></label>
+          <button class="btn small" id="btnReloadList" type="button">↻ <span data-i18n="btnReload">Reload</span></button>
+        </div>
+      </div>
+      <div id="listMsg"></div>
+      <div class="tbl-wrap"><table class="rd" id="batchTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ---------- review ---------- -->
+  <div id="viewReview" class="hidden">
+    <div class="card">
+      <div class="rd-head">
+        <h2 id="revTitle"></h2>
+        <div class="bar">
+          <button class="btn small" id="btnTogglePhoto" type="button">🖼 <span data-i18n="btnPhoto">Page photo</span></button>
+          <button class="btn small" id="btnReloadRows" type="button">↻ <span data-i18n="btnReload">Reload</span></button>
+        </div>
+      </div>
+      <div class="hint" id="revSub"></div>
+      <div class="progress" id="revProg"></div>
+      <div class="rd-grid" id="revStats"></div>
+      <div class="filters" id="revFilters">
+        <button class="btn small on" type="button" data-f="all" data-i18n="fAll">All</button>
+        <button class="btn small" type="button" data-f="todo" data-i18n="fTodo">Not checked</button>
+        <button class="btn small" type="button" data-f="doubt" data-i18n="fDoubt">Doubtful</button>
+        <button class="btn small" type="button" data-f="err" data-i18n="fErr">With errors</button>
+        <button class="btn small" type="button" data-f="warn" data-i18n="fWarn">With warnings</button>
+        <button class="btn small" type="button" data-f="ok" data-i18n="fOk">Checked</button>
+        <button class="btn small" type="button" data-f="skip" data-i18n="fSkip">Left out</button>
+        <button class="btn small" type="button" data-f="imp" data-i18n="fImp">Added</button>
+        <select id="fPage"></select>
+        <input type="search" id="fText" data-i18n-ph="fSearchPh" placeholder="Search">
+      </div>
+      <div class="hint" id="kbdHint"></div>
+    </div>
+    <div id="revMsg"></div>
+    <div class="split" id="split">
+      <div id="rowsBox"></div>
+      <div class="photo-pane" id="photoPane"></div>
+    </div>
+  </div>
+
+  <!-- ---------- import ---------- -->
+  <div id="viewImport" class="hidden">
+    <div class="card">
+      <div class="rd-head"><h2 id="impTitle"></h2></div>
+      <div id="impBody"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalHost"></div>
+<div id="lightHost"></div>
+<div id="toastHost"></div>
+
+<script>
+/* ============================================================
+   Register Desk — loads a handwritten-register file (rows + page photos), lets staff check every row against the
+   page photo, and then adds only the checked, error-free rows to Daily Cases.
+   Collections:  registerBatches/{batchId}   one per register
+                 registerRows/{batchId}__{rowKey}   one per row (status new / checked / skip / imported)
+                 registerPages/{batchId}__p{N}      one page photo (small JPEG as text)
+   Nothing is ever deleted from here. A register can only be archived (hidden).
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+try{ if(window.CaseMaster) CaseMaster.connect(db); }catch(e){}
+
+var PAGE_KEY = "register-desk";
+var C_BATCH = "registerBatches", C_ROW = "registerRows", C_PAGE = "registerPages";
+var TZ = "Asia/Karachi";
+var MAX_ROWS = 1500, MAX_PAGES = 150, MAX_IMG = 900000, MAX_FILE = 60 * 1024 * 1024;
+
+/* ---------- language ---------- */
+var I18N = {
+  en: {
+    brandTitle:"Camp Office Digital Portal — Register Desk",
+    signInTitle:"Redirecting…", signInSub:"Please sign in from the main portal first — redirecting…",
+    notAllowedTitle:"No access", notAllowedBody:"Your account is not approved for the Register Desk.", btnPortal:"Back to the portal",
+    btnSignOut:"Sign Out", signedInAs:"Signed in as",
+    introTitle:"How the Register Desk works",
+    introBody:"1) Load the register file you were given. 2) Check every row against the photo of its register page: press Correct, Edit or Leave out. The page tells you about doubtful readings and mistakes by itself. 3) On the last tab, only the rows you marked Correct (and that have no error) are added to Daily Cases — nothing is retyped, and a row already in Daily Cases for the same case and date is never added twice. Nothing is ever deleted from this page.",
+    tabList:"Registers", tabReview:"Review rows", tabImport:"Add to Daily Cases",
+    loadTitle:"Load a new register", loadHint:"Choose the register file you were given (a .json file).",
+    listTitle:"Registers loaded", showArch:"Show archived", btnReload:"Reload",
+    thName:"Register", thOfficer:"Officer", thRows:"Rows", thPages:"Pages", thLoaded:"Loaded", thState:"State", thAction:"",
+    stOpen:"In review", stImported:"All added", stArchived:"Archived", stLoading:"Load incomplete", stPartly:"Partly added",
+    btnOpen:"Open", btnArchive:"Archive", btnUnarchive:"Unarchive",
+    noBatches:"No register has been loaded yet.",
+    fileBad:"This file is not a valid register file: ", fileBig:"The file is too large.",
+    pvTitle:"File ready to load", pvName:"Register", pvOfficer:"Officer", pvNature:"Nature", pvRows:"Rows", pvPages:"Page photos", pvDoubt:"Rows marked doubtful", pvErr:"Rows with errors (to fix in review)", pvDup:"A register with this name and row count is already loaded.",
+    pvOfficerUnknown:"This officer is not in the officers list; every row will show an error until it is added.",
+    btnLoadNow:"Load into Register Desk", loading:"Loading… ", loadDone:"Register loaded. Opening it for review…", loadFail:"Loading stopped: ", loadNoPerm:"You do not have permission to load a register.",
+    reviewFor:"Register", rowsWord:"rows", pagesWord:"pages",
+    sTotal:"Rows", sTodo:"Not checked", sOk:"Checked", sDoubt:"Doubtful", sErr:"With errors", sSkip:"Left out", sImp:"Added to Daily Cases", sReady:"Ready to add",
+    fAll:"All", fTodo:"Not checked", fDoubt:"Doubtful", fErr:"With errors", fWarn:"With warnings", fOk:"Checked", fSkip:"Left out", fImp:"Added", fPageAll:"All pages", fSearchPh:"Search title / case no.",
+    pageWord:"Page", btnPhoto:"Page photo",
+    kbd:"Keys: ↑ ↓ move between rows, C = correct, E = edit, S = leave out, U = undo.",
+    bOk:"✔ Correct", bEdit:"✎ Edit", bSkip:"✖ Leave out", bUndo:"↶ Undo", bSave:"Save", bCancel:"Cancel", bAddRow:"+ Add row", bCheckPage:"✔ All clean rows of this page",
+    noRows:"No rows match.",
+    chOk:"Checked", chNew:"Not checked", chSkip:"Left out", chImp:"Added", chDoubt:"Doubtful", chExists:"Already in Daily Cases",
+    doubtNote:"Doubt noted: ", editedWord:"edited",
+    fDate:"Date", fBench:"Bench", fSerial:"Serial no.", fType:"Case type", fCaseNo:"Case no.", fYear:"Year", fTitle:"Title", fVersus:"Versus", fRelief:"Category", fResult:"Result", fRemarks:"Remarks", fNature:"Nature", fOfficer:"Officer",
+    lSerial:"Sr.",
+    cfTitle:"Please confirm", cfDoubt:"This row was marked doubtful:", cfDoubtAsk:"Have you compared it with the page photo, and is it correct?", cfYes:"Yes, it is correct", cfNo:"Cancel",
+    cfPage:"Mark all clean rows of this register page as correct? ({n} rows). Rows with a doubt, a warning or an error are left for you to check one by one.",
+    toSaved:"Saved", toFail:"Not saved: ", toBusy:"Please wait…", noEditRight:"You do not have permission to edit.", locked:"This row has already been added to Daily Cases and cannot be changed here.",
+    e_noCaseNo:"Case number is missing", e_badCaseNo:"Case number should look like 142 or 12345-L", e_noYear:"Year is missing or wrong", e_yearAfter:"Case year is later than the hearing date",
+    e_noTitle:"Title is missing", e_noDate:"Date is missing or wrong", e_futureDate:"Date is in the future", e_type:"Case type is not in the Case Master table", e_relief:"Category “{x}” does not belong to case type {t}",
+    e_officer:"Officer is missing or not in the list", e_dupBatch:"Same case and same date appears twice in this register (also row {n})",
+    w_weekend:"This date is a Saturday or Sunday", w_noResult:"Result is empty", w_noBench:"Bench is empty or not in the list", w_noRelief:"Category is empty", w_nature:"Nature is not in the list", w_year:"Year is not in the years list",
+    w_serialOrder:"Serial number is out of order in this page", w_serialDup:"Serial number {n} appears more than once on this date and bench",
+    w_title:"Same case number appears with a different name: {x}",
+    i_exists:"Already in Daily Cases for this date — will not be added again", i_before:"Earlier hearings of this case: {x}",
+    impTitle:"Add to Daily Cases", impNeed:"Open a register first.", impNoRight:"You do not have permission to add cases to Daily Cases (needs the Add tick for Daily Cases and for the Register Desk import).",
+    impOfficerLock:"This register belongs to another officer, so your account cannot add it.",
+    impReady:"Ready to add", impExists:"Already in Daily Cases (will be skipped)", impBlocked:"Checked but now has an error (will not be added)", impTodo:"Not checked yet (will not be added)", impSkip:"Left out", impDone:"Added earlier",
+    impConfirm:"I have compared every one of these rows with the page photo and they are correct.", impBtn:"Add {n} rows to Daily Cases", impNone:"Nothing is ready to add yet.",
+    impRunning:"Adding… {a} of {n}", impFinished:"Finished: {n} rows added to Daily Cases.", impStopped:"Stopped: {x}. Added so far: {a}. Open this tab again — only the rows that remain will be added.",
+    impVerify:"Count check: Daily Cases now holds {c} rows from this register; this page recorded {m}.", impVerifyOk:"The counts match.", impVerifyBad:"The counts do NOT match — please tell Claude before doing anything else.",
+    impListHead:"First {n} rows", impNoMore:"…and {n} more",
+    arSure:"Archive this register? It is only hidden; nothing is deleted.", unarSure:"Bring this register back?",
+    errLoad:"Could not read data: ", errPerm:"Permission denied. The new database rules may not be switched on yet.",
+    roleSuper:"Super Admin", roleAdmin:"Admin", roleDE:"Data Entry", roleViewer:"Viewer",
+    pgPrev:"Previous page", pgNext:"Next page", zIn:"Zoom in", zOut:"Zoom out", zFit:"Fit width", zFull:"Full screen", close:"Close", noPhoto:"No photo was loaded for this page.", photoHidden:"Page photo is hidden.", loadingPhoto:"Loading photo…"
+  },
+  ur: {
+    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — رجسٹر ڈیسک",
+    signInTitle:"منتقل کیا جا رہا ہے…", signInSub:"پہلے مرکزی پورٹل سے سائن اِن کریں — منتقل کیا جا رہا ہے…",
+    notAllowedTitle:"رسائی نہیں", notAllowedBody:"آپ کا اکاؤنٹ رجسٹر ڈیسک کے لیے منظور نہیں۔", btnPortal:"پورٹل پر واپس",
+    btnSignOut:"سائن آؤٹ", signedInAs:"سائن اِن:",
+    introTitle:"رجسٹر ڈیسک کیسے کام کرتا ہے",
+    introBody:"1) جو رجسٹر کی فائل آپ کو ملی ہے وہ لوڈ کریں۔ 2) ہر قطار کو اس کے رجسٹر صفحے کی تصویر سے ملائیں اور ٹھیک ہے، ایڈٹ یا چھوڑ دیں دبائیں۔ مشکوک پڑھت اور غلطیاں صفحہ خود بتاتا ہے۔ 3) آخری ٹیب میں صرف وہی قطاریں ڈیلی کیسز میں جاتی ہیں جنہیں آپ نے ٹھیک ہے کیا ہو اور جن میں کوئی خرابی نہ ہو — دوبارہ ٹائپ کچھ نہیں کرنا، اور جو قطار اسی کیس اور اسی تاریخ کی پہلے سے ڈیلی کیسز میں ہو وہ دوبارہ نہیں جاتی۔ اس صفحے سے کچھ بھی ڈیلیٹ نہیں ہوتا۔",
+    tabList:"رجسٹرز", tabReview:"قطاروں کا ریویو", tabImport:"ڈیلی کیسز میں شامل کریں",
+    loadTitle:"نیا رجسٹر لوڈ کریں", loadHint:"رجسٹر کی وہ فائل چنیں جو آپ کو دی گئی ہے (.json فائل)۔",
+    listTitle:"لوڈ شدہ رجسٹرز", showArch:"آرکائیو شدہ بھی دکھائیں", btnReload:"دوبارہ لوڈ",
+    thName:"رجسٹر", thOfficer:"افسر", thRows:"قطاریں", thPages:"صفحات", thLoaded:"لوڈ ہوا", thState:"حالت", thAction:"",
+    stOpen:"ریویو جاری", stImported:"سب شامل ہو گئیں", stArchived:"آرکائیو", stLoading:"لوڈ ادھورا", stPartly:"کچھ شامل ہوئیں",
+    btnOpen:"کھولیں", btnArchive:"آرکائیو کریں", btnUnarchive:"واپس لائیں",
+    noBatches:"ابھی کوئی رجسٹر لوڈ نہیں ہوا۔",
+    fileBad:"یہ فائل درست رجسٹر فائل نہیں: ", fileBig:"فائل بہت بڑی ہے۔",
+    pvTitle:"فائل لوڈ کے لیے تیار", pvName:"رجسٹر", pvOfficer:"افسر", pvNature:"نوعیت", pvRows:"قطاریں", pvPages:"صفحات کی تصاویر", pvDoubt:"مشکوک نشان زدہ قطاریں", pvErr:"خرابی والی قطاریں (ریویو میں درست کرنی ہوں گی)", pvDup:"اسی نام اور اتنی ہی قطاروں والا رجسٹر پہلے سے لوڈ ہے۔",
+    pvOfficerUnknown:"یہ افسر افسروں کی فہرست میں نہیں؛ جب تک اسے شامل نہ کیا جائے ہر قطار پر خرابی آئے گی۔",
+    btnLoadNow:"رجسٹر ڈیسک میں لوڈ کریں", loading:"لوڈ ہو رہا ہے… ", loadDone:"رجسٹر لوڈ ہو گیا۔ ریویو کے لیے کھول رہا ہوں…", loadFail:"لوڈ رک گیا: ", loadNoPerm:"آپ کو رجسٹر لوڈ کرنے کی اجازت نہیں۔",
+    reviewFor:"رجسٹر", rowsWord:"قطاریں", pagesWord:"صفحات",
+    sTotal:"قطاریں", sTodo:"چیک نہیں ہوئیں", sOk:"ٹھیک", sDoubt:"مشکوک", sErr:"خرابی والی", sSkip:"چھوڑی ہوئی", sImp:"ڈیلی کیسز میں شامل", sReady:"شامل کرنے کے لیے تیار",
+    fAll:"سب", fTodo:"چیک نہیں ہوئیں", fDoubt:"مشکوک", fErr:"خرابی والی", fWarn:"انتباہ والی", fOk:"ٹھیک", fSkip:"چھوڑی ہوئی", fImp:"شامل ہو چکیں", fPageAll:"تمام صفحات", fSearchPh:"عنوان / کیس نمبر تلاش کریں",
+    pageWord:"صفحہ", btnPhoto:"صفحے کی تصویر",
+    kbd:"کیز: ↑ ↓ قطار بدلیں، C = ٹھیک، E = ایڈٹ، S = چھوڑ دیں، U = واپس۔",
+    bOk:"✔ ٹھیک ہے", bEdit:"✎ ایڈٹ", bSkip:"✖ چھوڑ دیں", bUndo:"↶ واپس", bSave:"محفوظ کریں", bCancel:"منسوخ", bAddRow:"+ قطار شامل", bCheckPage:"✔ اس صفحے کی تمام صاف قطاریں",
+    noRows:"کوئی قطار نہیں ملی۔",
+    chOk:"ٹھیک", chNew:"چیک نہیں", chSkip:"چھوڑی", chImp:"شامل", chDoubt:"مشکوک", chExists:"ڈیلی کیسز میں پہلے سے",
+    doubtNote:"شک کا نوٹ: ", editedWord:"ایڈٹ شدہ",
+    fDate:"تاریخ", fBench:"بنچ", fSerial:"سیریل نمبر", fType:"کیس کی قسم", fCaseNo:"کیس نمبر", fYear:"سال", fTitle:"عنوان", fVersus:"بمقابلہ", fRelief:"زمرہ", fResult:"نتیجہ", fRemarks:"ریمارکس", fNature:"نوعیت", fOfficer:"افسر",
+    lSerial:"سیریل",
+    cfTitle:"براہِ کرم تصدیق کریں", cfDoubt:"یہ قطار مشکوک نشان زد ہے:", cfDoubtAsk:"کیا آپ نے اسے صفحے کی تصویر سے ملا لیا ہے اور یہ درست ہے؟", cfYes:"جی ہاں، درست ہے", cfNo:"منسوخ",
+    cfPage:"اس رجسٹر صفحے کی تمام صاف قطاروں کو ٹھیک ہے کر دوں؟ ({n} قطاریں)۔ جن میں شک، انتباہ یا خرابی ہے وہ آپ ایک ایک کر کے چیک کریں گے۔",
+    toSaved:"محفوظ ہو گیا", toFail:"محفوظ نہیں ہوا: ", toBusy:"براہِ کرم انتظار کریں…", noEditRight:"آپ کو ایڈٹ کی اجازت نہیں۔", locked:"یہ قطار ڈیلی کیسز میں شامل ہو چکی ہے، یہاں سے بدلی نہیں جا سکتی۔",
+    e_noCaseNo:"کیس نمبر موجود نہیں", e_badCaseNo:"کیس نمبر ایسا ہونا چاہیے: 142 یا 12345-L", e_noYear:"سال موجود نہیں یا غلط ہے", e_yearAfter:"کیس کا سال سماعت کی تاریخ کے بعد کا ہے",
+    e_noTitle:"عنوان موجود نہیں", e_noDate:"تاریخ موجود نہیں یا غلط ہے", e_futureDate:"تاریخ آئندہ کی ہے", e_type:"کیس کی قسم ماسٹر ٹیبل میں نہیں", e_relief:"زمرہ “{x}” کیس کی قسم {t} میں نہیں ہوتا",
+    e_officer:"افسر موجود نہیں یا فہرست میں نہیں", e_dupBatch:"اسی رجسٹر میں ایک ہی کیس اور ایک ہی تاریخ دو بار ہے (قطار {n} بھی)",
+    w_weekend:"یہ تاریخ ہفتہ یا اتوار کی ہے", w_noResult:"نتیجہ خالی ہے", w_noBench:"بنچ خالی ہے یا فہرست میں نہیں", w_noRelief:"زمرہ خالی ہے", w_nature:"نوعیت فہرست میں نہیں", w_year:"سال سالوں کی فہرست میں نہیں",
+    w_serialOrder:"اس صفحے میں سیریل نمبر کی ترتیب ٹوٹی ہے", w_serialDup:"سیریل {n} اسی تاریخ اور بنچ پر ایک سے زیادہ بار ہے",
+    w_title:"یہی کیس نمبر ایک مختلف نام کے ساتھ بھی ہے: {x}",
+    i_exists:"اس تاریخ کے لیے ڈیلی کیسز میں پہلے سے موجود — دوبارہ شامل نہیں ہو گی", i_before:"اس کیس کی پچھلی تاریخیں: {x}",
+    impTitle:"ڈیلی کیسز میں شامل کریں", impNeed:"پہلے کوئی رجسٹر کھولیں۔", impNoRight:"آپ کو ڈیلی کیسز میں کیس شامل کرنے کی اجازت نہیں (ڈیلی کیسز اور رجسٹر ڈیسک امپورٹ دونوں کی شامل/امپورٹ ٹک چاہیے)۔",
+    impOfficerLock:"یہ رجسٹر کسی اور افسر کا ہے، اس لیے آپ کا اکاؤنٹ اسے شامل نہیں کر سکتا۔",
+    impReady:"شامل کرنے کے لیے تیار", impExists:"ڈیلی کیسز میں پہلے سے (چھوڑی جائیں گی)", impBlocked:"ٹھیک کی گئیں مگر اب خرابی ہے (شامل نہیں ہوں گی)", impTodo:"ابھی چیک نہیں ہوئیں (شامل نہیں ہوں گی)", impSkip:"چھوڑی ہوئی", impDone:"پہلے شامل ہو چکیں",
+    impConfirm:"میں نے ان تمام قطاروں کو صفحے کی تصویر سے ملا لیا ہے اور یہ درست ہیں۔", impBtn:"{n} قطاریں ڈیلی کیسز میں شامل کریں", impNone:"ابھی شامل کرنے کے لیے کچھ تیار نہیں۔",
+    impRunning:"شامل ہو رہی ہیں… {a} / {n}", impFinished:"مکمل: {n} قطاریں ڈیلی کیسز میں شامل ہو گئیں۔", impStopped:"رک گیا: {x}۔ اب تک شامل: {a}۔ یہ ٹیب دوبارہ کھولیں — صرف باقی رہ جانے والی قطاریں جائیں گی۔",
+    impVerify:"گنتی کی جانچ: ڈیلی کیسز میں اس رجسٹر کی {c} قطاریں ہیں؛ اس صفحے نے {m} درج کی تھیں۔", impVerifyOk:"گنتی برابر ہے۔", impVerifyBad:"گنتی برابر نہیں — کچھ اور کرنے سے پہلے Claude کو بتائیں۔",
+    impListHead:"پہلی {n} قطاریں", impNoMore:"…اور {n} مزید",
+    arSure:"اس رجسٹر کو آرکائیو کریں؟ یہ صرف چھپتا ہے، کچھ ڈیلیٹ نہیں ہوتا۔", unarSure:"اس رجسٹر کو واپس لائیں؟",
+    errLoad:"ڈیٹا پڑھا نہیں جا سکا: ", errPerm:"اجازت نہیں۔ ہو سکتا ہے نئے قواعد ابھی لگے نہ ہوں۔",
+    roleSuper:"سپر ایڈمن", roleAdmin:"ایڈمن", roleDE:"ڈیٹا انٹری", roleViewer:"ناظر",
+    pgPrev:"پچھلا صفحہ", pgNext:"اگلا صفحہ", zIn:"بڑا کریں", zOut:"چھوٹا کریں", zFit:"چوڑائی کے مطابق", zFull:"پوری سکرین", close:"بند کریں", noPhoto:"اس صفحے کی تصویر لوڈ نہیں ہوئی تھی۔", photoHidden:"صفحے کی تصویر چھپی ہوئی ہے۔", loadingPhoto:"تصویر لوڈ ہو رہی ہے…"
+  }
+};
+var currentLang = "ur";
+try{ var _sl = localStorage.getItem("cmpLang"); if(_sl === "en" || _sl === "ur") currentLang = _sl; }catch(e){}
+function t(k, p){
+  var s = (I18N[currentLang] && I18N[currentLang][k]);
+  if(s == null) s = I18N.en[k];
+  if(s == null) s = k;
+  if(p){ Object.keys(p).forEach(function(x){ s = s.split("{" + x + "}").join(p[x]); }); }
+  return s;
+}
+function roleName(r){ return r === "super_admin" ? t("roleSuper") : r === "admin" ? t("roleAdmin") : r === "data_entry" ? t("roleDE") : r === "viewer" ? t("roleViewer") : (r || ""); }
+function esc(s){ return (s == null ? "" : String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function $(id){ return document.getElementById(id); }
+
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang === "ur");
+  document.documentElement.setAttribute("dir", currentLang === "ur" ? "rtl" : "ltr");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key] != null) el.textContent = I18N[currentLang][key];
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(el){ el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph"))); });
+  if(MAIN_SHOWN) renderAll();
+}
+$("langSelect").value = currentLang;
+$("langSelect").addEventListener("change", function(e){
+  currentLang = e.target.value;
+  try{ localStorage.setItem("cmpLang", currentLang); }catch(err){}
+  applyI18n();
+});
+$("themeSelect").addEventListener("change", function(e){
+  document.documentElement.setAttribute("data-theme", e.target.value);
+  try{ localStorage.setItem("cmpTheme", e.target.value); }catch(err){}
+});
+(function(){
+  var saved = null;
+  try{ saved = localStorage.getItem("cmpTheme"); }catch(e){}
+  if(saved && ["navy","green","teal","night"].indexOf(saved) !== -1){
+    document.documentElement.setAttribute("data-theme", saved);
+    $("themeSelect").value = saved;
+  }
+})();
+
+/* ---------- small helpers ---------- */
+var MAIN_SHOWN = false;
+var ME = null, CAN = { add:false, edit:false, imp:false, caseAdd:false, restrictedOfficer:"" , restricted:false };
+var LISTS = {
+  officers:["Tariq Siddique — APG","Ahmad Raza Gilani — APG","Rai Akhtar Hussain — APG","M. Irfan Zia — DPG","Ms. Memoona Ehsan Ul Haq — DPG","Sajjad Hussain — DPG","Mirza Abid Majeed — DPG"],
+  benches:["I","II","III","IV","V","VI","VII","VIII","IX","X"],
+  results:["Dismissed","Dismissed Infructuous","Dismissed DNP","Allowed","Partly Allowed","Allowed though Compromise","Converted into Lesser Sentence","Leave Granted","Adjourned","Dismissed as withdrawn"],
+  natures:["Criminal","Civil","Constitutional","Service","Tax","Property","Family","Banking","Other"],
+  years:[]
+};
+function toast(msg){
+  var host = $("toastHost"); host.innerHTML = '<div class="toast">' + esc(msg) + "</div>";
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ host.innerHTML = ""; }, 3500);
+}
+function str(v, max){ var s = (v == null ? "" : String(v)).replace(/\s+/g, " ").trim(); return max && s.length > max ? s.slice(0, max) : s; }
+function normNo(v){ return String(v == null ? "" : v).replace(/\s+/g, "").toUpperCase(); }
+function caseKey(type, no, yr){ return [String(type || "").replace(/[\s.]+/g, "").toLowerCase(), normNo(no), String(yr || "").trim()].join("|"); }
+var FMT_DAY = new Intl.DateTimeFormat("en-CA", { timeZone:TZ, year:"numeric", month:"2-digit", day:"2-digit" });
+var FMT_DT = new Intl.DateTimeFormat("en-GB", { timeZone:TZ, day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true });
+function todayKey(){ return FMT_DAY.format(new Date()); }
+function validDate(s){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s || "")) return false;
+  var p = s.split("-"), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  return d.getUTCFullYear() === +p[0] && d.getUTCMonth() === +p[1] - 1 && d.getUTCDate() === +p[2];
+}
+function weekday(s){ var p = s.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay(); }   /* 0 = Sunday */
+function fmtDate(s){ if(!validDate(s)) return s || "—"; var p = s.split("-"); return p[2] + "-" + p[1] + "-" + p[0]; }
+function fmtTs(ts){ try{ var d = ts && ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : null); return d ? FMT_DT.format(d).replace(",", "") : "—"; }catch(e){ return "—"; } }
+function yearNow(){ return +todayKey().slice(0, 4); }
+
+/* ---------- Case Master helpers (the same table Daily Cases uses) ---------- */
+function caseTypes(){ try{ return CaseMaster.types(); }catch(e){ return []; } }
+function categoriesFor(type){ try{ return CaseMaster.categoriesFor(type); }catch(e){ return []; } }
+function reliefAllowed(type, relief){ try{ return CaseMaster.allows(type, relief); }catch(e){ return true; } }
+function canonType(type){ try{ return CaseMaster.canonType(type) || ""; }catch(e){ return ""; } }
+
+/* ============================================================
+   Row validation — every message says what is wrong in plain words.
+   errs block "Correct" and the import; warns and infos only inform.
+   ============================================================ */
+var STOP = { the:1, state:1, and:1, another:1, others:1, other:1, alias:1, thr:1, vs:1, etc:1 };
+function tokens(s){
+  var o = {};
+  String(s || "").toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g, " ").split(" ").forEach(function(w){ if(w.length >= 3 && !STOP[w]) o[w] = 1; });
+  return Object.keys(o);
+}
+function sharesName(a, b){
+  var ta = tokens(a), tb = tokens(b);
+  if(!ta.length || !tb.length) return true;
+  for(var i = 0; i < ta.length; i++) for(var j = 0; j < tb.length; j++){
+    if(ta[i] === tb[j]) return true;
+    if(ta[i].length >= 4 && tb[j].length >= 4 && ta[i].slice(0, 4) === tb[j].slice(0, 4)) return true;
+  }
+  return false;
+}
+function serialParts(s){
+  var m = /^\s*(\d+)\s*(?:\((\d+)\))?\s*$/.exec(String(s || ""));
+  return m ? { base:+m[1], sub:m[2] ? +m[2] : 0 } : null;
+}
+/* rows = batch rows in order; portal = array of cases; returns {id: {errs:[], warns:[], infos:[], exists:bool}} */
+function validateAll(rows, portal){
+  var out = {}, today = todayKey(), cy = yearNow();
+  var portalIdx = {}, portalIds = {};
+  (portal || []).forEach(function(c){
+    portalIds[c.id] = 1;
+    var k = caseKey(c.type, c.caseNo, c.year);
+    (portalIdx[k] = portalIdx[k] || []).push(c);
+  });
+  var batchIdx = {};
+  rows.forEach(function(r){ if(r.status === "skip") return; var k = caseKey(r.type, r.caseNo, r.year); (batchIdx[k] = batchIdx[k] || []).push(r); });
+  var seenKD = {};
+  var grpState = {};
+  rows.forEach(function(r, idx){
+    if(r.status === "skip"){ out[r.id] = { errs:[], warns:[], infos:[], exists:false }; return; }   /* a row that is left out is not judged */
+    var e = [], w = [], inf = [], exists = false;
+    var no = normNo(r.caseNo), yr = String(r.year || "").trim();
+    if(!no) e.push(t("e_noCaseNo")); else if(!/^\d{1,8}(-[A-Z]{1,2})?$/.test(no)) e.push(t("e_badCaseNo"));
+    if(!/^\d{4}$/.test(yr) || +yr < 1950 || +yr > cy) e.push(t("e_noYear"));
+    if(!r.title) e.push(t("e_noTitle"));
+    if(!validDate(r.date)) e.push(t("e_noDate"));
+    else {
+      if(r.date > today) e.push(t("e_futureDate"));
+      if(/^\d{4}$/.test(yr) && +yr > +r.date.slice(0, 4)) e.push(t("e_yearAfter"));
+      var wd = weekday(r.date); if(wd === 0 || wd === 6) w.push(t("w_weekend"));
+    }
+    if(caseTypes().indexOf(r.type) < 0) e.push(t("e_type"));
+    else if(r.relief && !reliefAllowed(r.type, r.relief)) e.push(t("e_relief", { x:r.relief, t:r.type }));
+    else if(!r.relief) w.push(t("w_noRelief"));
+    if(!r.officer || LISTS.officers.indexOf(r.officer) < 0) e.push(t("e_officer"));
+    if(!r.result) w.push(t("w_noResult"));
+    if(!r.bench || LISTS.benches.indexOf(r.bench) < 0) w.push(t("w_noBench"));
+    if(r.nature && LISTS.natures.indexOf(r.nature) < 0) w.push(t("w_nature"));
+    if(/^\d{4}$/.test(yr) && LISTS.years.length && LISTS.years.indexOf(yr) < 0) w.push(t("w_year"));
+    var k = caseKey(r.type, r.caseNo, r.year);
+    /* same case + same date twice inside this register */
+    if(no && validDate(r.date)){
+      var kd = k + "|" + r.date;
+      if(seenKD[kd]) e.push(t("e_dupBatch", { n:seenKD[kd].seq })); else seenKD[kd] = r;
+    }
+    /* already in Daily Cases for this date */
+    var same = portalIdx[k] || [];
+    var sameDay = same.filter(function(c){ return String(c.date || "") === String(r.date || ""); });
+    if(sameDay.length && r.status !== "imported"){ exists = true; inf.push(t("i_exists")); }
+    if(r.status === "imported"){ exists = false; }
+    /* the same case number with an unrelated name — the most useful catch for misread digits */
+    var others = same.filter(function(c){ return c.id !== r.importedCaseId; }).map(function(c){ return { title:c.title, versus:c.versus, date:c.date }; });
+    (batchIdx[k] || []).forEach(function(o){ if(o !== r) others.push({ title:o.title, versus:o.versus, date:o.date }); });
+    if(others.length){
+      var mine = (r.title || "") + " " + (r.versus || "");
+      var odd = others.filter(function(o){ return !sharesName(mine, (o.title || "") + " " + (o.versus || "")); })[0];
+      if(odd && r.title) w.push(t("w_title", { x:(odd.title || "") + " / " + (odd.versus || "") + " (" + fmtDate(odd.date) + ")" }));
+      var dates = others.map(function(o){ return o.date; }).filter(function(d){ return d && d !== r.date; }).sort();
+      var uniq = dates.filter(function(d, i){ return dates.indexOf(d) === i; });
+      if(uniq.length) inf.push(t("i_before", { x:uniq.slice(0, 6).map(fmtDate).join("، ") + (uniq.length > 6 ? " …" : "") }));
+    }
+    /* serial order inside one date + bench */
+    var gk = r.pg + "|" + r.date + "|" + r.bench, sp = serialParts(r.serial);
+    var gs = grpState[gk] = grpState[gk] || { last:0, bases:{} };
+    if(sp){
+      if(sp.base < gs.last) w.push(t("w_serialOrder"));
+      if(!sp.sub){ if(gs.bases[sp.base]) w.push(t("w_serialDup", { n:sp.base })); gs.bases[sp.base] = 1; }
+      if(sp.base > gs.last) gs.last = sp.base;
+    }
+    out[r.id] = { errs:e, warns:w, infos:inf, exists:exists };
+  });
+  return out;
+}
+
+/* ============================================================
+   Sign-in, permission ticks, registers list, loading a register file
+   ============================================================ */
+var VIEW = "list", CUR = null, ROWS = [], VAL = {}, PORTAL = [], BATCHES = [], PVW = null, BUSY = false;
+var SHOW_ARCH = false;
+
+function showOnly(id){
+  ["authScreen","notAdminScreen","mainApp"].forEach(function(s){ $(s).classList.toggle("hidden", s !== id); });
+  MAIN_SHOWN = (id === "mainApp");
+}
+$("mainSignOut").addEventListener("click", function(){ auth.signOut(); });
+
+auth.onAuthStateChanged(function(user){
+  if(!user){ showOnly("authScreen"); window.location.replace("index.html"); return; }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var u = doc.exists ? (doc.data() || {}) : {};
+    var okUser = u.approvalStatus === "approved" && u.isActive !== false;
+    var role = u.roleV2 || (u.role === "admin" ? "admin" : "viewer");
+    if(!okUser){ showOnly("notAdminScreen"); return; }
+    if(window.CampPerm && !CampPerm.init(u, PAGE_KEY)){ showOnly("notAdminScreen"); return; }   /* no View tick: the page stays closed */
+    var P = function(pg, act){ return window.CampPerm ? CampPerm.can(u, pg, act) : (role === "admin" || role === "super_admin"); };
+    var isAdm = role === "admin" || role === "super_admin";
+    ME = { uid:user.uid, email:user.email, role:role, officer:String(u.officer || "") };
+    CAN.add = P(PAGE_KEY, "a"); CAN.edit = P(PAGE_KEY, "e"); CAN.imp = P(PAGE_KEY, "ic");
+    CAN.caseAdd = P("case-entry", "a");
+    CAN.restricted = !isAdm; CAN.restrictedOfficer = isAdm ? "" : ME.officer;
+    showOnly("mainApp");
+    $("curEmail").textContent = user.email;
+    var rb = $("curRoleBadge"); rb.textContent = roleName(role); rb.className = "badge " + role;
+    startLists();
+    loadBatches();
+    applyI18n();
+  }).catch(function(err){ console.error(err); showOnly("notAdminScreen"); });
+});
+
+function startLists(){
+  try{
+    db.collection("lookupLists").doc("caseEntry").onSnapshot(function(doc){
+      if(!doc.exists) return;
+      var d = doc.data() || {};
+      ["officers","benches","results","natures","years"].forEach(function(k){
+        if(Array.isArray(d[k]) && d[k].length) LISTS[k] = d[k].map(String);
+      });
+      if(MAIN_SHOWN && CUR) refreshValidation();
+    }, function(e){ console.error("lists", e); });
+  }catch(e){ console.error(e); }
+  try{ if(window.CaseMaster) CaseMaster.onChange(function(){ if(MAIN_SHOWN && CUR) refreshValidation(); }); }catch(e){}
+}
+
+/* ---------- tabs ---------- */
+function setView(v){
+  if((v === "review" || v === "import") && !CUR) v = "list";
+  VIEW = v;
+  ["list","review","import"].forEach(function(x){
+    $("view" + x.charAt(0).toUpperCase() + x.slice(1)).classList.toggle("hidden", x !== v);
+    $("tab" + x.charAt(0).toUpperCase() + x.slice(1)).classList.toggle("on", x === v);
+  });
+  if(v === "review") renderReview();
+  if(v === "import") renderImport();
+  window.scrollTo(0, 0);
+}
+$("tabs").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-tab]"); if(!b) return;
+  if(b.getAttribute("data-tab") === "import" && CUR) { refreshPortal().then(function(){ setView("import"); }); return; }
+  setView(b.getAttribute("data-tab"));
+});
+function renderAll(){
+  renderList();
+  if(CUR){ if(VIEW === "review") renderReview(); if(VIEW === "import") renderImport(); }
+  $("loadCard").classList.toggle("hidden", !CAN.add);
+  if(PVW) renderPreview();
+}
+
+/* ---------- Daily Cases snapshot (read when needed: for the duplicate and same-name checks) ---------- */
+function refreshPortal(){
+  return db.collection("cases").get().then(function(qs){
+    PORTAL = [];
+    qs.forEach(function(d){ var c = d.data() || {}; c.id = d.id; PORTAL.push(c); });
+    if(CUR) refreshValidation(true);
+  });
+}
+
+/* ---------- registers list ---------- */
+function loadBatches(){
+  $("listMsg").innerHTML = "";
+  return db.collection(C_BATCH).get().then(function(qs){
+    BATCHES = [];
+    qs.forEach(function(d){ var b = d.data() || {}; b.id = d.id; BATCHES.push(b); });
+    BATCHES.sort(function(a, b){ return tsNum(b.createdAt) - tsNum(a.createdAt); });
+    renderList();
+  }).catch(function(e){
+    $("listMsg").innerHTML = '<div class="msg err">' + esc(e && e.code === "permission-denied" ? t("errPerm") : t("errLoad") + (e && e.message || "")) + "</div>";
+  });
+}
+function tsNum(ts){ try{ return ts && ts.toMillis ? ts.toMillis() : (ts instanceof Date ? ts.getTime() : 0); }catch(e){ return 0; } }
+$("btnReloadList").addEventListener("click", loadBatches);
+$("showArch").addEventListener("change", function(e){ SHOW_ARCH = e.target.checked; renderList(); });
+
+function batchState(b){
+  if(b.status === "archived") return '<span class="chip arch">' + esc(t("stArchived")) + "</span>";
+  if(b.status === "loading") return '<span class="chip bad">' + esc(t("stLoading")) + "</span>";
+  if(b.status === "imported") return '<span class="chip imp">' + esc(t("stImported")) + "</span>";
+  if(b.importedCount > 0) return '<span class="chip warn">' + esc(t("stPartly")) + " (" + b.importedCount + ")</span>";
+  return '<span class="chip new">' + esc(t("stOpen")) + "</span>";
+}
+function renderList(){
+  var tb = $("batchTable");
+  var list = BATCHES.filter(function(b){ return SHOW_ARCH || b.status !== "archived"; });
+  if(!list.length){ tb.innerHTML = '<tbody><tr><td class="empty">' + esc(t("noBatches")) + "</td></tr></tbody>"; return; }
+  var h = "<thead><tr><th>" + esc(t("thName")) + "</th><th>" + esc(t("thOfficer")) + "</th><th>" + esc(t("thRows")) + "</th><th>" + esc(t("thPages")) + "</th><th>" + esc(t("thLoaded")) + "</th><th>" + esc(t("thState")) + "</th><th></th></tr></thead><tbody>";
+  list.forEach(function(b){
+    h += "<tr><td><strong>" + esc(b.name) + "</strong></td><td>" + esc(b.officer) + "</td><td>" + esc(b.rowCount) + "</td><td>" + esc(b.pageCount) + (b.photoCount ? " 🖼" + esc(b.photoCount) : "") + "</td><td>" + esc(fmtTs(b.createdAt)) + '<div class="hint">' + esc(b.createdBy || "") + "</div></td><td>" + batchState(b) + "</td><td><div class=\"bar\">";
+    if(b.status !== "loading") h += '<button class="btn small primary" type="button" data-open="' + esc(b.id) + '">' + esc(t("btnOpen")) + "</button>";
+    if(CAN.edit && b.status !== "archived") h += '<button class="btn small" type="button" data-arch="' + esc(b.id) + '">' + esc(t("btnArchive")) + "</button>";
+    if(CAN.edit && b.status === "archived") h += '<button class="btn small" type="button" data-unarch="' + esc(b.id) + '">' + esc(t("btnUnarchive")) + "</button>";
+    h += "</div></td></tr>";
+  });
+  tb.innerHTML = h + "</tbody>";
+}
+$("batchTable").addEventListener("click", function(e){
+  var b;
+  if((b = e.target.closest("[data-open]"))) { openBatch(b.getAttribute("data-open")); return; }
+  if((b = e.target.closest("[data-arch]"))) { archiveBatch(b.getAttribute("data-arch"), true); return; }
+  if((b = e.target.closest("[data-unarch]"))) { archiveBatch(b.getAttribute("data-unarch"), false); return; }
+});
+function archiveBatch(id, on){
+  var b = BATCHES.filter(function(x){ return x.id === id; })[0]; if(!b || !CAN.edit) return;
+  confirmBox(t("cfTitle"), '<p>' + esc(on ? t("arSure") : t("unarSure")) + "</p><p><strong>" + esc(b.name) + "</strong></p>", t("cfYes"), function(){
+    var st = on ? "archived" : (b.importedCount > 0 && b.importedCount >= b.rowCount ? "imported" : "open");
+    db.collection(C_BATCH).doc(id).update({ status:st, updatedBy:ME.email, updatedAt:firebase.firestore.FieldValue.serverTimestamp() }).then(function(){
+      b.status = st; if(CUR && CUR.id === id) CUR.status = st; renderList(); toast(t("toSaved"));
+    }).catch(function(err){ toast(t("toFail") + (err && err.message || "")); });
+  });
+}
+
+/* ---------- a small confirm dialog ---------- */
+function confirmBox(title, html, yesText, onYes, noText){
+  var host = $("modalHost");
+  host.innerHTML = '<div class="modal-bg" id="mbg"><div class="modal" role="dialog" aria-modal="true"><h3>' + esc(title) + "</h3>" + html +
+    '<div class="fbar"><button class="btn" type="button" id="mNo">' + esc(noText || t("cfNo")) + '</button><button class="btn primary" type="button" id="mYes">' + esc(yesText) + "</button></div></div></div>";
+  function close(){ host.innerHTML = ""; }
+  $("mNo").addEventListener("click", close);
+  $("mYes").addEventListener("click", function(){ close(); onYes(); });
+  $("mbg").addEventListener("click", function(e){ if(e.target.id === "mbg") close(); });
+  $("mYes").focus();
+}
+
+/* ============================================================
+   Loading a register file
+   File shape (format "camp-register-batch", version 1):
+   { format, version, name, officer, nature, note, rows:[{key, pg, date, bench, serial, type, caseNo, year, title,
+     versus, relief, result, remarks, note, status, nature, officer}], pages:[{pg, img:"data:image/jpeg;base64,…", w, h}] }
+   ============================================================ */
+function cleanFile(raw){
+  function bad(m){ return { ok:false, error:m }; }
+  if(!raw || typeof raw !== "object") return bad("not a JSON object");
+  if(raw.format !== "camp-register-batch" || +raw.version !== 1) return bad("format / version");
+  var name = str(raw.name, 120), officer = str(raw.officer, 80), nature = str(raw.nature, 40) || "Criminal";
+  if(!name) return bad("name is missing");
+  if(!officer) return bad("officer is missing");
+  if(!Array.isArray(raw.rows) || !raw.rows.length) return bad("no rows");
+  if(raw.rows.length > MAX_ROWS) return bad("more than " + MAX_ROWS + " rows");
+  var used = {}, rows = [];
+  for(var i = 0; i < raw.rows.length; i++){
+    var r = raw.rows[i]; if(!r || typeof r !== "object") return bad("row " + (i + 1) + " is not an object");
+    var key = String(r.key || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40) || ("r" + (i + 1));
+    var k2 = key, n = 2; while(used[k2]){ k2 = key + "_" + n++; } used[k2] = 1;
+    var pg = parseInt(r.pg, 10); if(!(pg >= 1 && pg <= 999)) return bad("row " + (i + 1) + ": page number");
+    var type = str(r.type, 20), ct = canonType(type); if(ct) type = ct;
+    var relief = str(r.relief, 60); try{ relief = CaseMaster.fix(relief); }catch(e){}
+    var st = r.status === "skip" ? "skip" : "new";
+    var date = str(r.date, 10); if(!validDate(date)) date = date;   /* a wrong date stays visible as an error in the review */
+    rows.push({ key:k2, seq:i + 1, pg:pg, date:date, bench:str(r.bench, 10).toUpperCase(), serial:str(r.serial, 20), type:type,
+      caseNo:normNo(str(r.caseNo, 20)), year:str(r.year, 4), title:str(r.title, 200), versus:str(r.versus, 200), relief:relief,
+      result:str(r.result, 60), remarks:str(r.remarks, 200), note:str(r.note, 300), nature:str(r.nature, 40) || nature,
+      officer:str(r.officer, 80) || officer, status:st });
+  }
+  var pages = [], seenPg = {};
+  (Array.isArray(raw.pages) ? raw.pages : []).forEach(function(p){
+    if(!p || typeof p.img !== "string") return;
+    var pg = parseInt(p.pg, 10);
+    if(!(pg >= 1 && pg <= 999) || seenPg[pg]) return;
+    if(p.img.indexOf("data:image/jpeg;base64,") !== 0 || p.img.length > MAX_IMG) return;
+    seenPg[pg] = 1; pages.push({ pg:pg, img:p.img, w:parseInt(p.w, 10) || 0, h:parseInt(p.h, 10) || 0 });
+  });
+  if(pages.length > MAX_PAGES) pages = pages.slice(0, MAX_PAGES);
+  return { ok:true, name:name, officer:officer, nature:nature, note:str(raw.note, 300), rows:rows, pages:pages, skippedPhotos:(Array.isArray(raw.pages) ? raw.pages.length : 0) - pages.length };
+}
+
+$("fileIn").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0]; PVW = null; $("loadPreview").innerHTML = "";
+  if(!f) return;
+  if(!CAN.add){ $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("loadNoPerm")) + "</div>"; return; }
+  if(f.size > MAX_FILE){ $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("fileBig")) + "</div>"; return; }
+  var rd = new FileReader();
+  rd.onload = function(){
+    var raw; try{ raw = JSON.parse(rd.result); }catch(err){ $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("fileBad") + "JSON") + "</div>"; return; }
+    var c = cleanFile(raw);
+    if(!c.ok){ $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("fileBad") + c.error) + "</div>"; return; }
+    c.fileName = f.name;
+    $("loadPreview").innerHTML = '<div class="msg info">' + esc(t("loading")) + "</div>";
+    (PORTAL.length ? Promise.resolve() : refreshPortalOnly()).then(function(){ PVW = c; renderPreview(); }).catch(function(err){
+      $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("errLoad") + (err && err.message || "")) + "</div>";
+    });
+  };
+  rd.onerror = function(){ $("loadPreview").innerHTML = '<div class="msg err">' + esc(t("fileBad") + "read") + "</div>"; };
+  rd.readAsText(f);
+});
+function refreshPortalOnly(){
+  return db.collection("cases").get().then(function(qs){ PORTAL = []; qs.forEach(function(d){ var c = d.data() || {}; c.id = d.id; PORTAL.push(c); }); });
+}
+function previewRows(c){
+  return c.rows.map(function(r){ var o = {}; Object.keys(r).forEach(function(k){ o[k] = r[k]; }); o.id = r.key; return o; });
+}
+function renderPreview(){
+  var c = PVW; if(!c){ $("loadPreview").innerHTML = ""; return; }
+  var rows = previewRows(c), v = validateAll(rows, PORTAL);
+  var nErr = rows.filter(function(r){ return v[r.id].errs.length; }).length;
+  var nDoubt = rows.filter(function(r){ return r.note; }).length;
+  var dup = BATCHES.some(function(b){ return b.name === c.name && b.rowCount === c.rows.length && b.status !== "archived"; });
+  var pgs = {}; c.rows.forEach(function(r){ pgs[r.pg] = 1; });
+  var h = '<div class="card" style="margin-top:12px"><h3>' + esc(t("pvTitle")) + "</h3><div class=\"kv\">" +
+    "<b>" + esc(t("pvName")) + "</b><span>" + esc(c.name) + "</span>" +
+    "<b>" + esc(t("pvOfficer")) + "</b><span>" + esc(c.officer) + "</span>" +
+    "<b>" + esc(t("pvNature")) + "</b><span>" + esc(c.nature) + "</span>" +
+    "<b>" + esc(t("pvRows")) + "</b><span>" + c.rows.length + " (" + Object.keys(pgs).length + " " + esc(t("pagesWord")) + ")</span>" +
+    "<b>" + esc(t("pvPages")) + "</b><span>" + c.pages.length + "</span>" +
+    "<b>" + esc(t("pvDoubt")) + "</b><span>" + nDoubt + "</span>" +
+    "<b>" + esc(t("pvErr")) + "</b><span>" + nErr + "</span></div>";
+  if(dup) h += '<div class="msg warn">' + esc(t("pvDup")) + "</div>";
+  if(LISTS.officers.indexOf(c.officer) < 0) h += '<div class="msg warn">' + esc(t("pvOfficerUnknown")) + "</div>";
+  h += '<div class="bar" style="margin-top:12px"><button class="btn primary" type="button" id="btnLoadNow"' + (BUSY ? " disabled" : "") + ">" + esc(t("btnLoadNow")) + '</button></div><div id="loadProg" class="hint" style="margin-top:8px"></div></div>';
+  $("loadPreview").innerHTML = h;
+  $("btnLoadNow").addEventListener("click", doLoad);
+}
+function newBatchId(){
+  var d = new Date(), p = function(n){ return (n < 10 ? "0" : "") + n; };
+  return "b" + d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + "-" + p(d.getUTCHours()) + p(d.getUTCMinutes()) + p(d.getUTCSeconds()) + "-" + Math.random().toString(36).slice(2, 6);
+}
+async function doLoad(){
+  var c = PVW; if(!c || BUSY) return;
+  if(!CAN.add){ toast(t("loadNoPerm")); return; }
+  BUSY = true; $("btnLoadNow").disabled = true;
+  var prog = $("loadProg"), id = newBatchId(), TS = firebase.firestore.FieldValue.serverTimestamp(), by = ME.email;
+  var pgs = {}; c.rows.forEach(function(r){ pgs[r.pg] = 1; });
+  try{
+    await db.collection(C_BATCH).doc(id).set({ name:c.name, officer:c.officer, nature:c.nature, note:c.note, sourceFile:c.fileName || "", formatVersion:1,
+      rowCount:c.rows.length, pageCount:Object.keys(pgs).length, photoCount:c.pages.length, pagesWithPhoto:[], importedCount:0, status:"loading", createdBy:by, createdAt:TS, updatedBy:by, updatedAt:TS });
+    for(var i = 0; i < c.rows.length; i += 300){
+      var b = db.batch();
+      c.rows.slice(i, i + 300).forEach(function(r){
+        var d = { batchId:id, key:r.key, seq:r.seq, pg:r.pg, date:r.date, bench:r.bench, serial:r.serial, type:r.type, caseNo:r.caseNo, year:r.year, title:r.title, versus:r.versus,
+          relief:r.relief, result:r.result, remarks:r.remarks, nature:r.nature, officer:r.officer, note:r.note, status:r.status, createdBy:by, createdAt:TS, updatedAt:TS };
+        b.set(db.collection(C_ROW).doc(id + "__" + r.key), d);
+      });
+      await b.commit();
+      prog.textContent = t("loading") + Math.min(i + 300, c.rows.length) + " / " + c.rows.length;
+    }
+    var done = [], chunk = [], size = 0;
+    async function flush(){
+      if(!chunk.length) return;
+      var b = db.batch();
+      chunk.forEach(function(p){ b.set(db.collection(C_PAGE).doc(id + "__p" + p.pg), { batchId:id, pg:p.pg, img:p.img, w:p.w, h:p.h, createdBy:by, createdAt:TS }); done.push(p.pg); });
+      await b.commit(); chunk = []; size = 0;
+      prog.textContent = t("loading") + c.rows.length + " / " + c.rows.length + " · 🖼 " + done.length + " / " + c.pages.length;
+    }
+    for(var j = 0; j < c.pages.length; j++){
+      if(size + c.pages[j].img.length > 5500000) await flush();
+      chunk.push(c.pages[j]); size += c.pages[j].img.length;
+    }
+    await flush();
+    done.sort(function(a, b){ return a - b; });
+    await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, updatedBy:by, updatedAt:TS });
+    prog.textContent = t("loadDone");
+    PVW = null; $("fileIn").value = ""; BUSY = false;
+    await loadBatches();
+    await openBatch(id);
+  }catch(err){
+    BUSY = false;
+    prog.innerHTML = '<span style="color:var(--danger)">' + esc(t("loadFail") + (err && err.message || "")) + "</span>";
+    $("btnLoadNow").disabled = false;
+    loadBatches();
+  }
+}
+
+/* ============================================================
+   Review: rows grouped by register page / date / bench, page photo beside them, per-row actions
+   ============================================================ */
+var FLT = { f:"all", pg:"", text:"" }, SEL = null, EDIT = null, PHOTO = { pg:0, zoom:100, hidden:false }, PIMG = {};
+var FIELDS = ["date","bench","serial","type","caseNo","year","title","versus","relief","result","remarks","nature","officer"];
+var TS_ = function(){ return firebase.firestore.FieldValue.serverTimestamp(); };
+
+async function openBatch(id){
+  var b = BATCHES.filter(function(x){ return x.id === id; })[0]; if(!b) return;
+  try{
+    var res = await Promise.all([db.collection(C_ROW).where("batchId", "==", id).get(), db.collection("cases").get()]);
+    CUR = b; ROWS = [];
+    res[0].forEach(function(d){ var r = d.data() || {}; r.id = d.id; r.seq = +r.seq || 0; r.pg = +r.pg || 0; ROWS.push(r); });
+    ROWS.sort(function(a, c){ return a.seq - c.seq; });
+    PORTAL = []; res[1].forEach(function(d){ var c = d.data() || {}; c.id = d.id; PORTAL.push(c); });
+    FLT = { f:"all", pg:"", text:"" }; SEL = null; EDIT = null; PHOTO = { pg:ROWS.length ? ROWS[0].pg : 0, zoom:100, hidden:PHOTO.hidden };
+    $("fText").value = "";
+    VAL = validateAll(ROWS, PORTAL);
+    setView("review");
+  }catch(e){
+    toast(t("errLoad") + (e && e.message || ""));
+  }
+}
+$("btnReloadRows").addEventListener("click", function(){ if(CUR) openBatch(CUR.id); });
+function refreshValidation(){
+  VAL = validateAll(ROWS, PORTAL);
+  if(VIEW === "review") renderReview(); else if(VIEW === "import") renderImport();
+}
+function rowById(id){ for(var i = 0; i < ROWS.length; i++) if(ROWS[i].id === id) return ROWS[i]; return null; }
+function isDoubt(r){ return !!r.note && r.status !== "imported" && r.status !== "skip"; }
+function rowStats(){
+  var s = { total:ROWS.length, todo:0, ok:0, skip:0, imp:0, doubt:0, err:0, ready:0 };
+  ROWS.forEach(function(r){
+    var v = VAL[r.id] || { errs:[], exists:false };
+    if(r.status === "new") s.todo++; else if(r.status === "checked") s.ok++; else if(r.status === "skip") s.skip++; else if(r.status === "imported") s.imp++;
+    if(isDoubt(r) && r.status === "new") s.doubt++;
+    if((r.status === "new" || r.status === "checked") && v.errs.length) s.err++;
+    if(r.status === "checked" && !v.errs.length && !v.exists) s.ready++;
+  });
+  return s;
+}
+function matches(r){
+  var v = VAL[r.id] || { errs:[], warns:[] };
+  if(FLT.pg && String(r.pg) !== String(FLT.pg)) return false;
+  var f = FLT.f;
+  if(f === "todo" && r.status !== "new") return false;
+  if(f === "doubt" && !(isDoubt(r) && r.status === "new")) return false;
+  if(f === "err" && !((r.status === "new" || r.status === "checked") && v.errs.length)) return false;
+  if(f === "warn" && !((r.status === "new" || r.status === "checked") && v.warns.length)) return false;
+  if(f === "ok" && r.status !== "checked") return false;
+  if(f === "skip" && r.status !== "skip") return false;
+  if(f === "imp" && r.status !== "imported") return false;
+  if(FLT.text){
+    var q = FLT.text.toLowerCase();
+    var hay = [r.title, r.versus, r.caseNo, r.serial, r.type, r.year, r.remarks].join(" ").toLowerCase();
+    if(hay.indexOf(q) < 0) return false;
+  }
+  return true;
+}
+
+function renderReview(){
+  if(!CUR) return;
+  $("revTitle").textContent = CUR.name;
+  $("revSub").textContent = CUR.officer + " · " + ROWS.length + " " + t("rowsWord") + " · " + (CUR.pageCount || 0) + " " + t("pagesWord");
+  var s = rowStats();
+  var pct = function(n){ return s.total ? (n * 100 / s.total).toFixed(2) : 0; };
+  $("revProg").innerHTML = '<i class="p-imp" style="width:' + pct(s.imp) + '%"></i><i class="p-ok" style="width:' + pct(s.ok) + '%"></i><i class="p-skip" style="width:' + pct(s.skip) + '%"></i>';
+  var cards = [["all", s.total, "sTotal", ""], ["todo", s.todo, "sTodo", ""], ["ok", s.ok, "sOk", "good"], ["doubt", s.doubt, "sDoubt", "warn"], ["err", s.err, "sErr", s.err ? "bad" : ""], ["skip", s.skip, "sSkip", ""], ["imp", s.imp, "sImp", ""]];
+  $("revStats").innerHTML = cards.map(function(c){
+    return '<button type="button" class="stat ' + c[3] + (FLT.f === c[0] ? " on" : "") + '" data-f="' + c[0] + '"><div class="n">' + c[1] + '</div><div class="l">' + esc(t(c[2])) + "</div></button>";
+  }).join("");
+  document.querySelectorAll("#revFilters button[data-f]").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-f") === FLT.f); });
+  var pgs = []; ROWS.forEach(function(r){ if(pgs.indexOf(r.pg) < 0) pgs.push(r.pg); });
+  var sel = $("fPage"), cur = FLT.pg;
+  sel.innerHTML = '<option value="">' + esc(t("fPageAll")) + "</option>" + pgs.map(function(p){ return '<option value="' + p + '">' + esc(t("pageWord")) + " " + p + "</option>"; }).join("");
+  sel.value = cur;
+  $("kbdHint").textContent = CAN.edit ? t("kbd") : "";
+  var list = ROWS.filter(matches);
+  var box = $("rowsBox");
+  if(!list.length){ box.innerHTML = '<div class="card empty">' + esc(t("noRows")) + "</div>"; }
+  else {
+    var h = "", prev = null;
+    list.forEach(function(r){
+      var gk = r.pg + "|" + r.date + "|" + r.bench;
+      if(gk !== prev){
+        if(prev !== null) h += "</div>";
+        var all = ROWS.filter(function(x){ return x.pg + "|" + x.date + "|" + x.bench === gk; });
+        var done = all.filter(function(x){ return x.status !== "new"; }).length;
+        h += '<div class="grp" data-grp="' + esc(gk) + '"><div class="grp-head"><span>' + esc(t("pageWord")) + " " + r.pg + "</span><span>" + esc(fmtDate(r.date)) + "</span><span>Bench " + esc(r.bench || "—") + "</span><span>" + done + "/" + all.length + '</span><span class="sp"></span>';
+        if(CAN.edit) h += '<button class="btn small" type="button" data-act="checkpage" data-gk="' + esc(gk) + '">' + esc(t("bCheckPage")) + '</button><button class="btn small" type="button" data-act="addrow" data-gk="' + esc(gk) + '">' + esc(t("bAddRow")) + "</button>";
+        h += "</div>";
+        prev = gk;
+      }
+      h += rowHtml(r);
+    });
+    box.innerHTML = h + "</div>";
+  }
+  renderPhotoPane();
+  $("split").classList.toggle("nophoto", PHOTO.hidden);
+  $("photoPane").classList.toggle("hidden", PHOTO.hidden);
+}
+
+function chip(cls, k){ return '<span class="chip ' + cls + '">' + esc(t(k)) + "</span>"; }
+function rowHtml(r){
+  var v = VAL[r.id] || { errs:[], warns:[], infos:[], exists:false };
+  var st = r.status;
+  var cls = "rowc st-" + (st === "checked" ? "ok" : st === "skip" ? "skip" : st === "imported" ? "imp" : "new");
+  if((st === "new" || st === "checked") && v.errs.length) cls += " has-err";
+  if(isDoubt(r)) cls += " has-doubt";
+  if(SEL === r.id) cls += " sel";
+  if(EDIT && EDIT.id === r.id) return '<div class="' + cls + '" data-id="' + esc(r.id) + '">' + editorHtml(r) + "</div>";
+  var h = '<div class="' + cls + '" data-id="' + esc(r.id) + '"><div class="main"><div class="l1"><span class="sr">' + esc(r.serial || "—") + '</span><span class="cs">' + esc(r.type) + " " + esc(r.caseNo || "?") + "/" + esc(r.year || "?") + '</span><span class="tt">' + esc(r.title || "—") + (r.versus ? " <em>vs</em> " + esc(r.versus) : "") + "</span></div>";
+  h += '<div class="l2">' + [r.relief || "—", r.result || "—", r.remarks && r.remarks !== "—" ? r.remarks : ""].filter(function(x){ return x; }).map(esc).join(" · ") + "</div>";
+  h += '<div class="l3">';
+  h += st === "checked" ? chip("ok", "chOk") : st === "skip" ? chip("skip", "chSkip") : st === "imported" ? chip("imp", "chImp") : chip("new", "chNew");
+  if(isDoubt(r) && st === "new") h += chip("warn", "chDoubt");
+  if(v.exists && st !== "imported") h += chip("warn", "chExists");
+  if(r.edited) h += '<span class="chip new">' + esc(t("editedWord")) + "</span>";
+  h += "</div>";
+  v.errs.forEach(function(m){ h += '<span class="iss e">⛔ ' + esc(m) + "</span>"; });
+  v.warns.forEach(function(m){ h += '<span class="iss w">⚠ ' + esc(m) + "</span>"; });
+  v.infos.forEach(function(m){ h += '<span class="iss i">ℹ ' + esc(m) + "</span>"; });
+  if(r.note) h += '<div class="note-box">' + esc(t("doubtNote")) + '<span dir="auto" style="unicode-bidi:plaintext">' + esc(r.note) + "</span></div>";
+  h += '</div><div class="acts">';
+  if(CAN.edit && st !== "imported"){
+    if(st === "new") h += '<button class="btn good" type="button" data-act="ok" data-id="' + esc(r.id) + '"' + (v.errs.length ? " disabled" : "") + ">" + esc(t("bOk")) + "</button>";
+    if(st === "new" || st === "checked") h += '<button class="btn" type="button" data-act="edit" data-id="' + esc(r.id) + '">' + esc(t("bEdit")) + "</button>";
+    if(st === "new") h += '<button class="btn dng" type="button" data-act="skip" data-id="' + esc(r.id) + '">' + esc(t("bSkip")) + "</button>";
+    if(st === "checked" || st === "skip") h += '<button class="btn" type="button" data-act="undo" data-id="' + esc(r.id) + '">' + esc(t("bUndo")) + "</button>";
+  }
+  return h + "</div></div>";
+}
+
+/* ---------- editor ---------- */
+function opt(list, cur, blank){
+  var h = blank ? '<option value=""></option>' : "";
+  var seen = false;
+  list.forEach(function(x){ if(x === cur) seen = true; h += '<option value="' + esc(x) + '"' + (x === cur ? " selected" : "") + ">" + esc(x) + "</option>"; });
+  if(cur && !seen) h += '<option value="' + esc(cur) + '" selected>' + esc(cur) + " ⚠</option>";
+  return h;
+}
+function editorHtml(r){
+  var d = EDIT.draft;
+  var f = function(id, label, inner, extra){ return '<div' + (extra ? ' class="' + extra + '"' : "") + '><label for="ed_' + id + '">' + esc(t(label)) + "</label>" + inner + "</div>"; };
+  var inp = function(id, val, attrs){ return '<input id="ed_' + id + '" data-fld="' + id + '" value="' + esc(val) + '" ' + (attrs || "") + ">"; };
+  var h = '<div class="editor" data-editor="' + esc(r.id) + '">';
+  h += f("date", "fDate", inp("date", d.date, 'type="date"'));
+  h += f("bench", "fBench", '<select id="ed_bench" data-fld="bench">' + opt(LISTS.benches, d.bench, true) + "</select>");
+  h += f("serial", "fSerial", inp("serial", d.serial, 'dir="ltr"'));
+  h += f("type", "fType", '<select id="ed_type" data-fld="type">' + opt(caseTypes(), d.type, true) + "</select>");
+  h += f("caseNo", "fCaseNo", inp("caseNo", d.caseNo, 'dir="ltr"'));
+  h += f("year", "fYear", inp("year", d.year, 'dir="ltr" inputmode="numeric" maxlength="4"'));
+  h += f("title", "fTitle", inp("title", d.title), "wide2");
+  h += f("versus", "fVersus", inp("versus", d.versus), "wide2");
+  h += f("relief", "fRelief", '<select id="ed_relief" data-fld="relief">' + opt(categoriesFor(d.type), d.relief, true) + "</select>");
+  h += f("result", "fResult", '<select id="ed_result" data-fld="result">' + opt(LISTS.results, d.result, true) + "</select>");
+  h += f("remarks", "fRemarks", inp("remarks", d.remarks), "wide2");
+  h += f("nature", "fNature", '<select id="ed_nature" data-fld="nature">' + opt(LISTS.natures, d.nature, true) + "</select>");
+  h += f("officer", "fOfficer", '<select id="ed_officer" data-fld="officer">' + opt(LISTS.officers, d.officer, true) + "</select>");
+  if(r.note) h += '<div class="wide2 note-box" style="grid-column:1/-1">' + esc(t("doubtNote")) + '<span dir="auto" style="unicode-bidi:plaintext">' + esc(r.note) + "</span></div>";
+  h += '<div id="edIssues" style="grid-column:1/-1"></div>';
+  h += '<div class="fbar"><button class="btn primary" type="button" data-act="save" data-id="' + esc(r.id) + '">' + esc(t("bSave")) + '</button><button class="btn" type="button" data-act="cancel">' + esc(t("bCancel")) + "</button></div></div>";
+  return h;
+}
+var edTimer = null;
+function draftIssues(){
+  if(!EDIT) return;
+  var r = rowById(EDIT.id); if(!r) return;
+  var tmp = ROWS.map(function(x){ if(x.id !== r.id) return x; var o = {}; Object.keys(x).forEach(function(k){ o[k] = x[k]; }); FIELDS.forEach(function(k){ o[k] = EDIT.draft[k]; }); o.caseNo = normNo(o.caseNo); o.status = x.status === "skip" ? "new" : x.status; return o; });
+  var v = validateAll(tmp, PORTAL)[r.id];
+  var h = "";
+  v.errs.forEach(function(m){ h += '<span class="iss e">⛔ ' + esc(m) + "</span>"; });
+  v.warns.forEach(function(m){ h += '<span class="iss w">⚠ ' + esc(m) + "</span>"; });
+  v.infos.forEach(function(m){ h += '<span class="iss i">ℹ ' + esc(m) + "</span>"; });
+  var el = $("edIssues"); if(el) el.innerHTML = h;
+}
+function readDraftField(el){
+  var k = el.getAttribute("data-fld"); if(!k || !EDIT) return;
+  var v = el.value;
+  EDIT.draft[k] = (k === "caseNo") ? normNo(v) : (k === "bench" ? v.toUpperCase() : v);
+  if(k === "type"){
+    var rs = $("ed_relief"); var cats = categoriesFor(v);
+    if(EDIT.draft.relief && cats.indexOf(EDIT.draft.relief) < 0) EDIT.draft.relief = "";
+    rs.innerHTML = opt(cats, EDIT.draft.relief, true);
+  }
+  clearTimeout(edTimer); edTimer = setTimeout(draftIssues, 120);
+}
+
+/* ---------- actions ---------- */
+function setBusy(on){ BUSY = on; }
+function updateRow(r, patch){
+  var d = {}; Object.keys(patch).forEach(function(k){ d[k] = patch[k]; });
+  d.updatedBy = ME.email; d.updatedAt = TS_();
+  return db.collection(C_ROW).doc(r.id).update(d).then(function(){ Object.keys(patch).forEach(function(k){ r[k] = patch[k]; }); });
+}
+function guard(){
+  if(!CAN.edit){ toast(t("noEditRight")); return false; }
+  if(BUSY){ toast(t("toBusy")); return false; }
+  return true;
+}
+function afterChange(){ VAL = validateAll(ROWS, PORTAL); var y = window.scrollY; renderReview(); window.scrollTo(0, y); }
+async function setStatus(r, status){
+  if(!guard()) return;
+  if(r.status === "imported"){ toast(t("locked")); return; }
+  setBusy(true);
+  try{
+    var p = { status:status, checkedBy:status === "checked" ? ME.email : "" };
+    await updateRow(r, p);
+    afterChange();
+  }catch(e){ toast(t("toFail") + (e && e.message || "")); }
+  setBusy(false);
+}
+function doCheck(r){
+  if(!r || r.status !== "new") return;
+  var v = VAL[r.id] || { errs:[] };
+  if(v.errs.length){ toast(v.errs[0]); return; }
+  if(r.note){
+    confirmBox(t("cfTitle"), "<p>" + esc(t("cfDoubt")) + '</p><div class="note-box">' + esc(r.note) + "</div><p><strong>" + esc(r.type + " " + r.caseNo + "/" + r.year + " — " + r.title) + "</strong></p><p>" + esc(t("cfDoubtAsk")) + "</p>", t("cfYes"), function(){ setStatus(r, "checked"); });
+  } else setStatus(r, "checked");
+}
+async function checkPage(gk){
+  if(!guard()) return;
+  var rows = ROWS.filter(function(x){ return x.pg + "|" + x.date + "|" + x.bench === gk && x.status === "new" && !x.note && !(VAL[x.id] || { errs:[], warns:[] }).errs.length && !(VAL[x.id] || { warns:[] }).warns.length; });
+  if(!rows.length){ toast(t("noRows")); return; }
+  confirmBox(t("cfTitle"), "<p>" + esc(t("cfPage", { n:rows.length })) + "</p>", t("cfYes"), async function(){
+    setBusy(true);
+    try{
+      for(var i = 0; i < rows.length; i += 300){
+        var b = db.batch(), ts = TS_();
+        rows.slice(i, i + 300).forEach(function(r){ b.update(db.collection(C_ROW).doc(r.id), { status:"checked", checkedBy:ME.email, updatedBy:ME.email, updatedAt:ts }); });
+        await b.commit();
+      }
+      rows.forEach(function(r){ r.status = "checked"; r.checkedBy = ME.email; });
+      afterChange(); toast(t("toSaved"));
+    }catch(e){ toast(t("toFail") + (e && e.message || "")); }
+    setBusy(false);
+  });
+}
+function startEdit(r){
+  if(!CAN.edit){ toast(t("noEditRight")); return; }
+  if(r.status === "imported"){ toast(t("locked")); return; }
+  EDIT = { id:r.id, draft:{} };
+  FIELDS.forEach(function(k){ EDIT.draft[k] = r[k] || ""; });
+  SEL = r.id; PHOTO.pg = r.pg;
+  renderReview();
+  var el = document.querySelector('[data-editor="' + r.id + '"]'); if(el) el.scrollIntoView({ block:"center" });
+  draftIssues();
+}
+async function saveEdit(){
+  if(!EDIT || !guard()) return;
+  var r = rowById(EDIT.id); if(!r) return;
+  var patch = {}, d = EDIT.draft;
+  FIELDS.forEach(function(k){
+    var v = str(d[k], k === "title" || k === "versus" || k === "remarks" ? 200 : 80);
+    if(k === "caseNo") v = normNo(v);
+    if(k === "type"){ var ct = canonType(v); if(ct) v = ct; }
+    if(k === "relief"){ try{ v = CaseMaster.fix(v); }catch(e){} }
+    if(v !== (r[k] || "")) patch[k] = v;
+  });
+  if(!Object.keys(patch).length){ EDIT = null; renderReview(); return; }
+  patch.edited = true;
+  if(r.status === "checked"){ patch.status = "new"; patch.checkedBy = ""; }
+  setBusy(true);
+  try{ await updateRow(r, patch); EDIT = null; afterChange(); toast(t("toSaved")); }
+  catch(e){ toast(t("toFail") + (e && e.message || "")); }
+  setBusy(false);
+}
+async function addRow(gk){
+  if(!CAN.add){ toast(t("noEditRight")); return; }
+  if(!guard()) return;
+  var idxs = []; ROWS.forEach(function(x, i){ if(x.pg + "|" + x.date + "|" + x.bench === gk) idxs.push(i); });
+  if(!idxs.length) return;
+  var li = idxs[idxs.length - 1], last = ROWS[li], next = ROWS[li + 1];
+  var seq = next ? (last.seq + next.seq) / 2 : last.seq + 1;
+  var key = "m" + Date.now().toString(36);
+  var d = { batchId:CUR.id, key:key, seq:seq, pg:last.pg, date:last.date, bench:last.bench, serial:"", type:"Crl.P.L.A.", caseNo:"", year:"", title:"", versus:"The State", relief:"", result:"", remarks:"", nature:CUR.nature || "Criminal", officer:CUR.officer, note:"", status:"new", manual:true, createdBy:ME.email, createdAt:TS_(), updatedAt:TS_() };
+  setBusy(true);
+  try{
+    await db.collection(C_ROW).doc(CUR.id + "__" + key).set(d);
+    var r = {}; Object.keys(d).forEach(function(k){ r[k] = d[k]; }); r.id = CUR.id + "__" + key;
+    ROWS.splice(li + 1, 0, r);
+    VAL = validateAll(ROWS, PORTAL);
+    setBusy(false);
+    startEdit(r);
+  }catch(e){ setBusy(false); toast(t("toFail") + (e && e.message || "")); }
+}
+
+/* ---------- events ---------- */
+$("rowsBox").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-act]");
+  if(b){
+    var a = b.getAttribute("data-act"), id = b.getAttribute("data-id"), r = id ? rowById(id) : null;
+    if(a === "ok") doCheck(r);
+    else if(a === "skip") setStatus(r, "skip");
+    else if(a === "undo") setStatus(r, "new");
+    else if(a === "edit") startEdit(r);
+    else if(a === "save") saveEdit();
+    else if(a === "cancel"){ EDIT = null; renderReview(); }
+    else if(a === "checkpage") checkPage(b.getAttribute("data-gk"));
+    else if(a === "addrow") addRow(b.getAttribute("data-gk"));
+    return;
+  }
+  if(e.target.closest("input,select,textarea,.editor")) return;
+  var c = e.target.closest(".rowc"); if(c) selectRow(c.getAttribute("data-id"));
+});
+$("rowsBox").addEventListener("input", function(e){ if(e.target.matches("[data-fld]")) readDraftField(e.target); });
+$("rowsBox").addEventListener("change", function(e){ if(e.target.matches("[data-fld]")) readDraftField(e.target); });
+function selectRow(id){
+  var r = rowById(id); if(!r) return;
+  SEL = id; var pgChanged = PHOTO.pg !== r.pg; PHOTO.pg = r.pg;
+  document.querySelectorAll(".rowc.sel").forEach(function(x){ x.classList.remove("sel"); });
+  var el = document.querySelector('.rowc[data-id="' + id.replace(/"/g, "") + '"]'); if(el) el.classList.add("sel");
+  if(pgChanged || true) renderPhotoPane();
+}
+$("revStats").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; FLT.f = b.getAttribute("data-f"); renderReview(); });
+$("revFilters").addEventListener("click", function(e){ var b = e.target.closest("button[data-f]"); if(!b) return; FLT.f = b.getAttribute("data-f"); renderReview(); });
+$("fPage").addEventListener("change", function(e){ FLT.pg = e.target.value; renderReview(); });
+$("fText").addEventListener("input", function(e){ FLT.text = e.target.value.trim(); clearTimeout(renderReview._t); renderReview._t = setTimeout(renderReview, 200); });
+$("btnTogglePhoto").addEventListener("click", function(){ PHOTO.hidden = !PHOTO.hidden; renderReview(); });
+document.addEventListener("keydown", function(e){
+  if(VIEW !== "review" || !CUR || e.ctrlKey || e.metaKey || e.altKey) return;
+  if($("modalHost").firstChild || $("lightHost").firstChild) { if(e.key === "Escape") { $("lightHost").innerHTML = ""; } return; }
+  var tg = e.target && e.target.tagName; if(tg === "INPUT" || tg === "SELECT" || tg === "TEXTAREA") return;
+  var vis = ROWS.filter(matches), i = -1;
+  vis.forEach(function(r, k){ if(r.id === SEL) i = k; });
+  var k = e.key.toLowerCase();
+  if(k === "arrowdown" || k === "arrowup"){
+    e.preventDefault();
+    var ni = k === "arrowdown" ? Math.min(vis.length - 1, i + 1) : Math.max(0, i - 1);
+    if(vis[ni]){ selectRow(vis[ni].id); var el = document.querySelector('.rowc[data-id="' + vis[ni].id + '"]'); if(el) el.scrollIntoView({ block:"nearest" }); }
+    return;
+  }
+  var r = SEL ? rowById(SEL) : null; if(!r) return;
+  if(k === "c") { doCheck(r); } else if(k === "e") { startEdit(r); } else if(k === "s" && r.status === "new") { setStatus(r, "skip"); } else if(k === "u" && (r.status === "checked" || r.status === "skip")) { setStatus(r, "new"); }
+});
+
+/* ---------- page photo ---------- */
+function pagesWithRows(){ var o = []; ROWS.forEach(function(r){ if(o.indexOf(r.pg) < 0) o.push(r.pg); }); return o.sort(function(a, b){ return a - b; }); }
+function photoKey(pg){ return CUR.id + "|" + pg; }
+function renderPhotoPane(){
+  if(!CUR || PHOTO.hidden) return;
+  var pane = $("photoPane"), pg = PHOTO.pg, pgs = pagesWithRows(), i = pgs.indexOf(pg);
+  var bar = '<div class="photo-bar"><button class="btn small" type="button" data-p="prev" title="' + esc(t("pgPrev")) + '"' + (i <= 0 ? " disabled" : "") + '>‹</button><span class="grow">' + esc(t("pageWord")) + " " + pg + '</span><button class="btn small" type="button" data-p="next" title="' + esc(t("pgNext")) + '"' + (i >= pgs.length - 1 ? " disabled" : "") + '>›</button>' +
+    '<button class="btn small" type="button" data-p="out" title="' + esc(t("zOut")) + '">−</button><button class="btn small" type="button" data-p="in" title="' + esc(t("zIn")) + '">+</button><button class="btn small" type="button" data-p="fit" title="' + esc(t("zFit")) + '">↔</button><button class="btn small" type="button" data-p="full" title="' + esc(t("zFull")) + '">⛶</button></div>';
+  var k = photoKey(pg), cached = PIMG[k];
+  var body;
+  if(cached === undefined){
+    body = '<div class="photo-none">' + esc(t("loadingPhoto")) + "</div>";
+    var want = pg;
+    db.collection(C_PAGE).doc(CUR.id + "__p" + pg).get().then(function(d){
+      PIMG[k] = d.exists ? ((d.data() || {}).img || null) : null;
+    }).catch(function(){ PIMG[k] = null; }).then(function(){ if(PHOTO.pg === want && VIEW === "review") renderPhotoPane(); });
+  } else if(!cached) body = '<div class="photo-none">' + esc(t("noPhoto")) + "</div>";
+  else body = '<div class="photo-view" id="photoView"><img alt="" src="' + cached + '" style="width:' + PHOTO.zoom + '%"></div>';
+  var keep = $("photoView") ? { l:$("photoView").scrollLeft, t:$("photoView").scrollTop } : null;
+  pane.innerHTML = bar + body;
+  if(keep && $("photoView")){ $("photoView").scrollLeft = keep.l; $("photoView").scrollTop = keep.t; }
+}
+$("photoPane").addEventListener("click", function(e){
+  var b = e.target.closest("button[data-p]"); if(!b) return;
+  var a = b.getAttribute("data-p"), pgs = pagesWithRows(), i = pgs.indexOf(PHOTO.pg);
+  if(a === "prev" && i > 0) PHOTO.pg = pgs[i - 1];
+  else if(a === "next" && i < pgs.length - 1) PHOTO.pg = pgs[i + 1];
+  else if(a === "in") PHOTO.zoom = Math.min(400, PHOTO.zoom + 25);
+  else if(a === "out") PHOTO.zoom = Math.max(50, PHOTO.zoom - 25);
+  else if(a === "fit") PHOTO.zoom = 100;
+  else if(a === "full"){ openLightbox(); return; }
+  renderPhotoPane();
+});
+function openLightbox(){
+  var src = PIMG[photoKey(PHOTO.pg)]; if(!src) return;
+  var z = 100;
+  var host = $("lightHost");
+  host.innerHTML = '<div class="lightbox"><div class="lb-bar"><span class="grow">' + esc(t("pageWord")) + " " + PHOTO.pg + '</span><button class="btn small" type="button" id="lbOut">−</button><button class="btn small" type="button" id="lbIn">+</button><button class="btn small" type="button" id="lbFit">↔</button><button class="btn small" type="button" id="lbClose">' + esc(t("close")) + '</button></div><div class="lb-view"><img id="lbImg" alt="" src="' + src + '" style="width:100%"></div></div>';
+  function setZ(n){ z = Math.max(50, Math.min(500, n)); $("lbImg").style.width = z + "%"; }
+  $("lbIn").addEventListener("click", function(){ setZ(z + 25); });
+  $("lbOut").addEventListener("click", function(){ setZ(z - 25); });
+  $("lbFit").addEventListener("click", function(){ setZ(100); });
+  $("lbClose").addEventListener("click", function(){ host.innerHTML = ""; });
+}
+
+/* ============================================================
+   Add to Daily Cases
+   ============================================================ */
+function importSets(){
+  var o = { ready:[], exists:[], blocked:[], todo:0, skip:0, done:0 };
+  ROWS.forEach(function(r){
+    var v = VAL[r.id] || { errs:[], exists:false };
+    if(r.status === "imported") o.done++;
+    else if(r.status === "skip") o.skip++;
+    else if(r.status === "new") o.todo++;
+    else if(r.status === "checked"){
+      if(v.errs.length) o.blocked.push(r); else if(v.exists) o.exists.push(r); else o.ready.push(r);
+    }
+  });
+  return o;
+}
+function rowLine(r){ return '<li>' + esc(t("pageWord") + " " + r.pg + " · " + fmtDate(r.date) + " · " + r.serial + " · " + r.type + " " + r.caseNo + "/" + r.year + " — " + r.title) + "</li>"; }
+function listBlock(rows, max){
+  if(!rows.length) return "";
+  var h = '<ul class="sumlist">' + rows.slice(0, max || 40).map(rowLine).join("");
+  if(rows.length > (max || 40)) h += "<li>" + esc(t("impNoMore", { n:rows.length - (max || 40) })) + "</li>";
+  return h + "</ul>";
+}
+function renderImport(){
+  if(!CUR){ $("impTitle").textContent = t("impTitle"); $("impBody").innerHTML = '<div class="msg info">' + esc(t("impNeed")) + "</div>"; return; }
+  $("impTitle").textContent = t("impTitle") + " — " + CUR.name;
+  var o = importSets(), body = "";
+  var allowed = CAN.imp && CAN.caseAdd;
+  var officerLocked = CAN.restricted && CUR.officer !== CAN.restrictedOfficer;
+  if(!allowed) body += '<div class="msg err">' + esc(t("impNoRight")) + "</div>";
+  else if(officerLocked) body += '<div class="msg err">' + esc(t("impOfficerLock")) + "</div>";
+  body += '<div class="rd-grid">' +
+    '<div class="stat good"><div class="n">' + o.ready.length + '</div><div class="l">' + esc(t("impReady")) + "</div></div>" +
+    '<div class="stat warn"><div class="n">' + o.exists.length + '</div><div class="l">' + esc(t("impExists")) + "</div></div>" +
+    '<div class="stat ' + (o.blocked.length ? "bad" : "") + '"><div class="n">' + o.blocked.length + '</div><div class="l">' + esc(t("impBlocked")) + "</div></div>" +
+    '<div class="stat"><div class="n">' + o.todo + '</div><div class="l">' + esc(t("impTodo")) + "</div></div>" +
+    '<div class="stat"><div class="n">' + o.skip + '</div><div class="l">' + esc(t("impSkip")) + "</div></div>" +
+    '<div class="stat"><div class="n">' + o.done + '</div><div class="l">' + esc(t("impDone")) + "</div></div></div>";
+  if(o.ready.length){
+    body += "<h3>" + esc(t("impReady")) + "</h3>" + listBlock(o.ready);
+    body += '<label style="display:flex;gap:8px;align-items:flex-start;margin-top:14px;font-size:14px;color:var(--text)"><input type="checkbox" id="impSure" style="margin-top:4px"> <span>' + esc(t("impConfirm")) + "</span></label>";
+    body += '<div class="bar" style="margin-top:12px"><button class="btn primary" type="button" id="btnImp" disabled>' + esc(t("impBtn", { n:o.ready.length })) + "</button></div>";
+  } else body += '<div class="msg info">' + esc(t("impNone")) + "</div>";
+  if(o.exists.length) body += "<h3 style=\"margin-top:14px\">" + esc(t("impExists")) + "</h3>" + listBlock(o.exists);
+  if(o.blocked.length) body += "<h3 style=\"margin-top:14px\">" + esc(t("impBlocked")) + "</h3>" + listBlock(o.blocked);
+  body += '<div id="impProg" class="hint" style="margin-top:10px"></div><div id="impRes"></div>';
+  $("impBody").innerHTML = body;
+  var sure = $("impSure"), btn = $("btnImp");
+  if(sure && btn){
+    var upd = function(){ btn.disabled = !(sure.checked && allowed && !officerLocked && !BUSY); };
+    sure.addEventListener("change", upd);
+    btn.addEventListener("click", function(){ runImport(o.ready.slice()); });
+  }
+}
+function caseDocOf(r, ts){
+  var d = { officer:r.officer, judge:"", bench:r.bench, serial:r.serial, date:r.date, type:r.type, caseNo:normNo(r.caseNo), year:String(r.year), title:r.title, versus:r.versus || "—",
+    nature:r.nature || CUR.nature || "Criminal", result:r.result, relief:r.relief, remarks:(r.remarks && r.remarks !== "") ? r.remarks : "—",
+    source:"register-desk", sourceBatch:CUR.id, sourceRef:r.key, createdBy:ME.email, createdAt:ts, updatedBy:ME.email, updatedAt:ts };
+  return d;
+}
+async function runImport(rows){
+  if(BUSY) return;
+  var prog = $("impProg"), res = $("impRes"), btn = $("btnImp");
+  if(!(CAN.imp && CAN.caseAdd)){ toast(t("impNoRight")); return; }
+  if(CAN.restricted && CUR.officer !== CAN.restrictedOfficer){ toast(t("impOfficerLock")); return; }
+  setBusy(true); if(btn) btn.disabled = true; var sure = $("impSure"); if(sure) sure.disabled = true;
+  var added = 0, N = rows.length;
+  try{
+    /* read Daily Cases again right now, so nothing added meanwhile is duplicated */
+    await refreshPortalOnly();
+    VAL = validateAll(ROWS, PORTAL);
+    var ids = {}; PORTAL.forEach(function(c){ ids[c.id] = 1; });
+    rows = rows.filter(function(r){ var v = VAL[r.id]; return r.status === "checked" && v && !v.errs.length && !v.exists; });
+    N = rows.length;
+    for(var i = 0; i < rows.length; i += 200){
+      var b = db.batch(), ts = TS_(), part = rows.slice(i, i + 200);
+      part.forEach(function(r){
+        var cid = "rg_" + r.id;
+        if(!ids[cid]) b.set(db.collection("cases").doc(cid), caseDocOf(r, ts));
+        b.update(db.collection(C_ROW).doc(r.id), { status:"imported", importedCaseId:cid, importedAt:ts, importedBy:ME.email, updatedBy:ME.email, updatedAt:ts });
+      });
+      await b.commit();
+      part.forEach(function(r){ r.status = "imported"; r.importedCaseId = "rg_" + r.id; });
+      added += part.length;
+      prog.textContent = t("impRunning", { a:added, n:N });
+    }
+    var imported = ROWS.filter(function(r){ return r.status === "imported"; }).length;
+    var allDone = ROWS.every(function(r){ return r.status === "imported" || r.status === "skip"; });
+    await db.collection(C_BATCH).doc(CUR.id).update({ importedCount:imported, importedAt:TS_(), importedBy:ME.email, status:allDone ? "imported" : "open", updatedBy:ME.email, updatedAt:TS_() });
+    CUR.importedCount = imported; CUR.status = allDone ? "imported" : "open";
+    /* count check straight from Daily Cases */
+    var q = await db.collection("cases").where("sourceBatch", "==", CUR.id).get();
+    var ok = q.size === imported;
+    res.innerHTML = '<div class="msg ok">' + esc(t("impFinished", { n:added })) + '</div><div class="msg ' + (ok ? "ok" : "err") + '">' + esc(t("impVerify", { c:q.size, m:imported })) + " " + esc(ok ? t("impVerifyOk") : t("impVerifyBad")) + "</div>";
+    prog.textContent = "";
+    await refreshPortalOnly(); VAL = validateAll(ROWS, PORTAL); loadBatches();
+    var keepRes = res.innerHTML;
+    renderImport(); $("impRes").innerHTML = keepRes;
+  }catch(e){
+    res.innerHTML = '<div class="msg err">' + esc(t("impStopped", { x:(e && e.message || ""), a:added })) + "</div>";
+  }
+  setBusy(false);
+}
+
+
+/* ================= Shared sidebar / mobile-drawer interactivity ================= */
+(function(){
+  var sidebarEl = document.getElementById('sidebar');
+  var backdrop = document.getElementById('sidebarBackdrop');
+  var mobileBtn = document.getElementById('mobileMenuBtn');
+  if(mobileBtn) mobileBtn.addEventListener('click', function(){
+    sidebarEl.classList.add('mobile-open'); backdrop.classList.add('show');
+  });
+  if(backdrop) backdrop.addEventListener('click', function(){
+    sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show');
+  });
+  document.querySelectorAll('.nav-group-head').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.getElementById(btn.dataset.group).classList.toggle('open');
+    });
+  });
+  document.querySelectorAll('.sidebar .nav-item:not(.disabled), .sidebar .nav-subitem').forEach(function(el){
+    el.addEventListener('click', function(){
+      if(window.innerWidth <= 960){ sidebarEl.classList.remove('mobile-open'); backdrop.classList.remove('show'); }
+    });
+  });
+})();
+applyI18n();
+
+
+</script>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+<script>
+/* header buttons (same look as other pages) drive the page's existing language / theme selectors */
+(function(){
+  var ls=document.getElementById('langSelect'), ts=document.getElementById('themeSelect');
+  var lb=document.getElementById('langBtn'), tb=document.getElementById('themeBtn'), tp=document.getElementById('themePicker');
+  if(!ls||!ts||!lb||!tb||!tp) return;
+  var COL={navy:['#2A5A84','#B8860B'],green:['#1a6b45','#C9A227'],teal:['#128f89','#96762a'],night:['#5b7bb0','#d4a13d']};
+  function syncLang(){ lb.textContent = ls.value==='ur' ? 'English' : 'اردو'; }
+  lb.addEventListener('click',function(){ ls.value = (ls.value==='ur') ? 'en' : 'ur'; ls.dispatchEvent(new Event('change')); syncLang(); });
+  function renderT(){
+    var cur=ts.value;
+    tp.innerHTML=Array.prototype.map.call(ts.options,function(o){
+      var c=COL[o.value]||['#2A5A84','#B8860B'];
+      return '<div class="theme-swatch'+(o.value===cur?' active':'')+'" data-id="'+o.value+'" title="'+o.text.replace(/"/g,'')+'" style="background:linear-gradient(135deg,'+c[1]+' 50%,'+c[0]+' 50%);"></div>';
+    }).join('');
+  }
+  tb.addEventListener('click',function(e){ e.stopPropagation(); renderT(); tp.classList.toggle('open'); });
+  tp.addEventListener('click',function(e){ var sw=e.target.closest('.theme-swatch'); if(!sw) return; ts.value=sw.getAttribute('data-id'); ts.dispatchEvent(new Event('change')); tp.classList.remove('open'); renderT(); });
+  document.addEventListener('click',function(e){ if(!tp.contains(e.target)) tp.classList.remove('open'); });
+  syncLang(); renderT();
+})();
+
+</script>
+</body>
+</html>

@@ -14,7 +14,7 @@
   var VISIT_GAP_MS = 20 * 60 * 1000;      /* same page again within 20 minutes is not a new visit */
   var FLUSH_MS = 3000;                    /* saves done within 3 seconds are grouped into one line */
   var MAX_LINES = 300;                    /* safety stop per opened page */
-  var SKIP = { activityLog: 1, chatMessages: 1, presence: 1, profileClaims: 1, accountRequests: 1 };
+  var SKIP = { activityLog: 1, chatMessages: 1, presence: 1, profileClaims: 1, accountRequests: 1, registerRows: 1, registerPages: 1 };   /* register rows: one line per tick would flood the log; the batch and the cases it creates are still logged */
   var LABEL_PRIVATE = { employees: 1 };   /* employee records: log only the name, never other fields */
 
   function device() {

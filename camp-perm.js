@@ -21,6 +21,7 @@
   var PAGES = [
     { key: 'case-entry',  href: 'case-entry.html',  ur: 'یومیہ کیس انٹری',   en: 'Daily Cases',        acts: ['v', 'a', 'e', 'd', 'x', 'ai'] },
     { key: 'cause-list',  href: 'cause-list.html',  ur: 'کاز لسٹ امپورٹ',    en: 'Cause List Import',  acts: ['v', 'a', 'e', 'd', 'x'] },
+    { key: 'register-desk', href: 'register-desk.html', ur: 'رجسٹر ڈیسک (شامل = رجسٹر لوڈ کرنا، ایڈٹ = قطاریں چیک/ایڈٹ کرنا، آخری ٹِک = ڈیلی کیسز میں شامل کرنا)', en: 'Register Desk (Add = load a register, Edit = check/edit rows, last tick = add to Daily Cases)', acts: ['v', 'a', 'e', 'ic'] },
     { key: 'lookup',      href: 'lookup.html',      ur: 'تلاش (Lookup)',      en: 'Lookup',             acts: ['v', 'x'] },
     { key: 'case-notice', href: 'case-notice.html', ur: 'کیس نوٹسز',          en: 'Case Notices',       acts: ['v', 'a', 'e', 'd', 'x'] },
     { key: 'scanning',    href: 'scanning.html',    ur: 'اسکیننگ ڈیسک',       en: 'Scanning Desk',      acts: ['v', 'a', 'e', 'd', 'x', 'ai'] },
@@ -41,7 +42,7 @@
   ];
   var ACT_LABEL = {
     v: ['دیکھنا', 'View'], a: ['شامل', 'Add'], e: ['ایڈٹ', 'Edit'], d: ['ڈیلیٹ', 'Delete'],
-    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], i: ['فائل سے امپورٹ', 'Import file'], b: ['بیک اپ بنانا', 'Make backup'], s1: ['دستخط: کلرک', 'Sign: Clerk'], s2: ['دستخط: پراسیکیوٹر', 'Sign: Prosecutor'], s3: ['دستخط: انچارج', 'Sign: In-charge'], k: ['مدت اور سیٹنگز', 'Periods & settings'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper'],
+    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], i: ['فائل سے امپورٹ', 'Import file'], b: ['بیک اپ بنانا', 'Make backup'], ic: ['ڈیلی کیسز میں شامل کرنا', 'Add to Daily Cases'], s1: ['دستخط: کلرک', 'Sign: Clerk'], s2: ['دستخط: پراسیکیوٹر', 'Sign: Prosecutor'], s3: ['دستخط: انچارج', 'Sign: In-charge'], k: ['مدت اور سیٹنگز', 'Periods & settings'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper'],
     bl: ['بل: ایڈٹ', 'Bills: edit'], ca: ['کیش بک: ایڈٹ', 'Cash Book: edit'], st: ['اسٹاک: ایڈٹ', 'Stock: edit'], em: ['ملازمین اور پے سلپ: ایڈٹ', 'Employees & pay slips: edit'], lv: ['چھٹی: ایڈٹ', 'Leave: edit'], at: ['حاضری: ایڈٹ', 'Attendance: edit'],
     cf: ['سیٹنگز / لیجر / فیلڈز (ایڈمن کا کام)', 'Settings / ledger / fields (admin work)'],
     be: ['بینچ اور کاز لسٹ: ایڈٹ', 'Bench & cause list: edit'], dr: ['ڈیوٹی روسٹر: ایڈٹ', 'Duty roster: edit'], fm: ['فائل موومنٹ: ایڈٹ', 'File movement: edit'], lt: ['خطوط: ایڈٹ', 'Letters: edit'], cr: ['کسٹم رجسٹر: ایڈٹ', 'Custom registers: edit']
@@ -51,6 +52,7 @@
   var DEFAULTS = {
     'case-entry':  { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'd', 'x'], admin: ['v', 'a', 'e', 'd', 'x', 'ai'] },
     'cause-list':  { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
+    'register-desk': { viewer: [],       data_entry: [],                         admin: ['v', 'a', 'e', 'ic'] },
     'lookup':      { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'x'] },
     'case-notice': { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x'],      admin: ['v', 'a', 'e', 'd', 'x'] },
     'scanning':    { viewer: ['v', 'x'], data_entry: ['v', 'a', 'e', 'x', 'ai'], admin: ['v', 'a', 'e', 'd', 'x', 'ai'] },

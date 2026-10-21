@@ -1000,19 +1000,18 @@ async function doLoad(){
       await b.commit();
       prog.textContent = t("loading") + Math.min(i + 300, c.rows.length) + " / " + c.rows.length;
     }
-    var done = [], chunk = [], size = 0;
-    async function flush(){
-      if(!chunk.length) return;
-      var b = db.batch();
-      chunk.forEach(function(p){ b.set(db.collection(C_PAGE).doc(id + "__p" + p.pg), { batchId:id, pg:p.pg, img:p.img, w:p.w, h:p.h, createdBy:by, createdAt:TS }); done.push(p.pg); });
-      await b.commit(); chunk = []; size = 0;
-      prog.textContent = t("loading") + c.rows.length + " / " + c.rows.length + " · 🖼 " + done.length + " / " + c.pages.length;
+    var done = [], nextP = 0, failure = null, t0 = Date.now();
+    var tick = setInterval(function(){ prog.textContent = t("loading") + c.rows.length + " / " + c.rows.length + " · 🖼 " + done.length + " / " + c.pages.length + " · " + Math.round((Date.now() - t0) / 1000) + " s"; }, 700);
+    async function pw(){
+      while(!failure){
+        var k = nextP++; if(k >= c.pages.length) return;
+        var p = c.pages[k];
+        try{ await db.collection(C_PAGE).doc(id + "__p" + p.pg).set({ batchId:id, pg:p.pg, img:p.img, w:p.w, h:p.h, createdBy:by, createdAt:TS }); done.push(p.pg); }
+        catch(e){ failure = failure || e; return; }
+      }
     }
-    for(var j = 0; j < c.pages.length; j++){
-      if(size + c.pages[j].img.length > 5500000) await flush();
-      chunk.push(c.pages[j]); size += c.pages[j].img.length;
-    }
-    await flush();
+    try{ await Promise.all([pw(), pw(), pw()]); }finally{ clearInterval(tick); }
+    if(failure) throw failure;
     done.sort(function(a, b){ return a - b; });
     await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, updatedBy:by, updatedAt:TS });
     prog.textContent = t("loadDone");
@@ -1524,7 +1523,7 @@ Object.assign(I18N.en, {
   phName:"Register name", phNamePh:"e.g. Mirza Abid Majeed Register — June 2026", phOfficer:"Officer", phNature:"Nature of cases", phStart:"First new page number",
   phChoose:"Choose photos or a PDF (several allowed)", phChooseHint:"Photos (JPG/PNG) and PDF files. They are shrunk to a readable size on this computer. Turn a sideways page with the ⟲ button before saving.",
   phNone:"No page yet.", phPages:"{n} pages ready", phReading:"Reading… {a}", phPageN:"Page {n}", phRotate:"Rotate", phRemove:"Remove",
-  phSave:"Save register", phSaveAdd:"Save these pages", phClose:"Close", phCancel:"Cancel",
+  phSave:"Save register", phSaveAdd:"Save these pages", phClose:"Close", phCancel:"Cancel", phStop:"Stop saving", phStopping:"Stopping after this page…", phStopped:"Stopped. {a} of {n} pages are saved. You can add the rest later with “Add page photos”.", phElapsed:"{s} s",
   phErrName:"Type a name for the register.", phErrOfficer:"Choose the officer.", phErrNoPages:"Add at least one page.", phErrStart:"Page number {n} already has a photo. Use {m} or higher.",
   phErrTooMany:"At most {n} pages can be added at a time to one register.", phErrFile:"Could not read: {f}", phErrBig:"This page photo is too detailed to store: {f}",
   phUploading:"Saving page {a} of {n}…", phDone:"Saved.", phFail:"Stopped: {x}. Pages saved so far: {a}.", phPdfLib:"The PDF reader could not be loaded (internet needed). Try again, or use photos.",
@@ -1537,7 +1536,7 @@ Object.assign(I18N.ur, {
   phName:"رجسٹر کا نام", phNamePh:"مثلاً مرزا عابد مجید رجسٹر — جون 2026", phOfficer:"افسر", phNature:"مقدمات کی نوعیت", phStart:"پہلے نئے صفحے کا نمبر",
   phChoose:"تصویریں یا PDF چنیں (کئی ایک ساتھ)", phChooseHint:"تصویریں (JPG/PNG) اور PDF۔ یہ اسی کمپیوٹر پر پڑھنے لائق سائز میں چھوٹی کی جاتی ہیں۔ الٹا صفحہ محفوظ کرنے سے پہلے ⟲ بٹن سے سیدھا کریں۔",
   phNone:"ابھی کوئی صفحہ نہیں۔", phPages:"{n} صفحے تیار", phReading:"پڑھ رہا ہے… {a}", phPageN:"صفحہ {n}", phRotate:"گھمائیں", phRemove:"ہٹائیں",
-  phSave:"رجسٹر محفوظ کریں", phSaveAdd:"یہ صفحے محفوظ کریں", phClose:"بند کریں", phCancel:"منسوخ",
+  phSave:"رجسٹر محفوظ کریں", phSaveAdd:"یہ صفحے محفوظ کریں", phClose:"بند کریں", phCancel:"منسوخ", phStop:"محفوظ کرنا روکیں", phStopping:"اس صفحے کے بعد رک رہا ہے…", phStopped:"روک دیا گیا۔ {n} میں سے {a} صفحے محفوظ ہو چکے ہیں۔ باقی بعد میں «صفحوں کی تصویریں شامل کریں» سے ڈال سکتے ہیں۔", phElapsed:"{s} سیکنڈ",
   phErrName:"رجسٹر کا نام لکھیں۔", phErrOfficer:"افسر چنیں۔", phErrNoPages:"کم از کم ایک صفحہ شامل کریں۔", phErrStart:"صفحہ نمبر {n} کی تصویر پہلے سے ہے۔ {m} یا اس سے بڑا نمبر لیں۔",
   phErrTooMany:"ایک رجسٹر میں ایک بار میں زیادہ سے زیادہ {n} صفحے شامل ہو سکتے ہیں۔", phErrFile:"پڑھی نہیں جا سکی: {f}", phErrBig:"اس صفحے کی تصویر محفوظ کرنے کے لیے بہت بھاری ہے: {f}",
   phUploading:"صفحہ {a} / {n} محفوظ ہو رہا ہے…", phDone:"محفوظ ہو گیا۔", phFail:"رک گیا: {x}۔ اب تک محفوظ صفحے: {a}۔", phPdfLib:"PDF پڑھنے والا حصہ لوڈ نہیں ہو سکا (انٹرنیٹ چاہیے)۔ دوبارہ کوشش کریں یا تصویریں استعمال کریں۔",
@@ -1554,17 +1553,21 @@ var PH = { mode:"new", list:[], busy:false, msgs:[], name:"", officer:"", nature
 
 /* ---------- reading images / PDF pages ---------- */
 function newCanvas(w, h){ var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
-function encodeSource(src, w0, h0){
-  var longs = [2000, 1800, 1600, 1400, 1200, 1000], qs = [0.82, 0.72, 0.62];
+var PH_TARGET = 400000;   /* a normal page photo is kept near this size so that saving 30 pages takes about a minute, not minutes */
+function encodeWith(src, w0, h0, longs, qs, limit){
   for(var i = 0; i < longs.length; i++){
     var s = Math.min(1, longs[i] / Math.max(w0, h0)), w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
     var c = newCanvas(w, h), x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, w, h); x.drawImage(src, 0, 0, w, h);
     for(var j = 0; j < qs.length; j++){
       var url = c.toDataURL("image/jpeg", qs[j]);
-      if(url.length <= MAX_IMG - 5000) return { img:url, w:w, h:h, th:thumbOf(c) };
+      if(url.length <= limit) return { img:url, w:w, h:h, th:thumbOf(c) };
     }
   }
   return null;
+}
+function encodeSource(src, w0, h0){
+  return encodeWith(src, w0, h0, [1800, 1600, 1400, 1200, 1000], [0.78, 0.68, 0.58], PH_TARGET) ||
+         encodeWith(src, w0, h0, [1600, 1400, 1200, 1000, 800], [0.6, 0.5], MAX_IMG - 5000);
 }
 function thumbOf(c){
   var s = Math.min(1, 200 / Math.max(c.width, c.height)), w = Math.max(1, Math.round(c.width * s)), h = Math.max(1, Math.round(c.height * s));
@@ -1662,7 +1665,10 @@ function openPhotoPanel(mode){
     '<div id="phStat" class="hint" style="margin-top:8px"></div><div id="phMsgs"></div><div class="thumbs" id="phThumbs"></div><div id="phProg" class="hint" style="margin-top:6px"></div>' +
     '<div class="fbar"><button class="btn" type="button" id="phCancel">' + esc(t("phCancel")) + '</button><button class="btn primary" type="button" id="phSave" disabled>' + esc(t(mode === "add" ? "phSaveAdd" : "phSave")) + "</button></div></div></div>";
   $("modalHost").innerHTML = h;
-  $("phCancel").addEventListener("click", function(){ if(!PH.busy && !PH.saving) $("modalHost").innerHTML = ""; });
+  $("phCancel").addEventListener("click", function(){
+    if(PH.saving){ PH.stop = true; var pr = $("phProg"); if(pr) pr.textContent = t("phStopping"); return; }
+    if(!PH.busy) $("modalHost").innerHTML = "";
+  });
   $("phFiles").addEventListener("change", function(e){ var fs = e.target.files; if(fs && fs.length) phReadFiles(fs).then(function(){ try{ e.target.value = ""; }catch(x){} }); });
   $("phSave").addEventListener("click", phSave);
   $("phThumbs").addEventListener("click", function(e){
@@ -1705,39 +1711,53 @@ function phRefresh(keepThumbs){
   }
   var sv = $("phSave"); if(sv) sv.disabled = PH.busy || PH.saving || !!prob;
 }
-/* writes the pages in chunks of at most 5.5M characters; returns the list of page numbers that were written */
+/* writes the pages one by one (3 at a time), shows every page as it is saved, and stops quickly when PH.stop is set;
+   returns the list of page numbers that were written */
 async function uploadPages(id, items, startNo, prog, done){
-  var chunk = [], size = 0, by = ME.email, TS = TS_ ? TS_() : firebase.firestore.FieldValue.serverTimestamp();
-  async function flush(){
-    if(!chunk.length) return;
-    var b = db.batch();
-    chunk.forEach(function(p){ b.set(db.collection(C_PAGE).doc(id + "__p" + p.pg), { batchId:id, pg:p.pg, img:p.img, w:p.w, h:p.h, createdBy:by, createdAt:TS }); });
-    await b.commit();
-    chunk.forEach(function(p){ done.push(p.pg); }); chunk = []; size = 0;
-    prog.textContent = t("phUploading", { a:done.length, n:items.length });
+  var by = ME.email, TS = TS_ ? TS_() : firebase.firestore.FieldValue.serverTimestamp(), next = 0, failure = null, t0 = Date.now();
+  function show(){
+    var sec = Math.round((Date.now() - t0) / 1000);
+    prog.textContent = (PH.stop ? t("phStopping") : t("phUploading", { a:Math.min(done.length + 1, items.length), n:items.length })) + "  (" + done.length + "/" + items.length + " · " + t("phElapsed", { s:sec }) + ")";
   }
-  for(var i = 0; i < items.length; i++){
-    var p = { pg:startNo + i, img:items[i].img, w:items[i].w, h:items[i].h };
-    if(size + p.img.length > 5500000) await flush();
-    chunk.push(p); size += p.img.length;
+  var tick = setInterval(show, 1000); show();
+  async function worker(){
+    while(!PH.stop && !failure){
+      var i = next++; if(i >= items.length) return;
+      var pg = startNo + i;
+      try{
+        await db.collection(C_PAGE).doc(id + "__p" + pg).set({ batchId:id, pg:pg, img:items[i].img, w:items[i].w, h:items[i].h, createdBy:by, createdAt:TS });
+        done.push(pg); show();
+      }catch(e){ failure = failure || e; return; }
+    }
   }
-  await flush();
+  try{ await Promise.all([worker(), worker(), worker()]); }finally{ clearInterval(tick); }
+  if(failure) throw failure;
   return done;
 }
 async function phSave(){
   if(PH.busy || PH.saving || phProblem()) return;
-  PH.saving = true; phRefresh(true);
+  PH.saving = true; PH.stop = false; phRefresh(true);
+  var cb = $("phCancel"); if(cb) cb.textContent = t("phStop");
   var prog = $("phProg"), by = ME.email, items = PH.list.slice(), done = [], id;
   try{
     if(PH.mode === "new"){
       id = newBatchId(); var TS = firebase.firestore.FieldValue.serverTimestamp(), n = items.length;
       await db.collection(C_BATCH).doc(id).set({ name:str(PH.name, 120), officer:PH.officer, nature:PH.nature || "Criminal", note:"", sourceFile:"photos", formatVersion:1,
         rowCount:0, pageCount:n, photoCount:n, pagesWithPhoto:[], importedCount:0, status:"loading", createdBy:by, createdAt:TS, updatedBy:by, updatedAt:TS });
-      await uploadPages(id, items, 1, prog, done);
+      try{ await uploadPages(id, items, 1, prog, done); }
+      catch(err){ err.partial = true; throw err; }
       done.sort(function(a, b){ return a - b; });
-      await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, updatedBy:by, updatedAt:TS_() });
+      var cnt = done.length;
+      await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, pageCount:cnt, photoCount:cnt, updatedBy:by, updatedAt:TS_() });
+      items.forEach(function(it, i){ if(done.indexOf(i + 1) >= 0) PIMG[id + "|" + (i + 1)] = it.img; });
+      PH.saving = false;
+      if(PH.stop){
+        await loadBatches();
+        if($("phProg")) $("phProg").textContent = t("phStopped", { a:cnt, n:items.length });
+        var cb2 = $("phCancel"); if(cb2) cb2.textContent = t("phClose");
+        phRefresh(true); return;
+      }
       $("modalHost").innerHTML = "";
-      items.forEach(function(it, i){ PIMG[id + "|" + (i + 1)] = it.img; });
       await loadBatches(); await openBatch(id); toast(t("phDone"));
     } else {
       id = CUR.id; var s0 = PH.start;
@@ -1746,15 +1766,28 @@ async function phSave(){
         if(done.length){ try{ await phRecordPages(id, done); }catch(e2){} }
         throw err;
       }
+      done.sort(function(a, b){ return a - b; });
       await phRecordPages(id, done);
-      items.forEach(function(it, i){ PIMG[id + "|" + (s0 + i)] = it.img; });
+      items.forEach(function(it, i){ if(done.indexOf(s0 + i) >= 0) PIMG[id + "|" + (s0 + i)] = it.img; });
+      PH.saving = false;
+      if(PH.stop){
+        if($("phProg")) $("phProg").textContent = t("phStopped", { a:done.length, n:items.length });
+        var cb3 = $("phCancel"); if(cb3) cb3.textContent = t("phClose");
+        PHOTO.pg = done[0] || PHOTO.pg; renderReview(); phRefresh(true); return;
+      }
       $("modalHost").innerHTML = "";
       PHOTO.pg = s0; renderReview(); toast(t("phDone"));
     }
     PH.saving = false;
   }catch(err){
     PH.saving = false;
+    /* a register that was created but could not get all its photos is closed properly as "open" with the pages that were saved */
+    if(PH.mode === "new" && id && done.length){
+      done.sort(function(a, b){ return a - b; });
+      try{ await db.collection(C_BATCH).doc(id).update({ status:"open", pagesWithPhoto:done, pageCount:done.length, photoCount:done.length, updatedBy:by, updatedAt:TS_() }); }catch(e3){}
+    }
     if($("phProg")) $("phProg").innerHTML = '<span style="color:var(--danger)">' + esc(t("phFail", { x:(err && err.message || ""), a:done.length })) + "</span>";
+    var cb4 = $("phCancel"); if(cb4) cb4.textContent = t("phClose");
     phRefresh(true);
     if(PH.mode === "new") loadBatches();
   }

@@ -401,6 +401,7 @@ html,body{overflow-x:hidden;}
         <h2 id="revTitle"></h2>
         <div class="bar">
           <button class="btn small hidden" id="btnAddPages" type="button">📷 <span data-i18n="phAddBtn">Add page photos</span></button>
+          <button class="btn small dng hidden" id="btnDelPhotos" type="button">🗑 <span data-i18n="delPhBtn">Delete page photos</span></button>
           <button class="btn small" id="btnTogglePhoto" type="button">🖼 <span data-i18n="btnPhoto">Page photo</span></button>
           <button class="btn small" id="btnReloadRows" type="button">↻ <span data-i18n="btnReload">Reload</span></button>
         </div>
@@ -853,8 +854,9 @@ function renderList(){
   if(!list.length){ tb.innerHTML = '<tbody><tr><td class="empty">' + esc(t("noBatches")) + "</td></tr></tbody>"; return; }
   var h = "<thead><tr><th>" + esc(t("thName")) + "</th><th>" + esc(t("thOfficer")) + "</th><th>" + esc(t("thRows")) + "</th><th>" + esc(t("thPages")) + "</th><th>" + esc(t("thLoaded")) + "</th><th>" + esc(t("thState")) + "</th><th></th></tr></thead><tbody>";
   list.forEach(function(b){
-    h += "<tr><td><strong>" + esc(b.name) + "</strong></td><td>" + esc(b.officer) + "</td><td>" + esc(b.rowCount) + "</td><td>" + esc(b.pageCount) + (b.photoCount ? " 🖼" + esc(b.photoCount) : "") + "</td><td>" + esc(fmtTs(b.createdAt)) + '<div class="hint">' + esc(b.createdBy || "") + "</div></td><td>" + batchState(b) + "</td><td><div class=\"bar\">";
+    h += "<tr><td><strong>" + esc(b.name) + "</strong>" + (b.photosDeleted ? '<div class="hint">' + esc(t("phGone")) + "</div>" : "") + "</td><td>" + esc(b.officer) + "</td><td>" + esc(b.rowCount) + "</td><td>" + esc(b.pageCount) + (b.photoCount ? " 🖼" + esc(b.photoCount) : "") + "</td><td>" + esc(fmtTs(b.createdAt)) + '<div class="hint">' + esc(b.createdBy || "") + "</div></td><td>" + batchState(b) + "</td><td><div class=\"bar\">";
     if(b.status !== "loading") h += '<button class="btn small primary" type="button" data-open="' + esc(b.id) + '">' + esc(t("btnOpen")) + "</button>";
+    if(canDelPhotos(b, null)) h += '<button class="btn small dng" type="button" data-delph="' + esc(b.id) + '">🗑 ' + esc(t("delPhBtn")) + "</button>";
     if(CAN.edit && b.status !== "archived") h += '<button class="btn small" type="button" data-arch="' + esc(b.id) + '">' + esc(t("btnArchive")) + "</button>";
     if(CAN.edit && b.status === "archived") h += '<button class="btn small" type="button" data-unarch="' + esc(b.id) + '">' + esc(t("btnUnarchive")) + "</button>";
     h += "</div></td></tr>";
@@ -864,6 +866,7 @@ function renderList(){
 $("batchTable").addEventListener("click", function(e){
   var b;
   if((b = e.target.closest("[data-open]"))) { openBatch(b.getAttribute("data-open")); return; }
+  if((b = e.target.closest("[data-delph]"))) { deletePhotos(b.getAttribute("data-delph")); return; }
   if((b = e.target.closest("[data-arch]"))) { archiveBatch(b.getAttribute("data-arch"), true); return; }
   if((b = e.target.closest("[data-unarch]"))) { archiveBatch(b.getAttribute("data-unarch"), false); return; }
 });
@@ -1103,6 +1106,7 @@ function renderReview(){
   document.querySelectorAll("#revFilters button[data-f]").forEach(function(b){ b.classList.toggle("on", b.getAttribute("data-f") === FLT.f); });
   var pgs = allPages();
   $("btnAddPages").classList.toggle("hidden", !CAN.add);
+  $("btnDelPhotos").classList.toggle("hidden", !canDelPhotos(CUR, ROWS));
   var sel = $("fPage"), cur = FLT.pg;
   sel.innerHTML = '<option value="">' + esc(t("fPageAll")) + "</option>" + pgs.map(function(p){ return '<option value="' + p + '">' + esc(t("pageWord")) + " " + p + "</option>"; }).join("");
   sel.value = cur;
@@ -1523,7 +1527,7 @@ Object.assign(I18N.en, {
   phName:"Register name", phNamePh:"e.g. Mirza Abid Majeed Register — June 2026", phOfficer:"Officer", phNature:"Nature of cases", phStart:"First new page number",
   phChoose:"Choose photos or a PDF (several allowed)", phChooseHint:"Photos (JPG/PNG) and PDF files. They are shrunk to a readable size on this computer. Turn a sideways page with the ⟲ button before saving.",
   phNone:"No page yet.", phPages:"{n} pages ready", phReading:"Reading… {a}", phPageN:"Page {n}", phRotate:"Rotate", phRemove:"Remove",
-  phSave:"Save register", phSaveAdd:"Save these pages", phClose:"Close", phCancel:"Cancel", phStop:"Stop saving", phStopping:"Stopping after this page…", phStopped:"Stopped. {a} of {n} pages are saved. You can add the rest later with “Add page photos”.", phElapsed:"{s} s",
+  phSave:"Save register", phSaveAdd:"Save these pages", phClose:"Close", phCancel:"Cancel", delPhBtn:"Delete page photos", delPhYes:"Yes, delete the photos", phGone:"Page photos deleted", delPhAsk:"Delete the photos of all {n} pages of this register? Only the page photos are removed. The rows and the cases already added to Daily Cases stay. This cannot be undone — keep your original files if you may need them again.", delPhDone:"Page photos deleted.", delPhFail:"Could not delete all photos: {x}. Deleted so far: {a} of {n}.", phStop:"Stop saving", phStopping:"Stopping after this page…", phStopped:"Stopped. {a} of {n} pages are saved. You can add the rest later with “Add page photos”.", phElapsed:"{s} s",
   phErrName:"Type a name for the register.", phErrOfficer:"Choose the officer.", phErrNoPages:"Add at least one page.", phErrStart:"Page number {n} already has a photo. Use {m} or higher.",
   phErrTooMany:"At most {n} pages can be added at a time to one register.", phErrFile:"Could not read: {f}", phErrBig:"This page photo is too detailed to store: {f}",
   phUploading:"Saving page {a} of {n}…", phDone:"Saved.", phFail:"Stopped: {x}. Pages saved so far: {a}.", phPdfLib:"The PDF reader could not be loaded (internet needed). Try again, or use photos.",
@@ -1536,7 +1540,7 @@ Object.assign(I18N.ur, {
   phName:"رجسٹر کا نام", phNamePh:"مثلاً مرزا عابد مجید رجسٹر — جون 2026", phOfficer:"افسر", phNature:"مقدمات کی نوعیت", phStart:"پہلے نئے صفحے کا نمبر",
   phChoose:"تصویریں یا PDF چنیں (کئی ایک ساتھ)", phChooseHint:"تصویریں (JPG/PNG) اور PDF۔ یہ اسی کمپیوٹر پر پڑھنے لائق سائز میں چھوٹی کی جاتی ہیں۔ الٹا صفحہ محفوظ کرنے سے پہلے ⟲ بٹن سے سیدھا کریں۔",
   phNone:"ابھی کوئی صفحہ نہیں۔", phPages:"{n} صفحے تیار", phReading:"پڑھ رہا ہے… {a}", phPageN:"صفحہ {n}", phRotate:"گھمائیں", phRemove:"ہٹائیں",
-  phSave:"رجسٹر محفوظ کریں", phSaveAdd:"یہ صفحے محفوظ کریں", phClose:"بند کریں", phCancel:"منسوخ", phStop:"محفوظ کرنا روکیں", phStopping:"اس صفحے کے بعد رک رہا ہے…", phStopped:"روک دیا گیا۔ {n} میں سے {a} صفحے محفوظ ہو چکے ہیں۔ باقی بعد میں «صفحوں کی تصویریں شامل کریں» سے ڈال سکتے ہیں۔", phElapsed:"{s} سیکنڈ",
+  phSave:"رجسٹر محفوظ کریں", phSaveAdd:"یہ صفحے محفوظ کریں", phClose:"بند کریں", phCancel:"منسوخ", delPhBtn:"صفحوں کی تصویریں مٹائیں", delPhYes:"جی ہاں، تصویریں مٹا دیں", phGone:"صفحوں کی تصویریں مٹا دی گئیں", delPhAsk:"اس رجسٹر کے تمام {n} صفحوں کی تصویریں مٹا دی جائیں؟ صرف صفحوں کی تصویریں ختم ہوں گی۔ قطاریں اور جو کیس Daily Cases میں شامل ہو چکے ہیں وہ برقرار رہیں گے۔ یہ واپس نہیں ہو سکتا — اصل فائلیں سنبھال کر رکھیں۔", delPhDone:"صفحوں کی تصویریں مٹا دی گئیں۔", delPhFail:"تمام تصویریں نہیں مٹ سکیں: {x}۔ اب تک مٹیں: {n} میں سے {a}۔", phStop:"محفوظ کرنا روکیں", phStopping:"اس صفحے کے بعد رک رہا ہے…", phStopped:"روک دیا گیا۔ {n} میں سے {a} صفحے محفوظ ہو چکے ہیں۔ باقی بعد میں «صفحوں کی تصویریں شامل کریں» سے ڈال سکتے ہیں۔", phElapsed:"{s} سیکنڈ",
   phErrName:"رجسٹر کا نام لکھیں۔", phErrOfficer:"افسر چنیں۔", phErrNoPages:"کم از کم ایک صفحہ شامل کریں۔", phErrStart:"صفحہ نمبر {n} کی تصویر پہلے سے ہے۔ {m} یا اس سے بڑا نمبر لیں۔",
   phErrTooMany:"ایک رجسٹر میں ایک بار میں زیادہ سے زیادہ {n} صفحے شامل ہو سکتے ہیں۔", phErrFile:"پڑھی نہیں جا سکی: {f}", phErrBig:"اس صفحے کی تصویر محفوظ کرنے کے لیے بہت بھاری ہے: {f}",
   phUploading:"صفحہ {a} / {n} محفوظ ہو رہا ہے…", phDone:"محفوظ ہو گیا۔", phFail:"رک گیا: {x}۔ اب تک محفوظ صفحے: {a}۔", phPdfLib:"PDF پڑھنے والا حصہ لوڈ نہیں ہو سکا (انٹرنیٹ چاہیے)۔ دوبارہ کوشش کریں یا تصویریں استعمال کریں۔",
@@ -1848,6 +1852,46 @@ async function addRowOnPage(pg, afterRow){
     startEdit(r);
   }catch(e){ setBusy(false); toast(t("toFail") + (e && e.message || "")); }
 }
+
+
+/* ---------- delete the page photos once the work on a register is finished ---------- */
+function canDelPhotos(b, rows){
+  if(!b || !CAN.edit || b.status === "loading") return false;
+  if(CAN.restricted && b.officer !== CAN.restrictedOfficer) return false;
+  if(!((b.pagesWithPhoto || []).length)) return false;
+  if(rows){   /* inside the register: only when no row is still waiting */
+    if(rows.some(function(r){ return r.status === "new" || r.status === "checked"; })) return false;
+    return rows.length > 0 || b.status === "archived";
+  }
+  return b.status === "imported" || b.status === "archived";
+}
+function deletePhotos(id){
+  var b = (CUR && CUR.id === id) ? CUR : BATCHES.filter(function(x){ return x.id === id; })[0];
+  if(!b || !canDelPhotos(b, (CUR && CUR.id === id) ? ROWS : null)) return;
+  var pages = (b.pagesWithPhoto || []).slice(), n = pages.length;
+  confirmBox(t("cfTitle"), "<p>" + esc(t("delPhAsk", { n:n })) + "</p><p><strong>" + esc(b.name) + "</strong></p>", t("delPhYes"), async function(){
+    var left = pages.slice(), done = [], failure = null, idx = 0;
+    async function worker(){
+      while(!failure){
+        var k = idx++; if(k >= pages.length) return;
+        try{ await db.collection(C_PAGE).doc(id + "__p" + pages[k]).delete(); done.push(pages[k]); }
+        catch(e){ failure = failure || e; return; }
+      }
+    }
+    toast(t("loading") + "…");
+    await Promise.all([worker(), worker(), worker()]);
+    left = pages.filter(function(p){ return done.indexOf(p) < 0; });
+    var upd = { pagesWithPhoto:left, photoCount:left.length, updatedBy:ME.email, updatedAt:TS_() };
+    if(!left.length){ upd.photosDeleted = true; upd.photosDeletedBy = ME.email; upd.photosDeletedAt = TS_(); }
+    try{ await db.collection(C_BATCH).doc(id).update(upd); }catch(e2){ failure = failure || e2; }
+    b.pagesWithPhoto = left; b.photoCount = left.length; if(!left.length) b.photosDeleted = true;
+    Object.keys(PIMG).forEach(function(k){ if(k.indexOf(id + "|") === 0) delete PIMG[k]; });
+    if(CUR && CUR.id === id){ CUR.pagesWithPhoto = left; CUR.photoCount = left.length; if(!left.length) CUR.photosDeleted = true; if(VIEW === "review") renderReview(); }
+    renderList();
+    if(failure) toast(t("delPhFail", { x:(failure && failure.message || ""), a:done.length, n:n })); else toast(t("delPhDone"));
+  });
+}
+$("btnDelPhotos").addEventListener("click", function(){ if(CUR) deletePhotos(CUR.id); });
 
 
 /* ================= Shared sidebar / mobile-drawer interactivity ================= */

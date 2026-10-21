@@ -35,11 +35,16 @@
     { key: 'chat',        href: 'chat-system.html', ur: 'ٹیم چیٹ (a = پیغام بھیجنا، d = پیغام حذف)', en: 'Team Chat (Add = send, Delete = remove messages)', acts: ['v', 'a', 'd'] },
     { key: 'ai-assistant', href: 'ai-assistant.html', ur: 'AI اسسٹنٹ', en: 'AI Assistant', acts: ['v', 'ai'] },
     { key: 'roster',      href: '',                 urlPart: 'weekly-court-roster', ur: 'ویکلی کورٹ روسٹر (ایڈٹ = روسٹر محفوظ کرنا)', en: 'Weekly Court Roster (Edit = save a week)', acts: ['v', 'e', 'd', 'x'] },
+    { key: 'bill',        href: '',                 urlPart: 'bill-register-system', ur: 'بل رجسٹر (ہر ٹیب کا ایڈٹ ٹِک: شامل/ایڈٹ/ڈیلیٹ)', en: 'Bill Register (one Edit tick per tab: add/edit/delete)', acts: ['v', 'bl', 'ca', 'st', 'em', 'lv', 'at', 'cf', 'x'] },
+    { key: 'recordsec',   href: '',                 urlPart: 'record-section-system', ur: 'ریکارڈ سیکشن (ہر ٹیب کا ایڈٹ ٹِک: شامل/ایڈٹ/ڈیلیٹ)', en: 'Record Section (one Edit tick per tab: add/edit/delete)', acts: ['v', 'be', 'dr', 'fm', 'lt', 'cr', 'cf', 'x'] },
     { key: 'lists',       href: '',                 ur: 'فہرستیں سنبھالنا (جج، آفیسر، اقسام…)', en: 'Manage lists (judges, officers, types…)', acts: ['l'] }
   ];
   var ACT_LABEL = {
     v: ['دیکھنا', 'View'], a: ['شامل', 'Add'], e: ['ایڈٹ', 'Edit'], d: ['ڈیلیٹ', 'Delete'],
-    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], i: ['فائل سے امپورٹ', 'Import file'], b: ['بیک اپ بنانا', 'Make backup'], s1: ['دستخط: کلرک', 'Sign: Clerk'], s2: ['دستخط: پراسیکیوٹر', 'Sign: Prosecutor'], s3: ['دستخط: انچارج', 'Sign: In-charge'], k: ['مدت اور سیٹنگز', 'Periods & settings'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper']
+    x: ['ایکسپورٹ / پرنٹ', 'Export / Print'], i: ['فائل سے امپورٹ', 'Import file'], b: ['بیک اپ بنانا', 'Make backup'], s1: ['دستخط: کلرک', 'Sign: Clerk'], s2: ['دستخط: پراسیکیوٹر', 'Sign: Prosecutor'], s3: ['دستخط: انچارج', 'Sign: In-charge'], k: ['مدت اور سیٹنگز', 'Periods & settings'], l: ['فہرستیں سنبھالنا', 'Manage lists'], ai: ['AI مددگار', 'AI helper'],
+    bl: ['بل: ایڈٹ', 'Bills: edit'], ca: ['کیش بک: ایڈٹ', 'Cash Book: edit'], st: ['اسٹاک: ایڈٹ', 'Stock: edit'], em: ['ملازمین اور پے سلپ: ایڈٹ', 'Employees & pay slips: edit'], lv: ['چھٹی: ایڈٹ', 'Leave: edit'], at: ['حاضری: ایڈٹ', 'Attendance: edit'],
+    cf: ['سیٹنگز / لیجر / فیلڈز (ایڈمن کا کام)', 'Settings / ledger / fields (admin work)'],
+    be: ['بینچ اور کاز لسٹ: ایڈٹ', 'Bench & cause list: edit'], dr: ['ڈیوٹی روسٹر: ایڈٹ', 'Duty roster: edit'], fm: ['فائل موومنٹ: ایڈٹ', 'File movement: edit'], lt: ['خطوط: ایڈٹ', 'Letters: edit'], cr: ['کسٹم رجسٹر: ایڈٹ', 'Custom registers: edit']
   };
 
   /* ---- what a user can do when his profile has no ticks (same as before the ticks existed) --- */
@@ -60,6 +65,8 @@
     'chat':        { viewer: ['v', 'a'], data_entry: ['v', 'a'],                 admin: ['v', 'a', 'd'] },
     'ai-assistant': { viewer: [],        data_entry: [],                         admin: ['v', 'ai'] },
     'roster':      { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'e', 'd', 'x'] },
+    'bill':        { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'bl', 'ca', 'st', 'em', 'lv', 'at', 'cf', 'x'] },
+    'recordsec':   { viewer: ['v', 'x'], data_entry: ['v', 'x'],                 admin: ['v', 'be', 'dr', 'fm', 'lt', 'cr', 'cf', 'x'] },
     'lists':       { viewer: [],         data_entry: [],                         admin: ['l'] }
   };
 

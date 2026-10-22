@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camp Office Portal — Maintenance</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-activity.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<style>
+html,body{overflow-x:hidden;}
+
+  :root{
+    --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5;
+    --amber:#B8860B; --amber-tint:#FBF3DF;
+    --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE;
+    --text:#22303C; --muted:#5B6B76;
+    --danger:#B3261E; --danger-tint:#FBEAE9;
+    --success:#2F7D4F; --success-tint:#EAF4EE;
+    --warn:#8A6A12; --warn-tint:#FBEBD0;
+    --radius:8px;
+    --shadow:0 1px 2px rgba(21,58,91,0.08), 0 1px 1px rgba(21,58,91,0.04);
+  }
+  [data-theme="navy"]{ --navy:#1F4E78; --navy-dark:#153A5B; --navy-tint:#EAF0F5; --amber:#B8860B; --amber-tint:#FBF3DF; --bg:#F4F3EF; --surface:#FFFFFF; --border:#DBD7CE; --border-strong:#BEC7CE; --text:#22303C; --muted:#5B6B76; }
+  [data-theme="green"]{ --navy:#0F5132; --navy-dark:#0B3B24; --navy-tint:#E7F0EA; --amber:#C9A227; --amber-tint:#FBF3D9; --bg:#F4F6F4; --surface:#FFFFFF; --border:#D9E1DB; --border-strong:#BFD1C5; --text:#1B2420; --muted:#54655B; }
+  [data-theme="teal"]{ --navy:#0B7A75; --navy-dark:#075753; --navy-tint:#E3F3F2; --amber:#8A6A12; --amber-tint:#FBEBD0; --bg:#F2F7F6; --surface:#FFFFFF; --border:#D8E9E7; --border-strong:#B9D6D2; --text:#1E2A2A; --muted:#54696A; }
+  [data-theme="night"]{ --navy:#1c2436; --navy-dark:#12141c; --navy-tint:#232838; --amber:#d4a13d; --amber-tint:#2a2416; --bg:#12141c; --surface:#1c2030; --border:#2a2f42; --border-strong:#3a3f55; --text:#e6e8ef; --muted:#8b93ab; }
+
+  :root{ --sidebar-bg:#17294a; --sidebar-bg2:#223c72; --sidebar-text:#e4e9f5; --sidebar-muted:#9caed0; --font-head:"Segoe UI",Tahoma,Arial,sans-serif; }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.5; }
+  body.lang-ur, body.lang-ur input, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
+  h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
+  .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
+  .topbar select{ background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.35); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .topbar select option{ color:#000; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:20px; min-width:0; width:100%; }
+  .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
+  .card + .card{ margin-top:16px; }
+  label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
+  input[type=email],input[type=password]{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
+  .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
+  .btn.primary{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .btn.primary:hover{ background:var(--navy-dark); }
+  .btn.small{ padding:6px 10px; font-size:12.5px; }
+  .btn.block{ width:100%; margin-top:16px; }
+  .btn:disabled{ opacity:0.55; cursor:not-allowed; }
+  .field-hint{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .error-box{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); border-radius:6px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .toggle-row{ text-align:center; margin-top:16px; font-size:13px; }
+  .badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .badge.super_admin{ background:#F3E6E4; color:#7A1F2B; }
+  .badge.admin{ background:var(--amber-tint); color:var(--navy-dark); }
+  .pending-screen{ text-align:center; padding:40px 20px; }
+  .pending-screen .icon{ font-size:48px; }
+  .userbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .note-banner{ background:var(--amber-tint); border:1px solid var(--amber); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .info-banner{ background:var(--navy-tint); border:1px solid var(--navy); border-radius:8px; padding:10px 14px; font-size:12.5px; color:var(--navy-dark); margin-bottom:16px; }
+  .hidden{ display:none !important; }
+  .spinner{ display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,0.4); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+  .last-backup-box{ display:flex; align-items:center; gap:10px; background:var(--navy-tint); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+  .last-backup-box .emoji{ font-size:22px; }
+  ol.restore-steps li{ margin-bottom:8px; }
+  .row-count-table{ width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; }
+  .row-count-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
+  .row-count-table td:last-child{ text-align:right; font-weight:700; }
+  .danger-banner{ background:var(--danger-tint); border:1px solid var(--danger); border-radius:8px; padding:12px 16px; font-size:13px; color:var(--danger); margin-top:14px; font-weight:600; }
+  input[type=file]{ display:block; margin-top:6px; font-size:13px; }
+  .restore-confirm-box{ margin-top:14px; }
+
+  /* ================= New shared dashboard shell (sidebar + topbar2) ================= */
+  .app-shell{ display:flex; min-height:100vh; }
+  .sidebar{ width:230px; flex:none; background:linear-gradient(180deg,var(--sidebar-bg2) 0%, var(--sidebar-bg) 100%); color:var(--sidebar-text); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; overflow-y:auto; transition:width .18s ease, transform .18s ease; z-index:40; }
+  .sidebar-head{ display:flex; align-items:center; justify-content:space-between; padding:14px 12px; border-bottom:1px solid rgba(255,255,255,0.12); }
+  .sidebar-brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .sidebar-collapse-btn{ background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:var(--sidebar-text); width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px; flex:none; }
+  .sidebar-nav{ padding:8px 7px; flex:1; }
+  .nav-item, .nav-group-head{ display:flex; align-items:center; gap:9px; width:100%; padding:9px 9px; border-radius:7px; color:var(--sidebar-text); text-decoration:none; font-size:12.5px; font-weight:600; background:none; border:none; cursor:pointer; text-align:left; margin-bottom:2px; font-family:var(--font-head); }
+  .nav-item:hover, .nav-group-head:hover{ background:rgba(255,255,255,0.09); }
+  .nav-item.active{ background:rgba(255,255,255,0.16); }
+  .nav-item .ico, .nav-group-head .ico{ width:18px; text-align:center; flex:none; }
+  .nav-group-head .chev{ margin-left:auto; transition:transform .15s; font-size:11px; }
+  .nav-group.open .nav-group-head .chev{ transform:rotate(90deg); }
+  .nav-submenu{ max-height:0; overflow:hidden; transition:max-height .18s ease; padding-left:12px; }
+  .nav-group.open .nav-submenu{ max-height:220px; }
+  .nav-subitem{ display:flex; align-items:center; gap:8px; padding:7px 9px; font-size:12px; color:var(--sidebar-muted); text-decoration:none; border-radius:6px; cursor:pointer; background:none; border:none; width:100%; text-align:left; font-family:inherit; }
+  .nav-subitem:hover, .nav-subitem.active{ background:rgba(255,255,255,0.09); color:var(--sidebar-text); }
+  .sidebar-foot{ border-top:1px solid rgba(255,255,255,0.12); padding:8px 7px 14px; display:flex; flex-direction:column; gap:2px; }
+  .sidebar-foot a{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; color:var(--sidebar-muted); text-decoration:none; font-size:11.5px; }
+  .sidebar-foot a:hover{ background:rgba(255,255,255,0.08); color:var(--sidebar-text); }
+  .sidebar-foot a.active{ background:rgba(255,255,255,0.16); color:var(--sidebar-text); }
+  .sidebar-backdrop{ display:none; }
+  .main-col{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar2{ display:flex; align-items:center; gap:12px; }
+  .topbar2 .brand{ display:flex; align-items:center; gap:8px; }
+  .mobile-menu-btn{ display:none; background:none; border:1px solid rgba(255,255,255,0.35); color:#fff; border-radius:6px; width:32px; height:32px; cursor:pointer; font-size:14px; flex:none; }
+  .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .user-chip-sm{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:#fff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:5px 12px; white-space:nowrap; }
+  .user-chip-sm .role-chip{ background:rgba(255,255,255,0.18); border:none; color:#fff; }
+  @media (max-width: 960px){
+    .sidebar{ position:fixed; top:0; bottom:0; left:0; transform:translateX(-102%); width:230px; box-shadow:0 0 30px rgba(0,0,0,0.3); }
+    [dir="rtl"] .sidebar{ left:auto; right:0; transform:translateX(102%); }
+    .sidebar.mobile-open{ transform:translateX(0); }
+    .mobile-menu-btn{ display:inline-block; }
+    .sidebar-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(10,14,26,0.45); z-index:39; }
+    .topbar2{ flex-wrap:wrap; }
+    .user-chip-sm{ display:none; }
+  }
+
+
+  #mobileMenuBtn{ display:inline-flex !important; align-items:center; justify-content:center; }
+  /* ---- unified header (identical to every other page) ---- */
+  :root{ --navy2:#3d6f9c; --gold:#B8860B; }
+  [data-theme="green"]{ --navy2:#2f8a5c; --gold:#C9A227; }
+  [data-theme="teal"]{ --navy2:#26a89f; --gold:#96762a; }
+  [data-theme="night"]{ --navy2:#7391c4; --gold:#d4a13d; }
+  .topbar{ background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; direction:ltr; }
+  .topbar .brand{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
+  .topbar .right-controls{ display:flex; align-items:center; gap:10px; }
+  .brand-logo-img{ height:30px; width:auto; flex-shrink:0; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); }
+  .lang-btn{ background:var(--gold); color:#1B3F63; border:none; padding:7px 16px; border-radius:20px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .theme-switch-wrap{ position:relative; }
+  .theme-btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; padding:6px 11px; border-radius:20px; font-size:14px; cursor:pointer; line-height:1; }
+  .theme-btn:hover{ background:rgba(255,255,255,.24); }
+  .theme-picker{ position:absolute; top:calc(100% + 8px); right:0; background:#fff; border:1px solid #E1DDD3; border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,.28); padding:10px; display:none; flex-wrap:wrap; gap:8px; width:170px; z-index:60; }
+  .theme-picker.open{ display:flex; }
+  .theme-swatch{ width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.1); }
+  .theme-swatch:hover{ transform:scale(1.08); }
+  .theme-swatch.active{ border-color:var(--navy); box-shadow:0 0 0 2px var(--gold); }
+  @media (min-width: 961px){ #mobileMenuBtn{ display:none !important; } }
+  /* ---- Register Desk page ---- */
+  .wrap.wide{ max-width:1500px; }
+  .hint{ font-size:12.5px; color:var(--muted); }
+  .rd-head{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .rd-head h2{ font-size:20px; }
+  .rd-tabs{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .rd-tabs .btn.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .rd-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:10px 12px; min-width:0; text-align:start; font:inherit; color:inherit; cursor:default; }
+  button.stat{ cursor:pointer; }
+  button.stat.on{ outline:2px solid var(--navy); }
+  .stat .n{ font-size:22px; font-weight:800; color:var(--navy-dark); line-height:1.1; font-variant-numeric:tabular-nums; }
+  [data-theme="night"] .stat .n{ color:#fff; }
+  .stat .l{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .stat.bad .n{ color:var(--danger); } .stat.good .n{ color:var(--success); } .stat.warn .n{ color:var(--warn); }
+  .progress{ height:10px; background:var(--border); border-radius:6px; overflow:hidden; margin:4px 0 14px; display:flex; }
+  .progress i{ display:block; height:100%; }
+  .progress .p-ok{ background:var(--success); } .progress .p-imp{ background:var(--navy); } .progress .p-skip{ background:var(--border-strong); }
+  .tbl-wrap{ overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+  table.rd{ width:100%; border-collapse:collapse; font-size:13px; min-width:620px; }
+  table.rd th{ background:var(--navy); color:#fff; text-align:start; padding:8px 10px; font-weight:700; font-size:12.5px; white-space:nowrap; }
+  table.rd td{ padding:7px 10px; border-top:1px solid var(--border); vertical-align:top; }
+  table.rd tbody tr:nth-child(even) td{ background:var(--navy-tint); }
+  [data-theme="night"] table.rd tbody tr:nth-child(even) td{ background:rgba(255,255,255,0.04); }
+  .chip{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11.5px; font-weight:700; white-space:nowrap; }
+  .chip.ok{ background:var(--success-tint); color:var(--success); }
+  .chip.new{ background:var(--navy-tint); color:var(--navy-dark); }
+  .chip.skip{ background:var(--border); color:var(--muted); }
+  .chip.imp{ background:var(--navy); color:#fff; }
+  .chip.bad{ background:var(--danger-tint); color:var(--danger); }
+  .chip.warn{ background:var(--warn-tint); color:var(--warn); }
+  .chip.arch{ background:var(--border); color:var(--muted); }
+  .drop{ border:2px dashed var(--border-strong); border-radius:10px; padding:20px; text-align:center; background:var(--navy-tint); }
+  .drop input[type=file]{ margin-top:8px; max-width:100%; }
+  .kv{ display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:13.5px; margin:10px 0; }
+  .kv b{ color:var(--muted); font-weight:600; }
+  .msg{ margin-top:10px; padding:10px 12px; border-radius:8px; font-size:13px; }
+  .msg.err{ background:var(--danger-tint); color:var(--danger); border:1px solid var(--danger); }
+  .msg.ok{ background:var(--success-tint); color:var(--success); border:1px solid var(--success); }
+  .msg.info{ background:var(--navy-tint); color:var(--navy-dark); border:1px solid var(--navy); }
+  .msg.warn{ background:var(--warn-tint); color:var(--warn); border:1px solid var(--warn); }
+  .filters{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0; }
+  .filters .btn.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .filters input[type=search], .filters select{ padding:7px 10px; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; background:var(--surface); color:var(--text); min-width:0; }
+  .split{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:14px; align-items:start; }
+  .split.nophoto{ grid-template-columns:minmax(0,1fr); }
+  .photo-pane{ position:sticky; top:8px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); display:flex; flex-direction:column; max-height:calc(100vh - 16px); min-width:0; }
+  .photo-bar{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border); }
+  .photo-bar .grow{ flex:1; font-weight:700; }
+  .photo-view{ overflow:auto; flex:1; min-height:240px; background:#222; text-align:center; }
+  .photo-view img{ display:block; margin:0 auto; max-width:none; }
+  .photo-none{ padding:30px 16px; text-align:center; color:var(--muted); font-size:13px; }
+  .grp{ margin-top:16px; }
+  .grp-head{ display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; padding:8px 12px; background:var(--navy); color:#fff; border-radius:8px 8px 0 0; font-weight:700; font-size:13.5px; }
+  .grp-head .sp{ flex:1; }
+  .grp-head .btn{ background:rgba(255,255,255,0.14); color:#fff; border-color:rgba(255,255,255,0.4); }
+  .rowc{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; padding:9px 12px; border:1px solid var(--border); border-top:none; background:var(--surface); cursor:pointer; }
+  .rowc:last-child{ border-radius:0 0 8px 8px; }
+  .rowc.sel{ outline:2px solid var(--navy); outline-offset:-2px; }
+  .rowc.st-ok{ border-inline-start:5px solid var(--success); }
+  .rowc.st-skip{ opacity:.65; border-inline-start:5px solid var(--border-strong); }
+  .rowc.st-imp{ border-inline-start:5px solid var(--navy); background:var(--navy-tint); }
+  .rowc.has-err{ border-inline-start:5px solid var(--danger); }
+  .rowc.has-doubt:not(.st-ok):not(.st-imp){ border-inline-start:5px solid var(--warn); }
+  .rowc .l1{ display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; font-size:14px; min-width:0; }
+  .rowc .l1 .sr{ font-weight:800; color:var(--navy-dark); min-width:34px; font-variant-numeric:tabular-nums; }
+  [data-theme="night"] .rowc .l1 .sr{ color:#fff; }
+  .rowc .l1 .cs{ font-weight:700; direction:ltr; unicode-bidi:isolate; }
+  .rowc .l1 .tt{ overflow-wrap:anywhere; min-width:0; }
+  .rowc .l2{ font-size:12.5px; color:var(--muted); margin-top:3px; overflow-wrap:anywhere; }
+  .rowc .l3{ margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; }
+  .rowc .acts{ display:flex; flex-direction:column; gap:5px; align-items:stretch; }
+  .rowc .acts .btn{ padding:5px 10px; font-size:12.5px; white-space:nowrap; }
+  .btn.good{ background:var(--success); border-color:var(--success); color:#fff; }
+  .btn.dng{ color:var(--danger); border-color:var(--danger); }
+  .note-box{ margin-top:5px; padding:5px 9px; border-radius:6px; background:var(--warn-tint); color:var(--warn); font-size:12.5px; border:1px solid var(--warn); }
+  .iss{ display:block; font-size:12px; margin-top:2px; }
+  .iss.e{ color:var(--danger); } .iss.w{ color:var(--warn); } .iss.i{ color:var(--muted); }
+  .editor{ grid-column:1 / -1; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 10px; padding:6px 0; }
+  .editor label{ margin:0 0 3px; font-size:12px; }
+  .editor input, .editor select, .editor textarea{ width:100%; padding:7px 9px; border:1px solid var(--border-strong); border-radius:6px; font-size:13.5px; background:var(--surface); color:var(--text); min-width:0; }
+  .editor .wide2{ grid-column:span 2; }
+  .editor .fbar{ grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .editor .bad-f{ border-color:var(--danger); background:var(--danger-tint); }
+  .sumlist{ margin:6px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto; font-size:12.5px; border:1px solid var(--border); border-radius:6px; }
+  .sumlist li{ padding:4px 9px; border-top:1px solid var(--border); overflow-wrap:anywhere; }
+  .sumlist li:first-child{ border-top:none; }
+  .modal-bg{ position:fixed; inset:0; background:rgba(10,20,40,.7); z-index:9000; display:flex; align-items:center; justify-content:center; padding:12px; }
+  .modal{ background:var(--surface); color:var(--text); border-radius:12px; max-width:560px; width:100%; padding:20px; max-height:90vh; overflow:auto; }
+  .modal h3{ margin-bottom:8px; }
+  .modal .fbar{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; justify-content:flex-end; }
+  .lightbox{ position:fixed; inset:0; background:#111; z-index:9100; display:flex; flex-direction:column; }
+  .lightbox .lb-bar{ display:flex; gap:8px; padding:8px 12px; align-items:center; background:#000; color:#fff; flex-wrap:wrap; }
+  .lightbox .lb-bar .grow{ flex:1; font-weight:700; }
+  .lightbox .lb-view{ flex:1; overflow:auto; text-align:center; }
+  .lightbox img{ max-width:none; }
+  .empty{ padding:22px; text-align:center; color:var(--muted); }
+  .bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .toast{ position:fixed; bottom:14px; inset-inline-start:14px; background:#17294a; color:#fff; padding:9px 14px; border-radius:8px; font-size:13px; z-index:9500; max-width:calc(100vw - 28px); box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  .kbd{ font-family:monospace; background:var(--navy-tint); border:1px solid var(--border-strong); border-radius:4px; padding:0 5px; font-size:12px; }
+  @media (max-width:1000px){
+    .split{ grid-template-columns:minmax(0,1fr); }
+    .photo-pane{ position:static; max-height:70vh; }
+    .rowc{ grid-template-columns:minmax(0,1fr); }
+    .rowc .acts{ flex-direction:row; flex-wrap:wrap; }
+    .editor .wide2{ grid-column:1 / -1; }
+  }
+  @media (max-width:600px){ .wrap{ padding:12px; } .card{ padding:14px; } }
+
+  .modal.wide{ max-width:760px; }
+  .thumbs{ display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:10px; max-height:300px; overflow:auto; }
+  .thumb{ border:1px solid var(--border); border-radius:8px; padding:5px; background:var(--surface); text-align:center; min-width:0; }
+  .thumb img{ width:100%; height:120px; object-fit:contain; background:#222; border-radius:4px; }
+  .thumb .tn{ font-size:12px; font-weight:700; margin-top:3px; }
+  .thumb .tb{ display:flex; gap:4px; justify-content:center; margin-top:4px; }
+  .thumb .tb .btn{ padding:2px 8px; }
+</style>
+<!-- PWA: installable app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17294a">
+<meta name="mobile-web-app-capable" content="yes">
+<script src="/pwa.js" defer></script>
+<script src="/auth-guard.js" defer></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" href="index.html"><span class="ico">🏠</span><span class="label">Dashboard</span></a>
+        <div class="nav-group" id="navGroupCase">
+          <button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label">Case Management</span><span class="chev">›</span></button>
+          <div class="nav-submenu">
+            <a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span>Daily Cases</span></a>
+            <a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span>Case Notices</span></a>
+            
+            <a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/" target="_blank"><span class="ico">📚</span><span>Record Section</span></a>
+          </div>
+        </div>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/" target="_blank"><span class="ico">🧾</span><span class="label">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank"><span class="ico">🗂️</span><span class="label">Weekly Court Roster</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label">Gallery</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports" target="_blank"><span class="ico">📊</span><span class="label">Reports</span></a>
+        <a class="nav-item" href="employee-directory.html"><span class="ico">🗂️</span><span class="label">Employee Directory</span></a>
+      </nav>
+      <div class="sidebar-foot">
+        <a href="chat-system.html"><span class="ico">💬</span><span class="label">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label">AI Assistant</span></a>
+        <a href="backup-center.html"><span class="ico">💾</span><span class="label">Backup Center</span></a>
+        <a href="index.html"><span class="ico">←</span><span class="label">Portal</span></a>
+      </div>
+    </aside>
+    <div class="main-col">
+<div class="topbar">
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Camp Office Digital Portal — Maintenance</span></div>
+  <div class="right-controls">
+    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    <div class="theme-switch-wrap">
+      <button class="theme-btn" id="themeBtn" title="تھیم منتخب کریں / Choose Theme">🎨</button>
+      <div class="theme-picker" id="themePicker"></div>
+    </div>
+    <button class="lang-btn" id="langBtn">اردو</button>
+    <select id="langSelect" hidden>
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+    </select>
+    <select id="themeSelect" hidden>
+      <option value="navy">عدالتی نیلا / Navy</option>
+      <option value="green">سرکاری سبز / Green</option>
+      <option value="teal">جدید ٹیل / Teal</option>
+      <option value="night">تاریک موڈ 🌙 / Night</option>
+    </select>
+    <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
+  </div>
+</div>
+
+<!-- ===================== AUTH SCREEN =====================
+     No independent sign-in here anymore — login happens only on the
+     main portal (index.html), which also enforces the super-admin
+     OTP step. This page just checks whether that session exists and
+     sends the browser to index.html if it doesn't. ==================== -->
+<div id="authScreen" class="center-wrap">
+  <div class="card">
+    <h2 data-i18n="signInTitle">Redirecting…</h2>
+    <p class="field-hint" data-i18n="signInSub">براہ کرم پہلے مرکزی پورٹل سے سائن اِن کریں — Redirecting to the main portal sign-in…</p>
+  </div>
+</div>
+
+<div id="notAdminScreen" class="center-wrap hidden">
+  <div class="card pending-screen">
+    <div class="icon">🔒</div>
+    <h2 data-i18n="notAllowedTitle">No access</h2>
+    <p data-i18n="notAllowedBody">Only the Super Admin can open this page.</p>
+    <a class="btn block" href="index.html"><span data-i18n="btnPortal">Back to the portal</span></a>
+  </div>
+</div>
+<style>
+  .mt-grid{ display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
+  .mt-status{ display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; }
+  .mt-big{ font-size:22px; font-weight:800; }
+  .mt-field{ display:block; margin:12px 0 4px; font-weight:700; font-size:13.5px; }
+  .mt-in, .mt-ta{ width:100%; max-width:560px; padding:9px 11px; border:1px solid var(--border-strong); border-radius:6px; font:inherit; font-size:14px; background:var(--surface); color:var(--text); }
+  .mt-ta{ min-height:84px; resize:vertical; }
+  .mt-radio{ display:flex; flex-wrap:wrap; gap:6px 18px; margin:6px 0; }
+  .mt-radio label{ display:flex; gap:6px; align-items:center; font-size:14px; }
+  .mt-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  .mt-actions{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .btn.dng{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+  .mt-list li{ margin:6px 0; }
+  .chip.open{ background:var(--success-tint); color:var(--success); }
+</style>
+<div id="mainApp" class="wrap hidden">
+  <div class="userbar">
+    <div>
+      <span data-i18n="signedInAs">Signed in as</span> <strong id="curEmail"></strong>
+      <span class="badge super_admin" data-i18n="roleSuper">Super Admin</span>
+    </div>
+    <button class="btn small" id="mainSignOut" type="button"><span data-i18n="btnSignOut">Sign Out</span></button>
+  </div>
+
+  <div class="info-banner">
+    <strong data-i18n="introTitle">Portal Maintenance Switch</strong><br>
+    <span data-i18n="introBody"></span>
+  </div>
+
+  <div class="mt-grid">
+    <div class="card">
+      <div class="rd-head"><h2 data-i18n="stTitle">Portal status right now</h2></div>
+      <div class="mt-status" id="stBox"></div>
+      <div class="hint" id="stMeta" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="rd-head"><h2 data-i18n="fmTitle">Close or reopen</h2></div>
+
+      <label class="mt-field" for="mMsg" data-i18n="fmMsg">Message everyone will see</label>
+      <textarea class="mt-ta" id="mMsg" maxlength="300" data-i18n-ph="fmMsgPh"></textarea>
+      <div class="hint" data-i18n="fmMsgHint"></div>
+
+      <div class="mt-field" data-i18n="fmWhen">When should it reopen?</div>
+      <div class="mt-radio">
+        <label><input type="radio" name="mMode" value="auto" checked> <span data-i18n="fmAuto">Reopen by itself at a set time</span></label>
+        <label><input type="radio" name="mMode" value="manual"> <span data-i18n="fmManual">I will reopen it myself</span></label>
+      </div>
+      <div id="mAutoBox">
+        <input class="mt-in" type="datetime-local" id="mWhen" style="max-width:260px">
+        <span class="hint" data-i18n="fmTz">(Pakistan time)</span>
+        <div class="mt-chips">
+          <button class="btn small" type="button" data-add="3600000" data-i18n="ch1h">+1 hour</button>
+          <button class="btn small" type="button" data-add="86400000" data-i18n="ch1d">+1 day</button>
+          <button class="btn small" type="button" data-add="259200000" data-i18n="ch3d">+3 days</button>
+          <button class="btn small" type="button" data-add="604800000" data-i18n="ch7d">+1 week</button>
+        </div>
+      </div>
+
+      <label class="hint" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px">
+        <input type="checkbox" id="mSure" style="margin-top:3px"> <span data-i18n="fmSure"></span>
+      </label>
+
+      <div class="mt-actions">
+        <button class="btn dng" id="btnClose" type="button">🔒 <span data-i18n="btnClose">Close the portal</span></button>
+        <button class="btn primary" id="btnOpen" type="button">🔓 <span data-i18n="btnOpen">Reopen the portal now</span></button>
+      </div>
+      <div id="mMsgBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="rd-head"><h2 data-i18n="howTitle">What happens when it is closed</h2></div>
+      <ul class="mt-list" id="howList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Maintenance page — Super Admin only.
+   One small document:  appConfig/maintenance = { closed, message, reopenAtMs, updatedBy, updatedAt }
+   The shared /auth-guard.js watches it live on every page and shows the "closed" notice to everybody except the Super Admin.
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
+  authDomain: "camp-office-project.firebaseapp.com",
+  projectId: "camp-office-project"
+};
+firebase.initializeApp(firebaseConfig);
+var auth = firebase.auth();
+var db = firebase.firestore();
+var TZ = "Asia/Karachi";
+var DEFAULT_MSG_UR = "پورٹل عارضی طور پر بند ہے۔ براہ کرم بعد میں دوبارہ کوشش کریں۔";
+
+var I18N = {
+  en: {
+    signInTitle:"Redirecting…", signInSub:"Please sign in from the main portal first — redirecting…",
+    notAllowedTitle:"No access", notAllowedBody:"Only the Super Admin can open this page.", btnPortal:"Back to the portal",
+    signedInAs:"Signed in as", roleSuper:"Super Admin", btnSignOut:"Sign Out",
+    brandTitle:"Camp Office Digital Portal — Maintenance",
+    introTitle:"Portal Maintenance Switch",
+    introBody:"Use this to close the whole portal for Eid, holidays, repairs or an emergency. While it is closed, everybody except the Super Admin sees a “portal closed” notice with your message and the reopening time. Nobody is signed out and no data is touched.",
+    stTitle:"Portal status right now",
+    fmTitle:"Close or reopen", fmMsg:"Message everyone will see", fmMsgPh:"e.g. The portal is closed for the Eid holidays.",
+    fmMsgHint:"Urdu or English. Leave empty to use the standard message.",
+    fmWhen:"When should it reopen?", fmAuto:"Reopen by itself at a set time", fmManual:"I will reopen it myself", fmTz:"(Pakistan time)",
+    ch1h:"+1 hour", ch1d:"+1 day", ch3d:"+3 days", ch7d:"+1 week",
+    fmSure:"I understand: everybody except the Super Admin will be shut out of the portal until it reopens.",
+    btnClose:"Close the portal", btnOpen:"Reopen the portal now",
+    howTitle:"What happens when it is closed",
+    how1:"Everyone who is signed in, or signs in later, sees a full-screen notice with your message and the reopening time. They can only press “Check again” or “Sign out”.",
+    how2:"You (Super Admin) keep full access and see a red strip at the bottom of every page as a reminder.",
+    how3:"If you chose a reopening time, the notice disappears by itself at that time — nobody has to press anything. You can also reopen earlier with the button above.",
+    how4:"Nothing is deleted and nobody is signed out. Saved data stays exactly as it is.",
+    how5:"This is a screen lock for normal users. It does not stop a technically skilled person from reading the database directly, so it is for holidays and repairs, not a security measure.",
+    stOpen:"OPEN", stClosed:"CLOSED", stAutoOpened:"OPEN (reopened by itself)",
+    stOpenSub:"Everyone can use the portal.", stClosedSub:"Everyone except the Super Admin is locked out.",
+    stMsg:"Message", stReopen:"Reopens at", stManual:"No reopening time — you reopen it yourself", stWas:"Was set to reopen at",
+    stLast:"Last changed by {who} on {when}", stNever:"The switch has never been used.",
+    errWhen:"Choose a reopening date and time (it must be in the future).", errSure:"Please tick the box to confirm.",
+    errAlready:"The portal is already closed. Change the message or time and press Close again to update it, or press Reopen.",
+    okClosed:"The portal is now CLOSED for everyone except you.", okOpened:"The portal is now OPEN.", okUpdated:"Closed — message and time updated.",
+    errSave:"Could not save: ", btnWorking:"Working…"
+  },
+  ur: {
+    signInTitle:"منتقل کیا جا رہا ہے…", signInSub:"براہ کرم پہلے مرکزی پورٹل سے سائن اِن کریں — Redirecting to the main portal sign-in…",
+    notAllowedTitle:"رسائی نہیں", notAllowedBody:"یہ صفحہ صرف سپر ایڈمن کھول سکتا ہے۔", btnPortal:"پورٹل پر واپس",
+    signedInAs:"سائن اِن", roleSuper:"سپر ایڈمن", btnSignOut:"سائن آؤٹ",
+    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — مینٹیننس",
+    introTitle:"پورٹل بند کرنے کا سوئچ",
+    introBody:"عید، چھٹیوں، مرمت یا ہنگامی حالت میں پورے پورٹل کو بند کرنے کے لیے یہ صفحہ استعمال کریں۔ بند ہونے پر سپر ایڈمن کے سوا ہر شخص کو آپ کے پیغام اور کھلنے کے وقت کے ساتھ “پورٹل بند ہے” کا نوٹس نظر آتا ہے۔ کسی کو لاگ آؤٹ نہیں کیا جاتا اور کسی ڈیٹا کو ہاتھ نہیں لگتا۔",
+    stTitle:"پورٹل کی موجودہ حالت",
+    fmTitle:"بند کریں یا کھولیں", fmMsg:"سب کو نظر آنے والا پیغام", fmMsgPh:"مثلاً: عید کی چھٹیوں کی وجہ سے پورٹل بند ہے۔",
+    fmMsgHint:"اردو یا انگریزی۔ خالی چھوڑیں تو معیاری پیغام لگے گا۔",
+    fmWhen:"دوبارہ کب کھلے؟", fmAuto:"مقررہ وقت پر خود بخود کھل جائے", fmManual:"میں خود کھولوں گا", fmTz:"(پاکستانی وقت)",
+    ch1h:"+1 گھنٹہ", ch1d:"+1 دن", ch3d:"+3 دن", ch7d:"+1 ہفتہ",
+    fmSure:"میں سمجھتا ہوں: کھلنے تک سپر ایڈمن کے سوا ہر شخص پورٹل سے باہر رہے گا۔",
+    btnClose:"پورٹل بند کریں", btnOpen:"پورٹل ابھی کھولیں",
+    howTitle:"بند ہونے پر کیا ہوتا ہے",
+    how1:"جو لوگ لاگ اِن ہیں یا بعد میں لاگ اِن کریں، انہیں پوری سکرین پر آپ کا پیغام اور کھلنے کا وقت نظر آتا ہے۔ وہ صرف “دوبارہ دیکھیں” یا “لاگ آؤٹ” دبا سکتے ہیں۔",
+    how2:"آپ (سپر ایڈمن) کو پوری رسائی رہتی ہے اور یاد دہانی کے لیے ہر صفحے کے نیچے سرخ پٹی نظر آتی ہے۔",
+    how3:"اگر آپ نے کھلنے کا وقت دیا ہو تو نوٹس اسی وقت خود ہٹ جاتا ہے، کسی کو کچھ دبانا نہیں پڑتا۔ آپ اوپر والے بٹن سے پہلے بھی کھول سکتے ہیں۔",
+    how4:"کچھ ڈیلیٹ نہیں ہوتا اور کوئی لاگ آؤٹ نہیں ہوتا۔ محفوظ ڈیٹا جیسا ہے ویسا رہتا ہے۔",
+    how5:"یہ عام صارفین کے لیے سکرین کا تالا ہے۔ کوئی تکنیکی ماہر براہِ راست ڈیٹا بیس پڑھنا چاہے تو یہ اسے نہیں روکتا، اس لیے یہ چھٹیوں اور مرمت کے لیے ہے، حفاظتی انتظام نہیں۔",
+    stOpen:"کھلا ہے", stClosed:"بند ہے", stAutoOpened:"کھلا ہے (خود بخود کھل گیا)",
+    stOpenSub:"ہر کوئی پورٹل استعمال کر سکتا ہے۔", stClosedSub:"سپر ایڈمن کے سوا سب بند ہیں۔",
+    stMsg:"پیغام", stReopen:"کھلنے کا وقت", stManual:"کھلنے کا وقت مقرر نہیں — آپ خود کھولیں گے", stWas:"کھلنے کا مقررہ وقت تھا",
+    stLast:"آخری تبدیلی: {who}، {when}", stNever:"یہ سوئچ ابھی تک استعمال نہیں ہوا۔",
+    errWhen:"کھلنے کی تاریخ اور وقت چنیں (آئندہ کا ہونا چاہیے)۔", errSure:"تصدیق کے لیے خانے پر ٹک لگائیں۔",
+    errAlready:"پورٹل پہلے سے بند ہے۔ پیغام یا وقت بدل کر دوبارہ “بند کریں” دبائیں تو نیا پیغام لگ جائے گا، یا “کھولیں” دبائیں۔",
+    okClosed:"پورٹل اب آپ کے سوا سب کے لیے بند ہے۔", okOpened:"پورٹل اب کھلا ہے۔", okUpdated:"بند ہے — پیغام اور وقت نیا لگ گیا۔",
+    errSave:"محفوظ نہیں ہوا: ", btnWorking:"کام ہو رہا ہے…"
+  }
+};
+var currentLang = "ur";
+try{ var _sl = localStorage.getItem("cmpLang"); if(_sl === "en" || _sl === "ur") currentLang = _sl; }catch(e){}
+function t(k, p){
+  var s = (I18N[currentLang] && I18N[currentLang][k]);
+  if(s == null) s = I18N.en[k];
+  if(s == null) s = k;
+  if(p){ Object.keys(p).forEach(function(x){ s = s.split("{" + x + "}").join(p[x]); }); }
+  return s;
+}
+function esc(s){ return (s == null ? "" : String(s)).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function $(id){ return document.getElementById(id); }
+var MAIN_SHOWN = false, DOC = null, ME = null, BUSY = false;
+
+function applyI18n(){
+  document.body.classList.toggle("lang-ur", currentLang === "ur");
+  document.documentElement.setAttribute("dir", currentLang === "ur" ? "rtl" : "ltr");
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var key = el.getAttribute("data-i18n");
+    if(I18N[currentLang][key] != null) el.textContent = I18N[currentLang][key];
+  });
+  document.querySelectorAll("[data-i18n-ph]").forEach(function(el){ el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph"))); });
+  var ul = $("howList"); if(ul) ul.innerHTML = ["how1","how2","how3","how4","how5"].map(function(k){ return "<li>" + esc(t(k)) + "</li>"; }).join("");
+  if(MAIN_SHOWN) renderStatus();
+}
+$("langSelect").value = currentLang;
+$("langSelect").addEventListener("change", function(e){
+  currentLang = e.target.value;
+  try{ localStorage.setItem("cmpLang", currentLang); }catch(err){}
+  applyI18n();
+});
+$("themeSelect").addEventListener("change", function(e){
+  document.documentElement.setAttribute("data-theme", e.target.value);
+  try{ localStorage.setItem("cmpTheme", e.target.value); }catch(err){}
+});
+(function(){
+  var saved = null;
+  try{ saved = localStorage.getItem("cmpTheme"); }catch(e){}
+  if(saved && ["navy","green","teal","night"].indexOf(saved) !== -1){
+    document.documentElement.setAttribute("data-theme", saved);
+    $("themeSelect").value = saved;
+  }
+})();
+
+/* ---------- time helpers (Pakistan time, UTC+5, no daylight saving) ---------- */
+var FMT_DT = new Intl.DateTimeFormat("en-GB", { timeZone:TZ, day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", hour12:true });
+function fmtMs(ms){ try{ return FMT_DT.format(new Date(ms)).replace(",", ""); }catch(e){ return "—"; } }
+function fmtTs(ts){ try{ var d = ts && ts.toDate ? ts.toDate() : null; return d ? fmtMs(d.getTime()) : "—"; }catch(e){ return "—"; } }
+function toInputValue(ms){ return new Date(ms + 5 * 3600 * 1000).toISOString().slice(0, 16); }          /* "YYYY-MM-DDTHH:mm" in Pakistan time */
+function fromInputValue(v){ if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v || "")) return 0; var ms = Date.parse(v + ":00+05:00"); return isNaN(ms) ? 0 : ms; }
+
+function closedNow(d){
+  if(!d || d.closed !== true) return false;
+  var r = Number(d.reopenAtMs) || 0;
+  return !(r > 0 && Date.now() >= r);
+}
+function showOnly(id){
+  ["authScreen","notAdminScreen","mainApp"].forEach(function(s){ $(s).classList.toggle("hidden", s !== id); });
+  MAIN_SHOWN = (id === "mainApp");
+}
+function say(kind, text){ $("mMsgBox").innerHTML = text ? '<div class="msg ' + kind + '">' + esc(text) + "</div>" : ""; }
+
+/* ---------- status ---------- */
+function renderStatus(){
+  var d = DOC, box = $("stBox"), meta = $("stMeta");
+  var r = d ? (Number(d.reopenAtMs) || 0) : 0;
+  var closed = closedNow(d);
+  var html = "";
+  if(closed){
+    html += '<span class="chip bad mt-big">🔒 ' + esc(t("stClosed")) + "</span><span>" + esc(t("stClosedSub")) + "</span>";
+  } else if(d && d.closed === true && r > 0){
+    html += '<span class="chip open mt-big">🔓 ' + esc(t("stAutoOpened")) + "</span><span>" + esc(t("stWas")) + " " + esc(fmtMs(r)) + "</span>";
+  } else {
+    html += '<span class="chip open mt-big">🔓 ' + esc(t("stOpen")) + "</span><span>" + esc(t("stOpenSub")) + "</span>";
+  }
+  box.innerHTML = html;
+  var lines = [];
+  if(closed){
+    var m = d && typeof d.message === "string" ? d.message.trim() : "";
+    lines.push(esc(t("stMsg")) + ": <strong>" + esc(m || DEFAULT_MSG_UR) + "</strong>");
+    lines.push(r > 0 ? esc(t("stReopen")) + ": <strong>" + esc(fmtMs(r)) + "</strong>" : esc(t("stManual")));
+  }
+  if(d && d.updatedBy) lines.push(esc(t("stLast", { who:d.updatedBy, when:fmtTs(d.updatedAt) })));
+  else if(!d) lines.push(esc(t("stNever")));
+  meta.innerHTML = lines.join("<br>");
+  $("btnOpen").disabled = BUSY || !closed;
+  $("btnClose").disabled = BUSY;
+}
+function fillForm(d){
+  if(d && typeof d.message === "string" && !$("mMsg").value) $("mMsg").value = d.message;
+  var r = d ? (Number(d.reopenAtMs) || 0) : 0;
+  if(closedNow(d)){
+    if(r > 0){ $("mWhen").value = toInputValue(r); document.querySelector('input[name="mMode"][value="auto"]').checked = true; }
+    else { document.querySelector('input[name="mMode"][value="manual"]').checked = true; }
+  } else if(!$("mWhen").value){
+    $("mWhen").value = toInputValue(Date.now() + 86400000);
+  }
+  syncMode();
+}
+function mode(){ var r = document.querySelector('input[name="mMode"]:checked'); return r ? r.value : "auto"; }
+function syncMode(){ $("mAutoBox").classList.toggle("hidden", mode() !== "auto"); }
+document.querySelectorAll('input[name="mMode"]').forEach(function(r){ r.addEventListener("change", syncMode); });
+document.querySelectorAll("[data-add]").forEach(function(b){
+  b.addEventListener("click", function(){ $("mWhen").value = toInputValue(Date.now() + Number(b.getAttribute("data-add"))); });
+});
+
+/* ---------- actions ---------- */
+function setBusy(on){ BUSY = on; renderStatus(); }
+async function saveSwitch(closed){
+  var ref = db.collection("appConfig").doc("maintenance");
+  var msg = ($("mMsg").value || "").replace(/\s+/g, " ").trim().slice(0, 300);
+  var reopen = 0;
+  if(closed){
+    if(!$("mSure").checked){ say("err", t("errSure")); return; }
+    if(mode() === "auto"){
+      reopen = fromInputValue($("mWhen").value);
+      if(!reopen || reopen <= Date.now() + 60000){ say("err", t("errWhen")); return; }
+    }
+  }
+  var wasClosed = closedNow(DOC);
+  setBusy(true); say("", "");
+  try{
+    await ref.set({
+      closed:closed,
+      message:closed ? msg : (DOC && typeof DOC.message === "string" ? DOC.message : ""),
+      reopenAtMs:closed ? reopen : 0,
+      updatedBy:ME.email,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(closed) $("mSure").checked = false;
+    say("ok", closed ? (wasClosed ? t("okUpdated") : t("okClosed")) : t("okOpened"));
+  }catch(e){
+    say("err", t("errSave") + (e && e.message || ""));
+  }
+  setBusy(false);
+}
+$("btnClose").addEventListener("click", function(){ saveSwitch(true); });
+$("btnOpen").addEventListener("click", function(){ saveSwitch(false); });
+$("mainSignOut").addEventListener("click", function(){ auth.signOut(); });
+
+/* ---------- sign-in ---------- */
+var UNSUB = null;
+auth.onAuthStateChanged(function(user){
+  if(!user){ showOnly("authScreen"); window.location.replace("index.html"); return; }
+  db.collection("users").doc(user.uid).get().then(function(doc){
+    var u = doc.exists ? (doc.data() || {}) : {};
+    var ok = u.approvalStatus === "approved" && u.isActive !== false && u.roleV2 === "super_admin";
+    if(!ok){ showOnly("notAdminScreen"); return; }
+    ME = { uid:user.uid, email:user.email };
+    showOnly("mainApp");
+    $("curEmail").textContent = user.email;
+    if(UNSUB) UNSUB();
+    var first = true;
+    UNSUB = db.collection("appConfig").doc("maintenance").onSnapshot(function(snap){
+      DOC = snap.exists ? (snap.data() || null) : null;
+      if(first){ fillForm(DOC); first = false; }
+      renderStatus();
+    }, function(err){ console.error(err); say("err", t("errSave") + (err && err.message || "")); });
+    applyI18n();
+    setInterval(function(){ if(MAIN_SHOWN) renderStatus(); }, 15000);      /* so an automatic reopening shows up without a refresh */
+  }).catch(function(err){ console.error(err); showOnly("notAdminScreen"); });
+});
+applyI18n();
+
+</script>
+    </div><!-- /.main-col -->
+  </div><!-- /.app-shell -->
+<script src="a11y.js" defer></script>
+<script>
+/* header buttons (same look as other pages) drive the page's existing language / theme selectors */
+(function(){
+  var ls=document.getElementById('langSelect'), ts=document.getElementById('themeSelect');
+  var lb=document.getElementById('langBtn'), tb=document.getElementById('themeBtn'), tp=document.getElementById('themePicker');
+  if(!ls||!ts||!lb||!tb||!tp) return;
+  var COL={navy:['#2A5A84','#B8860B'],green:['#1a6b45','#C9A227'],teal:['#128f89','#96762a'],night:['#5b7bb0','#d4a13d']};
+  function syncLang(){ lb.textContent = ls.value==='ur' ? 'English' : 'اردو'; }
+  lb.addEventListener('click',function(){ ls.value = (ls.value==='ur') ? 'en' : 'ur'; ls.dispatchEvent(new Event('change')); syncLang(); });
+  function renderT(){
+    var cur=ts.value;
+    tp.innerHTML=Array.prototype.map.call(ts.options,function(o){
+      var c=COL[o.value]||['#2A5A84','#B8860B'];
+      return '<div class="theme-swatch'+(o.value===cur?' active':'')+'" data-id="'+o.value+'" title="'+o.text.replace(/"/g,'')+'" style="background:linear-gradient(135deg,'+c[1]+' 50%,'+c[0]+' 50%);"></div>';
+    }).join('');
+  }
+  tb.addEventListener('click',function(e){ e.stopPropagation(); renderT(); tp.classList.toggle('open'); });
+  tp.addEventListener('click',function(e){ var sw=e.target.closest('.theme-swatch'); if(!sw) return; ts.value=sw.getAttribute('data-id'); ts.dispatchEvent(new Event('change')); tp.classList.remove('open'); renderT(); });
+  document.addEventListener('click',function(e){ if(!tp.contains(e.target)) tp.classList.remove('open'); });
+  syncLang(); renderT();
+})();
+
+</script>
+</body>
+</html>

@@ -395,6 +395,7 @@ html,body{overflow-x:hidden;}
 .exp-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 18px; padding:8px 16px 4px; transition:opacity .15s; }
 .exp-col h4{ margin:0 0 4px; font-size:13px; color:var(--navy); }
 .exp-col label{ display:block; font-size:12px; color:var(--muted); margin:7px 0 2px; }
+.exp-col select{ width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-family:inherit; font-size:13px; margin-bottom:2px; }
 .exp-col input, .exp-col textarea{ width:100%; box-sizing:border-box; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); font-family:inherit; font-size:13px; }
 .exp-ft{ display:flex; gap:10px; align-items:center; justify-content:flex-end; flex-wrap:wrap; padding:12px 16px; border-top:1px solid var(--border); margin-top:8px; }
 .exp-err{ flex:1; font-size:12.5px; color:var(--muted); min-width:140px; }
@@ -431,6 +432,7 @@ html,body{overflow-x:hidden;}
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 <script src="/logo-control.js?v=2" defer></script>
+<script src="/stamp-signers.js?v=1"></script>
 </head><body>
 
   <div id="authGate"><div class="gate-card">
@@ -546,14 +548,16 @@ html,body{overflow-x:hidden;}
   <div class="hist-box" role="dialog" aria-modal="true" aria-labelledby="expTitle" id="expBox" style="width:min(720px,100%);">
     <div class="hist-hd"><div><h3 id="expTitle"></h3><p id="expSub"></p></div><button type="button" class="hist-x" id="expX" aria-label="Close">✕</button></div>
     <div style="padding:12px 16px 0;">
-      <label class="exp-chk"><input type="checkbox" id="exp_on" checked> <span data-en="Add the sign-off (Prepared by / Approved by) at the end" data-ur="آخر میں دستخط/مہر (Prepared by / Approved by) شامل کریں">Add the sign-off (Prepared by / Approved by) at the end</span></label>
+      <label class="exp-chk"><input type="checkbox" id="exp_on"> <span data-en="Add the sign-off (Prepared by / Approved by) at the end" data-ur="آخر میں دستخط/مہر (Prepared by / Approved by) شامل کریں">Add the sign-off (Prepared by / Approved by) at the end</span></label>
     </div>
     <div class="exp-grid" id="expFields">
       <div class="exp-col"><h4 data-en="Prepared by" data-ur="Prepared by (تیار کنندہ)">Prepared by</h4>
+        <select id="exp_left_pick" aria-label="Choose from list"></select>
         <label for="exp_left_name" data-en="Name" data-ur="نام">Name</label><input type="text" id="exp_left_name">
         <label for="exp_left_designation" data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="exp_left_designation">
         <label for="exp_left_address" data-en="Office address" data-ur="دفتر کا پتہ">Office address</label><textarea id="exp_left_address" rows="3"></textarea></div>
       <div class="exp-col"><h4 data-en="Approved by" data-ur="Approved by (منظور کنندہ)">Approved by</h4>
+        <select id="exp_right_pick" aria-label="Choose from list"></select>
         <label for="exp_right_name" data-en="Name" data-ur="نام">Name</label><input type="text" id="exp_right_name">
         <label for="exp_right_designation" data-en="Designation" data-ur="عہدہ">Designation</label><input type="text" id="exp_right_designation">
         <label for="exp_right_address" data-en="Office address" data-ur="دفتر کا پتہ">Office address</label><textarea id="exp_right_address" rows="3"></textarea></div>
@@ -1070,8 +1074,9 @@ html,body{overflow-x:hidden;}
 
   /* sign-off texts: remembered on this computer, editable in the export window */
   var LK_STAMP = (function(){
-    var d = { left:{ name:'Iftikhar Ahmed', designation:'Junior Clerk', address:LK_ADDR }, right:{ name:'', designation:'', address:LK_ADDR }, on:true };
-    try{ var s = JSON.parse(lsGet('lkStamp') || 'null'); if(s && s.left && s.right){ d = { left:s.left, right:s.right, on:s.on !== false }; } }catch(e){}
+    var d = { left:{ name:'Iftikhar Ahmed', designation:'Junior Clerk', address:LK_ADDR }, right:{ name:'', designation:'', address:LK_ADDR }, on:false };
+    /* the sign-off is OFF unless the box is ticked in the export window (an older saved "on" is ignored; v:2 marks the new setting) */
+    try{ var s = JSON.parse(lsGet('lkStamp') || 'null'); if(s && s.left && s.right){ d = { left:s.left, right:s.right, on:(s.v === 2 && s.on === true) }; } }catch(e){}
     return d;
   })();
   function stampLines(st){ return [st.name, st.designation, st.address].filter(function(v){ return v && String(v).trim(); }).join('\n').split('\n').filter(function(v){ return v.trim(); }); }
@@ -1500,6 +1505,14 @@ html,body{overflow-x:hidden;}
     document.getElementById('expSub').textContent = (isUrdu ? 'ریکارڈ: ' : 'Records: ') + X.nRows + (isUrdu ? ' از ' : ' of ') + X.total + (X.pairs.length ? '' : (isUrdu ? ' (کوئی فلٹر نہیں)' : ' (no filter)'));
     ['left','right'].forEach(function(s){ ['name','designation','address'].forEach(function(k){ expField(s, k).value = LK_STAMP[s][k] || ''; }); });
     document.getElementById('exp_on').checked = LK_STAMP.on;
+    if(window.StampSigners){
+      ['left','right'].forEach(function(sd){
+        StampSigners.mount(document.getElementById('exp_' + sd + '_pick'), function(it){
+          ['name','designation','address'].forEach(function(k){ expField(sd, k).value = it[k] || ''; });
+        }, function(){ return isUrdu; });
+      });
+      StampSigners.load(db);
+    }
     expToggle();
     document.getElementById('expErr').textContent = '';
     document.getElementById('expGo').disabled = false;
@@ -1518,6 +1531,7 @@ html,body{overflow-x:hidden;}
     var btn = document.getElementById('expGo'), err = document.getElementById('expErr');
     ['left','right'].forEach(function(s){ ['name','designation','address'].forEach(function(k){ LK_STAMP[s][k] = expField(s, k).value.trim(); }); });
     LK_STAMP.on = document.getElementById('exp_on').checked;
+    LK_STAMP.v = 2;
     lsSet('lkStamp', JSON.stringify(LK_STAMP));
     btn.disabled = true; err.textContent = isUrdu ? 'فائل بن رہی ہے…' : 'Building the file…';
     try{

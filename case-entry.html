@@ -271,6 +271,7 @@ html,body{overflow-x:hidden;}
   [dir="rtl"] .print-sheet .p-stamp-icons .heading-icon{margin-right:0; margin-left:8px;}
   .print-sheet .p-stamp-icons .heading-icon:hover{opacity:1;}
   .print-sheet .p-stamp-block.editing{display:flex; flex-direction:column; gap:4px;}
+  .print-sheet .stamp-pick{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit; margin-bottom:4px;}
   .print-sheet .stamp-input{font-size:11.5px; padding:4px 6px; border-radius:5px; border:1px solid var(--gold-deep); width:100%; box-sizing:border-box; font-family:inherit;}
 
   [dir="rtl"] table.case-table th, [dir="rtl"] table.case-table td{text-align:right;}
@@ -403,6 +404,7 @@ html.embedded .app-shell{ min-height:0; }
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 <script src="/logo-control.js?v=2" defer></script>
+<script src="/stamp-signers.js?v=1"></script>
 </head>
 <body>
 
@@ -639,7 +641,10 @@ html.embedded .app-shell{ min-height:0; }
       <div class="modal-close"><span onclick="closeReportPrint()">✕</span></div>
       <div style="padding:0 20px 20px;">
         <div id="reportPrintArea" class="print-sheet"></div>
-        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px;">
+        <div class="actions" style="padding:16px 0 0; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;" title="Add the Prepared by / Approved by sign-off at the end of the report / رپورٹ کے آخر میں تیار کردہ / منظور کردہ کا دستخطی خانہ شامل کریں">
+            <input type="checkbox" id="chkStamp" onchange="setIncludeStamp(this.checked)"> <span data-en="Add Prepared by / Approved by stamp" data-ur="تیار کردہ / منظور کردہ کا اسٹامپ شامل کریں">Add Prepared by / Approved by stamp</span>
+          </label>
           <div class="btn primary" onclick="window.print()" data-en="🖨️ Print" data-ur="🖨️ پرنٹ کریں">🖨️ Print</div>
           <div class="btn ghost needs-export" onclick="downloadReportPdf()" title="Downloads a ready PDF file directly" data-en="📄 Download PDF" data-ur="📄 PDF ڈاؤن لوڈ کریں">📄 Download PDF</div>
           <div class="btn ghost needs-export" onclick="downloadReportXlsx()" data-en="📊 Excel" data-ur="📊 Excel">📊 Excel</div>
@@ -2102,6 +2107,14 @@ html.embedded .app-shell{ min-height:0; }
   // whole, right at print time (same pattern as the Weekly Court Roster tool).
   var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
   var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  /* The "Prepared by / Approved by" sign-off stamp is OPTIONAL: left out unless the box in the report preview is ticked. */
+  var includeStamp = false;
+  try { includeStamp = localStorage.getItem('reportIncludeStamp') === '1'; } catch (e) {}
+  function setIncludeStamp(on){
+    includeStamp = !!on;
+    try { localStorage.setItem('reportIncludeStamp', includeStamp ? '1' : '0'); } catch (e) {}
+    printCurrentReport();
+  }
   var editingStamp = null; // 'left' | 'right' | null
   function escapeHtml(s){ return escapeAttr(s); }
 
@@ -2136,9 +2149,12 @@ html.embedded .app-shell{ min-height:0; }
     var value = isUrdu ? headingUr : headingEn;
     return '<div class="p-logo">'+PUNJAB_LOGO_HTML+'</div>' + printHeaderRowHtml(fieldKey, value, 'p-head');
   }
+  function stampPickHtml(side){
+    return window.StampSigners ? '<select class="stamp-pick" data-side="'+side+'">' + StampSigners.options(isUrdu) + '</select>' : '';
+  }
   function stampBlockHtml(side, stamp){
     if(editingStamp === side){
-      return '<div class="p-stamp-block editing" data-side="'+side+'">' +
+      return '<div class="p-stamp-block editing" data-side="'+side+'">' + stampPickHtml(side) +
         '<input type="text" class="stamp-input" data-side="'+side+'" data-field="name" value="'+escapeAttr(stamp.name)+'" placeholder="'+(isUrdu?'نام':'Name')+'">' +
         '<input type="text" class="stamp-input" data-side="'+side+'" data-field="designation" value="'+escapeAttr(stamp.designation)+'" placeholder="'+(isUrdu?'عہدہ':'Designation')+'">' +
         '<textarea class="stamp-input" data-side="'+side+'" data-field="address" rows="'+((stamp.address.match(/\n/g)||[]).length+1)+'" placeholder="'+(isUrdu?'دفتر کا پتہ':'Office Address')+'">'+escapeHtml(stamp.address)+'</textarea>' +
@@ -2186,14 +2202,25 @@ html.embedded .app-shell{ min-height:0; }
       html += '<td>'+r.grandTotal+'</td></tr>';
     }
     html += '</tbody></table>';
-    html += buildSignHtml();
+    if(includeStamp){ html += buildSignHtml(); }
 
     document.getElementById('reportPrintArea').innerHTML = html;
     document.getElementById('reportPrintModal').classList.add('open');
+    var chkSt = document.getElementById('chkStamp'); if(chkSt) chkSt.checked = includeStamp;
+    if(window.StampSigners && !StampSigners.__loaded){ StampSigners.__loaded = true; try{ StampSigners.load(firebase.firestore()); }catch(e){} }
     var activePrintInput = document.querySelector('.print-heading-input') || document.querySelector('.stamp-input');
     if(activePrintInput){ activePrintInput.focus(); activePrintInput.select(); }
   }
 
+  document.getElementById('reportPrintArea').addEventListener('change', function(e){
+    if(e.target.classList.contains('stamp-pick') && window.StampSigners){
+      var pk = StampSigners.get(e.target.value);
+      if(!pk) return;
+      document.querySelectorAll('.stamp-input[data-side="'+e.target.dataset.side+'"]').forEach(function(inp){
+        var v = pk[inp.dataset.field]; if(v != null){ inp.value = v; if(inp.tagName === 'TEXTAREA'){ inp.rows = (String(v).match(/\n/g)||[]).length + 1; } }
+      });
+    }
+  });
   document.getElementById('reportPrintArea').addEventListener('click', function(e){
     if(e.target.classList.contains('print-edit')){
       editingPrintField = e.target.dataset.field;
@@ -2337,7 +2364,7 @@ html.embedded .app-shell{ min-height:0; }
       addRow(function(rn){ merges.push('A'+rn+':'+L+rn); return t('A'+rn, 'Note: ' + r.uncounted.length + ' case(s) not in the table (result blank / not a column): ' + r.uncounted.join(', '), 12); }, 30);
     }
     rowNo++;                                              // blank spacer
-    var sl = stampLines(stampLeft), sr2 = stampLines(stampRight), mx = Math.max(sl.length, sr2.length);
+    var sl = includeStamp ? stampLines(stampLeft) : [], sr2 = includeStamp ? stampLines(stampRight) : [], mx = Math.max(sl.length, sr2.length);
     var rightStart = colLetter(Math.max(3, lastCol - 3));
     for(var i = 0; i < mx; i++){
       (function(i){ addRow(function(rn){
@@ -2457,10 +2484,10 @@ html.embedded .app-shell{ min-height:0; }
       return new D.TableCell({width:{size:TOTAL_W/2, type:D.WidthType.DXA}, children:ls.map(function(line, i){ return para([run(line, {size:18, bold:i === 0, color:i === 0 ? '111111' : '444444'})], {align:align}); })});
     }
     var none = {style:D.BorderStyle.NONE};
-    kids.push(para([run('')], {before:200}));
+    if(includeStamp){ kids.push(para([run('')], {before:200}));
     kids.push(new D.Table({width:{size:TOTAL_W, type:D.WidthType.DXA}, columnWidths:[TOTAL_W/2, TOTAL_W/2], layout:D.TableLayoutType.FIXED,
       borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none},
-      rows:[new D.TableRow({cantSplit:true, children:[stampCell(stampLeft, AL.LEFT), stampCell(stampRight, AL.RIGHT)]})]}));
+      rows:[new D.TableRow({cantSplit:true, children:[stampCell(stampLeft, AL.LEFT), stampCell(stampRight, AL.RIGHT)]})]})); }
     var doc = new D.Document({
       creator:'Camp Office, Prosecutor General Punjab', title:'Monthly Progress Report — ' + r.officer + ' — ' + r.monthName + ' ' + r.year,
       sections:[{
@@ -2621,8 +2648,8 @@ html.embedded .app-shell{ min-height:0; }
     }
     var rowIdx = 0, MINRH = 22;
     (function(){
-      var stL0 = stampLines(stampLeft), stR0 = stampLines(stampRight), m0 = Math.max(stL0.length, stR0.length);
-      var reserve = 12 + 30 + 14 + m0 * 11.5 + 6 + 8 + ((r.uncounted && r.uncounted.length) ? 34 : 0);
+      var stL0 = includeStamp ? stampLines(stampLeft) : [], stR0 = includeStamp ? stampLines(stampRight) : [], m0 = Math.max(stL0.length, stR0.length);
+      var reserve = (includeStamp ? 12 + 30 + 14 + m0 * 11.5 + 6 : 0) + 8 + ((r.uncounted && r.uncounted.length) ? 34 : 0);
       var n0 = (r.rows.length || 0) + 1, avail = (y - h1 - h2) - BOT - reserve;
       MINRH = Math.max(16.5, Math.min(22, Math.floor(avail / n0)));
     })();
@@ -2660,10 +2687,9 @@ html.embedded .app-shell{ min-height:0; }
     }
 
     /* ---- sign-off: signature line, then name / designation / office ---- */
-    var stL = stampLines(stampLeft), stR = stampLines(stampRight), mxs = Math.max(stL.length, stR.length);
+    var stL = includeStamp ? stampLines(stampLeft) : [], stR = includeStamp ? stampLines(stampRight) : [], mxs = Math.max(stL.length, stR.length);
     var signH = 12 + 30 + 14 + mxs * 11.5 + 6;
-    if(y - signH < BOT - 4) newPage();
-    y -= 12;
+    if(includeStamp){ if(y - signH < BOT - 4) newPage(); y -= 12; }
     async function signCol(label, lines, rightAlign){
       var lineW = 190, x0 = rightAlign ? PW - M - lineW : M;
       txt(label, {x:x0, y:y - 8, size:7.6, font:fB, color:GREYTX});
@@ -2681,7 +2707,7 @@ html.embedded .app-shell{ min-height:0; }
         yy -= 11.5;
       }
     }
-    await signCol('PREPARED BY', stL, false); await signCol('APPROVED BY', stR, true);
+    if(includeStamp){ await signCol('PREPARED BY', stL, false); await signCol('APPROVED BY', stR, true); }
 
     /* ---- footer on every page ---- */
     pages.forEach(function(pg, i){

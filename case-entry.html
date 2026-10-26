@@ -402,6 +402,7 @@ html.embedded .app-shell{ min-height:0; }
 <script src="camp-perm.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
+<script src="/logo-control.js?v=2" defer></script>
 </head>
 <body>
 
@@ -679,8 +680,9 @@ html.embedded .app-shell{ min-height:0; }
   })();
 
   var PUNJAB_LOGO_SRC = 'logo-punjab-govt.png', PUNJAB_LOGO_RATIO = 300 / 236;
-  var PUNJAB_LOGO_HTML = '<img src="logo-punjab-govt.png" alt="Government of Punjab">';
+  var PUNJAB_LOGO_HTML = '<img data-camp-logo="govt" src="logo-punjab-govt.png" alt="Government of Punjab">';
   function punjabLogoPng(){
+    if(window.CampLogos && !CampLogos.show('govt')) return Promise.resolve(null);   /* switched off in the Logos control */
     return new Promise(function(res){
       try{
         var img = new Image();
@@ -2555,6 +2557,8 @@ html.embedded .app-shell{ min-height:0; }
     /* ---- letterhead: emblem left, heading centred, gold + navy rule ---- */
     var headTop = y, embBytes = await emblemPng();
     if(embBytes){ var em = await doc.embedPng(embBytes); page.drawImage(em, {x:M, y:y - 46, width:46 * PUNJAB_LOGO_RATIO, height:46}); }
+    var prosI = window.CampLogos ? await CampLogos.info('pros') : null;   /* Prosecution logo, right side — only when switched on */
+    if(prosI){ var pem = await doc.embedPng(prosI.bytes), phh = 46, pww = phh * prosI.w / prosI.h; page.drawImage(pem, {x:PW - M - pww, y:y - phh, width:pww, height:phh}); }
     var headLines = reportHeadingText().split('\n');
     y -= 1;
     for(var i = 0; i < headLines.length; i++){ await centredLine(headLines[i], i === 0 ? 14.5 : 9.6, i === 0, i === 0 ? NAVY : GREYTX); }

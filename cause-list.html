@@ -468,6 +468,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
 <script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
+<script src="/logo-control.js?v=2" defer></script>
 </head><body>
 
   <div id="authGate"><div class="gate-card">
@@ -662,8 +663,9 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
   })();
 
   var PUNJAB_LOGO_SRC = 'logo-punjab-govt.png', PUNJAB_LOGO_RATIO = 300 / 236;
-  var PUNJAB_LOGO_HTML = '<img src="logo-punjab-govt.png" alt="Government of Punjab">';
+  var PUNJAB_LOGO_HTML = '<img data-camp-logo="govt" src="logo-punjab-govt.png" alt="Government of Punjab">';
   function punjabLogoPng(){
+    if(window.CampLogos && !CampLogos.show('govt')) return Promise.resolve(null);   /* switched off in the Logos control */
     return new Promise(function(res){
       try{
         var img = new Image();
@@ -1930,6 +1932,8 @@ async function buildPdf(days){
   /* letterhead (same standard look as the Monthly Progress Report): emblem, office heading, gold + navy rule */
   var headTop = y, embBytes = await pdfEmblemPng();
   if(embBytes){ var emb = await doc.embedPng(embBytes); page.drawImage(emb, {x:M, y:y - 40, width:40 * PUNJAB_LOGO_RATIO, height:40}); }
+  var prosI = window.CampLogos ? await CampLogos.info('pros') : null;   /* Prosecution logo, right side — only when switched on */
+  if(prosI){ var pem = await doc.embedPng(prosI.bytes), phh = 40, pww = phh * prosI.w / prosI.h; page.drawImage(pem, {x:PW - M - pww, y:y - phh, width:pww, height:phh}); }
   var h1t = 'Camp Office Prosecutor General Punjab', h2t = 'Supreme Court of Pakistan, Islamabad';
   page.drawText(h1t, {x:(PW - FB.widthOfTextAtSize(h1t, 14.5)) / 2, y:y - 14, size:14.5, font:FB, color:navy});
   page.drawText(h2t, {x:(PW - F.widthOfTextAtSize(h2t, 9.5)) / 2, y:y - 28, size:9.5, font:F, color:grey});

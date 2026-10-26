@@ -325,6 +325,7 @@ html,body{overflow-x:hidden;}
 <script src="case-master.js"></script>
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
+<script src="/logo-control.js?v=2" defer></script>
 </head>
 <body>
 
@@ -541,8 +542,9 @@ html,body{overflow-x:hidden;}
   })();
 
   var PUNJAB_LOGO_SRC = 'logo-punjab-govt.png', PUNJAB_LOGO_RATIO = 300 / 236;
-  var PUNJAB_LOGO_HTML = '<img src="logo-punjab-govt.png" alt="Government of Punjab">';
+  var PUNJAB_LOGO_HTML = '<img data-camp-logo="govt" src="logo-punjab-govt.png" alt="Government of Punjab">';
   function punjabLogoPng(){
+    if(window.CampLogos && !CampLogos.show('govt')) return Promise.resolve(null);   /* switched off in the Logos control */
     return new Promise(function(res){
       try{
         var img = new Image();

@@ -404,7 +404,7 @@ html.embedded .app-shell{ min-height:0; }
 <script src="/pwa.js" defer></script>
 <script src="/auth-guard.js" defer></script>
 <script src="/logo-control.js?v=2" defer></script>
-<script src="/stamp-signers.js?v=1"></script>
+<script src="/stamp-signers.js?v=2"></script>
 </head>
 <body>
 
@@ -2150,7 +2150,7 @@ html.embedded .app-shell{ min-height:0; }
     return '<div class="p-logo">'+PUNJAB_LOGO_HTML+'</div>' + printHeaderRowHtml(fieldKey, value, 'p-head');
   }
   function stampPickHtml(side){
-    return window.StampSigners ? '<select class="stamp-pick" data-side="'+side+'">' + StampSigners.options(isUrdu) + '</select>' : '';
+    return window.StampSigners ? '<select class="stamp-pick" data-side="'+side+'">' + StampSigners.options(isUrdu) + '</select>' + StampSigners.manageLinkHtml(isUrdu) : '';
   }
   function stampBlockHtml(side, stamp){
     if(editingStamp === side){

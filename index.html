@@ -1125,7 +1125,17 @@ function showAuthLoadError(err){
 }
 
 function enterApp(user, data){
-  showOnly("mainApp");
+  var jumpBack = false;
+  /* came here from a system's page because nobody was signed in: go back to that page now that the sign-in is done */
+  try{
+    var rt = JSON.parse(sessionStorage.getItem("campReturnTo") || "null");
+    sessionStorage.removeItem("campReturnTo");
+    if(rt && typeof rt.p === "string" && (Date.now() - rt.t) < 3600000 && /^\/(?![\/\\])/.test(rt.p) &&
+       rt.p !== "/" && rt.p.indexOf("/index.html") !== 0 && rt.p.indexOf("/camp-office-suite/index.html") !== 0 && !/^\/camp-office-suite\/?([?#]|$)/.test(rt.p)){
+      jumpBack = true; location.replace(rt.p);   /* the opening screen stays on until the other page loads */
+    }
+  }catch(e){}
+  if(!jumpBack) showOnly("mainApp");
   document.getElementById("curEmail2").textContent = user.email;
   document.getElementById("welcomeName").textContent = user.email.split("@")[0];
   document.getElementById("userAvatar").textContent = user.email.charAt(0).toUpperCase();

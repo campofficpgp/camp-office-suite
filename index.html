@@ -611,7 +611,7 @@ html,body{overflow-x:hidden;}
           <div class="summary-card"><div class="sc-n" id="scPending">—</div><div class="sc-l" data-en="Pending" data-ur="زیرِ التوا">Pending</div></div>
           <div class="summary-card"><div class="sc-n" id="scDecided">—</div><div class="sc-l" data-en="Decided" data-ur="فیصلہ شدہ">Decided</div></div>
           <div class="summary-card"><div class="sc-n" id="scNotices">—</div><div class="sc-l" data-en="Notices" data-ur="نوٹسز">Notices</div></div>
-          <a class="summary-card link-card" href="https://cmpofficepgp.org/bill-register-system/">
+          <a class="summary-card link-card hidden" id="pendingBillsCard" href="https://cmpofficepgp.org/bill-register-system/">
             <div class="sc-n">↗</div>
             <div class="sc-l" data-en="Pending Bills — open Bill Register" data-ur="زیرِ التوا بلز — بل رجسٹر کھولیں">Pending Bills — open Bill Register</div>
           </a>
@@ -1137,6 +1137,7 @@ function enterApp(user, data){
   document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
   if(window.CampPerm) CampPerm.init(data);   /* hide menu entries the user has no View tick for */
   document.getElementById("masterDataLink").classList.toggle("hidden", role !== "super_admin");
+  document.getElementById("pendingBillsCard").classList.toggle("hidden", role !== "super_admin");   /* Pending Bills shortcut: Super Admin only */
   document.getElementById("resultListLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("activityLogLink").classList.toggle("hidden", role !== "super_admin");
   if(window.CampActivity){ try{ CampActivity.loginIfNew(db, user, data); }catch(e){} }   /* records a NEW sign-in once (Activity Log, Super Admin only) */

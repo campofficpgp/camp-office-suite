@@ -547,6 +547,7 @@ html,body{overflow-x:hidden;}
           <div class="nav-submenu">
             <a class="nav-subitem" href="employee-directory.html"><span class="ico">🗂️</span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
             <button class="nav-subitem needs-admin hidden" id="openAdminPanelBtn"><span class="ico">✅</span><span data-en="User Approvals" data-ur="یوزر منظوری">User Approvals</span></button>
+            <a class="nav-subitem hidden" id="controlPanelLink" href="control-panel.html"><span class="ico">🎛️</span><span data-en="Control Panel" data-ur="کنٹرول پینل">Control Panel</span></a>
             <a class="nav-subitem hidden" id="masterDataLink" href="master-data.html"><span class="ico">🧩</span><span data-en="Master Data" data-ur="ماسٹر ڈیٹا">Master Data</span></a>
             <a class="nav-subitem hidden" id="resultListLink" href="result-list.html"><span class="ico">🏁</span><span data-en="Result List" data-ur="نتیجہ کی فہرست">Result List</span></a>
             <a class="nav-subitem hidden" id="activityLogLink" href="activity-log.html"><span class="ico">📜</span><span data-en="Activity Log" data-ur="سرگرمی لاگ">Activity Log</span></a>
@@ -1153,6 +1154,8 @@ function enterApp(user, data){
   document.getElementById("openAdminPanelBtn").classList.toggle("hidden", !isAdminUp);
   if(window.CampPerm) CampPerm.init(data);   /* hide menu entries the user has no View tick for */
   document.getElementById("masterDataLink").classList.toggle("hidden", role !== "super_admin");
+  document.getElementById("controlPanelLink").classList.toggle("hidden", role !== "super_admin");
+  if(location.hash === "#admin" && isAdminUp){ setTimeout(function(){ var b = document.getElementById("openAdminPanelBtn"), p = document.getElementById("adminPanel"); if(b && p && p.classList.contains("hidden")) b.click(); }, 600); }   /* opened from the Control Panel */
   document.getElementById("pendingBillsCard").classList.toggle("hidden", role !== "super_admin");   /* Pending Bills shortcut: Super Admin only */
   document.getElementById("resultListLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("activityLogLink").classList.toggle("hidden", role !== "super_admin");

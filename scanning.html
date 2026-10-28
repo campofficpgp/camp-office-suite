@@ -735,7 +735,14 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
         <div class="cl-field"><label for="fScType">Filed in Supreme Court as / سپریم کورٹ میں دائر</label><select id="fScType"></select></div>
         <div class="cl-field"><label for="fScNo">SC Case No / نمبر</label><input id="fScNo" placeholder="e.g. 1450-L"></div>
         <div class="cl-field"><label for="fScYear">SC Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fScYear"></select></div>
-        <div class="cl-field full"><label for="fGrounds">Major grounds of acquittal / conversion / بریت یا تبدیلی کی اہم وجوہات (Inspection Proforma B)</label><textarea id="fGrounds" rows="3" placeholder="One reason per line / ہر وجہ نئی سطر میں"></textarea></div>
+        <div class="cl-field full"><label for="fGrounds">Major grounds of acquittal / conversion / بریت یا تبدیلی کی اہم وجوہات (Inspection Proforma B)</label><textarea id="fGrounds" rows="3" placeholder="One reason per line / ہر وجہ نئی سطر میں"></textarea>
+          <div class="sc-ai needs-ai" style="margin-top:6px">
+            <button type="button" class="cl-btn gold" id="btnAiG" onclick="aiGrounds()">✨ AI: 2 short lines for Proforma B / AI سے پروفارما B کے لیے 2 مختصر سطریں</button>
+            <label class="sc-ai-lang" for="aiLangG">Language / زبان <select id="aiLangG"><option value="en">English</option><option value="ur">اردو</option></select></label>
+          </div>
+          <div class="sc-ai-note needs-ai">Uses the judgment text read above. Only a draft — nothing is filled until you press “Use the text”. In Inspection Proforma B it then appears in the yellow “check and send” screen. / مسودہ صرف آپ کے «استعمال کریں» دبانے پر بھرا جاتا ہے؛ پھر پروفارما B کی پیلی چیک اسکرین میں نظر آئے گا۔</div>
+          <div id="aiGOut" class="sc-ai-out" style="display:none"></div>
+        </div>
         <div class="cl-field full"><label for="fNotes">Notes / تفصیل</label><textarea id="fNotes" rows="2"></textarea></div>
       </div>
 
@@ -1726,7 +1733,7 @@ function getForm(){
 function setForm(d){
   d = d || {};
   fillLinkOptions(d.linkedTo || '');
-  $('aiOut').style.display = 'none';
+  $('aiOut').style.display = 'none'; $('aiGOut').style.display = 'none';
   $('fDistrict').value = d.district || '';
   refreshTehsilStation(d.tehsil || '', d.station || '');
   FIELDS.forEach(function(k){
@@ -2255,6 +2262,57 @@ async function aiDraft(){
     box.style.display = 'none';
     showModal('❌ ' + bi('AI مسودہ نہیں بن سکا: ', 'The AI draft could not be made: ') + esc(e && e.message || e) + ' ' + bi('(کچھ دیر بعد دوبارہ کوشش کریں؛ آپ خود رائے لکھ سکتے ہیں۔)', '(try again in a minute; you can write the opinion yourself)'), 'err');
   }finally{ AI.busy = false; $('btnAi').disabled = false; }
+}
+/* ---------- AI: two short lines for Inspection Proforma B "grounds of acquittal / conversion" (officer decides; nothing is filled until "Use") ---------- */
+function aiGPrompt(text, lang){
+  if(text.length > 24000) text = text.slice(0, 8000) + '\n[...]\n' + text.slice(-16000);
+  return 'You are helping an officer of the Prosecutor General Punjab camp office (Supreme Court of Pakistan) fill an internal inspection form (Proforma B: "major and material grounds of acquittal or conversion"). Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes) in which the accused was acquitted, or a sentence (for example death) was converted to a lesser sentence.\n' +
+    'State the major and material grounds on which the court acquitted or converted the sentence, as given in the judgment itself.\n' +
+    'Rules: use only facts that are in the text; never invent names, section numbers, dates or citations; do not give the case number; if the text does not show clear grounds, answer exactly the single word UNSURE.\n' +
+    'Answer with exactly TWO short lines, one separate ground per line, each line at most 22 words, no numbering, no bullets, no heading, nothing else.\n' +
+    'Write in ' + (lang === 'ur' ? 'Urdu script' : 'English') + '.\n\nJUDGMENT TEXT:\n"""\n' + text + '\n"""';
+}
+function aiGParse(ans){
+  var t = String(ans || '').trim();
+  if(!t || /^\W*UNSURE\W*$/i.test(t)) return [];
+  var lines = t.split(/\r?\n/).map(function(l){ return l.replace(/^\s*(?:[-*•●]+|\(?\d{1,2}[.)])\s*/, '').replace(/^\s*(?:ground|reason)\s*\d*\s*[:.\-]\s*/i, '').trim(); }).filter(function(l){ return l && !/^UNSURE\b/i.test(l); });
+  return lines.slice(0, 2).map(function(l){ return l.length > 260 ? l.slice(0, 257).replace(/\s+\S*$/, '') + '…' : l; });
+}
+function aiGShow(lines){
+  var box = $('aiGOut');
+  box.innerHTML = '<b>✨ ' + bi('AI کا مسودہ', 'AI draft') + '</b> <span class="sc-ai-tag">' + bi('صرف مسودہ — فیصلہ افسر کا', 'draft only — the officer decides') + '</span>' +
+    '<div class="t" dir="auto">' + lines.map(esc).join('\n') + '</div>' +
+    '<div class="row"><button type="button" class="cl-btn gold" id="aiGUse">' + bi('متن استعمال کریں', 'Use the text') + '</button>' +
+    '<button type="button" class="cl-btn" id="aiGClose">' + bi('بند کریں', 'Close') + '</button></div>';
+  box.style.display = '';
+  function useText(){
+    var el = $('fGrounds'); el.value = lines.join('\n'); el.classList.add('sc-auto'); delete el.dataset.touched; formHistPush(); box.style.display = 'none';
+  }
+  $('aiGUse').onclick = function(){
+    var el = $('fGrounds');
+    if(el.value.trim() && !el.classList.contains('sc-auto')) confirmBox('Replace the text? / متن بدلیں؟', bi2('وجوہات کے خانے میں پہلے سے لکھا ہوا ہے۔ اسے AI کے مسودے سے بدل دوں؟', 'The grounds box already has text. Replace it with the AI draft?'), useText, {yesLabel:'Replace / بدل دیں', noLabel:'Cancel / منسوخ'});
+    else useText();
+  };
+  $('aiGClose').onclick = function(){ box.style.display = 'none'; };
+}
+async function aiGrounds(){
+  if(!CTX.canAi) return;
+  if(AI.busy) return;
+  var text = $('fOcr').value.trim();
+  if(text.length < 300){ showModal('⚠ ' + bi('پہلے «پڑھ کر خود تفصیل بھریں» یا OCR دبائیں تاکہ فیصلے کا متن موجود ہو۔', 'First press “Read & fill the details” or OCR so the judgment text is available.'), 'err'); return; }
+  if(!AI.consent){
+    confirmBox('Send to the AI? / AI کو بھیجیں؟', bi2('فیصلے کا متن گوگل کی مفت AI سروس کو بھیجا جائے گا (گوگل مفت سروس کا متن اپنی مصنوعات بہتر بنانے میں استعمال کر سکتا ہے)۔ اندرونی نوٹس اور افسر کے نام نہیں بھیجے جاتے۔ جاری رکھیں؟', 'The judgment text will be sent to Google\'s free AI service (Google may use free-service text to improve its products). Internal notes and officer names are not sent. Continue?'), function(){ AI.consent = true; aiGrounds(); }, {yesLabel:'Yes, make the draft / ہاں مسودہ بنائیں', noLabel:'Cancel / منسوخ'});
+    return;
+  }
+  AI.busy = true; $('btnAiG').disabled = true; $('btnAi').disabled = true; showModal(''); var box = $('aiGOut'); box.style.display = ''; box.innerHTML = '⏳ ' + bi('AI مسودہ بنا رہا ہے… (چند سیکنڈ)', 'AI is drafting… (a few seconds)');
+  try{
+    var lines = aiGParse(await aiCall(aiGPrompt(text, $('aiLangG').value)));
+    if(!lines.length){ box.style.display = 'none'; showModal('ℹ ' + bi('AI کو فیصلے میں بریت/تبدیلی کی واضح وجوہات نہیں ملیں؛ آپ خود لکھ سکتے ہیں۔', 'The AI could not find clear grounds of acquittal/conversion in the text; you can write them yourself.'), 'err'); }
+    else aiGShow(lines);
+  }catch(e){
+    box.style.display = 'none';
+    showModal('❌ ' + bi('AI مسودہ نہیں بن سکا: ', 'The AI draft could not be made: ') + esc(e && e.message || e) + ' ' + bi('(کچھ دیر بعد دوبارہ کوشش کریں؛ آپ خود لکھ سکتے ہیں۔)', '(try again in a minute; you can write it yourself)'), 'err');
+  }finally{ AI.busy = false; $('btnAiG').disabled = false; $('btnAi').disabled = false; }
 }
 async function sliceRecord(rec){
   /* a separate PDF made of just this judgment's pages */

@@ -787,10 +787,30 @@ body.is-super .super-only{ display:inline-block !important; }
     document.getElementById('uMobile').value = (e.mobile && e.mobile !== '—') ? e.mobile : '';
     document.getElementById('uEmail').value = (e.email && e.email !== '—') ? e.email : '';
     document.getElementById('uPhoto').value = '';
-    document.getElementById('uPhotoCurrent').innerHTML = e.photo
-      ? (isUrdu ? 'موجودہ تصویر: ' : 'Current photo: ') + '<img class="photo-thumb" src="' + escAttr(e.photo) + '">'
-      : (isUrdu ? 'ابھی کوئی تصویر موجود نہیں' : 'No photo set yet');
+    REMOVE_PHOTO = false;
+    renderPhotoCurrent(e.photo);
     toggleEditForm();
+  }
+
+  /* Edit form: the current photo can now be removed (nothing changes until Save Changes; Undo brings it back) */
+  var REMOVE_PHOTO = false;
+  function renderPhotoCurrent(photo){
+    var box = document.getElementById('uPhotoCurrent');
+    if(!photo){ box.innerHTML = isUrdu ? 'ابھی کوئی تصویر موجود نہیں' : 'No photo set yet'; return; }
+    var bs = 'padding:3px 10px; font-size:11px; margin-inline-start:8px; cursor:pointer; display:inline-block;';
+    if(REMOVE_PHOTO){
+      box.innerHTML = '<span style="color:#a33a3a; font-weight:600;">' + (isUrdu ? 'محفوظ کرنے پر تصویر ہٹا دی جائے گی' : 'The photo will be removed when you press Save Changes') + '</span>' +
+        '<span class="btn ghost" style="' + bs + '" onclick="setRemovePhoto(false)">' + (isUrdu ? 'واپس' : 'Undo') + '</span>';
+    } else {
+      box.innerHTML = (isUrdu ? 'موجودہ تصویر: ' : 'Current photo: ') + '<img class="photo-thumb" src="' + escAttr(photo) + '">' +
+        '<span class="btn ghost" style="' + bs + ' color:#a33a3a;" onclick="setRemovePhoto(true)">🗑 ' + (isUrdu ? 'تصویر ہٹائیں' : 'Remove photo') + '</span>';
+    }
+  }
+  function setRemovePhoto(v){
+    var e = EMP.find(function(x){ return x.pers === document.getElementById('uPersHidden').value; });
+    if(!e || !e.photo) return;
+    REMOVE_PHOTO = !!v;
+    renderPhotoCurrent(e.photo);
   }
 
   function saveEditEmployee(){
@@ -818,11 +838,12 @@ body.is-super .super-only{ display:inline-block !important; }
     e.mobile = document.getElementById('uMobile').value.trim() || '—';
     e.email = document.getElementById('uEmail').value.trim() || '—';
     readPhotoFile('uPhoto', function(photoData){
-      if(photoData) e.photo = photoData;
+      if(photoData) e.photo = photoData; else if(REMOVE_PHOTO) e.photo = null;
       var upd = {};
       ['name','father','cnic','dob','designation','department','scale','status','service_len','gpf','bank','account','mobile','email','photo'].forEach(function(k){ upd[k] = (e[k] === undefined ? null : e[k]); });
       upd.updatedBy = CURRENT_USER.email; upd.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
       db.collection('employees').doc(empDocId(e.pers)).update(upd).then(function(){
+        REMOVE_PHOTO = false;
         PENDING_SHOW = e.pers;
         toggleEditForm();
       }).catch(function(err){ alert((isUrdu ? 'محفوظ نہیں ہو سکا: ' : 'Could not save: ') + err.message); });

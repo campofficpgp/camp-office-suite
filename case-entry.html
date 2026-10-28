@@ -2161,10 +2161,11 @@ html.embedded .app-shell{ min-height:0; }
   var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
   /* The "Prepared by / Approved by" sign-off stamp is OPTIONAL: left out unless the box in the report preview is ticked. */
   var includeStamp = false;
-  try { includeStamp = localStorage.getItem('reportIncludeStamp') === '1'; } catch (e) {}
+  /* One shared setting for every system: the same key the other systems use (older separate key still read once, so nobody's choice is lost). */
+  try { var _stv = localStorage.getItem('campoffice_includeStamp_v1'); if (_stv === null) _stv = localStorage.getItem('reportIncludeStamp'); includeStamp = _stv === '1'; } catch (e) {}
   function setIncludeStamp(on){
     includeStamp = !!on;
-    try { localStorage.setItem('reportIncludeStamp', includeStamp ? '1' : '0'); } catch (e) {}
+    try { localStorage.setItem('campoffice_includeStamp_v1', includeStamp ? '1' : '0'); } catch (e) {}
     printCurrentReport();
   }
   var editingStamp = null; // 'left' | 'right' | null

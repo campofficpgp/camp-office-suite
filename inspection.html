@@ -68,6 +68,22 @@ html,body{overflow-x:hidden;}
     --topbar-grad-angle:180deg;
     --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0;
   }
+  body[data-theme="ivory"]{ /* Ivory */
+    --navy:#7A1F2B; --navy2:#9a3342; --navy3:#5C1620;
+    --gold:#B08D4F; --gold-light:#c9a96e; --gold-deep:#7d6232;
+    --bg:#F4EFE3; --card:#FBF7EE; --border:#E3D8BE; --text:#2E2A22; --muted:#7a6a50;
+    --radius-lg:8px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#5C1620; --sidebar-bg2:#7A1F2B; --sidebar-text:#f3e6e4; --sidebar-muted:#cfa9ad;
+  }
+  body[data-theme="slate"]{ /* Soft Slate */
+    --navy:#3b4758; --navy2:#55657b; --navy3:#2a323f;
+    --gold:#a68b5b; --gold-light:#c1a979; --gold-deep:#7d6840;
+    --bg:#eef1f4; --card:#ffffff; --border:#dde3ea; --text:#2e3440; --muted:#6d7787;
+    --radius-lg:8px; --radius-sm:5px; --font-head:"Segoe UI",Tahoma,Arial,sans-serif;
+    --topbar-grad-angle:135deg;
+    --sidebar-bg:#2a323f; --sidebar-bg2:#3b4758; --sidebar-text:#e8ecf1; --sidebar-muted:#a9b4c3;
+  }
   body[data-theme="night"]{ /* Night */
     --navy:#5b7bb0; --navy2:#7292c4; --navy3:#3f5580;
     --gold:#d4a13d; --gold-light:#e0b968; --gold-deep:#a87f2c;
@@ -629,6 +645,8 @@ table.pf-t td.sm div{ line-height:1.35; }
     { id:'ocean', nameEn:'Ocean', nameUr:'سمندری', navy:'#1670a0', gold:'#c9852a' },
     { id:'sepia', nameEn:'Sepia', nameUr:'بھورا', navy:'#6d5330', gold:'#a3742a' },
     { id:'contrast', nameEn:'Contrast', nameUr:'کنٹراسٹ', navy:'#111111', gold:'#8a4b00' },
+    { id:'ivory', nameEn:'Ivory', nameUr:'کاغذی سفید', navy:'#7A1F2B', gold:'#B08D4F' },
+    { id:'slate', nameEn:'Slate', nameUr:'نرم خاکستری', navy:'#3b4758', gold:'#a68b5b' },
     { id:'night', nameEn:'Night', nameUr:'تاریک', navy:'#5b7bb0', gold:'#d4a13d' }
   ];
   var currentTheme = (function(){ try{ return localStorage.getItem('cmpTheme') || 'navy'; }catch(e){ return 'navy'; } })();

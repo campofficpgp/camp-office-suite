@@ -40,6 +40,11 @@ html,body{overflow-x:hidden;}
   body{ background:var(--bg); color:var(--text); font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif; font-size:14px; line-height:1.6; }
   body.lang-ur, body.lang-ur input, body.lang-ur textarea, body.lang-ur select, body.lang-ur button, body.lang-ur label{ font-family:"Noto Nastaliq Urdu","Noto Naskh Arabic",Tahoma,Arial,sans-serif; }
   h1,h2,h3{ font-family:Georgia,"Times New Roman",serif; font-weight:700; margin:0; color:var(--navy-dark); }
+  [data-theme="sepia"]{ --navy:#6d5330; --navy-dark:#4a381f; --navy-tint:#f3e9d8; --amber:#a3742a; --amber-tint:#f6ecd6; --bg:#f6efe0; --surface:#fcf7ee; --border:#e5d9bd; --border-strong:#d0bd97; --text:#42341f; --muted:#83725a; --sidebar-bg:#4a381f; --sidebar-bg2:#6d5330; --sidebar-text:#f3e9d8; --sidebar-muted:#d0bd97; }
+  [data-theme="ocean"]{ --navy:#1670a0; --navy-dark:#0f4a6e; --navy-tint:#EAF4FA; --amber:#c9852a; --amber-tint:#faf0dd; --bg:#F2F8FB; --surface:#ffffff; --border:#D8E9F0; --border-strong:#B6D8E6; --text:#1A3444; --muted:#5A7E8F; --sidebar-bg:#0f4a6e; --sidebar-bg2:#1670a0; --sidebar-text:#e8f4fa; --sidebar-muted:#a8cfe0; }
+  [data-theme="contrast"]{ --navy:#111111; --navy-dark:#000000; --navy-tint:#f5f5f5; --amber:#8a4b00; --amber-tint:#fff3d6; --bg:#fafafa; --surface:#ffffff; --border:#1a1a1a; --border-strong:#000000; --text:#0a0a0a; --muted:#2e2e2e; --sidebar-bg:#0a0a0a; --sidebar-bg2:#1a1a1a; --sidebar-text:#fafafa; --sidebar-muted:#d0d0d0; }
+  [data-theme="ivory"]{ --navy:#7A1F2B; --navy-dark:#5C1620; --navy-tint:#F3E6E4; --amber:#B08D4F; --amber-tint:#EFE7D4; --bg:#F4EFE3; --surface:#FBF7EE; --border:#E3D8BE; --border-strong:#CBB98F; --text:#2E2A22; --muted:#7a6a50; --sidebar-bg:#5C1620; --sidebar-bg2:#7A1F2B; --sidebar-text:#f3e6e4; --sidebar-muted:#cfa9ad; }
+  [data-theme="slate"]{ --navy:#3b4758; --navy-dark:#2a323f; --navy-tint:#eef1f4; --amber:#a68b5b; --amber-tint:#f1ece2; --bg:#eef1f4; --surface:#ffffff; --border:#dde3ea; --border-strong:#c3ccd6; --text:#2e3440; --muted:#6d7787; --sidebar-bg:#2a323f; --sidebar-bg2:#3b4758; --sidebar-text:#e8ecf1; --sidebar-muted:#a9b4c3; }
   [data-theme="night"] h1,[data-theme="night"] h2,[data-theme="night"] h3{ color:#fff; }
   .topbar{ background:linear-gradient(180deg,var(--navy) 0%, var(--navy-dark) 100%); color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
   .topbar .brand{ display:flex; align-items:center; gap:10px; font-weight:700; font-size:16px; }
@@ -116,6 +121,11 @@ html,body{overflow-x:hidden;}
   [data-theme="green"]{ --navy2:#2f8a5c; --gold:#C9A227; }
   [data-theme="teal"]{ --navy2:#26a89f; --gold:#96762a; }
   [data-theme="night"]{ --navy2:#7391c4; --gold:#d4a13d; }
+  [data-theme="sepia"]{ --navy2:#8a6c40; --gold:#a3742a; }
+  [data-theme="ocean"]{ --navy2:#2a8cc4; --gold:#c9852a; }
+  [data-theme="contrast"]{ --navy2:#2a2a2a; --gold:#8a4b00; }
+  [data-theme="ivory"]{ --navy2:#9a3342; --gold:#B08D4F; }
+  [data-theme="slate"]{ --navy2:#55657b; --gold:#a68b5b; }
   .topbar{ background:linear-gradient(135deg,var(--navy2),var(--navy)); color:#fff; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; direction:ltr; }
   .topbar .brand{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; }
   .topbar .right-controls{ display:flex; align-items:center; gap:10px; }
@@ -190,6 +200,11 @@ html,body{overflow-x:hidden;}
       <option value="navy">عدالتی نیلا / Navy</option>
       <option value="green">سرکاری سبز / Green</option>
       <option value="teal">جدید ٹیل / Teal</option>
+      <option value="sepia">گرم بھورا / Sepia</option>
+      <option value="ocean">سمندری نیلا 🌊 / Ocean</option>
+      <option value="contrast">ہائی کنٹراسٹ / High Contrast</option>
+      <option value="ivory">کاغذی سفید / Ivory</option>
+      <option value="slate">نرم خاکستری 🩶 / Soft Slate</option>
       <option value="night">تاریک موڈ 🌙 / Night</option>
     </select>
     <img class="topbar-logo-sm" src="logo-public-prosecution.png" alt="Public Prosecution Punjab">
@@ -284,7 +299,7 @@ document.getElementById("themeSelect").addEventListener("change", function(e){ d
 (function(){
   var saved = null;
   try{ saved = localStorage.getItem('cmpTheme'); }catch(e){}
-  if(saved && ['navy','green','teal','night'].indexOf(saved) !== -1){
+  if(saved && ['navy','green','teal','night','sepia','ocean','contrast','ivory','slate'].indexOf(saved) !== -1){
     document.documentElement.setAttribute('data-theme', saved);
     var ts = document.getElementById('themeSelect');
     if(ts) ts.value = saved;
@@ -462,7 +477,7 @@ applyI18n();
   var ls=document.getElementById('langSelect'), ts=document.getElementById('themeSelect');
   var lb=document.getElementById('langBtn'), tb=document.getElementById('themeBtn'), tp=document.getElementById('themePicker');
   if(!ls||!ts||!lb||!tb||!tp) return;
-  var COL={navy:['#2A5A84','#B8860B'],green:['#1a6b45','#C9A227'],teal:['#128f89','#96762a'],night:['#5b7bb0','#d4a13d']};
+  var COL={navy:['#2A5A84','#B8860B'],green:['#1a6b45','#C9A227'],teal:['#128f89','#96762a'],night:['#5b7bb0','#d4a13d'],sepia:['#6d5330','#a3742a'],ocean:['#1670a0','#c9852a'],contrast:['#111111','#8a4b00'],ivory:['#7A1F2B','#B08D4F'],slate:['#3b4758','#a68b5b']};
   function syncLang(){ lb.textContent = ls.value==='ur' ? 'English' : 'اردو'; }
   lb.addEventListener('click',function(){ ls.value = (ls.value==='ur') ? 'en' : 'ur'; ls.dispatchEvent(new Event('change')); syncLang(); });
   function renderT(){

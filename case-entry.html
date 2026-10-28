@@ -186,6 +186,15 @@ html,body{overflow-x:hidden;}
   table.case-table td.wrap-cell{white-space:normal; max-width:180px;}
   table.case-table tr:last-child td{border-bottom:none;}
   table.case-table tr:hover td{background:#faf8f2;}
+  /* connected cases (same date + bench + judge, serial "N", "N (2)", ...) are shown together as one group joined by "and" */
+  table.case-table tr.cg td{background:color-mix(in srgb,var(--navy) 7%,var(--card));}
+  table.case-table tr.cg:hover td{background:color-mix(in srgb,var(--navy) 13%,var(--card));}
+  table.case-table tr.cg td:first-child{border-inline-start:4px solid var(--navy);}
+  table.case-table tr.cg:not(.cg-last) td{border-bottom:1px dashed var(--border);}
+  table.case-table tr.cg-last td{border-bottom:2px solid var(--navy);}
+  .cg-and,.cg-badge{display:inline-block; border-radius:10px; padding:1px 9px; font-size:10.5px; font-weight:700; white-space:nowrap; margin-inline-end:6px; vertical-align:middle;}
+  .cg-and{background:var(--gold); color:var(--navy3);}
+  .cg-badge{background:var(--navy); color:#fff;}
   /* Computer-size screens (wide window, with a mouse OR a touch screen): the case list scrolls inside its own box, so the
      left-right scroll bar is always on screen (not hidden at the very bottom of a very long page) and the column headings
      stay visible. Phone-size screens are unchanged. */
@@ -1117,9 +1126,46 @@ html.embedded .app-shell{ min-height:0; }
       return dec.map(function(x){ return x.r; });
     }
 
+    /* Connected cases: same date + bench + judge and the same leading Cause List number (5, 5 (2), 5 (3) ...).
+       They are pulled next to each other (main case first, then (2), (3) ...) so they read as one group. Nothing is changed in the data. */
+    function connKey(r){
+      var m = String(r.serial == null ? '' : r.serial).match(/^\s*(\d+)/);
+      return m ? [r.date || '', r.bench || '', r.judge || '', String(parseInt(m[1], 10))].join('|') : '';
+    }
+    function connRank(r){
+      var s = String(r.serial == null ? '' : r.serial).trim();
+      if(/^\d+$/.test(s)) return 0;
+      var m = s.match(/\((\d+)\)/);
+      return m ? parseInt(m[1], 10) : 99;
+    }
+    function groupConnected(rows){
+      var cnt = {}, byKey = {}, seen = {}, out = [], info = {};
+      rows.forEach(function(r, i){
+        var k = connKey(r); if(!k) return;
+        cnt[k] = (cnt[k] || 0) + 1;
+        (byKey[k] = byKey[k] || []).push({ r:r, i:i });
+      });
+      Object.keys(byKey).forEach(function(k){
+        byKey[k].sort(function(a, b){ return (connRank(a.r) - connRank(b.r)) || (a.i - b.i); });
+      });
+      rows.forEach(function(r){
+        var k = connKey(r);
+        if(!k || cnt[k] < 2){ out.push(r); return; }
+        if(seen[k]) return;
+        seen[k] = 1;
+        var g = byKey[k];
+        g.forEach(function(m, i){
+          out.push(m.r);
+          info[m.r.id] = { pos: i === 0 ? 'first' : (i === g.length - 1 ? 'last' : 'mid'), i:i, n:g.length };
+        });
+      });
+      return { rows:out, info:info };
+    }
+
     function render(){
       var all = data();
-      var rows = sorted(filtered());
+      var grouped = groupConnected(sorted(filtered()));
+      var rows = grouped.rows, CG = grouped.info;
       var cols = visCols();
       document.getElementById('ceHead').innerHTML = '<tr>' + cols.map(function(c){
         var on = SORT.col === c.id;
@@ -1135,13 +1181,19 @@ html.embedded .app-shell{ min-height:0; }
       var start = (PAGER.page - 1) * size;
       var shown = PAGER.size ? rows.slice(start, start + size) : rows;
 
+      var tagCol = cols.some(function(x){ return x.id === 'title'; }) ? 'title' : (cols[0] ? cols[0].id : '');
       document.getElementById('caseTableBody').innerHTML = shown.length ? shown.map(function(c){
         var idq = "'" + String(c.id).replace(/[^A-Za-z0-9_-]/g,'') + "'";
-        return '<tr>' + cols.map(function(col){
+        var g = CG[c.id];
+        var tag = !g ? '' : (g.i > 0
+          ? '<span class="cg-and">' + (isUrdu ? 'اور' : 'and') + '</span>'
+          : '<span class="cg-badge">🔗 ' + g.n + (isUrdu ? ' جڑے ہوئے کیس' : ' connected cases') + '</span>');
+        return '<tr' + (g ? ' class="cg cg-' + g.pos + '"' : '') + '>' + cols.map(function(col){
           var v = col.f(c);
           var show = (v === '' || v == null) ? '—' : v;
-          if(col.pill) return '<td><span class="result-pill ' + resultClass(c.result) + '">' + esc(c.result) + '</span></td>';
-          return '<td' + (col.w ? ' class="wrap-cell"' : '') + '>' + esc(show) + '</td>';
+          var pre = (tag && col.id === tagCol) ? tag : '';
+          if(col.pill) return '<td>' + pre + '<span class="result-pill ' + resultClass(c.result) + '">' + esc(c.result) + '</span></td>';
+          return '<td' + (col.w ? ' class="wrap-cell"' : '') + '>' + pre + esc(show) + '</td>';
         }).join('') +
         '<td><div class="row-actions">' +
           (canEditCase(c) ? '<div class="btn ghost needs-edit" onclick="openEditForm(' + idq + ')">' + (isUrdu ? 'ترمیم' : 'Edit') + '</div>' : '') +

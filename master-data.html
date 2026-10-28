@@ -370,6 +370,16 @@ html,body{overflow-x:hidden;}
 .md-panel .btns{ display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:14px; }
 .md-diff-add{ color:#2c7a3d; font-weight:600; } .md-diff-del{ color:#a33a3a; font-weight:600; } .md-diff-mv{ color:var(--navy); font-weight:600; }
 .readonly-mode .needs-edit{ display:none !important; }
+
+.ml-top{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; border-bottom:2px solid var(--border); padding-bottom:0; }
+.ml-top .ml-tab{ border-radius:8px 8px 0 0; margin-bottom:-2px; padding:9px 18px; font-size:14px; }
+.ml-top .dot{ color:#c46a1c; margin-inline-start:6px; }
+.ml-tabs{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+.ml-tab{ border:1px solid var(--border-strong,var(--border)); background:var(--card); color:var(--text); border-radius:8px; padding:7px 13px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+.ml-tab.sel{ background:var(--navy); color:#fff; border-color:var(--navy); }
+.ml-tab .n{ opacity:.75; font-weight:500; margin-inline-start:5px; }
+.ml-hint{ margin:0 2px 10px; font-size:12.5px; color:var(--muted); line-height:1.7; }
+.ml-ro .ml-edit{ display:none !important; }
 .sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 @media (max-width:760px){
   .md-grid{ grid-template-columns:minmax(0,1fr); }
@@ -440,6 +450,12 @@ html,body{overflow-x:hidden;}
     <div class="user-chip-sm"><span id="ceUserEmail"></span><span class="role-chip" id="ceUserRole"></span></div>
   </div>
 <div class="wrap">
+  <div class="ml-top" id="mdTopTabs" role="tablist" hidden>
+    <button class="ml-tab sel" id="mdTabTypes" role="tab" aria-selected="true">🧩 <span data-en="Case Types &amp; Categories" data-ur="کیس کی اقسام اور زمرے">Case Types &amp; Categories</span></button>
+    <button class="ml-tab" id="mdTabLists" role="tab" aria-selected="false">🗂️ <span data-en="Court Lists" data-ur="عدالتی فہرستیں">Court Lists</span><span class="dot" id="mdListsDot" hidden>●</span></button>
+  </div>
+
+  <div id="panelTypes">
 
   <div class="md-head">
     <h2 data-en="Case Types &amp; Categories" data-ur="کیس کی اقسام اور ان کے زمرے">Case Types &amp; Categories</h2>
@@ -482,6 +498,45 @@ html,body{overflow-x:hidden;}
     <h3 data-en="Check against saved cases &amp; notices" data-ur="محفوظ کیسز اور نوٹسز سے موازنہ">Check against saved cases &amp; notices</h3>
     <div id="mdCheck" style="font-size:13px"></div>
   </div>
+
+  </div><!-- /#panelTypes -->
+
+  <div id="panelLists" hidden>
+
+  <div class="md-head">
+    <h2 data-en="Court Lists" data-ur="عدالتی فہرستیں">Court Lists</h2>
+    <p data-en="The lists used by Daily Case Entry, Cause List, Result List, Inspection, Scanning, Case Notice and the dashboard: judges, benches, case nature, case result and officers. Change a list here and every page follows." data-ur="روزانہ کیس انٹری، کاز لسٹ، رزلٹ لسٹ، انسپکشن، اسکیننگ، کیس نوٹس اور ڈیش بورڈ میں استعمال ہونے والی فہرستیں: جج صاحبان، بنچز، کیس کی نوعیت، کیس کا نتیجہ اور افسران۔ یہاں بدلیں تو تمام صفحات میں بدل جائے گا۔">The lists used by Daily Case Entry, Cause List, Result List, Inspection, Scanning, Case Notice and the dashboard: judges, benches, case nature, case result and officers. Change a list here and every page follows.</p>
+  </div>
+
+  <div id="mlNotice"></div>
+  <p class="ml-hint" data-en="The small number beside a name = how many saved cases use it. A name that saved cases use is locked: it cannot be renamed or removed, so old records and reports never change. Nothing goes live until you press Save, and a backup copy of the old lists is made automatically before every save." data-ur="نام کے ساتھ چھوٹا عدد = کتنے محفوظ کیسز اسے استعمال کرتے ہیں۔ جو نام محفوظ کیسز میں استعمال ہو رہا ہو وہ مقفل ہے: اس کا نام بدلا یا اسے نکالا نہیں جا سکتا، تاکہ پرانے ریکارڈ اور رپورٹس نہ بدلیں۔ محفوظ کریں دبانے سے پہلے کچھ لائیو نہیں ہوتا، اور ہر بار محفوظ کرنے سے پہلے پرانی فہرستوں کی نقل خود بخود بن جاتی ہے۔">The small number beside a name = how many saved cases use it. A name that saved cases use is locked: it cannot be renamed or removed, so old records and reports never change. Nothing goes live until you press Save, and a backup copy of the old lists is made automatically before every save.</p>
+
+  <div class="md-bar" id="mlBar">
+    <button class="mdb ml-edit" id="mlUndo" disabled title="Ctrl+Z">↶ <span data-en="Undo" data-ur="واپس">Undo</span></button>
+    <button class="mdb ml-edit" id="mlRedo" disabled title="Ctrl+Y">↷ <span data-en="Redo" data-ur="دوبارہ">Redo</span></button>
+    <button class="mdb ml-edit" id="mlRestore" disabled>⟲ <span data-en="Discard changes" data-ur="تبدیلیاں ختم کریں">Discard changes</span></button>
+    <span class="spacer"></span>
+    <span class="md-state" id="mlState" role="status"></span>
+    <button class="mdb primary ml-edit" id="mlSave" disabled>💾 <span data-en="Save" data-ur="محفوظ کریں">Save</span></button>
+  </div>
+
+  <div class="ml-tabs" id="mlTabs" role="tablist"></div>
+
+  <div class="md-card">
+    <h3 id="mlTitle"></h3>
+    <ul class="md-list" id="mlItems"></ul>
+    <div class="md-add ml-edit">
+      <input id="mlNew" maxlength="80" dir="ltr" autocomplete="off" aria-label="New item">
+      <button class="mdb primary" id="mlAdd">＋ <span data-en="Add" data-ur="شامل کریں">Add</span></button>
+    </div>
+  </div>
+
+  <div class="md-card" style="margin-top:14px">
+    <h3 data-en="Check against saved cases" data-ur="محفوظ کیسز سے موازنہ">Check against saved cases</h3>
+    <div id="mlCheck" style="font-size:13px"></div>
+  </div>
+
+  </div><!-- /#panelLists -->
 
 </div>
 
@@ -997,6 +1052,352 @@ html,body{overflow-x:hidden;}
 
   document.body.setAttribute('data-theme', currentTheme);
   renderThemePicker();
+</script>
+<script>
+/* ================= Court Lists tab (judges, benches, nature, result, officers) ================= */
+(function(){
+  /* ================= Master Lists editor =================
+     Edits the shared court lists in Firestore  lookupLists/caseEntry
+     (judges, benches, natures, results, officers) - the same document every court page already reads.
+     Safety rules built in:
+       - a name used by any saved case is LOCKED (cannot be renamed or removed), so old records and reports never change
+       - nothing is written until Save; before every save the whole old document is copied to lookupLists/backup_caseEntry_<time>
+       - only the changed lists are written (other fields of the document are left untouched)
+       - saved cases are only READ here, never changed */
+  function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function J(x){ return JSON.stringify(x); }
+  function clone(x){ return JSON.parse(JSON.stringify(x)); }
+  function tidy(s){ return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+
+  var FIELDS = [
+    { k: 'judges',   f: 'judge',   en: 'Judges',      ur: 'جج صاحبان',      ph: 'New judge, e.g. Justice Name Surname', phUr: 'نیا جج، مثلاً Justice Name Surname' },
+    { k: 'benches',  f: 'bench',   en: 'Benches',     ur: 'بنچز',            ph: 'New bench, e.g. XI', phUr: 'نیا بنچ، مثلاً XI' },
+    { k: 'natures',  f: 'nature',  en: 'Case Nature', ur: 'کیس کی نوعیت',    ph: 'New nature', phUr: 'نئی نوعیت' },
+    { k: 'results',  f: 'result',  en: 'Case Result', ur: 'کیس کا نتیجہ',    ph: 'New result', phUr: 'نیا نتیجہ' },
+    { k: 'officers', f: 'officer', en: 'Officers',    ur: 'افسران',          ph: 'New officer, e.g. Name — DPG', phUr: 'نیا افسر، مثلاً Name — DPG' }
+  ];
+  function fdef(k){ for(var i = 0; i < FIELDS.length; i++) if(FIELDS[i].k === k) return FIELDS[i]; return null; }
+
+  var PANEL = document.getElementById('panelLists'), TYPES = document.getElementById('panelTypes'), TOPTABS = document.getElementById('mdTopTabs');
+  var CAN = false, ALLOWED = false, STARTED = false, EMAIL = '';
+  var SERVER = {}, BASE = '', WORK = {}, HIST = [], HIX = -1, SEL = 'judges';
+  var LOADED = false, SAVING = false, REMOTE = false, EDITING = null;
+  var USE = null, USE_TOTAL = 0, USE_ERR = false;      // USE[field][value] = number of saved cases
+
+  function lists(o){ var r = {}; FIELDS.forEach(function(f){ r[f.k] = Array.isArray(o && o[f.k]) ? o[f.k].map(String) : []; }); return r; }
+  function dirty(){ return J(WORK) !== BASE; }
+  function pack(){ return J({ w: WORK, s: SEL }); }
+  function commit(){
+    var s = pack();
+    if(HIST[HIX] !== s){
+      HIST = HIST.slice(0, HIX + 1); HIST.push(s);
+      if(HIST.length > 200) HIST.shift();
+      HIX = HIST.length - 1;
+    }
+    render();
+  }
+  function restoreAt(ix){ var o = JSON.parse(HIST[ix]); WORK = o.w; SEL = o.s; HIX = ix; EDITING = null; render(); }
+  function doUndo(){ if(!CAN || HIX <= 0) return; restoreAt(HIX - 1); toast(T('Undone', 'واپس کر دیا')); }
+  function doRedo(){ if(!CAN || HIX >= HIST.length - 1) return; restoreAt(HIX + 1); toast(T('Redone', 'دوبارہ کر دیا')); }
+  function doRestore(){
+    if(!CAN || !dirty()) return;
+    askModal({ title: T('Discard unsaved changes?', 'بغیر محفوظ تبدیلیاں ختم کریں؟'),
+      html: T('The lists go back to the last saved version. You can still press Undo to bring your changes back.', 'فہرستیں آخری محفوظ حالت پر آ جائیں گی۔ چاہیں تو Undo دبا کر اپنی تبدیلیاں واپس لا سکتے ہیں۔'),
+      ok: T('Discard', 'ختم کریں') }, function(){ WORK = clone(SERVER); EDITING = null; commit(); });
+  }
+
+  /* ---------- usage in saved cases (read only) ---------- */
+  function useOf(field, val){ return USE ? ((USE[field] && USE[field][val]) || 0) : null; }
+  function loadUsage(){
+    db.collection('cases').get().then(function(qs){
+      var tmp = {}, total = 0;
+      FIELDS.forEach(function(f){ tmp[f.f] = {}; });
+      qs.forEach(function(d){
+        var r = d.data() || {}; total++;
+        FIELDS.forEach(function(f){
+          var v = r[f.f]; if(v == null || v === '') return;
+          v = String(v); tmp[f.f][v] = (tmp[f.f][v] || 0) + 1;
+        });
+      });
+      USE = tmp; USE_TOTAL = total; USE_ERR = false; render();
+    }).catch(function(e){ console.error('cases', e); USE_ERR = true; render(); });
+  }
+
+  /* ---------- rendering ---------- */
+  function cntHtml(n){ return n == null ? '' : '<span class="cnt" title="' + esc(T('saved cases using it', 'اس کو استعمال کرنے والے محفوظ کیسز')) + '"><b>' + n + '</b></span>'; }
+  function rowButtons(i, last, locked){
+    if(!CAN) return '';
+    var h = '<span class="acts ml-edit">';
+    h += '<button class="mdb sm" data-act="up" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + ' aria-label="' + esc(T('Move up', 'اوپر')) + '" title="' + esc(T('Move up', 'اوپر')) + '">↑</button>';
+    h += '<button class="mdb sm" data-act="down" data-i="' + i + '"' + (last ? ' disabled' : '') + ' aria-label="' + esc(T('Move down', 'نیچے')) + '" title="' + esc(T('Move down', 'نیچے')) + '">↓</button>';
+    if(!locked){
+      h += '<button class="mdb sm" data-act="edit" data-i="' + i + '" aria-label="' + esc(T('Edit', 'ترمیم')) + '" title="' + esc(T('Edit', 'ترمیم')) + '">✎</button>';
+      h += '<button class="mdb sm danger" data-act="del" data-i="' + i + '" aria-label="' + esc(T('Remove', 'نکالیں')) + '" title="' + esc(T('Remove', 'نکالیں')) + '">✕</button>';
+    }
+    return h + '</span>';
+  }
+  function renderTabs(){
+    document.getElementById('mlTabs').innerHTML = FIELDS.map(function(f){
+      return '<button class="ml-tab' + (f.k === SEL ? ' sel' : '') + '" role="tab" aria-selected="' + (f.k === SEL) + '" data-tab="' + f.k + '">' + esc(isUrdu ? f.ur : f.en) + '<span class="n">' + (WORK[f.k] || []).length + '</span></button>';
+    }).join('');
+  }
+  function renderList(){
+    var f = fdef(SEL), arr = WORK[SEL] || [], h = '';
+    document.getElementById('mlTitle').textContent = isUrdu ? f.ur : f.en;
+    arr.forEach(function(v, i){
+      var u = useOf(f.f, v);
+      var locked = u == null ? true : u > 0;          /* while counting, everything stays locked */
+      h += '<li class="md-row">';
+      if(EDITING && EDITING.i === i){
+        h += '<input class="md-edit" id="mlEdit" dir="ltr" maxlength="80" value="' + esc(v) + '" aria-label="' + esc(T('New name', 'نیا نام')) + '">' +
+          '<span class="acts"><button class="mdb sm primary" data-act="ok" aria-label="OK" title="OK">✓</button><button class="mdb sm" data-act="cancel" aria-label="Cancel" title="Esc">✕</button></span>';
+      } else {
+        h += '<span class="nm cat" dir="ltr">' + esc(v) + '</span>' +
+          (locked ? '<span class="md-lock" title="' + esc(u == null ? T('Counting saved cases…', 'محفوظ کیسز گنے جا رہے ہیں…') : T('Used by saved cases - locked', 'محفوظ کیسز میں استعمال ہو رہا ہے - مقفل')) + '">🔒</span>' : '') +
+          cntHtml(u) + rowButtons(i, i === arr.length - 1, locked);
+      }
+      h += '</li>';
+    });
+    document.getElementById('mlItems').innerHTML = h || '<li class="md-empty">' + esc(T('No items yet.', 'ابھی کوئی نام نہیں۔')) + '</li>';
+    var ni = document.getElementById('mlNew'); ni.placeholder = isUrdu ? f.phUr : f.ph;
+  }
+  function renderCheck(){
+    var box = document.getElementById('mlCheck');
+    if(USE_ERR){ box.textContent = T('Saved cases could not be read, so usage counts are not shown and every name stays locked.', 'محفوظ کیسز نہیں پڑھے جا سکے، اس لیے گنتی نہیں دکھائی جا رہی اور ہر نام مقفل رہے گا۔'); return; }
+    if(!USE){ box.textContent = T('Counting saved cases…', 'محفوظ کیسز گنے جا رہے ہیں…'); return; }
+    var h = '<div>' + esc(T(USE_TOTAL + ' saved cases checked.', USE_TOTAL + ' محفوظ کیسز چیک کیے گئے۔')) + '</div>', any = false;
+    FIELDS.forEach(function(f){
+      var list = WORK[f.k] || [], miss = [];
+      Object.keys(USE[f.f] || {}).forEach(function(v){ if(list.indexOf(v) < 0) miss.push({ v: v, n: USE[f.f][v] }); });
+      if(!miss.length) return;
+      any = true;
+      miss.sort(function(a, b){ return b.n - a.n; });
+      h += '<div style="color:#9c5b0e;font-weight:600;margin-top:8px">⚠ ' + esc(isUrdu ? f.ur : f.en) + '</div><ul>';
+      miss.slice(0, 30).forEach(function(m){ h += '<li><span dir="ltr">' + esc(m.v) + '</span> <small>(' + m.n + ' ' + esc(T('cases', 'کیسز')) + ')</small></li>'; });
+      h += '</ul>';
+    });
+    if(!any) h += '<div style="color:#2c7a3d;font-weight:600;margin-top:4px">✔ ' + esc(T('Every value used in saved cases is in the lists on screen.', 'محفوظ کیسز میں استعمال ہونے والی ہر قدر سکرین کی فہرستوں میں موجود ہے۔')) + '</div>';
+    else h += '<div style="color:var(--muted);font-size:12px;margin-top:6px">' + esc(T('These values are in saved cases but not in the lists. Saved cases are never changed here.', 'یہ قدریں محفوظ کیسز میں ہیں مگر فہرستوں میں نہیں۔ یہاں محفوظ کیسز کو کبھی نہیں بدلا جاتا۔')) + '</div>';
+    box.innerHTML = h;
+  }
+  function renderBar(){
+    var d = dirty();
+    document.getElementById('mlUndo').disabled = !(CAN && HIX > 0);
+    document.getElementById('mlRedo').disabled = !(CAN && HIX < HIST.length - 1);
+    document.getElementById('mlRestore').disabled = !(CAN && d);
+    document.getElementById('mlSave').disabled = !(CAN && d && !SAVING);
+    var st = document.getElementById('mlState');
+    st.className = 'md-state' + (d ? ' dirty' : '');
+    document.getElementById('mdListsDot').hidden = !d;
+    st.textContent = SAVING ? T('Saving…', 'محفوظ ہو رہا ہے…') : (d ? T('● Unsaved changes', '● تبدیلیاں محفوظ نہیں') : T('✔ Saved', '✔ محفوظ'));
+  }
+  function renderNotice(){
+    var box = document.getElementById('mlNotice'), h = '';
+    if(!CAN) h += '<div class="md-notice">👁 ' + esc(T('View only. Only a Super Admin can change these lists.', 'صرف دیکھ سکتے ہیں۔ یہ فہرستیں صرف سپر ایڈمن بدل سکتا ہے۔')) + '</div>';
+    if(REMOTE) h += '<div class="md-notice warn">⚠ ' + esc(T('Someone else saved a newer version while you were editing. If you press Save only the lists YOU changed are written.', 'آپ کے ایڈٹ کرتے ہوئے کسی اور نے نیا ورژن محفوظ کیا۔ Save دبانے پر صرف وہ فہرستیں لکھی جائیں گی جو آپ نے بدلی ہیں۔')) +
+      '<br><button class="mdb sm" data-nact="theirs">' + esc(T('Load their version', 'ان کا ورژن لوڈ کریں')) + '</button> <button class="mdb sm" data-nact="mine">' + esc(T('Keep mine', 'میرا رکھیں')) + '</button></div>';
+    box.innerHTML = h;
+  }
+  function takeTheirs(){ REMOTE = false; WORK = clone(SERVER); EDITING = null; commit(); }
+  function render(){
+    if(!LOADED) return;
+    PANEL.classList.toggle('ml-ro', !CAN);
+    renderNotice(); renderTabs(); renderList(); renderCheck(); renderBar();
+    if(EDITING){ var ei = document.getElementById('mlEdit'); if(ei && document.activeElement !== ei){ ei.focus(); ei.select(); } }
+  }
+
+  /* ---------- editing actions ---------- */
+  function checkName(name, selfIdx){
+    if(!name) return T('Please type a name.', 'براہ کرم نام لکھیں۔');
+    var arr = WORK[SEL];
+    for(var i = 0; i < arr.length; i++) if(i !== selfIdx && arr[i].toLowerCase() === name.toLowerCase()) return T('This name is already in the list.', 'یہ نام فہرست میں پہلے سے موجود ہے۔');
+    return '';
+  }
+  function addItem(){
+    if(!CAN) return;
+    var inp = document.getElementById('mlNew'), name = tidy(inp.value);
+    var err = checkName(name, -1);
+    if(err){ toast(err, true); inp.focus(); return; }
+    WORK[SEL].push(name); inp.value = ''; EDITING = null; commit();
+  }
+  document.getElementById('mlNew').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); addItem(); } });
+  function move(i, dir){
+    var arr = WORK[SEL], j = i + dir;
+    if(j < 0 || j >= arr.length) return;
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t; EDITING = null; commit();
+  }
+  function commitEdit(){
+    if(!EDITING) return;
+    var i = EDITING.i, inp = document.getElementById('mlEdit'), name = tidy(inp.value), old = WORK[SEL][i];
+    if(name === old){ EDITING = null; render(); return; }
+    var err = checkName(name, i);
+    if(err){ toast(err, true); inp.focus(); return; }
+    if(useOf(fdef(SEL).f, old) !== 0){ toast(T('This name is used by saved cases, so it cannot be renamed.', 'یہ نام محفوظ کیسز میں استعمال ہو رہا ہے، اس لیے نہیں بدلا جا سکتا۔'), true); EDITING = null; render(); return; }
+    WORK[SEL][i] = name; EDITING = null; commit();
+  }
+  function delItem(i){
+    var arr = WORK[SEL], name = arr[i];
+    if(useOf(fdef(SEL).f, name) !== 0){ toast(T('This name is used by saved cases, so it cannot be removed.', 'یہ نام محفوظ کیسز میں استعمال ہو رہا ہے، اس لیے نہیں نکالا جا سکتا۔'), true); return; }
+    if(arr.length <= 1){ toast(T('A list needs at least one name.', 'فہرست میں کم از کم ایک نام ضروری ہے۔'), true); return; }
+    askModal({ title: T('Remove from the list?', 'فہرست سے نکالیں؟'),
+      html: '<p dir="ltr"><b>' + esc(name) + '</b></p><p>' + esc(T('No saved case uses it. Nothing is saved until you press Save, and Undo brings it back.', 'کوئی محفوظ کیس اسے استعمال نہیں کرتا۔ Save دبانے تک کچھ محفوظ نہیں ہوتا، اور Undo سے یہ واپس آ جائے گا۔')) + '</p>',
+      ok: T('Remove', 'نکالیں') }, function(){ arr.splice(i, 1); EDITING = null; commit(); });
+  }
+  document.getElementById('mlItems').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-act]'); if(!b || !CAN) return;
+    var act = b.dataset.act, i = +b.dataset.i;
+    if(act === 'up') return move(i, -1);
+    if(act === 'down') return move(i, 1);
+    if(act === 'edit'){ EDITING = { i: i }; return render(); }
+    if(act === 'del') return delItem(i);
+    if(act === 'ok') return commitEdit();
+    if(act === 'cancel'){ EDITING = null; return render(); }
+  });
+  document.getElementById('mlTabs').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-tab]'); if(!b) return;
+    SEL = b.dataset.tab; EDITING = null; render();
+  });
+  /* capture phase + only while this panel is showing, so Ctrl+Z / Ctrl+Y never reach the Case Types editor */
+  document.addEventListener('keydown', function(e){
+    if(PANEL.hidden) return;
+    var tg = e.target, tag = tg && tg.tagName, modalOpen = document.getElementById('mdModal').classList.contains('open');
+    if(tg && tg.id === 'mlEdit'){
+      if(e.key === 'Enter'){ e.preventDefault(); commitEdit(); } else if(e.key === 'Escape'){ EDITING = null; render(); }
+      return;
+    }
+    if(modalOpen || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if(e.ctrlKey || e.metaKey){
+      var k = e.key.toLowerCase();
+      if(k === 'z' && !e.shiftKey){ e.preventDefault(); e.stopImmediatePropagation(); doUndo(); }
+      else if(k === 'y' || (k === 'z' && e.shiftKey)){ e.preventDefault(); e.stopImmediatePropagation(); doRedo(); }
+    }
+  }, true);
+  window.addEventListener('beforeunload', function(e){ if(CAN && LOADED && STARTED && dirty()){ e.preventDefault(); e.returnValue = ''; } });
+
+  /* ---------- save ---------- */
+  function changedFields(){ return FIELDS.filter(function(f){ return J(WORK[f.k]) !== J(SERVER[f.k]); }); }
+  function diffHtml(){
+    var h = '';
+    changedFields().forEach(function(f){
+      var o = SERVER[f.k], n = WORK[f.k];
+      var add = n.filter(function(x){ return o.indexOf(x) < 0; });
+      var del = o.filter(function(x){ return n.indexOf(x) < 0; });
+      h += '<div style="margin-top:6px"><b>' + esc(isUrdu ? f.ur : f.en) + '</b></div><ul>';
+      add.forEach(function(x){ h += '<li class="md-diff-add" dir="ltr">＋ ' + esc(x) + '</li>'; });
+      del.forEach(function(x){ h += '<li class="md-diff-del" dir="ltr">− ' + esc(x) + '</li>'; });
+      if(!add.length && !del.length) h += '<li class="md-diff-mv">↕ ' + esc(T('order changed', 'ترتیب بدلی')) + '</li>';
+      h += '</ul>';
+    });
+    return h;
+  }
+  function doSave(){
+    if(!CAN || !dirty() || SAVING) return;
+    var ch = changedFields();
+    for(var i = 0; i < ch.length; i++){
+      if(!WORK[ch[i].k].length){ toast(T('Every list needs at least one name.', 'ہر فہرست میں کم از کم ایک نام ضروری ہے۔'), true); return; }
+      /* safety net: never write a list that drops a name used by saved cases */
+      var lost = SERVER[ch[i].k].filter(function(x){ return WORK[ch[i].k].indexOf(x) < 0 && useOf(ch[i].f, x) !== 0; });
+      if(lost.length){ toast(T('Cannot save: a name used by saved cases is missing - ', 'محفوظ نہیں ہو سکتا: محفوظ کیسز میں استعمال ہونے والا نام غائب ہے - ') + lost[0], true); return; }
+    }
+    askModal({ title: T('Save to the live portal?', 'لائیو پورٹل پر محفوظ کریں؟'),
+      html: '<p>' + esc(T('These lists are used by every court page straight away:', 'یہ فہرستیں فوراً تمام عدالتی صفحات میں استعمال ہونے لگیں گی:')) + '</p>' + diffHtml() +
+        '<p style="color:var(--muted);font-size:12px">' + esc(T('Saved cases are never changed. A backup copy of the old lists is made first.', 'محفوظ کیسز کو کبھی نہیں بدلا جاتا۔ پہلے پرانی فہرستوں کی نقل بنتی ہے۔')) + '</p>',
+      ok: T('Save', 'محفوظ کریں') }, function(){
+        SAVING = true; renderBar();
+        var ref = db.collection('lookupLists').doc('caseEntry'), email = EMAIL;
+        var stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+        var mine = {}; ch.forEach(function(f){ mine[f.k] = clone(WORK[f.k]); });
+        ref.get().then(function(s){
+          var cur = s.exists ? s.data() : {};
+          var bk = {}; Object.keys(cur).forEach(function(k){ bk[k] = cur[k]; });
+          bk.backupNote = 'Automatic copy of lookupLists/caseEntry taken before a Master Lists save'; bk.backupBy = email || ''; bk.backupAt = firebase.firestore.FieldValue.serverTimestamp();
+          return db.collection('lookupLists').doc('backup_caseEntry_' + stamp).set(bk);
+        }).then(function(){
+          return db.runTransaction(function(t){
+            return t.get(ref).then(function(s){
+              var upd = {}; Object.keys(mine).forEach(function(k){ upd[k] = mine[k]; });
+              upd.updatedBy = email || ''; upd.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+              if(s.exists) t.update(ref, upd); else t.set(ref, upd);
+            });
+          });
+        }).then(function(){
+          SAVING = false; REMOTE = false; render();
+          toast(T('✔ Saved. All court pages now use these lists.', '✔ محفوظ ہو گیا۔ اب تمام عدالتی صفحات یہی فہرستیں استعمال کریں گے۔'));
+        }).catch(function(err){
+          SAVING = false; render();
+          toast(T('Could not save: ', 'محفوظ نہیں ہو سکا: ') + (err && err.message ? err.message : err), true);
+        });
+      });
+  }
+
+  /* ---------- live copy ---------- */
+  function startLive(){
+    db.collection('lookupLists').doc('caseEntry').onSnapshot(function(doc){
+      var items = lists(doc.exists ? doc.data() : {});
+      var nb = J(items);
+      if(!LOADED){
+        SERVER = items; BASE = nb; WORK = clone(items); HIST = [pack()]; HIX = 0; LOADED = true;
+        render(); loadUsage(); return;
+      }
+      var changedRemote = J(SERVER) !== nb;
+      var wasDirty = J(WORK) !== BASE;
+      SERVER = items; BASE = nb;
+      if(!changedRemote || J(WORK) === nb){ REMOTE = false; render(); return; }
+      if(!wasDirty){ WORK = clone(items); EDITING = null; commit(); }
+      else { REMOTE = true; render(); }
+    }, function(err){
+      toast(T('Lists could not be loaded: ', 'فہرستیں لوڈ نہیں ہو سکیں: ') + err.message, true);
+    });
+  }
+
+
+  /* ---------- buttons ---------- */
+  document.getElementById('mlUndo').addEventListener('click', doUndo);
+  document.getElementById('mlRedo').addEventListener('click', doRedo);
+  document.getElementById('mlRestore').addEventListener('click', doRestore);
+  document.getElementById('mlSave').addEventListener('click', doSave);
+  document.getElementById('mlAdd').addEventListener('click', addItem);
+  document.getElementById('mlNotice').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-nact]'); if(!b) return;
+    if(b.dataset.nact === 'theirs') takeTheirs(); else { REMOTE = false; render(); }
+  });
+
+  /* ---------- top tabs: Case Types | Court Lists ---------- */
+  var topTypes = document.getElementById('mdTabTypes'), topLists = document.getElementById('mdTabLists');
+  function showPanel(which){
+    var l = (which === 'lists' && ALLOWED);
+    PANEL.hidden = !l; TYPES.hidden = l;
+    topTypes.classList.toggle('sel', !l); topLists.classList.toggle('sel', l);
+    topTypes.setAttribute('aria-selected', String(!l)); topLists.setAttribute('aria-selected', String(l));
+    try{ history.replaceState(null, '', l ? '#lists' : location.pathname + location.search); }catch(e){}
+    if(l && !STARTED){ STARTED = true; startLive(); }
+    if(l && LOADED) render();
+    window.scrollTo(0, 0);
+  }
+  topTypes.addEventListener('click', function(){ showPanel('types'); });
+  topLists.addEventListener('click', function(){ showPanel('lists'); });
+
+  /* language switch: the page's own toggleLang translates data-en/data-ur text; we also redraw our lists */
+  var origToggle = window.toggleLang;
+  window.toggleLang = function(){ var r = origToggle.apply(this, arguments); if(LOADED && STARTED) render(); return r; };
+
+  /* who may see this tab: Super Admin edits, Admin looks only; everyone else sees the page exactly as before */
+  auth.onAuthStateChanged(function(user){
+    if(!user) return;
+    EMAIL = user.email || '';
+    db.collection('users').doc(user.uid).get().then(function(doc){
+      var u = doc.exists ? doc.data() : {};
+      var approved = u.approvalStatus === 'approved' && u.isActive !== false, legacyAdmin = u.role === 'admin';
+      if(!approved && !legacyAdmin) return;
+      var r2 = u.roleV2 || (legacyAdmin ? 'admin' : 'viewer');
+      if(r2 !== 'super_admin' && r2 !== 'admin') return;
+      if(window.CampPerm && !CampPerm.can(u, 'master-data', 'v')) return;
+      CAN = (r2 === 'super_admin') && (!window.CampPerm || CampPerm.can(u, 'master-data', 'e'));
+      ALLOWED = true; TOPTABS.hidden = false;
+      if(location.hash === '#lists') showPanel('lists');
+    }).catch(function(){});
+  });
+})();
 </script>
 
   <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>

@@ -944,7 +944,7 @@ if(typeof module !== 'undefined') module.exports = CLParser;
 /* =====================  CAUSE LIST IMPORT (Final list)  ===================== */
 var CASES = [];                     // live copy of the shared Daily Case Entry records
 var LISTS = {                       // same defaults as Daily Case Entry; replaced by the live lists when they load
-  judges: ['Justice Yahya Afridi (Chief Justice)','Justice Mansoor Ali Shah','Justice Muneeb Akhtar','Justice Ameenuddin Khan','Justice Jamal Khan Mandokhel','Justice Muhammad Ali Mazhar','Justice Ayesha A. Malik','Justice Athar Minallah','Justice Hasan Azhar Rizvi','Justice Shahid Waheed','Justice Musarrat Hilali','Justice Irfan Saadat Khan','Justice Naeem Akhtar Afghan','Justice Shehzad Malik','Justice Aqeel Ahmed Abbasi','Justice Shahid Bilal Hassan','Justice Muhammad Hashim Kakar','Justice Shafi Siddiqui'],
+  judges: ['Justice Yahya Afridi (Chief Justice)','Justice Mansoor Ali Shah','Justice Munib Akhtar','Justice Aminuddin Khan','Justice Jamal Khan Mandokhail','Justice Muhammad Ali Mazhar','Justice Ayesha A. Malik','Justice Athar Minallah','Justice Hasan Azhar Rizvi','Justice Shahid Waheed','Justice Musarrat Hilali','Justice Irfan Saadat Khan','Justice Naeem Akhtar Afghan','Justice Shehzad Malik','Justice Aqeel Ahmed Abbasi','Justice Shahid Bilal Hassan','Justice Muhammad Hashim Kakar','Justice Shafi Siddiqui','Federal Construction Court','Justice Malik Shahzad Ahmad Khan','Justice Salahuddin Panhwar','Justice Ishtiaq Ibrahim','Justice Shakeel Ahmad','Justice Miangul Hassan Aurangzeb'],
   benches: ['I','II','III','IV','V','VI','VII','VIII','IX','X'],
   types: CaseMaster.types(),   // from the shared master table (case-master.js)
   natures: ['Criminal','Civil','Constitutional','Service','Tax','Property','Family','Banking','Other'],
@@ -1070,6 +1070,11 @@ function applyAutoOut(r){
   r.mine = false; r.autoOut = why; r.unc = []; r.confirmed = false;
   return true;
 }
+function inheritedNote(){
+  var a = ST.rows.filter(function(r){ return r.inherited && r.mine; }); if(!a.length) return '';
+  return '<br><b>' + bi('جڑے ہوئے کیس (اصل کیس کی وجہ سے شامل، تصدیق ضروری): ', 'Connected cases included with their main case (please confirm): ') + a.length + '</b> — ' +
+    a.map(function(r){ return '<bdi dir="ltr">' + esc(caseText(r)) + '</bdi>'; }).join('، ');
+}
 function autoOutNote(){
   var a = ST.rows.filter(function(r){ return r.autoOut && !r.mine; }); if(!a.length) return '';
   return '<br><b>' + bi('خود نکالے گئے (دوسرے صوبے/رجسٹری کے): ', 'Taken out automatically (other province/registry): ') + a.length + '</b> — ' +
@@ -1092,6 +1097,7 @@ function uncertainReasons(r){
   if(!r.title || /Enrl#|\bAOR\b|\bASC\b/.test(r.title + ' ' + (r.versus||''))) u.push('عنوان میں وکیل کا نام شامل ہو سکتا ہے / Title may include a lawyer name');
   /* kept on purpose (user's choice): even when a Punjab P.G. is listed, another province/agency name still gets the "please confirm" mark */
   if(/(P\.?\s?G\.?|Prosecutor General)[^,;]{0,12}(Sindh|Balochistan|KP|Khyber|Islamabad|ICT|AJK)|Special Prosecutor|\bANF\b/i.test(r.lawyers)) u.push('دوسرے صوبے/ادارے کا نام بھی موجود / Another province or agency also named');
+  if(r.inherited) u.push('جڑا ہوا کیس — اصل کیس کی وجہ سے شامل؛ اس کا اپنا پنجاب وکیل لسٹ میں نہیں / Connected case — included because the main case is ours; no Punjab lawyer listed on this one');
   if(r.autoOut) u.push('پہلے خود نکالا گیا تھا: ' + r.autoOut);
   if(!r.natText && !r.supp && !/M\.A\.|C\.M\./.test(r.type)) u.push('نوعیت نہیں ملی / Nature not found');
   return u;
@@ -1107,13 +1113,15 @@ function rowsFromParsed(list){
   order.forEach(function(k){
     var b = blocks[k];
     if(!b.some(function(e){ return e.pg; })) return;
+    var mainPg = b.some(function(e){ return !e.sub && e.pg; });   /* the main case of this block has our lawyer: its connected cases ("and (2)", "and (3)") are heard together with it */
     b.forEach(function(e){
       var cn = CLParser.parseCaseNo(e.caseno), sp = splitTitle(e.title);
       var r = newRow({
         iso:isoFromDmy(e.date), bench:e.bench, sitting:e.sitting, judges:e.judges, hid:e.hid, sr:e.sr || '', sub:e.sub || '',
         type:cn.type, no:cn.no, year:cn.year, main:e.main || '', title:sp.title, versus:sp.versus, natText:e.nature, section:e.section,
-        bt:e.bt, mine:!!e.pg, lawyers:e.lawyers, idx:e.idx
+        bt:e.bt, mine:!!e.pg || (mainPg && !!e.sub), lawyers:e.lawyers, idx:e.idx
       });
+      if(!e.pg && r.mine) r.inherited = true;   /* ours only because it is connected to a Punjab case in the same block */
       if(!cn.type && e.caseno){ r.type = e.caseno; }
       r.relief = mapRelief(e.nature, r.type);
       r.remarks = r.main ? 'IN ' + r.main : '';
@@ -1631,7 +1639,7 @@ async function readPdf(file, asSupp){
     var punjab = list.filter(function(e){ return e.pg; }).length;
     if(!list.length || !punjab){ showRead('❌ ' + bi('اس PDF میں پنجاب کا کوئی کیس نہیں ملا۔', 'No Punjab case was found in this PDF.'), 'err'); return; }
     ST.meta = meta; ST.fileName = file.name; ST.rows = rowsFromParsed(list); ST.offDay = {}; ST.offBench = {}; HIST = []; FUT = []; VIEW.supp = false; SL_CUR = null; renderSaved();
-    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list) + autoOutNote(), 'good');
+    showRead('✅ ' + esc(file.name) + '<br>' + bi(doc.numPages + ' صفحات، ' + list.length + ' اندراجات، پنجاب کے ' + punjab + ' کیس', doc.numPages + ' pages, ' + list.length + ' entries, ' + punjab + ' Punjab cases') + partyNote(list) + inheritedNote() + autoOutNote(), 'good');
     dropDraft(); changed();
     window.scrollTo(0, 0);
   }catch(err){

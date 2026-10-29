@@ -1,4 +1,4 @@
-/* camp-activity.js (v2) — the Camp Office portal's "Activity Log" recorder (read by the Super Admin in activity-log.html).
+/* camp-activity.js (v2) — the portal's "Activity Log" recorder (read by the Super Admin in activity-log.html).
    WHAT IS RECORDED (short facts only, in the Firestore collection `activityLog`):
      login / logout  — who signed in or out (index page),
      visit           — which page a signed-in user opened (at most once per page per 20 minutes),

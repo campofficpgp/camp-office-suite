@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Case Entry — Camp Office PG Punjab</title>
+<title>Daily Case Entry</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -443,7 +443,7 @@ html.embedded .app-shell{ min-height:0; }
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -2173,8 +2173,8 @@ html.embedded .app-shell{ min-height:0; }
   // Sign-off stamps at the bottom of the print sheet — left = prepared by, right = approved by.
   // Each stamp is a Name / Designation / Office Address block, editable (✎) or clearable (✕) as a
   // whole, right at print time (same pattern as the Weekly Court Roster tool).
-  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
-  var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: '' };
+  var stampRight = { name: '', designation: '', address: '' };
   /* The "Prepared by / Approved by" sign-off stamp is OPTIONAL: left out unless the box in the report preview is ticked. */
   var includeStamp = false;
   /* One shared setting for every system: the same key the other systems use (older separate key still read once, so nobody's choice is lost). */
@@ -2187,11 +2187,11 @@ html.embedded .app-shell{ min-height:0; }
   var editingStamp = null; // 'left' | 'right' | null
   function escapeHtml(s){ return escapeAttr(s); }
 
-  // Print letterhead heading — replaces the old fixed "از دفتر پراسیکیوٹر جنرل پنجاب / Office of
+  // Print letterhead heading — replaces the old fixed "
   // the Prosecutor General Punjab" text with the same office address used across the project, and
   // makes it editable in place (✎ edit / ↺ reset), same pattern as Weekly Roster / Case Notice.
-  var DEFAULT_HEADING_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
-  var DEFAULT_HEADING_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var DEFAULT_HEADING_EN = '';
+  var DEFAULT_HEADING_UR = '';
   var headingEn = DEFAULT_HEADING_EN;
   var headingUr = DEFAULT_HEADING_UR;
   var editingPrintField = null; // 'en' | 'ur' | null
@@ -2558,7 +2558,7 @@ html.embedded .app-shell{ min-height:0; }
       borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none},
       rows:[new D.TableRow({cantSplit:true, children:[stampCell(stampLeft, AL.LEFT), stampCell(stampRight, AL.RIGHT)]})]})); }
     var doc = new D.Document({
-      creator:'Camp Office, Prosecutor General Punjab', title:'Monthly Progress Report — ' + r.officer + ' — ' + r.monthName + ' ' + r.year,
+      creator:'', title:'Monthly Progress Report — ' + r.officer + ' — ' + r.monthName + ' ' + r.year,
       sections:[{
         properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:567, left:567, right:567}}},
         children:kids
@@ -2781,15 +2781,15 @@ html.embedded .app-shell{ min-height:0; }
     /* ---- footer on every page ---- */
     pages.forEach(function(pg, i){
       pg.drawLine({start:{x:M, y:30}, end:{x:PW - M, y:30}, thickness:0.6, color:BORDER});
-      pg.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:M, y:19, size:7, font:fR, color:GREYTX});
+      pg.drawText('', {x:M, y:19, size:7, font:fR, color:GREYTX});
       var mid = 'Generated ' + genDate, mw = fR.widthOfTextAtSize(mid, 7);
       pg.drawText(mid, {x:(PW - mw) / 2, y:19, size:7, font:fR, color:GREYTX});
       var pn = 'Page ' + (i + 1) + ' of ' + pages.length, pw0 = fB.widthOfTextAtSize(pn, 7.4);
       pg.drawText(pn, {x:PW - M - pw0, y:19, size:7.4, font:fB, color:NAVY});
     });
     doc.setTitle('Monthly Progress Report — ' + pdfSafe(r.officer) + ' — ' + r.monthName + ' ' + r.year);
-    doc.setCreator('Camp Office, Prosecutor General Punjab');
-    doc.setAuthor((r.clerk && r.clerk !== '—') ? r.clerk : 'Camp Office, Prosecutor General Punjab');
+    doc.setCreator('');
+    doc.setAuthor((r.clerk && r.clerk !== '—') ? r.clerk : '');
     return await doc.save();
   }
   async function downloadReportPdf(){
@@ -2982,7 +2982,7 @@ html.embedded .app-shell{ min-height:0; }
   renderThemePicker();
 
   /* ================= Firebase: login gate + live data =================
-     Same Firebase project and login as the Camp Office portal (index.html).
+     Same Firebase project and login as the portal (index.html).
      Data:  cases/{auto-id}            — one document per case entry
             monthlyReports/{yyyy-mm-officer} — saved monthly progress reports
             lookupLists/caseEntry      — dropdown lists (judges, officers, ...)
@@ -3122,7 +3122,7 @@ html.embedded .app-shell{ min-height:0; }
   });
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

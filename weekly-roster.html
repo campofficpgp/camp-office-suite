@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Weekly Court Roster — Camp Office PG Punjab</title>
+<title>Weekly Court Roster</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -367,7 +367,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -1130,8 +1130,8 @@ html,body{overflow-x:hidden;}
   // Sign-off stamps at the bottom of the print sheet — left = prepared by, right = approved by.
   // Each stamp is a Name / Designation / Office Address block, editable (✎) or clearable (✕) as a
   // whole. Only the FIRST printed page's stamps are editable, same reasoning as the letterhead.
-  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
-  var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: '' };
+  var stampRight = { name: '', designation: '', address: '' };
   var editingStamp = null; // 'left' | 'right' | null
   function stampBlockHtml(side, stamp, editable){
     if(editable && editingStamp === side){
@@ -1392,8 +1392,8 @@ html,body{overflow-x:hidden;}
 
   // Page heading (top bar) — editable in place (✎ edit, ↺ reset to default), separately for each
   // language, so a correction to the office name doesn't need touching the file.
-  var DEFAULT_HEADING_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
-  var DEFAULT_HEADING_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var DEFAULT_HEADING_EN = '';
+  var DEFAULT_HEADING_UR = '';
   var headingEn = DEFAULT_HEADING_EN;
   var headingUr = DEFAULT_HEADING_UR;
   var editingHeading = false;
@@ -1552,7 +1552,7 @@ html,body{overflow-x:hidden;}
   })();
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

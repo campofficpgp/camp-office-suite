@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camp Office Suite | کیمپ آفس سویٹ</title>
+<title>Digital Portal | ڈیجیٹل پورٹل</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -282,10 +282,10 @@ html,body{overflow-x:hidden;}
   <div class="row">
     <div class="stamp"><img src="logo-punjab-govt-print.png" alt="Punjab Government logo"></div>
     <div>
-      <h1><span data-ur>کیمپ آفس سویٹ</span><span data-en>Camp Office Suite</span></h1>
+      <h1><span data-ur>ڈیجیٹل پورٹل</span><span data-en>Digital Portal</span></h1>
       <div class="sub">
-        <span data-ur>پراسیکیوٹر جنرل پنجاب، کیمپ آفس، سپریم کورٹ آف پاکستان</span>
-        <span data-en>Prosecutor General Punjab — Camp Office, Supreme Court of Pakistan</span>
+        <span data-ur></span>
+        <span data-en></span>
       </div>
     </div>
   </div>
@@ -316,7 +316,7 @@ html,body{overflow-x:hidden;}
       <span class="ic">📨</span><span data-ur>کیس نوٹس سسٹم</span><span data-en>Case Notice System</span>
     </button>
     <button class="side-item" data-key="gallery" onclick="openItem('gallery')">
-      <span class="ic">🖼️</span><span data-ur>کیمپ آفس گیلری</span><span data-en>Camp Office Gallery</span>
+      <span class="ic">🖼️</span><span data-ur>گیلری</span><span data-en>Gallery</span>
     </button>
 
     <div class="side-group-label"><span data-ur>معلومات</span><span data-en>Information</span></div>
@@ -353,8 +353,8 @@ html,body{overflow-x:hidden;}
 </div>
 
 <footer>
-  <span data-ur>کیمپ آفس پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد — © افتخار احمد</span>
-  <span data-en>Camp Office Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad — © Iftikhar Ahmed</span>
+  <span data-ur>© افتخار احمد</span>
+  <span data-en>© Iftikhar Ahmed</span>
 </footer>
 
 <div class="modal-overlay" id="adModalOverlay">
@@ -396,7 +396,7 @@ var SYSTEMS = {
   dcms:    { ur:"ڈیلی کیس مینجمنٹ سسٹم", en:"Daily Case Management System", url:"daily-case-management-system/", ic:"🗂️",
              descUr:"Cases، Hearings، Results، ڈاک ان/آؤٹ، ٹوکن رجسٹر اور ملازمین کا روزانہ ریکارڈ۔",
              descEn:"Cases, Hearings, Results, Dak In/Out, Token Register, and daily employee records." },
-  gallery: { ur:"کیمپ آفس گیلری", en:"Camp Office Gallery", url:"camp-office-gallery/", ic:"🖼️",
+  gallery: { ur:"گیلری", en:"Gallery", url:"camp-office-gallery/", ic:"🖼️",
              descUr:"دفتری تصاویر کی گیلری اور ہر ملازم کا اپنا الگ پروفائل اکاؤنٹ۔",
              descEn:"Office photo gallery and each staff member's own separate profile account." },
   recsec:  { ur:"ریکارڈ سیکشن سسٹم", en:"Record Section System", url:"record-section-system/", ic:"📚",
@@ -431,10 +431,10 @@ function aboutHtml(){
     '<div id="announcementBannerSlot"></div>' +
     '<div class="hero-card">' +
       '<div class="hero-eyebrow">🕐 ' + greetingHtml() + '</div>' +
-      '<h2><span data-ur>کیمپ آفس ڈیجیٹل پورٹل میں خوش آمدید</span><span data-en>Welcome to the Camp Office Digital Portal</span></h2>' +
+      '<h2><span data-ur>ڈیجیٹل پورٹل میں خوش آمدید</span><span data-en>Welcome to the Digital Portal</span></h2>' +
       '<p class="lede">' +
-        '<span data-ur>پراسیکیوٹر جنرل پنجاب، کیمپ آفس کے تمام ڈیجیٹل سسٹمز اب ایک ہی جگہ سے دستیاب ہیں۔ بائیں طرف فہرست سے کوئی بھی سسٹم منتخب کریں — وہ فوراً اسی صفحے کے اندر کھل جائے گا، الگ ٹیب کھولنے کی ضرورت نہیں۔ ہر سسٹم اپنا الگ اور محفوظ لاگ اِن رکھتا ہے۔</span>' +
-        '<span data-en data-en-block>Every digital system used by the Camp Office, Prosecutor General Punjab is now available in one place. Pick any system from the list on the left — it opens instantly, right here on this page, with no extra tab to manage. Each system keeps its own separate, secure sign-in.</span>' +
+        '<span data-ur>تمام ڈیجیٹل سسٹمز اب ایک ہی جگہ سے دستیاب ہیں۔ بائیں طرف فہرست سے کوئی بھی سسٹم منتخب کریں — وہ فوراً اسی صفحے کے اندر کھل جائے گا، الگ ٹیب کھولنے کی ضرورت نہیں۔ ہر سسٹم اپنا الگ اور محفوظ لاگ اِن رکھتا ہے۔</span>' +
+        '<span data-en data-en-block>Every digital system is now available in one place. Pick any system from the list on the left — it opens instantly, right here on this page, with no extra tab to manage. Each system keeps its own separate, secure sign-in.</span>' +
       '</p>' +
       '<div class="stat-row">' +
         '<div class="stat-chip"><span class="num">5</span><span class="lbl"><span data-ur>ڈیجیٹل<br>سسٹمز</span><span data-en>Digital<br>Systems</span></span></div>' +
@@ -453,8 +453,8 @@ function contactHtml(){
       '<div class="hero-eyebrow">☎️ <span data-ur>رابطہ</span><span data-en>Contact Us</span></div>' +
       '<h2><span data-ur>ہم سے رابطہ کریں</span><span data-en>Get in Touch</span></h2>' +
       '<p class="lede">' +
-        '<span data-ur>کیمپ آفس، پراسیکیوٹر جنرل پنجاب<br>سپریم کورٹ آف پاکستان، اسلام آباد</span>' +
-        '<span data-en data-en-block>Camp Office, Prosecutor General Punjab<br>Supreme Court of Pakistan, Islamabad</span>' +
+        '<span data-ur></span>' +
+        '<span data-en data-en-block></span>' +
       '</p>' +
       '<p class="lede" style="margin-top:16px;color:#8a8a88;font-size:13px;">' +
         '<span data-ur>مزید رابطہ کی تفصیلات (فون/ای میل) جلد شامل کی جائیں گی۔</span>' +
@@ -789,7 +789,7 @@ function runFullBackup(){
 }
 
 /* ================= ADVERTISEMENTS (visible to everyone; add/edit/delete = Administrator only) =================
-   Same Cloudinary account/pattern as the Camp Office Gallery photo uploads (unsigned upload preset —
+   Same Cloudinary account/pattern as the Gallery photo uploads (unsigned upload preset —
    no API Secret anywhere in this file). Ad data (image URL, title, optional expiry date, optional link)
    is stored in a new shared Firestore collection "advertisements". An ad past its "show until" date is
    simply filtered out on load — nothing needs to be manually deleted when it expires. */

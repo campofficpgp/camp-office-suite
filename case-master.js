@@ -1,4 +1,4 @@
-/* case-master.js — ONE master table of Case Type -> Categories for the whole Camp Office portal.
+/* case-master.js — ONE master table of Case Type -> Categories for the whole portal.
    Used by Daily Case Entry, Case Notice, Cause List Import and Lookup, so every page offers exactly the
    same case types and the same categories for each type.
 

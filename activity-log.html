@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camp Office Portal — Activity Log</title>
+<title>Activity Log</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -218,7 +218,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -248,7 +248,7 @@ html,body{overflow-x:hidden;}
     </aside>
     <div class="main-col">
 <div class="topbar">
-  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Camp Office Digital Portal — Activity Log</span></div>
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Activity Log</span></div>
   <div class="right-controls">
     <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
     <div class="theme-switch-wrap">
@@ -303,7 +303,7 @@ html,body{overflow-x:hidden;}
   </div>
 
   <div class="print-only" id="printHead">
-    <h2 style="margin:0">Camp Office Prosecutor General Punjab — <span data-i18n="pageTitle">User Activity Log</span></h2>
+    <h2 style="margin:0"><span data-i18n="pageTitle">User Activity Log</span></h2>
     <div id="printSub" style="margin:4px 0 10px;font-size:11px"></div>
   </div>
 
@@ -375,7 +375,7 @@ var KEEP_DAYS = 90, PAGE_STEP = 100, TZ = "Asia/Karachi";
 
 var I18N = {
   en: {
-    brandTitle:"Camp Office Digital Portal — Activity Log",
+    brandTitle:"Activity Log",
     pageTitle:"User Activity Log",
     signInTitle:"Redirecting…", signInSub:"Please sign in from the main portal first — redirecting…",
     notAdminTitle:"Super Admin only", notAdminBody:"The Activity Log can only be opened by the Super Admin account.", btnPortal:"Back to the portal",
@@ -403,7 +403,7 @@ var I18N = {
     roleSuper:"Super Admin", roleAdmin:"Admin", roleDE:"Data Entry", roleViewer:"Viewer"
   },
   ur: {
-    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — سرگرمی لاگ",
+    brandTitle:"سرگرمی لاگ",
     pageTitle:"یوزرز کی سرگرمی کا لاگ",
     signInTitle:"منتقل کیا جا رہا ہے…", signInSub:"پہلے مرکزی پورٹل سے سائن اِن کریں — منتقل کیا جا رہا ہے…",
     notAdminTitle:"صرف سپر ایڈمن", notAdminBody:"سرگرمی لاگ صرف سپر ایڈمن اکاؤنٹ ہی کھول سکتا ہے۔", btnPortal:"پورٹل پر واپس",
@@ -725,8 +725,8 @@ async function buildXlsx(rows){
   var out = "", merges = [], rn = 0;
   function row(cells, ht){ rn++; out += '<row r="' + rn + '"' + (ht ? ' ht="' + ht + '" customHeight="1"' : "") + ">" + cells(rn) + "</row>"; return rn; }
   function merged(text, st, ht){ return row(function(r){ merges.push("A" + r + ":" + L + r); return cell("A" + r, text, st); }, ht); }
-  merged("Camp Office Prosecutor General Punjab", 1, 24);
-  merged("Supreme Court Of Pakistan, Islamabad", 2, 16);
+  merged("", 1, 24);
+  merged("", 2, 16);
   merged("USER ACTIVITY LOG — SIGN-INS, PAGE VISITS AND DATA CHANGES", 3, 22);
   merged("Generated " + fmtDT(new Date()) + "   |   Filters: " + filterTextEn(), 2, 18);
   row(function(){ return ""; }, 6);

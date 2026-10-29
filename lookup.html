@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lookup — Camp Office PG Punjab</title>
+<title>Lookup</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -461,7 +461,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -1069,9 +1069,9 @@ html,body{overflow-x:hidden;}
     throw err || new Error('library ' + name);
   }
   var LK_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var LK_HEAD_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
-  var LK_HEAD_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
-  var LK_ADDR = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
+  var LK_HEAD_EN = '';
+  var LK_HEAD_UR = '';
+  var LK_ADDR = '';
   var AR_RE = /[؀-ۿ]/;
   function xmlEsc(v){ return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function colLetter(i){ var s2 = ''; i++; while(i > 0){ var m = (i - 1) % 26; s2 = String.fromCharCode(65 + m) + s2; i = Math.floor((i - 1) / 26); } return s2; }
@@ -1338,15 +1338,15 @@ html,body{overflow-x:hidden;}
     var tot = pages.length;
     pages.forEach(function(pg, i){
       pg.drawLine({start:{x:MG, y:30}, end:{x:PW - MG, y:30}, thickness:0.6, color:BORDER});
-      pg.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:MG, y:19, size:7, font:fR, color:GREYTX});
+      pg.drawText('', {x:MG, y:19, size:7, font:fR, color:GREYTX});
       var mid = 'Generated ' + X.genDate, mw = fR.widthOfTextAtSize(mid, 7);
       pg.drawText(mid, {x:(PW - mw) / 2, y:19, size:7, font:fR, color:GREYTX});
       var pn = 'Page ' + (i + 1) + ' of ' + tot, pw0 = fB.widthOfTextAtSize(pn, 7.4);
       pg.drawText(pn, {x:PW - MG - pw0, y:19, size:7.4, font:fB, color:NAVY});
     });
     doc.setTitle(pdfSafe(X.title + ' — Lookup result — ' + X.genDate));
-    doc.setCreator('Camp Office, Prosecutor General Punjab');
-    doc.setAuthor((X.stamp && X.stamp.left.name && X.stamp.left.name.trim()) ? pdfSafe(X.stamp.left.name.trim()) : 'Camp Office, Prosecutor General Punjab');
+    doc.setCreator('');
+    doc.setAuthor((X.stamp && X.stamp.left.name && X.stamp.left.name.trim()) ? pdfSafe(X.stamp.left.name.trim()) : '');
     return await doc.save();
   }
 
@@ -1480,7 +1480,7 @@ html,body{overflow-x:hidden;}
       '<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="3" name="Public Prosecution Punjab" descr="Public Prosecution Punjab"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
       '<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+pW2+'" cy="'+cy0+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>' : '';
     drawing = dHead + (logo ? dGovt : '') + prosAnchor + '</xdr:wsDr>';
-    var footerTxt = '&amp;L&amp;"Arial,Regular"&amp;7Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad&amp;C&amp;"Arial,Regular"&amp;7Generated ' + xmlEsc(X.genDate) + '&amp;R&amp;"Arial,Bold"&amp;7Page &amp;P of &amp;N';
+    var footerTxt = '&amp;C&amp;"Arial,Regular"&amp;7Generated ' + xmlEsc(X.genDate) + '&amp;R&amp;"Arial,Bold"&amp;7Page &amp;P of &amp;N';
     var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="'+NS_MAIN+'" xmlns:r="'+NS_R+'">' +
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0" tabSelected="1"><pane ySplit="'+headRow+'" topLeftCell="A'+(headRow+1)+'" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A'+(headRow+1)+'" sqref="A'+(headRow+1)+'"/></sheetView></sheetViews>' +
       '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>'; }).join('') + '</cols>' +
@@ -2117,7 +2117,7 @@ html,body{overflow-x:hidden;}
   buildFilters('cases'); buildFilters('notices'); render('cases'); render('notices');
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

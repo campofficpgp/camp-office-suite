@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iftikhar Personal AI Assistant — Camp Office PG Punjab</title>
+<title>Iftikhar Personal AI Assistant</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -261,7 +261,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -344,7 +344,7 @@ html,body{overflow-x:hidden;}
 
   </div>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
 
 <script>
   var THEMES = [
@@ -455,7 +455,7 @@ html,body{overflow-x:hidden;}
   var HIST = [];                 // [{role:'user'|'ai', text:'...'}]
   var HIST_TURNS = 6;            // how many recent messages are re-sent with each question (fewer = faster)
   var HIST_CHARS = 6000;         // total size limit of the re-sent history
-  var STEER_EN = 'You assist a prosecution office in Pakistan (Camp Office, Prosecutor General Punjab). Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. If the user writes in Urdu or in Roman Urdu (Urdu typed in English letters), reply in proper Urdu script (اردو), keeping section numbers, court names and legal terms in English where natural; reply in English only when the user writes in English. Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
+  var STEER_EN = 'You assist a prosecution office in Pakistan. Answer general, office, legal and drafting questions with practical advice and short reasons. Say so when unsure or when a lawyer or official source is needed. If the user writes in Urdu or in Roman Urdu (Urdu typed in English letters), reply in proper Urdu script (اردو), keeping section numbers, court names and legal terms in English where natural; reply in English only when the user writes in English. Never invent case numbers, sections or citations. Never ask for or repeat CNIC or bank/account numbers.';
   var STYLE_FAST = 'Be brief: at most about 120 words, no preamble, unless the user asks for detail or a full draft.';
   var STYLE_FULL = 'Give a complete, well-organised answer. Finish every point; never stop mid-sentence.';
   var SPEED = (function(){ try{ return localStorage.getItem('aiSpeed') === 'fast' ? 'fast' : 'full'; }catch(e){ return 'full'; } })();

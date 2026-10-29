@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camp Office Portal — Backup Center</title>
+<title>Backup Center</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -167,7 +167,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -196,7 +196,7 @@ html,body{overflow-x:hidden;}
     </aside>
     <div class="main-col">
 <div class="topbar">
-  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Camp Office Digital Portal — Backup Center (Prototype)</span></div>
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">Backup Center (Prototype)</span></div>
   <div class="right-controls">
     <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
     <div class="theme-switch-wrap">
@@ -315,7 +315,7 @@ html,body{overflow-x:hidden;}
 
 <script>
 /* ============================================================
-   Firebase config — SAME project as the live Camp Office apps.
+   Firebase config — SAME project as the live apps.
    Backup/restore log entries are written to "appData_backupmeta"
    (the collection already reserved for this in Firestore Rules —
    admin/super_admin only, read and write).
@@ -331,10 +331,10 @@ var db = firebase.firestore();
 
 var I18N = {
   en: {
-    brandTitle:"Camp Office Digital Portal — Backup Center",
+    brandTitle:"Backup Center",
     protoNote:"🧪 Prototype — Stage 10 (Backup Center). Reads/writes the real shared database. Only Admin / Super Admin accounts can use it. Restore replaces shared data for everyone — always read the warning before confirming.",
-    signInTitle:"Sign In", signInSub:"Camp Office Digital Portal — Backup Center",
-    signInHint:"Use your existing Camp Office Portal account (the same one you use on cmpofficepgp.org).",
+    signInTitle:"Sign In", signInSub:"Backup Center",
+    signInHint:"Use your existing Digital Portal account (the same one you use on cmpofficepgp.org).",
     lblEmail:"Email", lblPassword:"Password", btnSignIn:"Sign In",
     notAdminTitle:"Admins Only",
     notAdminBody:"The Backup Center can only be used by an Administrator or Super Administrator account.",
@@ -376,10 +376,10 @@ var I18N = {
     restoreFileFromLabel:"Backup file date:"
   },
   ur: {
-    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل — بیک اپ سینٹر",
+    brandTitle:"بیک اپ سینٹر",
     protoNote:"🧪 آزمائشی نمونہ — مرحلہ 10 (Backup Center)۔ یہ صفحہ اصل مشترکہ ڈیٹا بیس پڑھ اور لکھ سکتا ہے۔ صرف Admin/Super Admin اکاؤنٹ استعمال کر سکتے ہیں۔ Restore سب کا مشترکہ ڈیٹا بدل دیتا ہے — تصدیق سے پہلے انتباہ ضرور پڑھ لیں۔",
-    signInTitle:"لاگ اِن", signInSub:"کیمپ آفس ڈیجیٹل پورٹل — بیک اپ سینٹر",
-    signInHint:"اپنا موجودہ Camp Office Portal اکاؤنٹ استعمال کریں (وہی جو cmpofficepgp.org پر استعمال ہوتا ہے)۔",
+    signInTitle:"لاگ اِن", signInSub:"بیک اپ سینٹر",
+    signInHint:"اپنا موجودہ Digital Portal اکاؤنٹ استعمال کریں (وہی جو cmpofficepgp.org پر استعمال ہوتا ہے)۔",
     lblEmail:"ای میل", lblPassword:"پاس ورڈ", btnSignIn:"لاگ اِن کریں",
     notAdminTitle:"صرف ایڈمن کے لیے",
     notAdminBody:"Backup Center صرف Administrator یا Super Administrator اکاؤنٹ استعمال کر سکتا ہے۔",

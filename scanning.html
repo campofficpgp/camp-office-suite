@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scanning Desk — Camp Office PG Punjab</title>
+<title>Scanning Desk</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -578,7 +578,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -1132,7 +1132,7 @@ function renderList(reset){
   var q = $('qBox').value.trim();
   var tot = SCANS.reduce(function(n, s){ return n + (s.fileSize || 0); }, 0);
   $('stats').innerHTML = '<span class="cl-chip">Total / کل <b>' + SCANS.length + '</b></span><span class="cl-chip ok">Shown / نتائج <b>' + list.length + '</b></span><span class="cl-chip">Stored / ذخیرہ <b>' + mb(tot) + '</b></span>';
-  $('printTitle').innerHTML = '<h1>Scanning Desk — Scanned Documents</h1><div>Camp Office, Prosecutor General Punjab &nbsp;|&nbsp; Documents: ' + list.length + ' &nbsp;|&nbsp; Prepared: ' + dmy(todayIso()) + '</div>';
+  $('printTitle').innerHTML = '<h1>Scanning Desk — Scanned Documents</h1><div>Documents: ' + list.length + ' &nbsp;|&nbsp; Prepared: ' + dmy(todayIso()) + '</div>';
   if(!list.length){
     $('listBox').innerHTML = '<div class="cl-empty">' + (SCANS.length ? bi('کوئی دستاویز نہیں ملی۔ تلاش یا فلٹر بدلیں۔', 'No document matches. Change the search or filters.') : bi('ابھی کوئی اسکین محفوظ نہیں۔ «نئی اسکین» دبائیں۔', 'No scans saved yet. Press “New scan”.')) + '</div>';
     $('btnMore').style.display = 'none'; return;
@@ -1950,7 +1950,7 @@ async function buildPdf(){
       var page = out.addPage([pw, ph]); page.drawImage(img, {x:0, y:0, width:pw, height:ph}); n++;
     }
   }
-  out.setTitle('Scanned document'); out.setProducer('Camp Office — Scanning Desk');
+  out.setTitle('Scanned document'); out.setProducer('Scanning Desk');
   SC.builtPdf = { bytes: await out.save(), pages:n };
   return SC.builtPdf;
 }
@@ -2211,7 +2211,7 @@ async function aiCall(question){
 }
 function aiPrompt(text, lang){
   if(text.length > 24000) text = text.slice(0, 8000) + '\n[...]\n' + text.slice(-16000);
-  return 'You are helping an officer of the Prosecutor General Punjab camp office (Supreme Court of Pakistan) prepare an internal note. Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes).\n' +
+  return 'You are helping an officer of a prosecution office prepare an internal note. Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes).\n' +
     'From the State\'s (prosecution\'s) point of view, write a very short opinion on whether this judgment is a FIT case for the State to assail (petition for leave to appeal / review) or NOT FIT, with the main reason.\n' +
     'Rules: use only facts that are in the text; never invent names, section numbers, dates or citations; if the text is too unclear, answer UNSURE.\n' +
     'Answer in exactly this format and nothing else:\nOPINION: <one or two sentences, at most 45 words>\nRECOMMENDATION: <FIT or NOT FIT or UNSURE>\nREASONS: <up to three short reasons separated by semicolons>\n' +
@@ -2266,7 +2266,7 @@ async function aiDraft(){
 /* ---------- AI: two short lines for Inspection Proforma B "grounds of acquittal / conversion" (officer decides; nothing is filled until "Use") ---------- */
 function aiGPrompt(text, lang){
   if(text.length > 24000) text = text.slice(0, 8000) + '\n[...]\n' + text.slice(-16000);
-  return 'You are helping an officer of the Prosecutor General Punjab camp office (Supreme Court of Pakistan) fill an internal inspection form (Proforma B: "major and material grounds of acquittal or conversion"). Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes) in which the accused was acquitted, or a sentence (for example death) was converted to a lesser sentence.\n' +
+  return 'You are helping an officer of a prosecution office fill an internal inspection form (Proforma B: "major and material grounds of acquittal or conversion"). Below is the text of a judgment or order (scanned with OCR, so it may contain mistakes) in which the accused was acquitted, or a sentence (for example death) was converted to a lesser sentence.\n' +
     'State the major and material grounds on which the court acquitted or converted the sentence, as given in the judgment itself.\n' +
     'Rules: use only facts that are in the text; never invent names, section numbers, dates or citations; do not give the case number; if the text does not show clear grounds, answer exactly the single word UNSURE.\n' +
     'Answer with exactly TWO short lines, one separate ground per line, each line at most 22 words, no numbering, no bullets, no heading, nothing else.\n' +
@@ -2323,7 +2323,7 @@ async function sliceRecord(rec){
   for(i = rec.from; i <= last; i++) idx.push(i);
   if(!idx.length) return;
   var cp = await out.copyPages(src, idx); cp.forEach(function(p){ out.addPage(p); });
-  out.setProducer('Camp Office — Scanning Desk');
+  out.setProducer('Scanning Desk');
   var bytes = await out.save();
   clearParts(true);
   PARTS.push(mkPart({kind:'pdf', name:'Judgment ' + (SC.qi + 1) + ' (pages ' + (rec.from + 1) + '–' + (rec.to + 1) + ').pdf', buf:bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), pages:idx.length, size:bytes.length}));
@@ -2554,7 +2554,7 @@ async function buildListPdf(rows){
     if(pageNo === 1){
       page.drawRectangle({x:0, y:H-52, width:W, height:52, color:navy3});
       page.drawText('Scanning Desk - Scanned Documents', {x:M, y:H-26, size:15, font:bold, color:P.rgb(1,1,1)});
-      page.drawText(san('Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso())), {x:M, y:H-42, size:8.5, font:font, color:P.rgb(0.9,0.93,0.97)});
+      page.drawText(san('Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso())), {x:M, y:H-42, size:8.5, font:font, color:P.rgb(0.9,0.93,0.97)});
       y = H - 52 - 14;
     }
     var x = M;
@@ -2574,7 +2574,7 @@ async function buildListPdf(rows){
     y -= h;
   });
   var pages = doc.getPages();
-  pages.forEach(function(p, i){ p.drawText('Page ' + (i+1) + ' of ' + pages.length, {x:W-M-60, y:14, size:7.5, font:font, color:grey}); p.drawText('(c) Iftikhar Ahmed - Camp Office, PG Punjab', {x:M, y:14, size:7.5, font:font, color:grey}); });
+  pages.forEach(function(p, i){ p.drawText('Page ' + (i+1) + ' of ' + pages.length, {x:W-M-60, y:14, size:7.5, font:font, color:grey}); p.drawText('(c) Iftikhar Ahmed', {x:M, y:14, size:7.5, font:font, color:grey}); });
   return await doc.save();
 }
 /* Word (docx) */
@@ -2588,7 +2588,7 @@ async function buildListDocx(rows){
   var docu = new D.Document({ sections:[{ properties:{ page:{ size:{ width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE }, margin:{top:700,bottom:700,left:600,right:600} } },
     children:[
       new D.Paragraph({ children:[ new D.TextRun({ text:'Scanning Desk - Scanned Documents', bold:true, size:32, color:'1B3F63', font:F }) ] }),
-      new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:'Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), size:18, color:'666666', font:F }) ] }),
+      new D.Paragraph({ spacing:{after:160}, children:[ new D.TextRun({ text:'Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), size:18, color:'666666', font:F }) ] }),
       table
     ] }] });
   return await D.Packer.toBlob(docu);
@@ -2602,7 +2602,7 @@ async function buildListXlsx(rows){
   var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' +
     widths.map(function(w, i){ return '<col min="' + (i+1) + '" max="' + (i+1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols><sheetData>' +
     '<row r="1" ht="24" customHeight="1">' + c('A1', 'Scanning Desk - Scanned Documents', 1) + '</row>' +
-    '<row r="2">' + c('A2', 'Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan   |   Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), 2) + '</row>' +
+    '<row r="2">' + c('A2', 'Documents: ' + rows.length + '   |   Prepared: ' + dmy(todayIso()), 2) + '</row>' +
     '<row r="3">' + EX_HEAD.map(function(h, i){ return c(colLetter(i) + '3', h, 3); }).join('') + '</row>' +
     rows.map(function(r, ri){ var n = ri + 4; return '<row r="' + n + '">' + r.map(function(v, i){ return c(colLetter(i) + n, v, 4); }).join('') + '</row>'; }).join('') +
     '</sheetData><autoFilter ref="A3:' + colLetter(EX_HEAD.length - 1) + (rows.length + 3) + '"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
@@ -2659,7 +2659,7 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

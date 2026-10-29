@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Case Notice — Camp Office PG Punjab</title>
+<title>Case Notice</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -355,7 +355,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -460,7 +460,7 @@ html,body{overflow-x:hidden;}
           <div class="field"><label data-en="Notice Date" data-ur="نوٹس کی تاریخ">Notice Date</label><input type="date" id="nDate"></div>
           <div class="field"><label data-en="Diary No." data-ur="ڈائری نمبر">Diary No. <span style="font-weight:400; color:var(--muted); font-size:10.5px;" data-en="(optional — printed after the notice number)" data-ur="(اختیاری — نوٹس نمبر کے آخر میں چھپے گا)">(optional — printed after the notice number)</span></label><input type="text" id="nDiaryNo" autocomplete="off" maxlength="20" placeholder="e.g. 12345"></div>
           <div class="field"><label data-en="Signatory Name" data-ur="دستخط کنندہ کا نام">Signatory Name <span class="manage-link" onclick="openListManage('signatory')" data-en="(+ Add/Edit)" data-ur="(+ شامل/ترمیم)">(+ Add/Edit)</span></label><select id="nSignatory"></select></div>
-          <div class="field"><label data-en="Signatory Designation" data-ur="دستخط کنندہ کا عہدہ">Signatory Designation</label><input type="text" id="nDesig" placeholder="e.g. Focal Person Punjab Police, Supreme Court Islamabad"></div>
+          <div class="field"><label data-en="Signatory Designation" data-ur="دستخط کنندہ کا عہدہ">Signatory Designation</label><input type="text" id="nDesig" placeholder="e.g. Focal Person Punjab Police"></div>
           <div class="field"><label data-en="Mobile No" data-ur="موبائل نمبر">Mobile No</label><input type="text" id="nMobile" placeholder="e.g. 03009769052"></div>
           <div class="field"><label data-en="Office No" data-ur="آفس نمبر">Office No</label><input type="text" id="nOffice" placeholder="e.g. 0519202466"></div>
         </div>
@@ -579,7 +579,7 @@ html,body{overflow-x:hidden;}
   var CASE_TYPES = CaseMaster.types();
   var BENCH_NOS = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
   var DISTRICTS = ['Attock','Bahawalnagar','Bahawalpur','Bhakkar','Chakwal','Chiniot','Dera Ghazi Khan','Faisalabad','Gujranwala','Gujrat','Hafizabad','Jhang','Jhelum','Kasur','Khanewal','Khushab','Lahore','Layyah','Lodhran','Mandi Bahauddin','Mianwali','Multan','Muzaffargarh','Narowal','Nankana Sahib','Okara','Pakpattan','Rahim Yar Khan','Rajanpur','Rawalpindi','Sahiwal','Sargodha','Sheikhupura','Sialkot','Toba Tek Singh','Vehari'];
-  var SIGNATORIES = ['Rashid Mahmood — Focal Person Punjab Police, Supreme Court Islamabad'];
+  var SIGNATORIES = ['Rashid Mahmood — Focal Person Punjab Police'];
 
   // Tehsils grouped by District — starter lists, please verify/correct via each District's (+ Add/Edit) on the Tehsil field.
   var DISTRICT_TEHSILS = {
@@ -1177,15 +1177,15 @@ html,body{overflow-x:hidden;}
   // block, at the user's request, so this same feature appears wherever anything is printed
   // across the project. Each stamp is a Name / Designation / Office Address block, editable
   // (✎) or clearable (✕) as a whole, right at preview/print time.
-  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
-  var stampRight = { name: '', designation: '', address: 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad' };
+  var stampLeft = { name: 'Iftikhar Ahmed', designation: 'Junior Clerk', address: '' };
+  var stampRight = { name: '', designation: '', address: '' };
   var editingStamp = null; // 'left' | 'right' | null
 
-  // Notice letterhead heading — replaces the old fixed "از دفتر پراسیکیوٹر جنرل پنجاب / Office of
+  // Notice letterhead heading — replaces the old fixed "
   // the Prosecutor General Punjab" text with the same office address used across the project, and
   // makes it editable in place (✎ edit / ↺ reset), same pattern as the other camp office tools.
-  var DEFAULT_HEADING_EN = 'Camp Office Prosecutor General Punjab\nSupreme Court Of Pakistan\nIslamabad';
-  var DEFAULT_HEADING_UR = 'کیمپ آفس پراسیکیوٹر جنرل پنجاب\nسپریم کورٹ آف پاکستان\nاسلام آباد';
+  var DEFAULT_HEADING_EN = '';
+  var DEFAULT_HEADING_UR = '';
   var headingEn = DEFAULT_HEADING_EN;
   var headingUr = DEFAULT_HEADING_UR;
   var editingPrintField = null; // 'en' | 'ur' | null
@@ -1213,8 +1213,8 @@ html,body{overflow-x:hidden;}
   // DEFAULT_BODY is what is printed unless an admin has saved their own wording (stored once for the whole
   // office in Firestore lookupLists/caseNoticeText; "✎ Edit notice paragraph" in the preview).
   var DEFAULT_BODY = {
-    ur: 'مقدمہ بالا کیس مورخہ {date} کو سپریم کورٹ آف پاکستان اسلام آباد میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے کیمپ آفس پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد میں حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔',
-    en: 'The above-mentioned case is fixed for hearing before the Supreme Court of Pakistan, Islamabad on {date}. Therefore, the Investigation Officer is directed to bring the complete police record of this case and to appear at the Camp Office Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad at 8:00 a.m., and also to ensure that the complainant of the case is served in person.'
+    ur: 'مقدمہ بالا کیس مورخہ {date} کو سپریم کورٹ آف پاکستان میں زیرِ سماعت ہے، لہٰذا انویسٹی گیشن کو ہدایت کی جاتی ہے کہ اس کیس کا مکمل پولیس ریکارڈ لے کر صبح 8:00 بجے حاضر آئیں، نیز مدعیٔ مقدمہ کی تعمیل اصالتاً کروائی جائے۔',
+    en: 'The above-mentioned case is fixed for hearing before the Supreme Court of Pakistan on {date}. Therefore, the Investigation Officer is directed to bring the complete police record of this case and to appear at 8:00 a.m., and also to ensure that the complainant of the case is served in person.'
   };
   var customBody = { ur: '', en: '' };
   var editingBody = false;
@@ -1665,7 +1665,7 @@ html,body{overflow-x:hidden;}
   renderThemePicker();
 
   /* ================= Firebase: login gate + live data =================
-     Same Firebase project and login as the Camp Office portal (index.html).
+     Same Firebase project and login as the portal (index.html).
      Data:  caseNotices/{auto-id}      — one document per notice
             lookupLists/caseNotice     — dropdown lists (districts, tehsils, stations, ...)
      Roles (users/{uid}.roleV2): viewer = read only, data_entry = add/edit,
@@ -1782,7 +1782,7 @@ html,body{overflow-x:hidden;}
   });
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

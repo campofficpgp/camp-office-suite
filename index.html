@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camp Office Suite — Prosecutor General Punjab</title>
+<title>Digital Portal</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -345,7 +345,7 @@ html,body{overflow-x:hidden;}
 <div class="topbar">
   <div class="brand">
     <img class="topbar-logo" src="logo-punjab-govt.png" alt="Government of Punjab">
-    <span data-i18n="brandTitle">Camp Office Digital Portal</span>
+    <span data-i18n="brandTitle">Digital Portal</span>
   </div>
   <div style="display:flex;gap:10px;align-items:center;">
     <select id="langSelect">
@@ -374,18 +374,18 @@ html,body{overflow-x:hidden;}
       <div class="auth-brand-top">
         <img class="auth-seal" src="logo-punjab-govt.png" alt="Government of Punjab">
         <div>
-          <div class="auth-org" lang="ur">دفتر پراسیکیوٹر جنرل پنجاب</div>
-          <div class="auth-org-en">Camp Office · Prosecutor General Punjab</div>
+          <div class="auth-org" lang="ur"></div>
+          <div class="auth-org-en"></div>
         </div>
       </div>
-      <h2 class="auth-brand-title" data-i18n="brandTitle">Camp Office Digital Portal</h2>
+      <h2 class="auth-brand-title" data-i18n="brandTitle">Digital Portal</h2>
       <p class="auth-tagline" data-i18n="authTagline">Secure access for authorised office staff only.</p>
       <ul class="auth-points">
         <li><span class="ap-ic"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span data-i18n="authPt1">Only approved accounts can open the system.</span></li>
         <li><span class="ap-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span data-i18n="authPt2">Automatic sign-out after 30 minutes of inactivity.</span></li>
         <li><span class="ap-ic"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span><span data-i18n="authPt3">Accounts are created only by the office administrator.</span></li>
       </ul>
-      <div class="auth-brand-foot">Supreme Court of Pakistan, Islamabad</div>
+      <div class="auth-brand-foot"></div>
     </aside>
 
     <section class="auth-main">
@@ -511,7 +511,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span data-en="Camp Office" data-ur="کیمپ آفس">Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span data-en="" data-ur=""></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -748,7 +748,7 @@ html,body{overflow-x:hidden;}
       </div>
 
       <div class="app-footer">
-        <div data-en="Camp Office Prosecutor General Punjab — Supreme Court of Pakistan, Islamabad" data-ur="کیمپ آفس پراسیکیوٹر جنرل پنجاب — سپریم کورٹ آف پاکستان، اسلام آباد">Camp Office Prosecutor General Punjab — Supreme Court of Pakistan, Islamabad</div>
+        <div data-en="" data-ur=""></div>
         <div>© Iftikhar Ahmed</div>
       </div>
     </div>
@@ -757,7 +757,7 @@ html,body{overflow-x:hidden;}
 
 <script>
 /* ============================================================
-   Firebase config — SAME project as the live Camp Office apps.
+   Firebase config — SAME project as the live apps.
    ============================================================ */
 var firebaseConfig = {
   apiKey: "AIzaSyCWl8dktUjAGF_JLMuZun2w3g_xnX3WBkU",
@@ -774,8 +774,8 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 var I18N = {
   en: {
-    brandTitle:"Camp Office Digital Portal",
-    signInTitle:"Sign In", signInSub:"Camp Office Digital Portal",
+    brandTitle:"Digital Portal",
+    signInTitle:"Sign In", signInSub:"Digital Portal",
     lblEmail:"Email", lblPassword:"Password", lblPassword2:"Confirm Password",
     btnSignIn:"Sign In", noAccount:"Don't have an account?", createOne:"Create one",
     forgotPassword:"Forgot password?",
@@ -805,8 +805,8 @@ var I18N = {
     notifTitle:"Notifications", notifMarkRead:"Mark all read"
   },
   ur: {
-    brandTitle:"کیمپ آفس ڈیجیٹل پورٹل",
-    signInTitle:"لاگ اِن", signInSub:"کیمپ آفس ڈیجیٹل پورٹل",
+    brandTitle:"ڈیجیٹل پورٹل",
+    signInTitle:"لاگ اِن", signInSub:"ڈیجیٹل پورٹل",
     lblEmail:"ای میل", lblPassword:"پاس ورڈ", lblPassword2:"پاس ورڈ دوبارہ لکھیں",
     btnSignIn:"لاگ اِن کریں", noAccount:"اکاؤنٹ نہیں ہے؟", createOne:"نیا بنائیں",
     forgotPassword:"پاسورڈ بھول گئے؟",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inspection Desk — Camp Office PG Punjab</title>
+<title>Inspection Desk</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -508,7 +508,7 @@ table.pf-t td.sm div{ line-height:1.35; }
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -708,7 +708,7 @@ var CFG = { assign:{}, ac:{ name:'', designation:'Duty Clerk' }, chairman:'Chair
 var CTX = { user:null, canEnter:false, canDel:false, canManage:false, canExport:false, signClerk:false, signPros:false, signInch:false };   /* all from the user's ticks (camp-perm.js) */
 var UI = { tab:'overview', ins:'', officer:'', rSrc:'', rQ:'' };
 var ERRS = {};
-var OFFICE_NAME = 'PGP CAMP OFFICE, SUPREME COURT OF PAKISTAN';
+var OFFICE_NAME = '';
 
 function esc(v){ return String(v==null ? '' : v).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function $(id){ return document.getElementById(id); }
@@ -2038,7 +2038,7 @@ async function buildExpPdf(sheets){
     var top = y;
     if(emb) page.drawImage(emb, {x:M, y:y - 40, width:40 * PUNJAB_LOGO_RATIO, height:40});
     if(pemb){ var pph = 40, ppw = pph * pemb.width / pemb.height; page.drawImage(pemb, {x:PW - M - ppw, y:y - pph, width:ppw, height:pph}); }
-    var h1 = 'Camp Office Prosecutor General Punjab', h2 = 'Supreme Court of Pakistan, Islamabad';
+    var h1 = '', h2 = '';
     txt(h1, {x:(PW - FB.widthOfTextAtSize(h1, 14.5)) / 2, y:y - 14, size:14.5, font:FB, color:navy});
     txt(h2, {x:(PW - F.widthOfTextAtSize(h2, 9.5)) / 2, y:y - 28, size:9.5, font:F, color:grey});
     y = top - 46;
@@ -2143,11 +2143,11 @@ async function buildExpPdf(sheets){
   var gen = expToday();
   pages.forEach(function(p, i){
     p.drawLine({start:{x:M, y:28}, end:{x:PW - M, y:28}, thickness:.6, color:lineC});
-    p.drawText('Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad', {x:M, y:16, size:7, font:F, color:grey});
+    p.drawText('', {x:M, y:16, size:7, font:F, color:grey});
     var mid = 'Generated ' + gen; p.drawText(mid, {x:(PW - F.widthOfTextAtSize(mid, 7)) / 2, y:16, size:7, font:F, color:grey});
     var s = 'Page ' + (i + 1) + ' of ' + pages.length; p.drawText(s, {x:PW - M - FB.widthOfTextAtSize(s, 7.4), y:16, size:7.4, font:FB, color:navy});
   });
-  doc.setTitle(pdfSafe(expSubject())); doc.setCreator('Camp Office, Prosecutor General Punjab'); doc.setSubject('Yearly inspection proformas');
+  doc.setTitle(pdfSafe(expSubject())); doc.setCreator(''); doc.setSubject('Yearly inspection proformas');
   return await doc.save();
 }
 
@@ -2155,11 +2155,11 @@ async function buildExpPdf(sheets){
 function expHtml(sheets){
   var gen = expToday();
   function cell(c, tag){ return c; }
-  var h = '<style>@page{ size:A4 landscape; margin:9mm 9mm 15mm; @bottom-left{ content:"Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad"; font:7pt Arial; color:#666 } @bottom-center{ content:"Generated ' + gen + '"; font:7pt Arial; color:#666 } @bottom-right{ content:"Page " counter(page) " of " counter(pages); font:bold 7.4pt Arial; color:#1B3F63 } }</style>';
+  var h = '<style>@page{ size:A4 landscape; margin:9mm 9mm 15mm; @bottom-left{ content:""; font:7pt Arial; color:#666 } @bottom-center{ content:"Generated ' + gen + '"; font:7pt Arial; color:#666 } @bottom-right{ content:"Page " counter(page) " of " counter(pages); font:bold 7.4pt Arial; color:#1B3F63 } }</style>';
   sheets.forEach(function(sh){
     var sum = sh.widths.reduce(function(a, b){ return a + b; }, 0), nCols = sh.widths.length;
     var fsz = nCols >= 10 ? '8.4pt' : nCols >= 8 ? '8.8pt' : '9.4pt';
-    h += '<section class="pa-sheet"><div class="pa-lh"><div class="pa-em">' + expEmblemSvg() + '</div><div class="pa-lt"><div class="a">Camp Office Prosecutor General Punjab</div><div class="b">Supreme Court of Pakistan, Islamabad</div></div></div><div class="pa-rule"></div>';
+    h += '<section class="pa-sheet"><div class="pa-lh"><div class="pa-em">' + expEmblemSvg() + '</div><div class="pa-lt"><div class="a"></div><div class="b"></div></div></div><div class="pa-rule"></div>';
     h += '<div class="pa-ban"><span>' + esc(sh.title) + '</span><small>' + esc(sh.sub) + '</small></div>';
     sh.meta.forEach(function(m){ h += '<div class="pa-meta">' + esc(m[0]) + ': <b>' + esc(m[1]) + '</b></div>'; });
     if(sh.heading) h += '<div class="pa-head">' + esc(sh.heading) + '</div>';
@@ -2241,8 +2241,8 @@ async function buildExpXlsx(sheets){
       if(c1 > c0) merges.push(colL(c0) + rr + ':' + colL(c1) + rr);
     }
     /* letterhead */
-    var r1 = row(24); merged(r1, 0, nCols - 1, 'Camp Office Prosecutor General Punjab', st({b:1, sz:15, c:NAVY, a:'c', v:'center'}));
-    var r2 = row(18); merged(r2, 0, nCols - 1, 'Supreme Court of Pakistan, Islamabad', st({sz:10, c:GREY, a:'c', v:'center'}));
+    var r1 = row(24); merged(r1, 0, nCols - 1, '', st({b:1, sz:15, c:NAVY, a:'c', v:'center'}));
+    var r2 = row(18); merged(r2, 0, nCols - 1, '', st({sz:10, c:GREY, a:'c', v:'center'}));
     var r3 = row(5); merged(r3, 0, nCols - 1, '', st({bd:'gold'}));
     var r4 = row(8); void r4;
     /* banner */
@@ -2330,7 +2330,7 @@ async function buildExpXlsx(sheets){
       '<sheetFormatPr defaultRowHeight="15"/><cols>' + cw.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
       '<sheetData>' + sd + '</sheetData>' + (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') +
       '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.65" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
-      '<headerFooter><oddFooter>&amp;L&amp;8Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad&amp;C&amp;8Generated ' + xe(expToday()) + '&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter>' +
+      '<headerFooter><oddFooter>&amp;C&amp;8Generated ' + xe(expToday()) + '&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter>' +
       ((emb || pI) ? '<drawing r:id="rId1"/>' : '') + '</worksheet>');
   });
   var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
@@ -2402,8 +2402,8 @@ async function buildExpDocx(sheets){
     function spanW(c0, cs){ var w = 0; for(var i = c0; i < c0 + cs; i++) w += W[i]; return w; }
     var kids = [];
     /* letterhead */
-    var lhText = [new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('Camp Office Prosecutor General Punjab', {size:30, bold:true, color:NAVY})]}),
-      new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('Supreme Court of Pakistan, Islamabad', {size:19, color:'666666'})]})];
+    var lhText = [new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('', {size:30, bold:true, color:NAVY})]}),
+      new D.Paragraph({alignment:D.AlignmentType.CENTER, spacing:{after:0}, children:[run('', {size:19, color:'666666'})]})];
     var lhCells = [tcell(emb ? [new D.Paragraph({children:[new D.ImageRun({type:'png', data:emb, transformation:{width:Math.round(48 * PUNJAB_LOGO_RATIO), height:48}})]})] : [], 1100, {borders:{top:none, bottom:none, left:none, right:none}}),
       tcell(lhText, PWT - 2200, {borders:{top:none, bottom:none, left:none, right:none}, va:D.VerticalAlign.CENTER}), tcell(pI ? [new D.Paragraph({alignment:D.AlignmentType.RIGHT, children:[new D.ImageRun({type:'png', data:pI.bytes, transformation:{width:Math.round(48 * pI.w / pI.h), height:48}})]})] : [], 1100, {borders:{top:none, bottom:none, left:none, right:none}})];
     kids.push(new D.Table({rows:[new D.TableRow({children:lhCells})], width:{size:PWT, type:D.WidthType.DXA}, columnWidths:[1100, PWT - 2200, 1100], layout:D.TableLayoutType.FIXED,
@@ -2455,11 +2455,11 @@ async function buildExpDocx(sheets){
       properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:760, left:567, right:567, footer:330}}},
       footers:{default:new D.Footer({children:[new D.Paragraph({tabStops:[{type:D.TabStopType.CENTER, position:Math.round(PWT / 2)}, {type:D.TabStopType.RIGHT, position:PWT}],
         border:{top:{style:D.BorderStyle.SINGLE, size:4, color:'B8B8B8', space:3}},
-        children:[new D.TextRun({children:['Camp Office Prosecutor General Punjab  |  Supreme Court of Pakistan, Islamabad\tGenerated ' + expToday() + '\tPage ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:14, color:'666666'})]})]})},
+        children:[new D.TextRun({children:['\tGenerated ' + expToday() + '\tPage ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:14, color:'666666'})]})]})},
       children:kids
     });
   });
-  var doc = new D.Document({creator:'Camp Office, Prosecutor General Punjab', title:expSubject(), description:'Yearly inspection proformas', sections:sections});
+  var doc = new D.Document({creator:'', title:expSubject(), description:'Yearly inspection proformas', sections:sections});
   return await D.Packer.toBlob(doc);
 }
 
@@ -2862,7 +2862,7 @@ renderAll();
 
 </script>
 
-  <div class="app-footer">© Iftikhar Ahmed — Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad</div>
+  <div class="app-footer">© Iftikhar Ahmed</div>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>

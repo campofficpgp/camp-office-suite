@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camp Office Portal — About</title>
+<title>About</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -152,7 +152,7 @@ html,body{overflow-x:hidden;}
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span>Camp Office</span></div>
+        <div class="sidebar-brand"><img src="logo-punjab-govt.png" alt="" style="height:24px;width:auto;"> <span></span></div>
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
@@ -181,7 +181,7 @@ html,body{overflow-x:hidden;}
     </aside>
     <div class="main-col">
 <div class="topbar">
-  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">About — Camp Office Digital Portal</span></div>
+  <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-i18n="brandTitle">About</span></div>
   <div class="right-controls">
     <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
     <div class="theme-switch-wrap">
@@ -255,20 +255,20 @@ var db = firebase.firestore();
 
 var DUMMY = {
   title_en:"About Us", title_ur:"ہمارے بارے میں",
-  body_en:"Camp Office, Prosecutor General Punjab, Supreme Court of Pakistan, Islamabad. This is sample/placeholder text — an Administrator can edit this page to add the office's real introduction, mandate, and background here.",
-  body_ur:"کیمپ آفس، پراسیکیوٹر جنرل پنجاب، سپریم کورٹ آف پاکستان، اسلام آباد۔ یہ نمونے کے طور پر رکھا گیا متن ہے — Administrator اس صفحے کو ترمیم کر کے یہاں دفتر کا اصل تعارف، دائرہ کار، اور پس منظر شامل کر سکتے ہیں۔"
+  body_en:"This is sample/placeholder text — an Administrator can edit this page to add the office's real introduction, mandate, and background here.",
+  body_ur:"یہ نمونے کے طور پر رکھا گیا متن ہے — Administrator اس صفحے کو ترمیم کر کے یہاں دفتر کا اصل تعارف، دائرہ کار، اور پس منظر شامل کر سکتے ہیں۔"
 };
 
 var I18N = {
   en:{
-    brandTitle:"About — Camp Office Digital Portal", backToHub:"← Back to Hub",
+    brandTitle:"About", backToHub:"← Back to Hub",
     signedInAs:"Signed in as", dummyNote:"ℹ️ This is placeholder/sample text. An Administrator can edit it below.",
     btnEdit:"✏️ Edit", editTitle:"Edit About Content",
     lblTitleEn:"Title (English)", lblTitleUr:"Title (Urdu)", lblBodyEn:"Body (English)", lblBodyUr:"Body (Urdu)",
     btnSave:"💾 Save", btnCancel:"Cancel", savedOk:"Saved."
   },
   ur:{
-    brandTitle:"تعارف — کیمپ آفس ڈیجیٹل پورٹل", backToHub:"← ہب پر واپس جائیں",
+    brandTitle:"تعارف", backToHub:"← ہب پر واپس جائیں",
     signedInAs:"لاگ اِن ہیں بطور", dummyNote:"ℹ️ یہ نمونے کے طور پر رکھا گیا متن ہے۔ Administrator نیچے سے اسے تبدیل کر سکتے ہیں۔",
     btnEdit:"✏️ ترمیم کریں", editTitle:"About مواد میں ترمیم",
     lblTitleEn:"عنوان (انگریزی)", lblTitleUr:"عنوان (اردو)", lblBodyEn:"متن (انگریزی)", lblBodyUr:"متن (اردو)",

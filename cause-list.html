@@ -356,6 +356,18 @@ html,body{overflow-x:hidden;}
 .cl-bench b{ color:var(--navy3); font-size:14px; }
 .cl-bench .jd{ color:var(--muted); }
 .cl-bench .sit{ display:inline-block; margin-inline-start:8px; padding:1px 9px; border-radius:12px; background:var(--navy); color:#fff; font-size:11.5px; }
+.cl-bench.pm{ border-inline-start:6px solid #8A660A; }
+.cl-bench.pm .sit{ background:#8A660A; font-weight:700; }
+.cl-sum{ padding:10px 14px 12px; }
+.cl-sum h3{ margin:0 0 4px; font-size:14px; color:var(--navy3); }
+.cl-sum .cl-sumnote{ margin:0 0 8px; font-size:12px; color:var(--muted); }
+.cl-sumw{ overflow-x:auto; }
+table.cl-sumt{ border-collapse:collapse; width:100%; font-size:12.5px; }
+table.cl-sumt th, table.cl-sumt td{ border:1px solid var(--border); padding:4px 7px; text-align:center; vertical-align:top; }
+table.cl-sumt th:first-child, table.cl-sumt td:first-child{ text-align:start; }
+table.cl-sumt th{ background:rgba(184,134,11,.14); }
+table.cl-sumt .pm{ color:#8A660A; font-weight:700; }
+table.cl-sumt tr.tot td{ font-weight:700; background:rgba(0,0,0,.04); }
 .cl-tw{ overflow-x:auto; }
 table.cl-t{ width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; min-width:1100px; }
 table.cl-t td{ overflow-wrap:break-word; }
@@ -409,6 +421,11 @@ select.cl-res.empty{ border-color:#d33; background:#fdecec; }
   .cl-sheet{ border:none; border-radius:0; margin:0 0 6px; overflow:visible; }
   .cl-day{ font-size:13px; padding:5px 8px; break-after:avoid; }
   .cl-bench{ font-size:11px; padding:4px 8px; break-after:avoid; }
+  .cl-bench .sit, .cl-bench.pm{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .cl-bench.pm .sit{ background:#8A660A !important; color:#fff !important; font-weight:700; font-size:11px; }
+  .cl-sum{ padding:4px 8px 6px; break-inside:avoid; }
+  table.cl-sumt{ font-size:9.5px; }
+  table.cl-sumt th, table.cl-sumt td{ padding:2px 4px; border-color:#999; }
   table.cl-t{ font-size:10.5px; min-width:0; }
   table.cl-t thead{ display:table-header-group; }
   table.cl-t tr{ break-inside:avoid; page-break-inside:avoid; }
@@ -1371,6 +1388,35 @@ function listTitle(){
   var m = ST.meta, t = !m ? 'Cause List' : (m.no ? (m.kind === 'FINAL' ? 'Final Cause List ' : m.kind + ' ') + m.no + ' of ' + m.year : (m.label || m.kind));
   return t + (VIEW.supp ? ' — Supplementary cases' : '');
 }
+/* week summary: which judges sat on which bench number each day (the bench number changes from day to day) + how many of our cases */
+function summaryHtml(){
+  var rows = ST.rows.filter(function(r){ return r.mine; }); if(!rows.length) return '';
+  var isos = [], panels = {}, order = [], tot = {};
+  rows.forEach(function(r){
+    if(isos.indexOf(r.iso) < 0) isos.push(r.iso);
+    var names = (r.judges || []).map(function(j){ return mapJudge(j).replace(/^Justice\s+/i, ''); }).sort();
+    var key = names.join(' · ') || '—';
+    var p = panels[key]; if(!p){ p = panels[key] = {label:key, cells:{}, n:0}; order.push(key); }
+    var c = p.cells[r.iso] || (p.cells[r.iso] = {}), bk = r.bench + '|' + (r.sitting || '') + '|' + r.hid;
+    var e = c[bk] || (c[bk] = {bench:r.bench, sitting:r.sitting || '', n:0}); e.n++; p.n++;
+    tot[r.iso] = (tot[r.iso] || 0) + 1;
+  });
+  isos.sort();
+  var h = '<div class="cl-sheet cl-sum"><h3>' + bi('ہفتے کا خلاصہ', 'Week summary') + '</h3>' +
+    '<div class="cl-sumnote">' + bi('بنچ کا نمبر ہر دن بدل سکتا ہے، اس لیے یہاں ججز کے حساب سے دیکھیں۔ ہر خانے میں: بنچ نمبر · ہمارے کیسوں کی تعداد۔ 🕐 = دوپہر کے بعد والی نشست۔', 'The bench number can change every day, so read this by judges. Each cell: bench number · number of our cases. 🕐 = after-noon sitting.') + '</div>' +
+    '<div class="cl-sumw"><table class="cl-sumt"><thead><tr><th>' + bi('ججز', 'Judges') + '</th>' +
+    isos.map(function(i){ return '<th>' + esc(dayName(i).slice(0, 3)) + '<br>' + esc(dmyFromIso(i)) + '</th>'; }).join('') + '<th>' + bi('کل', 'Total') + '</th></tr></thead><tbody>';
+  order.forEach(function(k){
+    var p = panels[k];
+    h += '<tr><td>' + esc(p.label) + '</td>' + isos.map(function(i){
+      var c = p.cells[i]; if(!c) return '<td>—</td>';
+      return '<td>' + Object.keys(c).map(function(bk){ var e = c[bk];
+        return (e.sitting ? '<span class="pm">🕐 ' : '<span>') + esc('Bench ' + e.bench) + ' · ' + e.n + '</span>'; }).join('<br>') + '</td>';
+    }).join('') + '<td>' + p.n + '</td></tr>';
+  });
+  h += '<tr class="tot"><td>' + bi('کل', 'Total') + '</td>' + isos.map(function(i){ return '<td>' + (tot[i] || 0) + '</td>'; }).join('') + '<td>' + rows.length + '</td></tr>';
+  return h + '</tbody></table></div></div>';
+}
 function render(){
   var days = visibleDays(), h = '';
   renderViewBar();
@@ -1379,7 +1425,7 @@ function render(){
       '<span class="cl-offsel no-print"><bdi dir="rtl">اس دن کا آفیسر</bdi> / Officer for this day <select data-act="offday" data-iso="' + esc(d.iso) + '">' + officerOptions(ST.offDay[d.iso] || '', '— none —') + '</select></span></div>';
     d.benches.forEach(function(b){
       var bk = d.iso + '|' + b.bench + '|' + b.hid;
-      h += '<div class="cl-bench"><span class="cl-offsel no-print" style="float:right"><bdi dir="rtl">اس بنچ کا آفیسر</bdi> / Officer for this bench <select data-act="offbench" data-key="' + esc(bk) + '">' + officerOptions(ST.offBench[bk] || '', ST.offDay[d.iso] ? '— day: ' + shortOff(ST.offDay[d.iso]) + ' —' : '— none —') + '</select></span><b>' + esc(benchTitle(b)) + '</b>' + (b.sitting ? '<span class="sit">' + esc(b.sitting.replace(/^\(|\)$/g,'')) + '</span>' : '') +
+      h += '<div class="cl-bench' + (b.sitting ? ' pm' : '') + '"><span class="cl-offsel no-print" style="float:right"><bdi dir="rtl">اس بنچ کا آفیسر</bdi> / Officer for this bench <select data-act="offbench" data-key="' + esc(bk) + '">' + officerOptions(ST.offBench[bk] || '', ST.offDay[d.iso] ? '— day: ' + shortOff(ST.offDay[d.iso]) + ' —' : '— none —') + '</select></span><b>' + esc(benchTitle(b)) + '</b>' + (b.sitting ? '<span class="sit">' + esc(b.sitting.replace(/^\(|\)$/g,'')) + '</span>' : '') +
         (judgesText(b) ? '<br><span class="jd">' + esc(judgesText(b)) + '</span>' : '') + (effOfficerBench(b) ? '<span class="cl-offprint"> — Officer: ' + esc(effOfficerBench(b)) + '</span>' : '') + '</div>';
       h += '<div class="cl-tw"><table class="cl-t"><colgroup><col class="cl-col-inc" style="width:32px"><col style="width:4%"><col style="width:5%"><col style="width:11%"><col style="width:19%"><col style="width:14%"><col style="width:9%"><col style="width:6.5%"><col style="width:13%"><col style="width:13%"><col class="cl-col-act" style="width:132px"></colgroup><thead><tr><th class="cl-col-inc"></th><th>Bench</th><th>Sr.</th><th>Case No</th><th>Title of Case</th><th>Nature</th><th>Section</th><th>B.Type</th><th>Officer</th><th>Result</th><th class="cl-col-act"></th></tr></thead><tbody>';
       var prevSr = null;
@@ -1388,7 +1434,7 @@ function render(){
     });
     h += '</div>';
   });
-  $('sheets').innerHTML = h || '<div class="cl-sheet"><div class="cl-empty">No rows. / کوئی کیس نہیں۔</div></div>';
+  $('sheets').innerHTML = h ? summaryHtml() + h : '<div class="cl-sheet"><div class="cl-empty">No rows. / کوئی کیس نہیں۔</div></div>';
   stats();
   $('btnUndo').disabled = !HIST.length; $('btnRedo').disabled = !FUT.length;
   var mineN = 0; days.forEach(function(d){ d.benches.forEach(function(b){ b.rows.forEach(function(r){ if(r.mine) mineN++; }); }); });
@@ -1974,7 +2020,7 @@ async function buildPdf(days){
   days.forEach(function(d){
     banner(d.label, '', navy, white, 12, 60);
     d.benches.forEach(function(b){
-      var sub = b.judges + (b.sitting ? '   [' + b.sitting + ']' : '');
+      var sub = (b.sitting ? '[ ' + b.sitting.toUpperCase() + ' ]   ' : '') + b.judges;
       banner('BENCH ' + b.bench, sub, gold, black, 10, 15 + 26);
       tableHeader();
       b.rows.forEach(drawRow);

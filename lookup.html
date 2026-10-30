@@ -381,6 +381,14 @@ html,body{overflow-x:hidden;}
 .lk-pager select{ padding:5px 6px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); }
 .lk-pager .lk-btn{ padding:5px 12px; }
 .lk-pager .lk-btn[disabled]{ opacity:.45; cursor:default; }
+/* ---- Rosters & Cause Lists tab (extra tab; the Daily Cases and Case Notices tabs above are untouched) ---- */
+.rl-grid-wide{ grid-column:1 / -1; }
+.rl-src{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600; border:1px solid var(--border); white-space:nowrap; }
+.rl-src.r{ background:rgba(42,90,132,.12); }
+.rl-src.c{ background:rgba(184,134,11,.14); }
+.rl-judges{ font-size:11.5px; color:var(--muted); }
+.rl-status{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.6; }
+.rl-status.bad{ color:#b3261e; }
 .lk-sort{ background:none; border:0; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; padding:0; display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
 .lk-sort .ar{ font-size:10px; opacity:.55; }
 .lk-sort.on .ar{ opacity:1; }
@@ -510,6 +518,7 @@ html,body{overflow-x:hidden;}
   <div class="lk-tabs">
     <div class="lk-tab active" id="tabCases" onclick="lkTab('cases')" data-en="Daily Cases" data-ur="یومیہ کیسز">Daily Cases</div>
     <div class="lk-tab" id="tabNotices" onclick="lkTab('notices')" data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</div>
+    <div class="lk-tab" id="tabRosters" style="display:none" data-en="Rosters &amp; Cause Lists" data-ur="روسٹر اور کاز لسٹ">Rosters &amp; Cause Lists</div>
   </div>
 
   <!-- ===== Cases ===== -->
@@ -556,6 +565,30 @@ html,body{overflow-x:hidden;}
     <div class="lk-wrap"><table class="lk-table"><thead id="nHead"></thead><tbody id="nBody"></tbody></table></div>
     <div class="lk-note" id="nNote"></div>
     <div class="lk-pager" id="nPager"></div>
+  </div>
+
+  <!-- ===== Rosters & Cause Lists (search all saved weekly rosters and saved cause lists at once; read-only) ===== -->
+  <div id="secRosters" style="display:none;">
+    <div class="lk-card">
+      <div class="lk-grid">
+        <div class="field rl-grid-wide"><label for="rl_q" id="rl_qlab" data-en="Search all saved rosters and cause lists at once (case number, party, judge, officer, bench)" data-ur="تمام محفوظ روسٹرز اور کاز لسٹوں میں ایک ساتھ تلاش (کیس نمبر، فریق، جج، آفیسر، بینچ)">Search all saved rosters and cause lists at once (case number, party, judge, officer, bench)</label><input type="search" id="rl_q" autocomplete="off"></div>
+        <div class="field"><label for="rl_src" data-en="Source" data-ur="ذریعہ">Source</label><select id="rl_src"><option value="" data-en="All" data-ur="سب">All</option><option value="r" data-en="Weekly Roster" data-ur="ہفتہ وار روسٹر">Weekly Roster</option><option value="c" data-en="Cause List" data-ur="کاز لسٹ">Cause List</option></select></div>
+        <div class="field"><label for="rl_from" data-en="From date" data-ur="تاریخ از">From date</label><input type="date" id="rl_from"></div>
+        <div class="field"><label for="rl_to" data-en="To date" data-ur="تاریخ تک">To date</label><input type="date" id="rl_to"></div>
+      </div>
+      <div class="lk-bar">
+        <span class="lk-count" id="rl_count"></span>
+        <button class="lk-btn ghost" type="button" id="rl_clear" data-en="Clear" data-ur="صاف کریں">Clear</button>
+        <button class="lk-btn ghost" type="button" id="rl_reload" data-en="Reload saved data" data-ur="محفوظ ڈیٹا دوبارہ لوڈ کریں">Reload saved data</button>
+        <button class="lk-btn needs-export" type="button" id="rl_csv" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <a class="lk-btn ghost" style="text-decoration:none" href="https://cmpofficepgp.org/weekly-court-roster/" target="_blank" rel="noopener" data-en="Open Weekly Court Roster" data-ur="ویکلی کورٹ روسٹر کھولیں">Open Weekly Court Roster</a>
+        <a class="lk-btn ghost" style="text-decoration:none" href="cause-list.html" data-en="Open Cause List Import" data-ur="کاز لسٹ امپورٹ کھولیں">Open Cause List Import</a>
+      </div>
+      <div class="rl-status" id="rl_status" role="status" aria-live="polite"></div>
+    </div>
+    <div class="lk-wrap"><table class="lk-table"><thead id="rl_head"></thead><tbody id="rl_body"></tbody></table></div>
+    <div class="lk-note" id="rl_note"></div>
+    <div class="lk-pager" id="rl_pager"></div>
   </div>
 
 </div>
@@ -2105,6 +2138,7 @@ html,body{overflow-x:hidden;}
       CAN_EDIT_REC.notices = window.CampPerm ? CampPerm.can(u, 'case-notice', 'e') : isAdmL;
       CAN_EXPORT = window.CampPerm ? CampPerm.can(u, 'lookup', 'x') : true;
       document.body.classList.toggle('no-export', !CAN_EXPORT);
+      try{ rlInit(u); }catch(e){ console.error(e); }
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
@@ -2115,6 +2149,184 @@ html,body{overflow-x:hidden;}
   document.body.setAttribute('data-theme', currentTheme);
   renderThemePicker();
   buildFilters('cases'); buildFilters('notices'); render('cases'); render('notices');
+
+
+  /* =====================================================================================================
+     ROSTERS & CAUSE LISTS tab  -  one search over every saved weekly roster and every saved cause list.
+     Read-only: it only READS appData_weeklyroster/shared and causeLists, and nothing is ever written.
+     It follows the same ticks as the pages those lists come from (roster View / Cause List View) and, for a
+     non-admin user, the same own-officer rule as the rest of this page. The data is read once when the tab is
+     opened (Reload saved data reads it again); only small search rows are kept, not the whole saved list.
+     ===================================================================================================== */
+  var RL = { can:{r:false, c:false}, rows:[], loaded:false, loading:false, limit:100, stat:{r:null, c:null, cTotal:0, cBad:0}, err:{r:'', c:''}, token:0 };
+  var RL_MON = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  var RL_DAYN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var RL_MONN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function rlBi(ur, en){ return isUrdu ? ur : en; }
+  function rlIso(s){
+    s = String(s == null ? '' : s).trim();
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); if(m) return s;
+    m = s.match(/^(\d{1,2})[-\s ]([A-Za-z]{3})[A-Za-z]*[-\s ,]+(\d{4})$/);
+    if(m && RL_MON[m[2].toLowerCase()]) return m[3] + '-' + ('0' + RL_MON[m[2].toLowerCase()]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+    return '';
+  }
+  function rlDmy(iso){ var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? m[3] + '-' + RL_MONN[+m[2] - 1] + '-' + m[1] : String(iso || ''); }
+  function rlDay(iso){ var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? RL_DAYN[new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay()] : ''; }
+  function rlOfficerOk(o){ return !OFFICER_RESTRICTED || (!!MY_OFFICER && String(o || '') === MY_OFFICER); }
+  function rlStrip(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, ''); }
+  function rlMakeRow(o){
+    o.hay = [o.caseNo, o.parties, o.judges, o.officer, o.bench, o.label, o.date, o.day].join(' ').toLowerCase();
+    o.hayS = rlStrip(o.hay);
+    return o;
+  }
+  function rlInit(u){
+    var P = window.CampPerm;
+    RL.can.r = !!(P && P.can(u, 'roster', 'v'));
+    RL.can.c = !!(P && P.can(u, 'cause-list', 'v'));
+    var tab = document.getElementById('tabRosters');
+    if(tab) tab.style.display = (RL.can.r || RL.can.c) ? '' : 'none';
+  }
+  function rlShowTab(){
+    document.getElementById('secCases').style.display = 'none';
+    document.getElementById('secNotices').style.display = 'none';
+    document.getElementById('secRosters').style.display = '';
+    document.getElementById('tabCases').classList.remove('active');
+    document.getElementById('tabNotices').classList.remove('active');
+    document.getElementById('tabRosters').classList.add('active');
+    if(!RL.loaded && !RL.loading) rlLoad();
+    else rlRender();
+  }
+  function rlHideTab(){
+    document.getElementById('secRosters').style.display = 'none';
+    document.getElementById('tabRosters').classList.remove('active');
+  }
+  function rlSetStatus(txt, bad){ var el = document.getElementById('rl_status'); if(el){ el.textContent = txt || ''; el.className = 'rl-status' + (bad ? ' bad' : ''); } }
+  function rlYield(){ return new Promise(function(res){ setTimeout(res, 0); }); }
+
+  async function rlLoadRosters(tok){
+    var doc = await db.collection('appData_weeklyroster').doc('shared').get();
+    if(tok !== RL.token) return;
+    var data = doc.exists ? doc.data() : null, arr = (data && Array.isArray(data.rosters)) ? data.rosters : [], n = 0;
+    arr.forEach(function(r){
+      if(!r || !Array.isArray(r.benches)) return;
+      var dates = r.dates || [], label = (dates[0] || '') + ' – ' + (dates[4] || ''); n++;
+      r.benches.forEach(function(b){
+        var officer = String((b && b.officer) || ''); if(!rlOfficerOk(officer)) return;
+        var judges = ((b && b.judgesList) || []).map(function(j){ return String(j || '').trim(); }).filter(Boolean).join(', ');
+        for(var d = 0; d < 5; d++){
+          var day = b.days && b.days[d]; if(!day || !Array.isArray(day.cases)) continue;
+          var iso = rlIso(dates[d]);
+          day.cases.forEach(function(c){
+            var txt = String(c == null ? '' : c).split(/\r?\n/).map(function(x){ return x.replace(/\t/g, ' ').trim(); }).filter(Boolean).join(' ');
+            if(!txt) return;
+            RL.rows.push(rlMakeRow({src:'r', label:label, iso:iso, date:iso ? rlDmy(iso) : String(dates[d] || ''), day:iso ? rlDay(iso) : '', bench:String(b.name || ''), judges:judges, officer:officer, caseNo:txt, parties:''}));
+          });
+        }
+      });
+    });
+    RL.stat.r = n;
+  }
+  async function rlLoadLists(tok){
+    var qs = await db.collection('causeLists').orderBy('savedAt', 'desc').limit(60).get();
+    var docs = []; qs.forEach(function(d){ docs.push(d); });
+    RL.stat.cTotal = docs.length; RL.stat.c = 0; RL.stat.cBad = 0;
+    for(var i = 0; i < docs.length; i++){
+      if(tok !== RL.token) return;
+      var c = docs[i].data(), d = null;
+      try{ d = JSON.parse(c.payload); }catch(e){ d = null; }
+      if(!d || !Array.isArray(d.rows)){ RL.stat.cBad++; continue; }
+      var offDay = d.offDay || {}, offBench = d.offBench || {}, label = String(c.name || c.fileName || '');
+      d.rows.forEach(function(r){
+        if(!r || !r.mine || !r.include) return;
+        var officer = r.officer || offBench[r.iso + '|' + r.bench + '|' + r.hid] || offDay[r.iso] || '';
+        if(!rlOfficerOk(officer)) return;
+        var cn = (r.type || '') + (r.no || '') + (r.year ? '/' + r.year : '');
+        RL.rows.push(rlMakeRow({src:'c', label:label, iso:String(r.iso || ''), date:rlDmy(r.iso), day:rlDay(r.iso),
+          bench:String(r.bench || '') + (r.sitting ? ' ' + r.sitting : ''), judges:(r.judges || []).join(', '), officer:String(officer).replace(/\s+—.*$/, ''),
+          caseNo:cn, parties:[r.title, r.versus].filter(Boolean).join(' v/s ')}));
+      });
+      RL.stat.c++;
+      rlSetStatus(rlBi('کاز لسٹیں پڑھی جا رہی ہیں: ', 'Reading cause lists: ') + (i + 1) + ' / ' + docs.length);
+      await rlYield();
+    }
+  }
+  async function rlLoad(){
+    if(RL.loading) return;
+    RL.loading = true; RL.loaded = false; RL.rows = []; RL.err = {r:'', c:''}; RL.stat = {r:null, c:null, cTotal:0, cBad:0}; RL.limit = 100;
+    var tok = ++RL.token;
+    rlSetStatus(rlBi('محفوظ ڈیٹا لوڈ ہو رہا ہے…', 'Loading the saved data…'));
+    rlRender();
+    if(RL.can.r){ try{ await rlLoadRosters(tok); }catch(e){ console.error('rl roster', e); RL.err.r = (e && e.message) || String(e); } }
+    if(tok !== RL.token) return;
+    if(RL.can.c){ try{ await rlLoadLists(tok); }catch(e){ console.error('rl lists', e); RL.err.c = (e && e.message) || String(e); } }
+    if(tok !== RL.token) return;
+    RL.loading = false; RL.loaded = true;
+    var parts = [];
+    if(RL.can.r) parts.push(RL.err.r ? rlBi('روسٹر نہیں پڑھے جا سکے: ', 'Rosters could not be read: ') + RL.err.r : rlBi('روسٹر کے ہفتے: ', 'Roster weeks: ') + (RL.stat.r || 0));
+    if(RL.can.c) parts.push(RL.err.c ? rlBi('کاز لسٹیں نہیں پڑھی جا سکیں: ', 'Cause lists could not be read: ') + RL.err.c : rlBi('کاز لسٹیں (تازہ ترین 60 تک): ', 'Cause lists (newest 60 at most): ') + (RL.stat.c || 0) + (RL.stat.cBad ? ' (' + RL.stat.cBad + rlBi(' نہیں کھل سکیں', ' unreadable') + ')' : ''));
+    rlSetStatus(parts.join('   |   '), !!(RL.err.r || RL.err.c));
+    rlRender();
+  }
+  function rlFiltered(){
+    var q = String((document.getElementById('rl_q') || {}).value || '').toLowerCase().trim();
+    var toks = q ? q.split(/\s+/).filter(Boolean) : [];
+    var src = (document.getElementById('rl_src') || {}).value || '', f = (document.getElementById('rl_from') || {}).value || '', t = (document.getElementById('rl_to') || {}).value || '';
+    var out = RL.rows.filter(function(r){
+      if(src && r.src !== src) return false;
+      if(f && (!r.iso || r.iso < f)) return false;
+      if(t && (!r.iso || r.iso > t)) return false;
+      for(var i = 0; i < toks.length; i++){
+        var k = toks[i], ks = rlStrip(k);
+        if(r.hay.indexOf(k) < 0 && !(ks && r.hayS.indexOf(ks) >= 0)) return false;
+      }
+      return true;
+    });
+    out.sort(function(a, b){ return String(b.iso).localeCompare(String(a.iso)) || a.src.localeCompare(b.src) || String(a.bench).localeCompare(String(b.bench)) || String(a.caseNo).localeCompare(String(b.caseNo)); });
+    return out;
+  }
+  function rlRender(){
+    var head = document.getElementById('rl_head'); if(!head) return;
+    var q = document.getElementById('rl_q'); if(q) q.placeholder = rlBi('مثلاً 321/2026 یا جج کا نام', 'e.g. 321/2026 or a judge name');
+    head.innerHTML = '<tr>' + [rlBi('تاریخ', 'Date'), rlBi('ذریعہ', 'Source'), rlBi('ہفتہ / فہرست', 'Week / List'), rlBi('بینچ', 'Bench'), rlBi('ججز', 'Judges'), rlBi('آفیسر', 'Officer'), rlBi('کیس', 'Case'), rlBi('فریقین', 'Parties')].map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    var body = document.getElementById('rl_body'), cnt = document.getElementById('rl_count'), note = document.getElementById('rl_note'), pg = document.getElementById('rl_pager');
+    if(RL.loading){ body.innerHTML = ''; cnt.textContent = ''; note.textContent = ''; pg.innerHTML = ''; return; }
+    var rows = rlFiltered(), show = rows.slice(0, RL.limit);
+    cnt.textContent = rows.length + rlBi(' نتائج', ' results');
+    body.innerHTML = show.map(function(r){
+      return '<tr><td style="white-space:nowrap">' + esc(r.date) + (r.day ? '<br><span class="rl-judges">' + esc(r.day) + '</span>' : '') + '</td>' +
+        '<td><span class="rl-src ' + r.src + '">' + esc(r.src === 'r' ? rlBi('روسٹر', 'Roster') : rlBi('کاز لسٹ', 'Cause List')) + '</span></td>' +
+        '<td dir="auto">' + esc(r.label) + '</td><td dir="auto">' + esc(r.bench) + '</td><td class="rl-judges" dir="auto">' + esc(r.judges) + '</td><td dir="auto">' + esc(r.officer) + '</td>' +
+        '<td dir="auto"><b>' + esc(r.caseNo) + '</b></td><td dir="auto">' + esc(r.parties) + '</td></tr>';
+    }).join('');
+    note.textContent = rows.length ? '' : (RL.rows.length ? rlBi('کوئی نتیجہ نہیں ملا۔ تلاش بدل کر دیکھیں۔', 'No match. Try a different search.') : rlBi('محفوظ شدہ روسٹر یا کاز لسٹ میں ابھی کوئی کیس نہیں۔', 'There are no cases in the saved rosters or cause lists yet.'));
+    pg.innerHTML = rows.length > show.length ? '<span>' + show.length + ' / ' + rows.length + '</span><button class="lk-btn ghost" type="button" id="rl_more">' + esc(rlBi('مزید دکھائیں', 'Show more')) + '</button>' : '';
+    var more = document.getElementById('rl_more'); if(more) more.addEventListener('click', function(){ RL.limit += 200; rlRender(); });
+  }
+  function rlCsv(){
+    if(!CAN_EXPORT) return;
+    var rows = rlFiltered();
+    function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    var lines = [['Date', 'Day', 'Source', 'Week / List', 'Bench', 'Judges', 'Officer', 'Case', 'Parties'].join(',')];
+    rows.forEach(function(r){ lines.push([r.date, r.day, r.src === 'r' ? 'Roster' : 'Cause List', r.label, r.bench, r.judges, r.officer, r.caseNo, r.parties].map(cell).join(',')); });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Lookup-Rosters-CauseLists.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  (function(){
+    var timer = null;
+    function sched(){ clearTimeout(timer); timer = setTimeout(function(){ RL.limit = 100; rlRender(); }, 200); }
+    ['rl_q', 'rl_src', 'rl_from', 'rl_to'].forEach(function(id){ var el = document.getElementById(id); if(el){ el.addEventListener('input', sched); el.addEventListener('change', sched); } });
+    document.getElementById('rl_clear').addEventListener('click', function(){
+      ['rl_q', 'rl_src', 'rl_from', 'rl_to'].forEach(function(id){ document.getElementById(id).value = ''; }); RL.limit = 100; rlRender();
+    });
+    document.getElementById('rl_reload').addEventListener('click', function(){ rlLoad(); });
+    document.getElementById('rl_csv').addEventListener('click', rlCsv);
+    document.getElementById('tabRosters').addEventListener('click', rlShowTab);
+    document.getElementById('tabCases').addEventListener('click', rlHideTab);
+    document.getElementById('tabNotices').addEventListener('click', rlHideTab);
+    if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secRosters').style.display !== 'none') rlRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
+  })();
 </script>
 
   <div class="app-footer">© Iftikhar Ahmed</div>

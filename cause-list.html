@@ -368,6 +368,19 @@ table.cl-sumt th:first-child, table.cl-sumt td:first-child{ text-align:start; }
 table.cl-sumt th{ background:rgba(184,134,11,.14); }
 table.cl-sumt .pm{ color:#8A660A; font-weight:700; }
 table.cl-sumt tr.tot td{ font-weight:700; background:rgba(0,0,0,.04); }
+.cl-sumhead{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+.cl-sumhead h3{ margin:0; }
+.cl-sumbtns{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.cl-sumchk{ font-size:12px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; margin-inline-end:6px; }
+.cl-sumstats{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 10px; }
+.cl-chip{ font-size:12px; padding:3px 10px; border-radius:999px; border:1px solid var(--border); background:rgba(0,0,0,.03); }
+.cl-chip b{ font-size:13px; color:var(--navy3); }
+.cl-chip.warn{ border-color:#d98a8a; background:rgba(200,60,60,.08); }
+.cl-sum h4{ margin:12px 0 4px; font-size:13px; color:var(--navy3); }
+table.cl-sumt .e{ display:block; margin-bottom:3px; }
+table.cl-sumt .nos{ display:block; font-weight:400; font-size:11px; color:var(--muted); }
+table.cl-sumt tr.na td:first-child{ background:rgba(200,60,60,.08); }
+.cl-incsum{ font-size:12px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
 .cl-tw{ overflow-x:auto; }
 table.cl-t{ width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; min-width:1100px; }
 table.cl-t td{ overflow-wrap:break-word; }
@@ -426,6 +439,10 @@ select.cl-res.empty{ border-color:#d33; background:#fdecec; }
   .cl-sum{ padding:4px 8px 6px; break-inside:avoid; }
   table.cl-sumt{ font-size:9.5px; }
   table.cl-sumt th, table.cl-sumt td{ padding:2px 4px; border-color:#999; }
+  .cl-sum h4{ font-size:11px; margin:6px 0 2px; }
+  .cl-sumstats{ margin:2px 0 6px; } .cl-chip{ font-size:10px; padding:1px 7px; }
+  table.cl-sumt .nos{ font-size:8.5px; }
+  body.print-sum #sheets > .cl-sheet:not(.cl-sum){ display:none !important; }
   table.cl-t{ font-size:10.5px; min-width:0; }
   table.cl-t thead{ display:table-header-group; }
   table.cl-t tr{ break-inside:avoid; page-break-inside:avoid; }
@@ -608,6 +625,7 @@ select.cl-off{ width:100%; min-width:0; padding:5px 4px; border:1px solid var(--
       <button class="cl-btn ghost needs-export" onclick="exportFile('pdf')">⬇ PDF</button>
       <button class="cl-btn ghost needs-export" onclick="exportFile('xlsx')">⬇ Excel</button>
       <button class="cl-btn ghost needs-export" onclick="exportFile('docx')">⬇ Word</button>
+      <label class="cl-incsum needs-export" title="Put the week summary at the start of the PDF and Word downloads (full list only)"><input type="checkbox" id="incSum" checked> <bdi dir="rtl">خلاصہ بھی شامل</bdi> / with summary</label>
       <span class="cl-sep"></span>
       <button class="cl-btn" onclick="document.getElementById('suppFile').click()" title="Supplementary list PDF">➕ Supplementary شامل کریں</button>
       <input type="file" id="suppFile" accept="application/pdf,.pdf" style="display:none">
@@ -1388,34 +1406,97 @@ function listTitle(){
   var m = ST.meta, t = !m ? 'Cause List' : (m.no ? (m.kind === 'FINAL' ? 'Final Cause List ' : m.kind + ' ') + m.no + ' of ' + m.year : (m.label || m.kind));
   return t + (VIEW.supp ? ' — Supplementary cases' : '');
 }
-/* week summary: which judges sat on which bench number each day (the bench number changes from day to day) + how many of our cases */
-function summaryHtml(){
-  var rows = ST.rows.filter(function(r){ return r.mine; }); if(!rows.length) return '';
-  var isos = [], panels = {}, order = [], tot = {};
+/* ---------- week summary: ONE model feeds the screen, print, PDF, Word, Excel and CSV ---------- */
+var SUM_NOS = false;                 /* show the case numbers inside the grid */
+var SUM_NA = 'Not assigned';
+function sumSitLabel(s){ return String(s || '').replace(/^\(|\)$/g, ''); }
+function summaryModel(){
+  var rows = ST.rows.filter(function(r){ return r.mine && r.include; }); if(!rows.length) return null;
+  var isos = [], panels = {}, order = [], tot = {}, offs = {}, st = {cases:rows.length, pm:0, noOff:0, noRes:0};
   rows.forEach(function(r){
     if(isos.indexOf(r.iso) < 0) isos.push(r.iso);
     var names = (r.judges || []).map(function(j){ return mapJudge(j).replace(/^Justice\s+/i, ''); }).sort();
     var key = names.join(' · ') || '—';
     var p = panels[key]; if(!p){ p = panels[key] = {label:key, cells:{}, n:0}; order.push(key); }
     var c = p.cells[r.iso] || (p.cells[r.iso] = {}), bk = r.bench + '|' + (r.sitting || '') + '|' + r.hid;
-    var e = c[bk] || (c[bk] = {bench:r.bench, sitting:r.sitting || '', n:0}); e.n++; p.n++;
+    var e = c[bk] || (c[bk] = {bench:r.bench, sitting:sumSitLabel(r.sitting), n:0, nos:[], offs:{}});
+    var o = shortOff(effOfficer(r)) || SUM_NA;
+    e.n++; p.n++; e.nos.push(caseText(r)); e.offs[o] = (e.offs[o] || 0) + 1;
     tot[r.iso] = (tot[r.iso] || 0) + 1;
+    var f = offs[o] || (offs[o] = {name:o, counts:{}, n:0}); f.counts[r.iso] = (f.counts[r.iso] || 0) + 1; f.n++;
+    if(r.sitting) st.pm++;
+    if(o === SUM_NA) st.noOff++;
+    if(!r.result) st.noRes++;
   });
   isos.sort();
-  var h = '<div class="cl-sheet cl-sum"><h3>' + bi('ہفتے کا خلاصہ', 'Week summary') + '</h3>' +
+  function cellList(p, iso){
+    var c = p.cells[iso]; if(!c) return [];
+    return Object.keys(c).map(function(k){ return c[k]; }).sort(function(a, b){ return (a.sitting ? 1 : 0) - (b.sitting ? 1 : 0) || (parseInt(a.bench, 10) || 0) - (parseInt(b.bench, 10) || 0); });
+  }
+  var plist = order.map(function(k){ var p = panels[k]; return {label:p.label, n:p.n, cells:isos.map(function(i){ return cellList(p, i); })}; });
+  var olist = Object.keys(offs).map(function(k){ return offs[k]; }).sort(function(a, b){ return ((a.name === SUM_NA) - (b.name === SUM_NA)) || (b.n - a.n) || a.name.localeCompare(b.name); });
+  var details = [];
+  isos.forEach(function(iso, ii){ plist.forEach(function(p){ p.cells[ii].forEach(function(e){
+    details.push({date:dmyFromIso(iso), day:dayName(iso), judges:p.label, bench:e.bench, sitting:e.sitting, n:e.n, nos:e.nos.join(', '),
+      officers:Object.keys(e.offs).map(function(k){ return k + ' (' + e.offs[k] + ')'; }).join('; ')});
+  }); }); });
+  st.days = isos.length; st.panels = plist.length;
+  return {title:listTitle(), isos:isos, range:dmyFromIso(isos[0]) + (isos.length > 1 ? ' to ' + dmyFromIso(isos[isos.length - 1]) : ''),
+    heads:isos.map(function(i){ return {dayS:dayName(i).slice(0, 3), date:dmyFromIso(i)}; }),
+    panels:plist, tot:isos.map(function(i){ return tot[i] || 0; }), total:rows.length,
+    offs:olist.map(function(f){ return {name:f.name, counts:isos.map(function(i){ return f.counts[i] || 0; }), n:f.n}; }),
+    stats:st, details:details};
+}
+function sumStatLine(m){
+  var s = m.stats, a = ['Punjab cases: ' + s.cases, 'Days: ' + s.days, 'Judge panels: ' + s.panels];
+  if(s.pm) a.push('After-noon cases: ' + s.pm);
+  if(s.noOff) a.push('Officer not assigned: ' + s.noOff);
+  if(s.noRes) a.push('Result pending: ' + s.noRes);
+  return a.join('   |   ');
+}
+function sumEntryLabel(e){ return (e.sitting ? 'After noon · ' : '') + 'Bench ' + e.bench + ' · ' + e.n; }
+function toggleSumNos(v){ SUM_NOS = !!v; var el = document.querySelector('#sheets .cl-sum'); if(el) el.outerHTML = summaryHtml(); }
+function summaryHtml(){
+  var m = summaryModel(); if(!m) return '';
+  function chip(t, n, cls){ return '<span class="cl-chip' + (cls ? ' ' + cls : '') + '"><b>' + n + '</b> ' + t + '</span>'; }
+  var s = m.stats;
+  var h = '<div class="cl-sheet cl-sum"><div class="cl-sumhead"><h3>' + bi('ہفتے کا خلاصہ', 'Week summary') + '</h3><div class="cl-sumbtns no-print">' +
+    '<label class="cl-sumchk"><input type="checkbox" onchange="toggleSumNos(this.checked)"' + (SUM_NOS ? ' checked' : '') + '> ' + bi('کیس نمبر دکھائیں', 'Show case numbers') + '</label>' +
+    '<button class="cl-btn ghost sm needs-export" onclick="printSummary()">🖨 ' + bi('پرنٹ', 'Print') + '</button>' +
+    '<button class="cl-btn ghost sm needs-export" onclick="exportSummary(\'pdf\')">⬇ PDF</button>' +
+    '<button class="cl-btn ghost sm needs-export" onclick="exportSummary(\'docx\')">⬇ Word</button>' +
+    '<button class="cl-btn ghost sm needs-export" onclick="exportSummary(\'xlsx\')">⬇ Excel</button>' +
+    '<button class="cl-btn ghost sm needs-export" onclick="exportSummary(\'csv\')">⬇ CSV</button></div></div>' +
+    '<div class="cl-sumstats">' + chip(bi('ہمارے کیس', 'Our cases'), s.cases) + chip(bi('دن', 'Days'), s.days) + chip(bi('ججز کے پینل', 'Judge panels'), s.panels) +
+    (s.pm ? chip(bi('دوپہر کے بعد کے کیس', 'After-noon cases'), s.pm) : '') +
+    (s.noOff ? chip(bi('آفیسر مقرر نہیں', 'Officer not assigned'), s.noOff, 'warn') : '') +
+    (s.noRes ? chip(bi('نتیجہ باقی', 'Result pending'), s.noRes, 'warn') : '') + '</div>' +
     '<div class="cl-sumnote">' + bi('بنچ کا نمبر ہر دن بدل سکتا ہے، اس لیے یہاں ججز کے حساب سے دیکھیں۔ ہر خانے میں: بنچ نمبر · ہمارے کیسوں کی تعداد۔ 🕐 = دوپہر کے بعد والی نشست۔', 'The bench number can change every day, so read this by judges. Each cell: bench number · number of our cases. 🕐 = after-noon sitting.') + '</div>' +
     '<div class="cl-sumw"><table class="cl-sumt"><thead><tr><th>' + bi('ججز', 'Judges') + '</th>' +
-    isos.map(function(i){ return '<th>' + esc(dayName(i).slice(0, 3)) + '<br>' + esc(dmyFromIso(i)) + '</th>'; }).join('') + '<th>' + bi('کل', 'Total') + '</th></tr></thead><tbody>';
-  order.forEach(function(k){
-    var p = panels[k];
-    h += '<tr><td>' + esc(p.label) + '</td>' + isos.map(function(i){
-      var c = p.cells[i]; if(!c) return '<td>—</td>';
-      return '<td>' + Object.keys(c).map(function(bk){ var e = c[bk];
-        return (e.sitting ? '<span class="pm">🕐 ' : '<span>') + esc('Bench ' + e.bench) + ' · ' + e.n + '</span>'; }).join('<br>') + '</td>';
+    m.heads.map(function(d){ return '<th>' + esc(d.dayS) + '<br>' + esc(d.date) + '</th>'; }).join('') + '<th>' + bi('کل', 'Total') + '</th></tr></thead><tbody>';
+  m.panels.forEach(function(p){
+    h += '<tr><td>' + esc(p.label) + '</td>' + p.cells.map(function(list){
+      if(!list.length) return '<td>—</td>';
+      return '<td>' + list.map(function(e){
+        return '<span class="e"><span' + (e.sitting ? ' class="pm"' : '') + '>' + (e.sitting ? '🕐 ' : '') + esc('Bench ' + e.bench + ' · ' + e.n) + '</span>' + (SUM_NOS ? '<span class="nos">' + esc(e.nos.join(', ')) + '</span>' : '') + '</span>'; }).join('') + '</td>';
     }).join('') + '<td>' + p.n + '</td></tr>';
   });
-  h += '<tr class="tot"><td>' + bi('کل', 'Total') + '</td>' + isos.map(function(i){ return '<td>' + (tot[i] || 0) + '</td>'; }).join('') + '<td>' + rows.length + '</td></tr>';
+  h += '<tr class="tot"><td>' + bi('کل', 'Total') + '</td>' + m.tot.map(function(n){ return '<td>' + n + '</td>'; }).join('') + '<td>' + m.total + '</td></tr></tbody></table></div>';
+  h += '<h4>' + bi('آفیسر کے حساب سے', 'By officer') + '</h4><div class="cl-sumw"><table class="cl-sumt"><thead><tr><th>' + bi('آفیسر', 'Officer') + '</th>' +
+    m.heads.map(function(d){ return '<th>' + esc(d.dayS) + '<br>' + esc(d.date) + '</th>'; }).join('') + '<th>' + bi('کل', 'Total') + '</th></tr></thead><tbody>';
+  m.offs.forEach(function(f){
+    h += '<tr' + (f.name === SUM_NA ? ' class="na"' : '') + '><td>' + (f.name === SUM_NA ? bi('آفیسر مقرر نہیں', 'Not assigned') : esc(f.name)) + '</td>' +
+      f.counts.map(function(n){ return '<td>' + (n || '—') + '</td>'; }).join('') + '<td><b>' + f.n + '</b></td></tr>';
+  });
   return h + '</tbody></table></div></div>';
+}
+function printSummary(){
+  if(!CTX.canExport) return;
+  document.body.classList.add('print-sum');
+  var done = function(){ document.body.classList.remove('print-sum'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  setTimeout(done, 120000);
+  window.print();
 }
 function render(){
   var days = visibleDays(), h = '';
@@ -1909,9 +1990,10 @@ async function exportFile(kind){
   if(!days.length){ showAct(bi('ڈاؤن لوڈ کے لیے کوئی کیس منتخب نہیں۔', 'No selected cases to download.'), 'err'); return; }
   showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
   try{
-    if(kind === 'pdf'){ await loadLib('pdflib'); downloadBlob(new Blob([await buildPdf(days)], {type:'application/pdf'}), exportFileBase() + '.pdf'); }
+    var sm = (kind === 'xlsx') ? null : summaryForDownload();
+    if(kind === 'pdf'){ await loadLib('pdflib'); var sb = sm ? await buildSummaryPdf(sm, {}) : null; downloadBlob(new Blob([await buildPdf(days, sb)], {type:'application/pdf'}), exportFileBase() + '.pdf'); }
     else if(kind === 'xlsx'){ await loadLib('jszip'); downloadBlob(await buildXlsx(days), exportFileBase() + '.xlsx'); }
-    else { await loadLib('docx'); downloadBlob(await buildDocx(days), exportFileBase() + '.docx'); }
+    else { await loadLib('docx'); downloadBlob(await buildDocx(days, sm), exportFileBase() + '.docx'); }
     showAct('✅ ' + bi('فائل تیار ہو گئی — ڈاؤن لوڈ فولڈر دیکھیں۔', 'File ready — check your Downloads folder.'), 'good');
   }catch(err){
     console.error(err);
@@ -1925,7 +2007,7 @@ function san(s){
     .replace(/ /g,' ').replace(/[​-‏‪-‮]/g,'').replace(/[^\x20-\x7E¡-ÿ]/g,'?');
 }
 function pdfEmblemPng(){ return punjabLogoPng(); }
-async function buildPdf(days){
+async function buildPdf(days, sumBytes){
   var L = PDFLib, doc = await L.PDFDocument.create();
   var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold);
   var PW = 841.89, PH = 595.28, M = 24, FOOT = 32;
@@ -2028,6 +2110,7 @@ async function buildPdf(days){
     });
     y -= 6;
   });
+  if(sumBytes){ var sp = await L.PDFDocument.load(sumBytes); var cps = await doc.copyPages(sp, sp.getPageIndices()); cps.forEach(function(pg, i){ doc.insertPage(i, pg); }); }
   var pages = doc.getPages(), nowD = new Date();
   var genD = nowD.getDate() + ' ' + ['January','February','March','April','May','June','July','August','September','October','November','December'][nowD.getMonth()] + ' ' + nowD.getFullYear();
   pages.forEach(function(p, i){
@@ -2158,7 +2241,7 @@ async function buildXlsx(days){
 }
 
 /* ---------------- Word (.docx via docx library) ---------------- */
-async function buildDocx(days){
+async function buildDocx(days, sm){
   var D = window.docx, FONT = 'Calibri';
   var W = [650, 650, 1800, 3900, 2500, 1600, 650, 1800, 2150];                     // twips, total 15700 (A4 landscape, narrow margins)
   var heads = ['Bench','Sr.','Case No','Title of Case','Nature','Section','B.Type','Officer','Result'];
@@ -2174,6 +2257,7 @@ async function buildDocx(days){
   var children = [];
   children.push(new D.Paragraph({children:[run(exportTitle(), {size:32, bold:true, color:'1B3F63'})], alignment:D.AlignmentType.CENTER, spacing:{after:60}}));
   children.push(new D.Paragraph({children:[run(subLine(days), {size:17, color:'666666'})], alignment:D.AlignmentType.CENTER, spacing:{after:160}}));
+  if(sm){ summaryDocxParts(sm).forEach(function(x){ children.push(x); }); children.push(new D.Paragraph({children:[new D.PageBreak()]})); }
   days.forEach(function(d, di){
     children.push(new D.Paragraph({children:[run(d.label, {size:24, bold:true, color:'FFFFFF'})], shading:{type:D.ShadingType.CLEAR, color:'auto', fill:'1B3F63'}, spacing:{before:di ? 200 : 0, after:60}, keepNext:true,
       border:{top:{style:D.BorderStyle.SINGLE, size:4, color:'1B3F63', space:3}, bottom:{style:D.BorderStyle.SINGLE, size:4, color:'1B3F63', space:3}}}));
@@ -2218,6 +2302,349 @@ async function buildDocx(days){
   return await D.Packer.toBlob(doc);
 }
 
+
+/* =====================  WEEK SUMMARY DOWNLOADS: PDF / WORD / EXCEL / CSV  ===================== */
+function sumFileBase(){
+  return 'Week_Summary_' + (ST.meta && ST.meta.no ? 'Cause_List_' + ST.meta.no + '_of_' + ST.meta.year : 'Cause_List');
+}
+function sumEntryText(e, withNos){
+  return (e.sitting ? '[After noon] ' : '') + 'Bench ' + e.bench + ' · ' + e.n + (withNos && SUM_NOS ? '\n' + e.nos.join(', ') : '');
+}
+async function exportSummary(kind){
+  if(!CTX.canExport) return;
+  var m = summaryModel();
+  if(!m){ showAct(bi('خلاصے کے لیے کوئی کیس نہیں۔', 'No cases for the summary.'), 'err'); return; }
+  showAct('⏳ ' + bi('فائل بن رہی ہے…', 'Preparing the file…'));
+  try{
+    var base = sumFileBase();
+    if(kind === 'pdf'){ await loadLib('pdflib'); downloadBlob(new Blob([await buildSummaryPdf(m, {standalone:true})], {type:'application/pdf'}), base + '.pdf'); }
+    else if(kind === 'xlsx'){ await loadLib('jszip'); downloadBlob(await buildSummaryXlsx(m), base + '.xlsx'); }
+    else if(kind === 'docx'){ await loadLib('docx'); downloadBlob(await buildSummaryDocx(m), base + '.docx'); }
+    else downloadBlob(new Blob([summaryCsv(m)], {type:'text/csv;charset=utf-8'}), base + '.csv');
+    showAct('✅ ' + bi('فائل تیار ہو گئی — ڈاؤن لوڈ فولڈر دیکھیں۔', 'File ready — check your Downloads folder.'), 'good');
+  }catch(err){
+    console.error(err);
+    showAct('❌ ' + bi('فائل نہیں بن سکی', 'Could not build the file') + ': ' + esc(err && err.message ? err.message : err), 'err');
+  }
+}
+/* the full-list PDF / Word downloads carry the summary at the start (only for the whole list, not a one-day / one-bench view) */
+function summaryForDownload(){
+  var cb = document.getElementById('incSum');
+  if(!cb || !cb.checked || VIEW.day || VIEW.bench || VIEW.supp) return null;
+  return summaryModel();
+}
+
+/* ---------------- CSV ---------------- */
+function summaryCsv(m){
+  function q(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+  var rows = [['Date','Day','Judges','Bench','Sitting','Our cases','Case numbers','Officers']];
+  m.details.forEach(function(d){ rows.push([d.date, d.day, d.judges, d.bench, d.sitting, d.n, d.nos, d.officers]); });
+  return '﻿' + rows.map(function(r){ return r.map(q).join(','); }).join('\r\n') + '\r\n';
+}
+
+/* ---------------- PDF (pdf-lib) ---------------- */
+async function buildSummaryPdf(m, o){
+  o = o || {};
+  var L = PDFLib, doc = await L.PDFDocument.create();
+  var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold);
+  var PW = 841.89, PH = 595.28, M = 24, FOOT = 32, TW = PW - 2*M;
+  var goldL = L.rgb(.722,.525,.043), navy = L.rgb(.106,.247,.388), grey = L.rgb(.45,.45,.45), line = L.rgb(.72,.72,.72), black = L.rgb(.1,.1,.1), white = L.rgb(1,1,1);
+  var pmc = L.rgb(.54,.4,.04), pmFill = L.rgb(.97,.92,.77), totFill = L.rgb(.94,.94,.94), warnFill = L.rgb(.99,.9,.9);
+  var page = null, y = 0;
+  function wrap(text, font, size, width){
+    var out = [], paras = san(text).split('\n');
+    paras.forEach(function(p){
+      var words = p.split(/\s+/).filter(Boolean), cur = '';
+      if(!words.length){ out.push(''); return; }
+      words.forEach(function(w){
+        while(font.widthOfTextAtSize(w, size) > width){
+          var k = w.length; while(k > 1 && font.widthOfTextAtSize(w.slice(0, k), size) > width) k--;
+          if(cur){ out.push(cur); cur = ''; }
+          out.push(w.slice(0, k)); w = w.slice(k);
+        }
+        var t = cur ? cur + ' ' + w : w;
+        if(font.widthOfTextAtSize(t, size) <= width) cur = t; else { out.push(cur); cur = w; }
+      });
+      if(cur) out.push(cur);
+    });
+    return out;
+  }
+  function newPage(){ page = doc.addPage([PW, PH]); y = PH - M; }
+  function banner(text){
+    var h = 19;
+    if(y - h - 60 < M + FOOT) newPage();
+    page.drawRectangle({x:M, y:y - h, width:TW, height:h, color:navy});
+    page.drawText(san(text), {x:M + 6, y:y - 13, size:10.5, font:FB, color:white});
+    y -= h + 3;
+  }
+  function note(text){
+    wrap(text, F, 8, TW - 6).forEach(function(l){ page.drawText(l, {x:M + 3, y:y - 8, size:8, font:F, color:grey}); y -= 10.5; });
+    y -= 4;
+  }
+  function segLines(segs, w){
+    var out = [];
+    segs.forEach(function(s){ wrap(s.t, s.b ? FB : F, s.s, w - 6).forEach(function(l){ out.push({t:l, f:s.b ? FB : F, s:s.s, c:s.c || black}); }); });
+    return out;
+  }
+  function drawTable(heads, W, rows){
+    var tw = W.reduce(function(a, b){ return a + b; }, 0);
+    function head(){
+      var hl = heads.map(function(t, i){ var o = []; String(t).split('\n').forEach(function(part){ wrap(part, FB, 8, W[i] - 6).forEach(function(l){ o.push(l); }); }); return o; });
+      var hh = Math.max.apply(null, hl.map(function(l){ return l.length; })) * 10 + 8;
+      if(y - hh < M + FOOT + 20) newPage();
+      page.drawRectangle({x:M, y:y - hh, width:tw, height:hh, color:navy});
+      var x = M;
+      hl.forEach(function(ls, i){
+        var yy = y - 4;
+        ls.forEach(function(l){ yy -= 8; var w = FB.widthOfTextAtSize(l, 8); page.drawText(l, {x:i ? x + (W[i] - w) / 2 : x + 3, y:yy, size:8, font:FB, color:white}); yy -= 2; });
+        x += W[i];
+      });
+      y -= hh;
+    }
+    head();
+    rows.forEach(function(row){
+      var cl = row.cells.map(function(segs, i){ return segLines(segs, W[i]); }), hh = 0;
+      cl.forEach(function(ls){ var h = ls.reduce(function(a, l){ return a + l.s + 2.4; }, 0); if(h > hh) hh = h; });
+      var rh = Math.max(hh + 7, 19);
+      if(y - rh < M + FOOT){ newPage(); head(); }
+      var x = M;
+      W.forEach(function(w, i){
+        var fill = (row.fills && row.fills[i]) || row.fill;
+        if(fill) page.drawRectangle({x:x, y:y - rh, width:w, height:rh, color:fill});
+        var yy = y - 3.5;
+        cl[i].forEach(function(l){ yy -= l.s; var lw = l.f.widthOfTextAtSize(l.t, l.s); page.drawText(l.t, {x:i ? x + (w - lw) / 2 : x + 3, y:yy + 1, size:l.s, font:l.f, color:l.c}); yy -= 2.4; });
+        page.drawLine({start:{x:x, y:y}, end:{x:x, y:y - rh}, thickness:.4, color:line});
+        x += w;
+      });
+      page.drawLine({start:{x:x, y:y}, end:{x:x, y:y - rh}, thickness:.4, color:line});
+      page.drawLine({start:{x:M, y:y - rh}, end:{x:x, y:y - rh}, thickness:.5, color:line});
+      y -= rh;
+    });
+  }
+  newPage();
+  if(o.standalone){
+    var headTop = y, embBytes = await pdfEmblemPng();
+    if(embBytes){ var emb = await doc.embedPng(embBytes); page.drawImage(emb, {x:M, y:y - 40, width:40 * PUNJAB_LOGO_RATIO, height:40}); }
+    var prosI = window.CampLogos ? await CampLogos.info('pros') : null;
+    if(prosI){ var pem = await doc.embedPng(prosI.bytes), phh = 40, pww = phh * prosI.w / prosI.h; page.drawImage(pem, {x:PW - M - pww, y:y - phh, width:pww, height:phh}); }
+    y = headTop - 46;
+    page.drawLine({start:{x:M, y:y}, end:{x:PW - M, y:y}, thickness:2.2, color:goldL});
+    page.drawLine({start:{x:M, y:y - 3.6}, end:{x:PW - M, y:y - 3.6}, thickness:.7, color:navy});
+    y -= 16;
+  }
+  var t = san('Week Summary — ' + m.title);
+  page.drawText(t, {x:(PW - FB.widthOfTextAtSize(t, 13)) / 2, y:y - 13, size:13, font:FB, color:navy}); y -= 19;
+  var st = san(m.range + '   |   ' + sumStatLine(m));
+  page.drawText(st, {x:(PW - F.widthOfTextAtSize(st, 8)) / 2, y:y - 9, size:8, font:F, color:grey}); y -= 18;
+
+  var nd = m.isos.length, W1 = 175, WT = 40, WD = (TW - W1 - WT) / nd;
+  var W = [W1].concat(m.isos.map(function(){ return WD; })).concat([WT]);
+  var heads = ['Judges'].concat(m.heads.map(function(d){ return d.dayS + '\n' + d.date; })).concat(['Total']);
+  banner('JUDGES BY DAY');
+  note('The bench number can change from day to day, so read this by judges. Each cell: bench number · number of our cases.' + (m.stats.pm ? ' "After noon" = after-noon sitting.' : '') + (SUM_NOS ? ' Case numbers are listed under each count.' : ''));
+  var rows = m.panels.map(function(p){
+    var fills = {};
+    var cells = [[{t:p.label, s:8.5, b:true}]].concat(p.cells.map(function(list, i){
+      if(!list.length) return [{t:'-', s:8.5, c:grey}];
+      if(list.some(function(e){ return e.sitting; })) fills[i + 1] = pmFill;
+      var segs = [];
+      list.forEach(function(e){
+        segs.push({t:(e.sitting ? 'After noon · ' : '') + 'Bench ' + e.bench + ' · ' + e.n, s:8.5, b:true, c:e.sitting ? pmc : black});
+        if(SUM_NOS) segs.push({t:e.nos.join(', '), s:7, c:grey});
+      });
+      return segs;
+    })).concat([[{t:String(p.n), s:8.5, b:true}]]);
+    return {cells:cells, fills:fills};
+  });
+  rows.push({fill:totFill, cells:[[{t:'Total', s:8.5, b:true}]].concat(m.tot.map(function(n){ return [{t:String(n), s:8.5, b:true}]; })).concat([[{t:String(m.total), s:8.5, b:true}]])});
+  drawTable(heads, W, rows);
+  y -= 14;
+
+  banner('BY OFFICER');
+  var oheads = ['Officer'].concat(m.heads.map(function(d){ return d.dayS + '\n' + d.date; })).concat(['Total']);
+  var orows = m.offs.map(function(f){
+    return {fill:f.name === SUM_NA ? warnFill : null, cells:[[{t:f.name === SUM_NA ? 'Not assigned' : f.name, s:8.5, b:true}]].concat(f.counts.map(function(n){ return [{t:n ? String(n) : '-', s:8.5, c:n ? black : grey}]; })).concat([[{t:String(f.n), s:8.5, b:true}]])};
+  });
+  drawTable(oheads, W, orows);
+
+  if(o.standalone){
+    var pages = doc.getPages(), nowD = new Date();
+    var genD = nowD.getDate() + ' ' + ['January','February','March','April','May','June','July','August','September','October','November','December'][nowD.getMonth()] + ' ' + nowD.getFullYear();
+    pages.forEach(function(p, i){
+      p.drawLine({start:{x:M, y:26}, end:{x:PW - M, y:26}, thickness:.6, color:line});
+      var mid = 'Generated ' + genD;
+      p.drawText(mid, {x:(PW - F.widthOfTextAtSize(mid, 7)) / 2, y:15, size:7, font:F, color:grey});
+      var s = 'Page ' + (i + 1) + ' of ' + pages.length;
+      p.drawText(s, {x:PW - M - FB.widthOfTextAtSize(s, 7.4), y:15, size:7.4, font:FB, color:navy});
+    });
+    doc.setTitle(san('Week Summary — ' + m.title)); doc.setCreator('');
+  }
+  return await doc.save();
+}
+
+/* ---------------- Excel (.xlsx written directly with JSZip) ---------------- */
+async function buildSummaryXlsx(m){
+  var NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
+  var S = {title:1, sub:2, head:3, headL:4, cell:5, cellC:6, pm:7, totL:8, totC:9, warn:10};
+  var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet ' + NS + '>' +
+    '<fonts count="5"><font><sz val="10"/><name val="Calibri"/></font><font><b/><sz val="15"/><color rgb="FF1B3F63"/><name val="Calibri"/></font>' +
+    '<font><sz val="10"/><color rgb="FF666666"/><name val="Calibri"/></font><font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="10"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="6"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF2A5A84"/><bgColor indexed="64"/></patternFill></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF8EBC4"/><bgColor indexed="64"/></patternFill></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFF3F3F3"/><bgColor indexed="64"/></patternFill></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FFFDE3E3"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border>' +
+    '<border><left style="thin"><color rgb="FFBBBBBB"/></left><right style="thin"><color rgb="FFBBBBBB"/></right><top style="thin"><color rgb="FFBBBBBB"/></top><bottom style="thin"><color rgb="FFBBBBBB"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="11">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment horizontal="left" vertical="center"/></xf>' +
+    '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="top" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="left" vertical="top"/></xf>' +
+    '<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment horizontal="center" vertical="top"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="5" borderId="1" xfId="0" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>' +
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  function c(ref, text, s){ return '<c r="' + ref + '" s="' + s + '" t="inlineStr"><is><t xml:space="preserve">' + xe(text) + '</t></is></c>'; }
+  function cn(ref, n, s){ return '<c r="' + ref + '" s="' + s + '"><v>' + Number(n) + '</v></c>'; }
+  function lines(text, w){ var n = 0; String(text == null ? '' : text).split('\n').forEach(function(p){ n += Math.max(1, Math.ceil(p.length * 1.08 / Math.max(4, w - 1))); }); return n; }
+  function ws(widths, rowsXml, merges, o){
+    o = o || {};
+    return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet ' + NS + '><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"' + (o.noGrid ? ' showGridLines="0"' : '') + '>' +
+      (o.freeze ? '<pane ySplit="' + o.freeze + '" topLeftCell="A' + (o.freeze + 1) + '" activePane="bottomLeft" state="frozen"/>' : '') + '</sheetView></sheetViews>' +
+      '<sheetFormatPr defaultRowHeight="15"/><cols>' + widths.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + rowsXml + '</sheetData>' + (o.filter ? '<autoFilter ref="' + o.filter + '"/>' : '') +
+      (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function(x){ return '<mergeCell ref="' + x + '"/>'; }).join('') + '</mergeCells>' : '') +
+      '<pageMargins left="0.35" right="0.35" top="0.45" bottom="0.55" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>';
+  }
+  var nd = m.isos.length, lastC = colName(nd + 1), dw = SUM_NOS ? 28 : 20;
+  var widths = [38].concat(m.isos.map(function(){ return dw; })).concat([9]);
+  function top(title){
+    return '<row r="1" ht="26" customHeight="1">' + c('A1', title, S.title) + '</row>' +
+      '<row r="2" ht="16" customHeight="1">' + c('A2', m.range + '   |   ' + sumStatLine(m), S.sub) + '</row>';
+  }
+  function headRow(r, first){
+    return '<row r="' + r + '" ht="32" customHeight="1">' + c('A' + r, first, S.headL) + m.heads.map(function(d, i){ return c(colName(i + 1) + r, d.dayS + '\n' + d.date, S.head); }).join('') + c(lastC + r, 'Total', S.head) + '</row>';
+  }
+  /* sheet 1: judges by day */
+  var r = 3, rows = top(m.title + ' — Week Summary') + headRow(3, 'Judges');
+  m.panels.forEach(function(p){
+    r++; var mx = lines(p.label, widths[0]), cells = c('A' + r, p.label, S.cell);
+    p.cells.forEach(function(list, i){
+      var txt = list.length ? list.map(function(e){ return sumEntryText(e, true); }).join('\n') : '—';
+      mx = Math.max(mx, lines(txt, dw));
+      cells += c(colName(i + 1) + r, txt, list.some(function(e){ return e.sitting; }) ? S.pm : S.cellC);
+    });
+    rows += '<row r="' + r + '" ht="' + Math.min(400, Math.max(18, mx * 13 + 5)) + '" customHeight="1">' + cells + cn(lastC + r, p.n, S.totC) + '</row>';
+  });
+  r++; rows += '<row r="' + r + '" ht="19" customHeight="1">' + c('A' + r, 'Total', S.totL) + m.tot.map(function(n, i){ return cn(colName(i + 1) + r, n, S.totC); }).join('') + cn(lastC + r, m.total, S.totC) + '</row>';
+  if(m.stats.pm){ r += 2; rows += '<row r="' + r + '" ht="16" customHeight="1">' + c('A' + r, 'Gold cells contain an after-noon sitting.', S.sub) + '</row>'; }
+  var sheet1 = ws(widths, rows, ['A1:' + lastC + '1', 'A2:' + lastC + '2'], {noGrid:true, freeze:3});
+  /* sheet 2: by officer */
+  r = 3; rows = top(m.title + ' — By Officer') + headRow(3, 'Officer');
+  m.offs.forEach(function(f){
+    r++;
+    rows += '<row r="' + r + '" ht="19" customHeight="1">' + c('A' + r, f.name, f.name === SUM_NA ? S.warn : S.cell) + f.counts.map(function(n, i){ return n ? cn(colName(i + 1) + r, n, S.cellC) : c(colName(i + 1) + r, '', S.cellC); }).join('') + cn(lastC + r, f.n, S.totC) + '</row>';
+  });
+  r++; rows += '<row r="' + r + '" ht="19" customHeight="1">' + c('A' + r, 'Total', S.totL) + m.tot.map(function(n, i){ return cn(colName(i + 1) + r, n, S.totC); }).join('') + cn(lastC + r, m.total, S.totC) + '</row>';
+  var sheet2 = ws(widths, rows, ['A1:' + lastC + '1', 'A2:' + lastC + '2'], {noGrid:true, freeze:3});
+  /* sheet 3: details (sort / filter) */
+  var dh = ['Date','Day','Judges','Bench','Sitting','Our cases','Case numbers','Officers'], dwid = [13, 11, 42, 8, 28, 10, 62, 40];
+  rows = '<row r="1" ht="24" customHeight="1">' + dh.map(function(h, i){ return c(colName(i) + '1', h, S.head); }).join('') + '</row>';
+  m.details.forEach(function(d, i){
+    var rr = i + 2, mx = Math.max(lines(d.judges, dwid[2]), lines(d.nos, dwid[6]), lines(d.officers, dwid[7]));
+    rows += '<row r="' + rr + '" ht="' + Math.max(18, mx * 13 + 4) + '" customHeight="1">' + c('A' + rr, d.date, S.cell) + c('B' + rr, d.day, S.cell) + c('C' + rr, d.judges, S.cell) + c('D' + rr, d.bench, S.cellC) + c('E' + rr, d.sitting, S.cell) + cn('F' + rr, d.n, S.cellC) + c('G' + rr, d.nos, S.cell) + c('H' + rr, d.officers, S.cell) + '</row>';
+  });
+  var nDet = m.details.length + 1;
+  var sheet3 = ws(dwid, rows, [], {freeze:1, filter:'A1:H' + nDet});
+  var wb = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook ' + NS + ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+    '<sheet name="Week Summary" sheetId="1" r:id="rId1"/><sheet name="By Officer" sheetId="2" r:id="rId2"/><sheet name="Details (filter)" sheetId="3" r:id="rId3"/></sheets>' +
+    '<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="2" hidden="1">\'Details (filter)\'!$A$1:$H$' + nDet + '</definedName></definedNames></workbook>';
+  var REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  var zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    [1, 2, 3].map(function(i){ return '<Override PartName="/xl/worksheets/sheet' + i + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + REL + '/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+  zip.file('xl/workbook.xml', wb);
+  zip.file('xl/_rels/workbook.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    [1, 2, 3].map(function(i){ return '<Relationship Id="rId' + i + '" Type="' + REL + '/worksheet" Target="worksheets/sheet' + i + '.xml"/>'; }).join('') +
+    '<Relationship Id="rId4" Type="' + REL + '/styles" Target="styles.xml"/></Relationships>');
+  zip.file('xl/styles.xml', styles);
+  zip.file('xl/worksheets/sheet1.xml', sheet1); zip.file('xl/worksheets/sheet2.xml', sheet2); zip.file('xl/worksheets/sheet3.xml', sheet3);
+  return await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+
+/* ---------------- Word (.docx via docx library) ---------------- */
+function summaryDocxParts(m){
+  var D = window.docx, FONT = 'Calibri';
+  var nd = m.isos.length, wFirst = 3300, wTot = 900, wDay = Math.floor((15700 - wFirst - wTot) / nd);
+  var W = [wFirst].concat(m.isos.map(function(){ return wDay; })).concat([wTot]), TOT = W.reduce(function(a, b){ return a + b; }, 0);
+  var bd = {style:D.BorderStyle.SINGLE, size:4, color:'BBBBBB'};
+  function run(t, o){ o = o || {}; return new D.TextRun({text:String(t == null ? '' : t), font:FONT, size:o.size || 18, bold:!!o.bold, color:o.color}); }
+  function para(parts, o){ o = o || {}; return new D.Paragraph({children:parts, alignment:o.align, spacing:{before:o.before || 0, after:o.after || 0}, keepNext:!!o.keepNext}); }
+  function cell(paras, i, fill){
+    return new D.TableCell({children:paras, width:{size:W[i], type:D.WidthType.DXA}, verticalAlign:D.VerticalAlign.TOP,
+      shading:fill ? {type:D.ShadingType.CLEAR, color:'auto', fill:fill} : undefined, margins:{top:50, bottom:50, left:70, right:70}});
+  }
+  function banner(t, before){
+    return new D.Paragraph({children:[run(t, {size:22, bold:true, color:'FFFFFF'})], shading:{type:D.ShadingType.CLEAR, color:'auto', fill:'1B3F63'}, spacing:{before:before || 0, after:60}, keepNext:true});
+  }
+  function table(heads, rows){
+    var trs = [new D.TableRow({tableHeader:true, cantSplit:true, children:heads.map(function(h, i){
+      return cell([para([run(h.replace('\n', ' · '), {size:17, bold:true, color:'FFFFFF'})], {align:i ? D.AlignmentType.CENTER : undefined})], i, '2A5A84');
+    })})];
+    rows.forEach(function(rw){
+      trs.push(new D.TableRow({cantSplit:true, children:rw.cells.map(function(ps, i){ return cell(ps, i, (rw.fills && rw.fills[i]) || rw.fill); })}));
+    });
+    return new D.Table({rows:trs, width:{size:TOT, type:D.WidthType.DXA}, columnWidths:W, layout:D.TableLayoutType.FIXED, borders:{top:bd, bottom:bd, left:bd, right:bd, insideHorizontal:bd, insideVertical:bd}});
+  }
+  function ctr(t, o){ o = o || {}; return [para([run(t, o)], {align:D.AlignmentType.CENTER})]; }
+  var heads = ['Judges'].concat(m.heads.map(function(d){ return d.dayS + '\n' + d.date; })).concat(['Total']);
+  var rows = m.panels.map(function(p){
+    var fills = {};
+    var cells = [[para([run(p.label, {bold:true})])]].concat(p.cells.map(function(list, i){
+      if(!list.length) return ctr('—', {color:'888888'});
+      if(list.some(function(e){ return e.sitting; })) fills[i + 1] = 'F8EBC4';
+      var ps = [];
+      list.forEach(function(e){
+        ps.push(para([run((e.sitting ? 'After noon · ' : '') + 'Bench ' + e.bench + ' · ' + e.n, {bold:true, color:e.sitting ? '8A660A' : '111111'})], {align:D.AlignmentType.CENTER}));
+        if(SUM_NOS) ps.push(para([run(e.nos.join(', '), {size:14, color:'666666'})], {align:D.AlignmentType.CENTER, after:40}));
+      });
+      return ps;
+    })).concat([ctr(String(p.n), {bold:true})]);
+    return {cells:cells, fills:fills};
+  });
+  rows.push({fill:'F3F3F3', cells:[[para([run('Total', {bold:true})])]].concat(m.tot.map(function(n){ return ctr(String(n), {bold:true}); })).concat([ctr(String(m.total), {bold:true})])});
+  var oheads = ['Officer'].concat(m.heads.map(function(d){ return d.dayS + '\n' + d.date; })).concat(['Total']);
+  var orows = m.offs.map(function(f){
+    return {fill:f.name === SUM_NA ? 'FDE3E3' : undefined, cells:[[para([run(f.name === SUM_NA ? 'Not assigned' : f.name, {bold:true})])]].concat(f.counts.map(function(n){ return ctr(n ? String(n) : '—', {color:n ? '111111' : '888888'}); })).concat([ctr(String(f.n), {bold:true})])};
+  });
+  return [
+    banner('Week Summary — judges by day'),
+    para([run('The bench number can change from day to day, so read this by judges. Each cell: bench number · number of our cases.' + (m.stats.pm ? ' Gold cells contain an after-noon sitting.' : ''), {size:15, color:'666666'})], {after:80}),
+    table(heads, rows),
+    para([run('')], {after:120}),
+    banner('By officer', 60),
+    table(oheads, orows)
+  ];
+}
+async function buildSummaryDocx(m){
+  var D = window.docx, FONT = 'Calibri';
+  var children = [
+    new D.Paragraph({children:[new D.TextRun({text:'Week Summary — ' + m.title, font:FONT, size:32, bold:true, color:'1B3F63'})], alignment:D.AlignmentType.CENTER, spacing:{after:60}}),
+    new D.Paragraph({children:[new D.TextRun({text:m.range + '   |   ' + sumStatLine(m), font:FONT, size:17, color:'666666'})], alignment:D.AlignmentType.CENTER, spacing:{after:160}})
+  ].concat(summaryDocxParts(m));
+  var doc = new D.Document({creator:'', title:'Week Summary — ' + m.title, sections:[{
+    properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:680, left:567, right:567, footer:300}}},
+    footers:{default:new D.Footer({children:[new D.Paragraph({alignment:D.AlignmentType.CENTER, children:[new D.TextRun({children:['Page ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:15, color:'777777'})]})]})},
+    children:children}]});
+  return await D.Packer.toBlob(doc);
+}
 
 /* ---------- sign-in, roles and live data (same pattern as the other Camp Office pages) ---------- */
 function applyLists(d){

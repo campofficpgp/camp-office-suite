@@ -2688,6 +2688,7 @@ html,body{overflow-x:hidden;}
   var JA = { auto:true, already:0, autoSaved:0, stored:0, attached:0, noFile:0, canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], uid:0, libs:false, worker:null };
   var JA_PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   var JA_TESS = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
+  var JA_BUCKET = 'gs://camp-office-project.firebasestorage.app';
   var JA_TYPES = ['J.P.', 'Crl.P.L.A.', 'Crl.A.'];
   var JA_PLACES = ['Mandi Bahauddin', 'Toba Tek Singh', 'Rahim Yar Khan', 'Dera Ghazi Khan', 'D.G. Khan', 'Nankana Sahib', 'Bahawalnagar', 'Bahawal Nagar', 'Bahawalpur',
     'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan', 'Gujranwala', 'Sargodha', 'Sahiwal', 'Mianwali', 'Jhelum', 'Attock', 'Chakwal', 'Gujrat', 'Sialkot', 'Narowal',
@@ -2814,7 +2815,8 @@ html,body{overflow-x:hidden;}
   }
   async function jaStorage(){
     if(!(window.firebase && firebase.storage)) await jaScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js');
-    return firebase.storage();
+    /* this page's Firebase config has no default bucket, so name the bucket (same one the Scanning Desk uses) */
+    try{ return firebase.app().storage(JA_BUCKET); }catch(e){ return firebase.storage(); }
   }
   async function jaUpload(id, blob){
     var st = await jaStorage(), path = 'jailReports/' + id + '/report.jpg';

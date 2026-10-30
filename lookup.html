@@ -686,6 +686,10 @@ html,body{overflow-x:hidden;}
     <div class="lk-wrap"><table class="lk-table"><thead id="jr_head"></thead><tbody id="jr_body"></tbody></table></div>
     <div class="lk-note" id="jr_note"></div>
     <div class="lk-pager" id="jr_pager"></div>
+    <div class="lk-card" id="jr_trashbox" style="display:none;">
+      <div class="lk-bar"><b data-en="Recently deleted reports (they can be brought back)" data-ur="حال میں ہٹائی گئی رپورٹیں (واپس لائی جا سکتی ہیں)">Recently deleted reports (they can be brought back)</b></div>
+      <div class="lk-wrap"><table class="lk-table"><tbody id="jr_trash"></tbody></table></div>
+    </div>
   </div>
 
 </div>
@@ -2568,7 +2572,7 @@ html,body{overflow-x:hidden;}
      jail, hearing, note). No report files, no phone numbers and no Supreme Court memos are stored there.
      The data is read once when the tab is opened (Reload saved data reads it again).
      ===================================================================================================== */
-  var JR = { rows:[], loaded:false, loading:false, err:'', limit:100, token:0, sigJail:'', sigType:'' };
+  var JR = { rows:[], trash:[], ask:'', msg:'', loaded:false, loading:false, err:'', limit:100, token:0, sigJail:'', sigType:'' };
   function jrInit(u){
     var tab = document.getElementById('tabJail'); if(tab) tab.style.display = '';
     try{ jaInit(u); }catch(e){ console.error(e); }
@@ -2592,6 +2596,7 @@ html,body{overflow-x:hidden;}
       bench:String(d.bench || ''), serial:d.serial == null ? '' : String(d.serial), listNo:d.listNo == null ? '' : String(d.listNo),
       note:String(d.note || ''), source:String(d.source || ''), flag:String(d.flag || ''), filePath:String(d.filePath || '')
     };
+    o.deleted = /^\[DELETED /.test(o.flag);
     o.caseLabel = (o.caseType + ' ' + o.caseNo + (o.caseYear ? '/' + o.caseYear : '')).trim();
     o.hay = [o.caseLabel, o.caseType + o.caseNo + o.caseYear, o.accused, o.jail, o.note, o.bench, o.hearing].join(' ').toLowerCase();
     o.hayS = rlStrip(o.hay);
@@ -2602,12 +2607,12 @@ html,body{overflow-x:hidden;}
     try{
       var snap = await db.collection('jailReports').get();
       if(tok !== JR.token) return;
-      var rows = [];
-      snap.forEach(function(s){ try{ var d = s.data() || {}; if(d.caseNo){ var mo = jrMake(d); mo.id = s.id; rows.push(mo); } }catch(e){} });
-      JR.rows = rows; JR.loaded = true;
+      var rows = [], gone = [];
+      snap.forEach(function(s){ try{ var d = s.data() || {}; if(d.caseNo){ var mo = jrMake(d); mo.id = s.id; (mo.deleted ? gone : rows).push(mo); } }catch(e){} });
+      JR.rows = rows; JR.trash = gone; JR.loaded = true;
     }catch(e){
       if(tok !== JR.token) return;
-      JR.err = String((e && e.message) || e); JR.rows = []; JR.loaded = false; console.error('jr load', e);
+      JR.err = String((e && e.message) || e); JR.rows = []; JR.trash = []; JR.loaded = false; console.error('jr load', e);
     }
     JR.loading = false; jrRender();
     try{ jwRender(); }catch(e){}
@@ -2653,10 +2658,10 @@ html,body{overflow-x:hidden;}
     var head = document.getElementById('jr_head'); if(!head) return;
     var body = document.getElementById('jr_body'), cnt = document.getElementById('jr_count'), note = document.getElementById('jr_note'), pg = document.getElementById('jr_pager'), st = document.getElementById('jr_status');
     document.getElementById('jr_q').placeholder = rlBi('مثلاً J.P. 258/2023 یا 258', 'e.g. J.P. 258/2023 or 258');
-    head.innerHTML = '<tr>' + [rlBi('کیس', 'Case'), rlBi('ملزم', 'Accused'), rlBi('جیل', 'Jail'), rlBi('سماعت', 'Hearing'), rlBi('نوٹ', 'Note')].map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    head.innerHTML = '<tr>' + [rlBi('کیس', 'Case'), rlBi('ملزم', 'Accused'), rlBi('جیل', 'Jail'), rlBi('سماعت', 'Hearing'), rlBi('نوٹ', 'Note')].concat(JA.canAdd ? [rlBi('ہٹائیں', 'Delete')] : []).map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
     if(JR.loading){ body.innerHTML = ''; cnt.textContent = ''; note.textContent = ''; pg.innerHTML = ''; st.textContent = rlBi('محفوظ ڈیٹا لوڈ ہو رہا ہے…', 'Loading the saved data…'); st.className = 'rl-status'; return; }
     if(JR.err){ st.textContent = rlBi('جیل رپورٹس نہیں پڑھی جا سکیں: ', 'Jail reports could not be read: ') + JR.err; st.className = 'rl-status bad'; }
-    else { st.textContent = rlBi('موصول شدہ رپورٹس: ', 'Reports received: ') + JR.rows.length + rlBi('۔ رپورٹ کی اصل فائل واٹس ایپ گروپ میں ہے۔', '. The report file itself is in the WhatsApp group.'); st.className = 'rl-status'; }
+    else { st.textContent = rlBi('موصول شدہ رپورٹس: ', 'Reports received: ') + JR.rows.length + rlBi('۔ رپورٹ کی اصل فائل واٹس ایپ گروپ میں ہے۔', '. The report file itself is in the WhatsApp group.') + (JR.msg ? ' ' + JR.msg : ''); st.className = 'rl-status'; }
     jrFill(document.getElementById('jr_jail'), 'jail', 'All', 'سب');
     jrFill(document.getElementById('jr_type'), 'caseType', 'All', 'سب');
     var rows = jrFiltered(), show = rows.slice(0, JR.limit);
@@ -2666,11 +2671,62 @@ html,body{overflow-x:hidden;}
         '<td dir="auto">' + esc(o.accused) + '</td>' +
         '<td dir="auto"><span class="jr-pill">' + esc(o.jail || '—') + '</span></td>' +
         '<td dir="auto">' + jrHearing(o) + '</td>' +
-        '<td dir="auto">' + esc(o.note) + (o.flag ? (o.note ? '<br>' : '') + '<span class="jr-pill warn">' + esc(o.flag) + '</span>' : '') + (o.source ? '<br><span class="jr-sub">' + esc(o.source) + '</span>' : '') + (o.filePath ? '<br><button class="lk-btn ghost jr-file" type="button" data-p="' + esc(o.filePath) + '">' + esc(rlBi('رپورٹ دیکھیں / ڈاؤن لوڈ', 'View / Download report')) + '</button>' : '') + '</td></tr>';
+        '<td dir="auto">' + esc(o.note) + (o.flag ? (o.note ? '<br>' : '') + '<span class="jr-pill warn">' + esc(o.flag) + '</span>' : '') + (o.source ? '<br><span class="jr-sub">' + esc(o.source) + '</span>' : '') + (o.filePath ? '<br><button class="lk-btn ghost jr-file" type="button" data-p="' + esc(o.filePath) + '">' + esc(rlBi('رپورٹ دیکھیں / ڈاؤن لوڈ', 'View / Download report')) + '</button>' : '') + '</td>' + (JA.canAdd ? jrDelCell(o) : '') + '</tr>';
     }).join('');
+    jrTrashRender();
     note.textContent = rows.length ? '' : (JR.rows.length ? rlBi('کوئی نتیجہ نہیں ملا۔ تلاش بدل کر دیکھیں۔', 'No match. Try a different search.') : (JR.err ? '' : rlBi('ابھی کوئی جیل رپورٹ محفوظ نہیں۔', 'No jail reports are saved yet.')));
     pg.innerHTML = rows.length > show.length ? '<span>' + show.length + ' / ' + rows.length + '</span><button class="lk-btn ghost" type="button" id="jr_more">' + esc(rlBi('مزید دکھائیں', 'Show more')) + '</button>' : '';
     var more = document.getElementById('jr_more'); if(more) more.addEventListener('click', function(){ JR.limit += 200; jrRender(); });
+  }
+
+  /* ---- Delete / bring back (reversible). The record is NOT erased: its "flag" field gets the prefix "[DELETED yyyy-mm-dd] " (the rules allow Admins to edit that field; only a Super Admin can erase a record for good). ---- */
+  function jrDelCell(o){
+    var ask = JR.ask === o.id;
+    return '<td><button class="lk-btn ghost jr-del' + (ask ? ' ask' : '') + '" type="button" data-id="' + esc(o.id) + '"' + (ask ? ' style="color:#b3261e;border-color:#b3261e;"' : '') + '>' + esc(ask ? rlBi('پکا ہٹائیں؟', 'Sure? Delete') : rlBi('ہٹائیں', 'Delete')) + '</button></td>';
+  }
+  function jrTrashRender(){
+    var box = document.getElementById('jr_trashbox'), tb = document.getElementById('jr_trash'); if(!box || !tb) return;
+    if(!JA.canAdd || !JR.trash.length){ box.style.display = 'none'; tb.innerHTML = ''; return; }
+    box.style.display = '';
+    tb.innerHTML = JR.trash.map(function(o){
+      var when = (String(o.flag).match(/^\[DELETED (\d{4}-\d{2}-\d{2})\]/) || [])[1] || '';
+      return '<tr><td dir="auto"><b>' + esc(o.caseLabel) + '</b></td><td dir="auto">' + esc(o.accused) + '</td><td dir="auto"><span class="jr-pill">' + esc(o.jail || '—') + '</span></td>' +
+        '<td class="jr-sub">' + esc(rlBi('ہٹائی گئی: ', 'Deleted on: ') + (when ? rlDmy(when) : '')) + '</td>' +
+        '<td><button class="lk-btn jr-restore" type="button" data-id="' + esc(o.id) + '">' + esc(rlBi('واپس لائیں', 'Bring back')) + '</button></td></tr>';
+    }).join('');
+  }
+  function jrOrigFlag(f){ return String(f || '').replace(/^\[DELETED [^\]]*\]\s?/, ''); }
+  async function jrDelete(id){
+    var o = JR.rows.filter(function(x){ return x.id === id; })[0]; if(!o || !JA.canAdd) return;
+    var nf = ('[DELETED ' + jaToday() + '] ' + o.flag).slice(0, 150);
+    await db.collection('jailReports').doc(id).update({ flag:nf });
+    o.flag = nf; o.deleted = true;
+    JR.rows = JR.rows.filter(function(x){ return x !== o; }); JR.trash.unshift(o);
+    JR.msg = rlBi('رپورٹ ہٹا دی گئی (نیچے "حال میں ہٹائی گئی رپورٹیں" سے واپس آ سکتی ہے)۔', 'Report deleted (it can be brought back from "Recently deleted reports" below).');
+  }
+  async function jrRestore(id){
+    var o = JR.trash.filter(function(x){ return x.id === id; })[0]; if(!o || !JA.canAdd) return;
+    var nf = jrOrigFlag(o.flag);
+    var ref = db.collection('jailReports').doc(id);
+    if(nf) await ref.update({ flag:nf }); else await ref.update({ flag:firebase.firestore.FieldValue.delete() });
+    o.flag = nf; o.deleted = false;
+    JR.trash = JR.trash.filter(function(x){ return x !== o; }); JR.rows.push(o);
+    JR.msg = rlBi('رپورٹ واپس آ گئی۔', 'Report brought back.');
+  }
+  function jrBindDel(){
+    var jb = document.getElementById('jr_body'), tb = document.getElementById('jr_trash');
+    var timer = null;
+    async function act(e, kind){
+      var t = e.target.closest ? e.target.closest(kind === 'del' ? '.jr-del' : '.jr-restore') : null; if(!t) return;
+      var id = t.getAttribute('data-id'); if(!/^[A-Za-z0-9-]+$/.test(id || '')) return;
+      if(kind === 'del' && JR.ask !== id){ JR.ask = id; JR.msg = ''; jrRender(); clearTimeout(timer); timer = setTimeout(function(){ JR.ask = ''; jrRender(); }, 6000); return; }
+      JR.ask = ''; clearTimeout(timer); t.disabled = true;
+      try{ if(kind === 'del') await jrDelete(id); else await jrRestore(id); }
+      catch(err){ console.error('jr del', err); JR.msg = rlBi('یہ کام نہیں ہو سکا: ', 'This could not be done: ') + String((err && err.message) || err); }
+      jrRender(); try{ jwRender(); }catch(x){}
+    }
+    if(jb) jb.addEventListener('click', function(e){ act(e, 'del'); });
+    if(tb) tb.addEventListener('click', function(e){ act(e, 'restore'); });
   }
   function jrCsv(){
     if(!CAN_EXPORT) return;
@@ -2900,7 +2956,7 @@ html,body{overflow-x:hidden;}
   }
   function jaStatusOf(r){
     var k = jaKey(r.type, r.no, r.year), dup = '';
-    if(JR.rows.some(function(o){ return jaKey(o.caseType, o.caseNo, o.caseYear) === k; })) dup = 'saved';
+    if(JR.rows.some(function(o){ return jaKey(o.caseType, o.caseNo, o.caseYear) === k; }) || JR.trash.some(function(o){ return jaKey(o.caseType, o.caseNo, o.caseYear) === k; })) dup = 'saved';
     else if(JA.rows.some(function(o){ return o !== r && o.id < r.id && jaKey(o.type, o.no, o.year) === k; })) dup = 'batch';
     return dup;
   }
@@ -3075,6 +3131,7 @@ html,body{overflow-x:hidden;}
       if(t.classList.contains('ja-sel')){ r.sel = t.checked; return; }
       if(t.classList.contains('ja-f')){ var f = t.getAttribute('data-f'); if(f === 'type' || f === 'no' || f === 'year'){ r.flag = ''; jaRender(); } }
     });
+    try{ jrBindDel(); }catch(e){ console.error(e); }
     var jb = document.getElementById('jr_body');
     if(jb) jb.addEventListener('click', async function(e){
       var t = e.target.closest ? e.target.closest('.jr-file') : null; if(!t) return;

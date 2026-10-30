@@ -2683,9 +2683,9 @@ html,body{overflow-x:hidden;}
      computer (OCR in the browser; nothing is sent to any server of ours), the case number and the jail are
      picked out, and a list is shown for checking. Nothing is saved until "Save selected reports" is pressed.
      Only the small record is saved (case, accused, jail, hearing, note) - never the file itself.
-     Pages that are Supreme Court letters or memos are skipped.
+     Pages that are Supreme Court memos (blank tables sent to the jail), court letters, forwarding letters or blank pages are skipped and never added.
      ===================================================================================================== */
-  var JA = { auto:true, already:0, autoSaved:0, stored:0, attached:0, noFile:0, canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], uid:0, libs:false, worker:null };
+  var JA = { auto:true, already:0, autoSaved:0, stored:0, attached:0, noFile:0, canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], memos:0, uid:0, libs:false, worker:null };
   var JA_PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   var JA_TESS = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
   var JA_BUCKET = 'gs://camp-office-project.firebasestorage.app';
@@ -2746,11 +2746,32 @@ html,body{overflow-x:hidden;}
     var n = m[1].replace(/\s+/g, ' ').trim().replace(/^.*\b(?:prisoner|namely)\s+(?:namely\s+|with\s+)?/i, '').replace(/^(respected sir|subject|kindly)\W*/i, '');
     return n.slice(0, 150);
   }
+  /* Does the page read like a reply written by a jail superintendent? (OCR can be rough, so the wording list is wide.) */
+  function jaReplySig(t){ return /kindly\s+(?:re|ro)f[eo]r|it\s+is\s+submitted|yours\s+faithful|submitted\s+please|respected\s+sir|dear\s+sir|requisite\s+information|as\s+under/i.test(String(t || '')); }
+  /* What kind of page is this? '' = a normal jail reply. A Supreme Court memo (blank table sent to the jail) also ends with
+     "To: The Superintendent", so the word Superintendent proves nothing - look for the memo's own wording instead. */
+  function jaKind(t){
+    t = String(t || '');
+    if(/supremecourt\.gov\.pk|fixation\.b/i.test(t)) return 'court letter';
+    if(/undersigned\s+(?:is|are|ia|ls)\s+directed|electronically\s+generated|does\s+not\s+require\s+(?:a\s+)?signature|may\s+be\s+obtained\s+immediately/i.test(t)) return 'memo';
+    var s = 0;
+    if(/\bMEMO\b(?!\s*(?:no|number|#|\/|\.))/i.test(t)) s++;
+    if(/MOST\s*IMMEDIATE/i.test(t)) s++;
+    if(/Fixed\s+on/i.test(t) && /Before\s+Bench/i.test(t)) s++;
+    if(/cims\.scp|pdr_proforma/i.test(t)) s++;
+    if(/SUPREME\s+COURT\s+OF\s+PAKISTAN/i.test(t) && !/AUGUST\s+SUPREME/i.test(t)) s++;
+    if(/Islamabad\s*,?\s*the\s+(?:[A-Za-z]+\s+\d{1,2}|\d{1,2}\s+[A-Za-z]+)/i.test(t)) s++;
+    if(s >= 2 || (s === 1 && !jaReplySig(t))) return 'memo';
+    var f = 0;
+    [/find\s+enclosed/i, /endorsement\s+no/i, /acknowledge\s+receipt/i, /further\s+necessary\s+action/i, /copy\s+of\s+the\s+above/i].forEach(function(r){ if(r.test(t)) f++; });
+    return f >= 2 ? 'forwarding letter' : '';
+  }
   /* One page of text -> {row} or {skip:reason}. */
   function jaParse(text, file, page){
     var t = String(text || '');
-    if(/supremecourt\.gov\.pk|fixation\.b/i.test(t)) return { skip:'court letter' };
-    if(/\bMEMO\b/i.test(t) && !/SUPERINTENDENT/i.test(t)) return { skip:'memo' };
+    if(t.replace(/[^A-Za-z0-9]/g, '').length < 60) return { skip:'blank page' };
+    var kind = jaKind(t);
+    if(kind) return { skip:kind };
     var m = JA_RE.exec(t);
     if(!m) return { skip:'no case number' };
     var type = jaNormType(m[1]), no = m[2].replace(/^0+(?=\d)/, ''), sfx = m[3] && /[A-Za-z]/.test(m[3]) ? '-' + m[3].toUpperCase() : '';
@@ -2759,7 +2780,9 @@ html,body{overflow-x:hidden;}
     if(no.length > 4 || yr < 2005 || yr > new Date().getFullYear() + 1) flag = 'Check the case number';
     var jail = jaJail(t);
     if(!jail || !/jail|prison/i.test(t.slice(0, 1000))) flag = flag || 'Check the jail';
-    return { row:{ sel:true, type:type, no:no + sfx, year:year, accused:jaAccused(t, m.index + m[0].length), jail:jail, note:'', src:file + (page ? ' p.' + page : ''), flag:flag } };
+    var noReply = !jaReplySig(t);
+    if(noReply) flag = flag || 'No jail reply wording found - maybe a court memo or an unclear picture';
+    return { row:{ sel:true, type:type, no:no + sfx, year:year, accused:jaAccused(t, m.index + m[0].length), jail:jail, note:'', src:file + (page ? ' p.' + page : ''), flag:flag, noReply:noReply } };
   }
   function jaScript(src){
     return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('Could not load ' + src)); }; document.head.appendChild(s); });
@@ -2915,7 +2938,7 @@ html,body{overflow-x:hidden;}
   }
   async function jaRun(files, dropped){
     if(!JA.canAdd || JA.busy || !files.length) return;
-    JA.busy = true; JA.stop = false; JA.already = 0; JA.autoSaved = 0; JA.stored = 0; JA.attached = 0; JA.noFile = 0; jaRender();
+    JA.busy = true; JA.stop = false; JA.already = 0; JA.autoSaved = 0; JA.stored = 0; JA.attached = 0; JA.noFile = 0; JA.memos = 0; jaRender();
     try{
       if(!JR.loaded) await jrLoad();
       await jaLoadCl();
@@ -2928,7 +2951,7 @@ html,body{overflow-x:hidden;}
             jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ' — ' + rlBi('صفحہ ', 'page ') + (p || 1) + ' / ' + n + ': ' + f.name);
             var res = jaParse(text, f.name, p);
             if(res.row){
-              var rw = res.row; rw.blob = await jaShot(shot); rw.id = ++JA.uid; rw.hit = (JA.cl && JA.cl[jaKey(rw.type, rw.no, rw.year)]) || null; rw.sel = !!rw.hit;
+              var rw = res.row; rw.blob = await jaShot(shot); rw.id = ++JA.uid; rw.hit = (JA.cl && JA.cl[jaKey(rw.type, rw.no, rw.year)]) || null; rw.sel = !!rw.hit && !rw.noReply;
               if(jaStatusOf(rw) === 'saved'){
                 if(JA.auto && rw.blob){ try{ if(await jaAttach(rw)){ JA.attached++; return; } }catch(e){ console.error('ja attach', e); JA.noFile++; } }
                 JA.already++; return;
@@ -2940,7 +2963,7 @@ html,body{overflow-x:hidden;}
               }
               JA.rows.push(rw); added++; jaRender();
             }
-            else JA.skipped.push(f.name + (p ? ' p.' + p : '') + ' (' + res.skip + ')');
+            else { JA.skipped.push(f.name + (p ? ' p.' + p : '') + ' (' + res.skip + ')'); if(/memo|court|forwarding|blank/.test(res.skip)) JA.memos++; }
           });
         }catch(e){
           console.error('ja read', e);
@@ -2949,7 +2972,7 @@ html,body{overflow-x:hidden;}
         }
       }
       if(loadFail) jaSay(rlBi('پڑھنے والی لائبریری لوڈ نہیں ہو سکی۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', 'The reader could not be loaded. Check the internet and try again.') + (added ? rlBi(' (اب تک ملی رپورٹیں: ', ' (Found so far: ') + added + ')' : ''), true);
-      else jaSay((JA.stop ? rlBi('روک دیا گیا۔ ', 'Stopped. ') : '') + rlBi('پڑھائی مکمل۔ خود محفوظ ہوئیں: ', 'Finished reading. Saved automatically: ') + JA.autoSaved + rlBi('۔ آپ کے دیکھنے کے لیے: ', '. Waiting for your check: ') + JA.rows.length + rlBi('۔ پہلے سے محفوظ تھیں: ', '. Already saved before: ') + JA.already + (dropped ? rlBi('۔ نہ پڑھی جانے والی فائلیں (اسٹیکر/چھوٹی تصویریں/دوسری قسم): ', '. Files not read (stickers, tiny pictures, other types): ') + dropped : '') + ((JA.stored + JA.attached) ? rlBi('۔ رپورٹ کی تصویریں محفوظ: ', '. Report pictures kept: ') + (JA.stored + JA.attached) + (JA.attached ? rlBi(' (پرانی رپورٹوں سے جوڑی: ', ' (attached to older reports: ') + JA.attached + ')' : '') : '') + (JA.noFile ? rlBi('۔ تصویر محفوظ نہ ہو سکی: ', '. Picture could not be stored: ') + JA.noFile : '') + rlBi('۔ نیچے کی قطاریں دیکھ لیں، غلط ہو تو درست کریں، پھر محفوظ کریں۔', '. Check the rows below, correct any that are wrong, then save.'));
+      else jaSay((JA.stop ? rlBi('روک دیا گیا۔ ', 'Stopped. ') : '') + rlBi('پڑھائی مکمل۔ خود محفوظ ہوئیں: ', 'Finished reading. Saved automatically: ') + JA.autoSaved + rlBi('۔ آپ کے دیکھنے کے لیے: ', '. Waiting for your check: ') + JA.rows.length + rlBi('۔ پہلے سے محفوظ تھیں: ', '. Already saved before: ') + JA.already + (JA.memos ? rlBi('۔ خالی سپریم کورٹ میمو/عدالتی خط/خالی صفحے (شامل نہیں کیے): ', '. Empty court memos, court letters and blank pages (NOT added): ') + JA.memos : '') + (dropped ? rlBi('۔ نہ پڑھی جانے والی فائلیں (اسٹیکر/چھوٹی تصویریں/دوسری قسم): ', '. Files not read (stickers, tiny pictures, other types): ') + dropped : '') + ((JA.stored + JA.attached) ? rlBi('۔ رپورٹ کی تصویریں محفوظ: ', '. Report pictures kept: ') + (JA.stored + JA.attached) + (JA.attached ? rlBi(' (پرانی رپورٹوں سے جوڑی: ', ' (attached to older reports: ') + JA.attached + ')' : '') : '') + (JA.noFile ? rlBi('۔ تصویر محفوظ نہ ہو سکی: ', '. Picture could not be stored: ') + JA.noFile : '') + rlBi('۔ نیچے کی قطاریں دیکھ لیں، غلط ہو تو درست کریں، پھر محفوظ کریں۔', '. Check the rows below, correct any that are wrong, then save.'));
     }catch(e){
       console.error('ja run', e); jaSay(rlBi('پڑھائی میں خرابی: ', 'Reading failed: ') + String((e && e.message) || e), true);
     }

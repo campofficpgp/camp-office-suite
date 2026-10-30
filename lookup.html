@@ -520,6 +520,7 @@ html,body{overflow-x:hidden;}
     <div class="lk-tab active" id="tabCases" onclick="lkTab('cases')" data-en="Daily Cases" data-ur="یومیہ کیسز">Daily Cases</div>
     <div class="lk-tab" id="tabNotices" onclick="lkTab('notices')" data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</div>
     <div class="lk-tab" id="tabRosters" style="display:none" data-en="Rosters, Cause Lists &amp; Scans" data-ur="روسٹر، کاز لسٹ اور اسکین">Rosters, Cause Lists &amp; Scans</div>
+    <div class="lk-tab" id="tabScans" style="display:none" data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</div>
   </div>
 
   <!-- ===== Cases ===== -->
@@ -591,6 +592,30 @@ html,body{overflow-x:hidden;}
     <div class="lk-wrap"><table class="lk-table"><thead id="rl_head"></thead><tbody id="rl_body"></tbody></table></div>
     <div class="lk-note" id="rl_note"></div>
     <div class="lk-pager" id="rl_pager"></div>
+  </div>
+
+  <!-- ===== Scanning Desk (search the scanned documents on their own; read-only) ===== -->
+  <div id="secScans" style="display:none;">
+    <div class="lk-card">
+      <div class="lk-grid">
+        <div class="field rl-grid-wide"><label for="sc_q" data-en="Search the scanned documents (case number, title, section, FIR, judge, officer, scanned text)" data-ur="اسکین دستاویزات میں تلاش (کیس نمبر، عنوان، دفعہ، FIR، جج، آفیسر، اسکین شدہ متن)">Search the scanned documents (case number, title, section, FIR, judge, officer, scanned text)</label><input type="search" id="sc_q" autocomplete="off"></div>
+        <div class="field"><label for="sc_doc" data-en="Document type" data-ur="دستاویز کی قسم">Document type</label><select id="sc_doc"></select></div>
+        <div class="field"><label for="sc_off" data-en="Officer" data-ur="آفیسر">Officer</label><select id="sc_off"></select></div>
+        <div class="field"><label for="sc_from" data-en="From date" data-ur="تاریخ از">From date</label><input type="date" id="sc_from"></div>
+        <div class="field"><label for="sc_to" data-en="To date" data-ur="تاریخ تک">To date</label><input type="date" id="sc_to"></div>
+      </div>
+      <div class="lk-bar">
+        <span class="lk-count" id="sc_count"></span>
+        <button class="lk-btn ghost" type="button" id="sc_clear" data-en="Clear" data-ur="صاف کریں">Clear</button>
+        <button class="lk-btn ghost" type="button" id="sc_reload" data-en="Reload saved data" data-ur="محفوظ ڈیٹا دوبارہ لوڈ کریں">Reload saved data</button>
+        <button class="lk-btn needs-export" type="button" id="sc_csv" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+        <a class="lk-btn ghost" style="text-decoration:none" href="scanning.html" data-en="Open Scanning Desk" data-ur="اسکین ڈیسک کھولیں">Open Scanning Desk</a>
+      </div>
+      <div class="rl-status" id="sc_status" role="status" aria-live="polite"></div>
+    </div>
+    <div class="lk-wrap"><table class="lk-table"><thead id="sc_head"></thead><tbody id="sc_body"></tbody></table></div>
+    <div class="lk-note" id="sc_note"></div>
+    <div class="lk-pager" id="sc_pager"></div>
   </div>
 
 </div>
@@ -2190,6 +2215,7 @@ html,body{overflow-x:hidden;}
     var tab = document.getElementById('tabRosters');
     if(tab) tab.style.display = (RL.can.r || RL.can.c || RL.can.s) ? '' : 'none';
     var sl = document.getElementById('rl_scanlink'); if(sl) sl.style.display = RL.can.s ? '' : 'none';
+    var st = document.getElementById('tabScans'); if(st) st.style.display = RL.can.s ? '' : 'none';
   }
   function rlShowTab(){
     document.getElementById('secCases').style.display = 'none';
@@ -2272,15 +2298,17 @@ html,body{overflow-x:hidden;}
       row.hayS = rlStrip(row.hay);
       if(s.ocrText) row.ocr = String(s.ocrText).toLowerCase();
       RL.rows.push(row); n++;
+      RL.scans.push({iso:dt, date:row.date, day:row.day, doc:doc, court:String(s.court || ''), judges:row.judges, caseNo:row.caseNo, title:String(s.title || ''), sc:(cn ? sc : ''), outcome:String(s.outcome || ''), sentence:String(s.sentence || ''), sections:String(s.sections || ''), fir:fir, place:[s.station, s.tehsil, s.district].filter(Boolean).join(', '), officer:String(s.officer || ''), opinion:[s.opinionStatus, s.opinionBy].filter(Boolean).join(' · '), pages:s.pages ? String(s.pages) : '', hay:row.hay, hayS:row.hayS, ocr:row.ocr || ''});
     });
     RL.stat.s = n;
   }
   async function rlLoad(){
     if(RL.loading) return;
-    RL.loading = true; RL.loaded = false; RL.rows = []; RL.err = {r:'', c:'', s:''}; RL.stat = {r:null, c:null, s:null, cTotal:0, cBad:0}; RL.limit = 100;
+    RL.loading = true; RL.loaded = false; RL.rows = []; RL.scans = []; RL.err = {r:'', c:'', s:''}; RL.stat = {r:null, c:null, s:null, cTotal:0, cBad:0}; RL.limit = 100;
     var tok = ++RL.token;
     rlSetStatus(rlBi('محفوظ ڈیٹا لوڈ ہو رہا ہے…', 'Loading the saved data…'));
     rlRender();
+    try{ scRender(); }catch(e){ console.error(e); }
     if(RL.can.r){ try{ await rlLoadRosters(tok); }catch(e){ console.error('rl roster', e); RL.err.r = (e && e.message) || String(e); } }
     if(tok !== RL.token) return;
     if(RL.can.c){ try{ await rlLoadLists(tok); }catch(e){ console.error('rl lists', e); RL.err.c = (e && e.message) || String(e); } }
@@ -2294,6 +2322,7 @@ html,body{overflow-x:hidden;}
     if(RL.can.s) parts.push(RL.err.s ? rlBi('اسکین ڈیسک نہیں پڑھا جا سکا: ', 'Scanning Desk could not be read: ') + RL.err.s : rlBi('اسکین دستاویزات: ', 'Scanned documents: ') + (RL.stat.s || 0));
     rlSetStatus(parts.join('   |   '), !!(RL.err.r || RL.err.c || RL.err.s));
     rlRender();
+    try{ scRender(); }catch(e){ console.error(e); }
   }
   function rlFiltered(){
     var q = String((document.getElementById('rl_q') || {}).value || '').toLowerCase().trim();
@@ -2358,6 +2387,108 @@ html,body{overflow-x:hidden;}
     document.getElementById('tabCases').addEventListener('click', rlHideTab);
     document.getElementById('tabNotices').addEventListener('click', rlHideTab);
     if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secRosters').style.display !== 'none') rlRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
+  })();
+
+  /* =====================================================================================================
+     SCANNING DESK tab  -  the scanned documents on their own (the same rows are also part of the combined tab).
+     Read-only. Uses the data already read by the combined tab's loader (collection "scans", once per load).
+     ===================================================================================================== */
+  var SC = { limit:100, sigDoc:'', sigOff:'' };
+  function scShow(){
+    ['secCases', 'secNotices', 'secRosters'].forEach(function(id){ document.getElementById(id).style.display = 'none'; });
+    ['tabCases', 'tabNotices', 'tabRosters'].forEach(function(id){ document.getElementById(id).classList.remove('active'); });
+    document.getElementById('secScans').style.display = '';
+    document.getElementById('tabScans').classList.add('active');
+    if(!RL.loaded && !RL.loading) rlLoad();
+    else scRender();
+  }
+  function scHide(){
+    document.getElementById('secScans').style.display = 'none';
+    document.getElementById('tabScans').classList.remove('active');
+  }
+  function scFill(sel, sig, key, allEn, allUr){
+    var vals = {}; (RL.scans || []).forEach(function(o){ if(o[key]) vals[o[key]] = 1; });
+    var list = Object.keys(vals).sort(function(a, b){ return a.localeCompare(b); });
+    var s = list.join('|') + '#' + isUrdu;
+    if(sel.getAttribute('data-sig') === s) return;
+    var keep = sel.value; sel.setAttribute('data-sig', s);
+    sel.innerHTML = '<option value="">' + esc(isUrdu ? allUr : allEn) + '</option>' + list.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+    if(keep && vals[keep]) sel.value = keep;
+  }
+  function scFiltered(){
+    var q = String((document.getElementById('sc_q') || {}).value || '').toLowerCase().trim();
+    var toks = q ? q.split(/\s+/).filter(Boolean) : [];
+    var doc = document.getElementById('sc_doc').value, off = document.getElementById('sc_off').value;
+    var f = document.getElementById('sc_from').value || '', t = document.getElementById('sc_to').value || '';
+    var out = (RL.scans || []).filter(function(o){
+      o.viaOcr = false;
+      if(doc && o.doc !== doc) return false;
+      if(off && o.officer !== off) return false;
+      if(f && (!o.iso || o.iso < f)) return false;
+      if(t && (!o.iso || o.iso > t)) return false;
+      for(var i = 0; i < toks.length; i++){
+        var k = toks[i], ks = rlStrip(k);
+        if(o.hay.indexOf(k) < 0 && !(ks && o.hayS.indexOf(ks) >= 0)){
+          if(o.ocr && o.ocr.indexOf(k) >= 0){ o.viaOcr = true; continue; }
+          return false;
+        }
+      }
+      return true;
+    });
+    out.sort(function(a, b){ return String(b.iso).localeCompare(String(a.iso)) || String(a.caseNo).localeCompare(String(b.caseNo)); });
+    return out;
+  }
+  function scRender(){
+    var head = document.getElementById('sc_head'); if(!head) return;
+    var body = document.getElementById('sc_body'), cnt = document.getElementById('sc_count'), note = document.getElementById('sc_note'), pg = document.getElementById('sc_pager'), st = document.getElementById('sc_status');
+    document.getElementById('sc_q').placeholder = rlBi('مثلاً 302 PPC یا کیس نمبر', 'e.g. 302 PPC or a case number');
+    head.innerHTML = '<tr>' + [rlBi('تاریخ', 'Date'), rlBi('دستاویز', 'Document'), rlBi('کیس', 'Case'), rlBi('نتیجہ', 'Result'), rlBi('دفعات', 'Sections'), rlBi('FIR / مقام', 'FIR / Place'), rlBi('آفیسر', 'Officer'), rlBi('رائے', 'Opinion'), rlBi('صفحات', 'Pages')].map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    if(!RL.can.s){ body.innerHTML = ''; cnt.textContent = ''; note.textContent = ''; pg.innerHTML = ''; return; }
+    if(RL.loading){ body.innerHTML = ''; cnt.textContent = ''; note.textContent = ''; pg.innerHTML = ''; st.textContent = rlBi('محفوظ ڈیٹا لوڈ ہو رہا ہے…', 'Loading the saved data…'); st.className = 'rl-status'; return; }
+    if(RL.err.s){ st.textContent = rlBi('اسکین ڈیسک نہیں پڑھا جا سکا: ', 'Scanning Desk could not be read: ') + RL.err.s; st.className = 'rl-status bad'; }
+    else { st.textContent = rlBi('اسکین دستاویزات: ', 'Scanned documents: ') + (RL.stat.s || 0); st.className = 'rl-status'; }
+    scFill(document.getElementById('sc_doc'), 'sigDoc', 'doc', 'All', 'سب');
+    scFill(document.getElementById('sc_off'), 'sigOff', 'officer', 'All', 'سب');
+    var rows = scFiltered(), show = rows.slice(0, SC.limit);
+    cnt.textContent = rows.length + rlBi(' نتائج', ' results');
+    body.innerHTML = show.map(function(o){
+      return '<tr><td style="white-space:nowrap">' + esc(o.date) + (o.day ? '<br><span class="rl-judges">' + esc(o.day) + '</span>' : '') + '</td>' +
+        '<td dir="auto"><span class="rl-src s">' + esc(o.doc || '—') + '</span>' + (o.court ? '<br><span class="rl-judges">' + esc(o.court) + '</span>' : '') + (o.judges ? '<br><span class="rl-judges">' + esc(o.judges) + '</span>' : '') + '</td>' +
+        '<td dir="auto"><b>' + esc(o.caseNo) + '</b>' + (o.title ? '<br>' + esc(o.title) : '') + (o.sc ? '<br><span class="rl-judges">' + esc(o.sc) + '</span>' : '') + (o.viaOcr ? '<br><span class="rl-judges">' + esc(rlBi('(اسکین شدہ متن میں ملا)', '(found in the scanned text)')) + '</span>' : '') + '</td>' +
+        '<td dir="auto">' + esc(o.outcome) + (o.sentence ? '<br><span class="rl-judges">' + esc(o.sentence) + '</span>' : '') + '</td>' +
+        '<td dir="auto">' + esc(o.sections) + '</td>' +
+        '<td dir="auto">' + esc([o.fir, o.place].filter(Boolean).join(' · ')) + '</td>' +
+        '<td dir="auto">' + esc(o.officer) + '</td>' +
+        '<td dir="auto">' + esc(o.opinion) + '</td>' +
+        '<td style="white-space:nowrap">' + esc(o.pages) + '</td></tr>';
+    }).join('');
+    note.textContent = rows.length ? '' : ((RL.scans || []).length ? rlBi('کوئی نتیجہ نہیں ملا۔ تلاش بدل کر دیکھیں۔', 'No match. Try a different search.') : rlBi('ابھی کوئی اسکین دستاویز محفوظ نہیں۔', 'No scanned documents are saved yet.'));
+    pg.innerHTML = rows.length > show.length ? '<span>' + show.length + ' / ' + rows.length + '</span><button class="lk-btn ghost" type="button" id="sc_more">' + esc(rlBi('مزید دکھائیں', 'Show more')) + '</button>' : '';
+    var more = document.getElementById('sc_more'); if(more) more.addEventListener('click', function(){ SC.limit += 200; scRender(); });
+  }
+  function scCsv(){
+    if(!CAN_EXPORT) return;
+    var rows = scFiltered();
+    function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    var lines = [['Date', 'Document', 'Court', 'Judges', 'Case', 'Title', 'Result', 'Sentence', 'Sections', 'FIR', 'Place', 'Officer', 'Opinion', 'Pages'].join(',')];
+    rows.forEach(function(o){ lines.push([o.date, o.doc, o.court, o.judges, o.caseNo, o.title, o.outcome, o.sentence, o.sections, o.fir, o.place, o.officer, o.opinion, o.pages].map(cell).join(',')); });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Lookup-Scanning-Desk.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  (function(){
+    var timer = null;
+    function sched(){ clearTimeout(timer); timer = setTimeout(function(){ SC.limit = 100; scRender(); }, 200); }
+    ['sc_q', 'sc_doc', 'sc_off', 'sc_from', 'sc_to'].forEach(function(id){ var el = document.getElementById(id); if(el){ el.addEventListener('input', sched); el.addEventListener('change', sched); } });
+    document.getElementById('sc_clear').addEventListener('click', function(){
+      ['sc_q', 'sc_doc', 'sc_off', 'sc_from', 'sc_to'].forEach(function(id){ document.getElementById(id).value = ''; }); SC.limit = 100; scRender();
+    });
+    document.getElementById('sc_reload').addEventListener('click', function(){ rlLoad(); });
+    document.getElementById('sc_csv').addEventListener('click', scCsv);
+    document.getElementById('tabScans').addEventListener('click', scShow);
+    ['tabCases', 'tabNotices', 'tabRosters'].forEach(function(id){ document.getElementById(id).addEventListener('click', scHide); });
+    if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secScans').style.display !== 'none') scRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
   })();
 </script>
 

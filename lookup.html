@@ -390,6 +390,10 @@ html,body{overflow-x:hidden;}
 .rl-judges{ font-size:11.5px; color:var(--muted); }
 .rl-status{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.6; }
 .rl-status.bad{ color:#b3261e; }
+/* ---- Jail Reports tab (extra tab; the other tabs above are untouched) ---- */
+.jr-pill{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600; border:1px solid var(--border); white-space:nowrap; background:rgba(42,90,132,.12); }
+.jr-pill.warn{ background:rgba(184,134,11,.16); }
+.jr-sub{ font-size:11.5px; color:var(--muted); }
 .lk-sort{ background:none; border:0; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; padding:0; display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
 .lk-sort .ar{ font-size:10px; opacity:.55; }
 .lk-sort.on .ar{ opacity:1; }
@@ -521,6 +525,7 @@ html,body{overflow-x:hidden;}
     <div class="lk-tab" id="tabNotices" onclick="lkTab('notices')" data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</div>
     <div class="lk-tab" id="tabRosters" style="display:none" data-en="Rosters, Cause Lists &amp; Scans" data-ur="روسٹر، کاز لسٹ اور اسکین">Rosters, Cause Lists &amp; Scans</div>
     <div class="lk-tab" id="tabScans" style="display:none" data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</div>
+    <div class="lk-tab" id="tabJail" style="display:none" data-en="Jail Reports" data-ur="جیل رپورٹس">Jail Reports</div>
   </div>
 
   <!-- ===== Cases ===== -->
@@ -616,6 +621,29 @@ html,body{overflow-x:hidden;}
     <div class="lk-wrap"><table class="lk-table"><thead id="sc_head"></thead><tbody id="sc_body"></tbody></table></div>
     <div class="lk-note" id="sc_note"></div>
     <div class="lk-pager" id="sc_pager"></div>
+  </div>
+
+  <!-- ===== Jail Reports (search by case number which jail report has been received; read-only) ===== -->
+  <div id="secJail" style="display:none;">
+    <div class="lk-card">
+      <div class="lk-grid">
+        <div class="field rl-grid-wide"><label for="jr_q" data-en="Search jail reports (case number, accused name, jail)" data-ur="جیل رپورٹس میں تلاش (کیس نمبر، ملزم کا نام، جیل)">Search jail reports (case number, accused name, jail)</label><input type="search" id="jr_q" autocomplete="off"></div>
+        <div class="field"><label for="jr_jail" data-en="Jail" data-ur="جیل">Jail</label><select id="jr_jail"></select></div>
+        <div class="field"><label for="jr_type" data-en="Case type" data-ur="کیس کی قسم">Case type</label><select id="jr_type"></select></div>
+        <div class="field"><label for="jr_from" data-en="Hearing from" data-ur="سماعت از">Hearing from</label><input type="date" id="jr_from"></div>
+        <div class="field"><label for="jr_to" data-en="Hearing to" data-ur="سماعت تک">Hearing to</label><input type="date" id="jr_to"></div>
+      </div>
+      <div class="lk-bar">
+        <span class="lk-count" id="jr_count"></span>
+        <button class="lk-btn ghost" type="button" id="jr_clear" data-en="Clear" data-ur="صاف کریں">Clear</button>
+        <button class="lk-btn ghost" type="button" id="jr_reload" data-en="Reload saved data" data-ur="محفوظ ڈیٹا دوبارہ لوڈ کریں">Reload saved data</button>
+        <button class="lk-btn needs-export" type="button" id="jr_csv" data-en="Export CSV" data-ur="CSV ایکسپورٹ">Export CSV</button>
+      </div>
+      <div class="rl-status" id="jr_status" role="status" aria-live="polite"></div>
+    </div>
+    <div class="lk-wrap"><table class="lk-table"><thead id="jr_head"></thead><tbody id="jr_body"></tbody></table></div>
+    <div class="lk-note" id="jr_note"></div>
+    <div class="lk-pager" id="jr_pager"></div>
   </div>
 
 </div>
@@ -2166,6 +2194,7 @@ html,body{overflow-x:hidden;}
       CAN_EXPORT = window.CampPerm ? CampPerm.can(u, 'lookup', 'x') : true;
       document.body.classList.toggle('no-export', !CAN_EXPORT);
       try{ rlInit(u); }catch(e){ console.error(e); }
+      try{ jrInit(u); }catch(e){ console.error(e); }
       document.getElementById('ceUserEmail').textContent = user.email;
       var rn = ROLE_NAMES[r2] || [r2, r2];
       document.getElementById('ceUserRole').textContent = rn[0] + ' / ' + rn[1];
@@ -2489,6 +2518,138 @@ html,body{overflow-x:hidden;}
     document.getElementById('tabScans').addEventListener('click', scShow);
     ['tabCases', 'tabNotices', 'tabRosters'].forEach(function(id){ document.getElementById(id).addEventListener('click', scHide); });
     if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secScans').style.display !== 'none') scRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
+  })();
+
+  /* =====================================================================================================
+     JAIL REPORTS tab  -  which jail report has been received for which case (search by case number).
+     Read-only: it only READS the collection "jailReports" (one small record per report: case, accused,
+     jail, hearing, note). No report files, no phone numbers and no Supreme Court memos are stored there.
+     The data is read once when the tab is opened (Reload saved data reads it again).
+     ===================================================================================================== */
+  var JR = { rows:[], loaded:false, loading:false, err:'', limit:100, token:0, sigJail:'', sigType:'' };
+  function jrInit(u){
+    var tab = document.getElementById('tabJail'); if(tab) tab.style.display = '';
+  }
+  function jrShow(){
+    ['secCases', 'secNotices', 'secRosters', 'secScans'].forEach(function(id){ var e = document.getElementById(id); if(e) e.style.display = 'none'; });
+    ['tabCases', 'tabNotices', 'tabRosters', 'tabScans'].forEach(function(id){ var e = document.getElementById(id); if(e) e.classList.remove('active'); });
+    document.getElementById('secJail').style.display = '';
+    document.getElementById('tabJail').classList.add('active');
+    if(!JR.loaded && !JR.loading) jrLoad(); else jrRender();
+  }
+  function jrHide(){
+    document.getElementById('secJail').style.display = 'none';
+    document.getElementById('tabJail').classList.remove('active');
+  }
+  function jrMake(d){
+    var o = {
+      caseType:String(d.caseType || ''), caseNo:String(d.caseNo || ''), caseYear:String(d.caseYear || ''),
+      accused:String(d.accused || ''), jail:String(d.jail || ''), hearing:String(d.hearing || ''),
+      bench:String(d.bench || ''), serial:d.serial == null ? '' : String(d.serial), listNo:d.listNo == null ? '' : String(d.listNo),
+      note:String(d.note || ''), source:String(d.source || ''), flag:String(d.flag || '')
+    };
+    o.caseLabel = (o.caseType + ' ' + o.caseNo + (o.caseYear ? '/' + o.caseYear : '')).trim();
+    o.hay = [o.caseLabel, o.caseType + o.caseNo + o.caseYear, o.accused, o.jail, o.note, o.bench, o.hearing].join(' ').toLowerCase();
+    o.hayS = rlStrip(o.hay);
+    return o;
+  }
+  async function jrLoad(){
+    var tok = ++JR.token; JR.loading = true; JR.err = ''; jrRender();
+    try{
+      var snap = await db.collection('jailReports').get();
+      if(tok !== JR.token) return;
+      var rows = [];
+      snap.forEach(function(s){ try{ var d = s.data() || {}; if(d.caseNo) rows.push(jrMake(d)); }catch(e){} });
+      JR.rows = rows; JR.loaded = true;
+    }catch(e){
+      if(tok !== JR.token) return;
+      JR.err = String((e && e.message) || e); JR.rows = []; JR.loaded = false; console.error('jr load', e);
+    }
+    JR.loading = false; jrRender();
+  }
+  function jrFill(sel, key, allEn, allUr){
+    var vals = {}; JR.rows.forEach(function(o){ if(o[key]) vals[o[key]] = 1; });
+    var list = Object.keys(vals).sort(function(a, b){ return a.localeCompare(b); });
+    var s = list.join('|') + '#' + isUrdu;
+    if(sel.getAttribute('data-sig') === s) return;
+    var keep = sel.value; sel.setAttribute('data-sig', s);
+    sel.innerHTML = '<option value="">' + esc(isUrdu ? allUr : allEn) + '</option>' + list.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+    if(keep && vals[keep]) sel.value = keep;
+  }
+  function jrFiltered(){
+    var q = String((document.getElementById('jr_q') || {}).value || '').toLowerCase().trim();
+    var toks = q ? q.split(/\s+/).filter(Boolean) : [];
+    var jail = document.getElementById('jr_jail').value, ty = document.getElementById('jr_type').value;
+    var f = document.getElementById('jr_from').value || '', t = document.getElementById('jr_to').value || '';
+    var out = JR.rows.filter(function(o){
+      if(jail && o.jail !== jail) return false;
+      if(ty && o.caseType !== ty) return false;
+      if(f && (!o.hearing || o.hearing < f)) return false;
+      if(t && (!o.hearing || o.hearing > t)) return false;
+      for(var i = 0; i < toks.length; i++){
+        var k = toks[i], ks = rlStrip(k);
+        if(o.hay.indexOf(k) < 0 && !(ks && o.hayS.indexOf(ks) >= 0)) return false;
+      }
+      return true;
+    });
+    out.sort(function(a, b){
+      var ah = a.hearing || '9999', bh = b.hearing || '9999';
+      return ah.localeCompare(bh) || (parseInt(a.serial, 10) || 999) - (parseInt(b.serial, 10) || 999) || a.caseLabel.localeCompare(b.caseLabel);
+    });
+    return out;
+  }
+  function jrHearing(o){
+    if(!o.hearing) return '<span class="jr-sub">' + esc(rlBi('کسی کاز لسٹ میں نہیں', 'Not in a saved cause list')) + '</span>';
+    return '<b>' + esc(rlDmy(o.hearing)) + '</b><br><span class="jr-sub">' + esc(rlDay(o.hearing)) + '</span>' +
+      ((o.bench || o.serial) ? '<br><span class="jr-sub">' + esc((o.bench ? rlBi('بینچ ', 'Bench ') + o.bench : '') + (o.serial ? ' · ' + rlBi('سیریل ', 'Serial ') + o.serial : '')) + '</span>' : '') +
+      (o.listNo ? '<br><span class="jr-sub">' + esc(rlBi('کاز لسٹ ', 'Cause List ') + o.listNo) + '</span>' : '');
+  }
+  function jrRender(){
+    var head = document.getElementById('jr_head'); if(!head) return;
+    var body = document.getElementById('jr_body'), cnt = document.getElementById('jr_count'), note = document.getElementById('jr_note'), pg = document.getElementById('jr_pager'), st = document.getElementById('jr_status');
+    document.getElementById('jr_q').placeholder = rlBi('مثلاً J.P. 258/2023 یا 258', 'e.g. J.P. 258/2023 or 258');
+    head.innerHTML = '<tr>' + [rlBi('کیس', 'Case'), rlBi('ملزم', 'Accused'), rlBi('جیل', 'Jail'), rlBi('سماعت', 'Hearing'), rlBi('نوٹ', 'Note')].map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    if(JR.loading){ body.innerHTML = ''; cnt.textContent = ''; note.textContent = ''; pg.innerHTML = ''; st.textContent = rlBi('محفوظ ڈیٹا لوڈ ہو رہا ہے…', 'Loading the saved data…'); st.className = 'rl-status'; return; }
+    if(JR.err){ st.textContent = rlBi('جیل رپورٹس نہیں پڑھی جا سکیں: ', 'Jail reports could not be read: ') + JR.err; st.className = 'rl-status bad'; }
+    else { st.textContent = rlBi('موصول شدہ رپورٹس: ', 'Reports received: ') + JR.rows.length + rlBi('۔ رپورٹ کی اصل فائل واٹس ایپ گروپ میں ہے۔', '. The report file itself is in the WhatsApp group.'); st.className = 'rl-status'; }
+    jrFill(document.getElementById('jr_jail'), 'jail', 'All', 'سب');
+    jrFill(document.getElementById('jr_type'), 'caseType', 'All', 'سب');
+    var rows = jrFiltered(), show = rows.slice(0, JR.limit);
+    cnt.textContent = rows.length + rlBi(' نتائج', ' results');
+    body.innerHTML = show.map(function(o){
+      return '<tr><td dir="auto"><b>' + esc(o.caseLabel) + '</b></td>' +
+        '<td dir="auto">' + esc(o.accused) + '</td>' +
+        '<td dir="auto"><span class="jr-pill">' + esc(o.jail || '—') + '</span></td>' +
+        '<td dir="auto">' + jrHearing(o) + '</td>' +
+        '<td dir="auto">' + esc(o.note) + (o.flag ? (o.note ? '<br>' : '') + '<span class="jr-pill warn">' + esc(o.flag) + '</span>' : '') + (o.source ? '<br><span class="jr-sub">' + esc(o.source) + '</span>' : '') + '</td></tr>';
+    }).join('');
+    note.textContent = rows.length ? '' : (JR.rows.length ? rlBi('کوئی نتیجہ نہیں ملا۔ تلاش بدل کر دیکھیں۔', 'No match. Try a different search.') : (JR.err ? '' : rlBi('ابھی کوئی جیل رپورٹ محفوظ نہیں۔', 'No jail reports are saved yet.')));
+    pg.innerHTML = rows.length > show.length ? '<span>' + show.length + ' / ' + rows.length + '</span><button class="lk-btn ghost" type="button" id="jr_more">' + esc(rlBi('مزید دکھائیں', 'Show more')) + '</button>' : '';
+    var more = document.getElementById('jr_more'); if(more) more.addEventListener('click', function(){ JR.limit += 200; jrRender(); });
+  }
+  function jrCsv(){
+    if(!CAN_EXPORT) return;
+    var rows = jrFiltered();
+    function cell(v){ v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+    var lines = [['Case', 'Accused', 'Jail', 'Hearing', 'Bench', 'Serial', 'Cause List', 'Note'].join(',')];
+    rows.forEach(function(o){ lines.push([o.caseLabel, o.accused, o.jail, o.hearing, o.bench, o.serial, o.listNo, o.note].map(cell).join(',')); });
+    var blob = new Blob(['\uFEFF' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Lookup-Jail-Reports.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }
+  (function(){
+    var timer = null;
+    function sched(){ clearTimeout(timer); timer = setTimeout(function(){ JR.limit = 100; jrRender(); }, 200); }
+    ['jr_q', 'jr_jail', 'jr_type', 'jr_from', 'jr_to'].forEach(function(id){ var el = document.getElementById(id); if(el){ el.addEventListener('input', sched); el.addEventListener('change', sched); } });
+    document.getElementById('jr_clear').addEventListener('click', function(){
+      ['jr_q', 'jr_jail', 'jr_type', 'jr_from', 'jr_to'].forEach(function(id){ document.getElementById(id).value = ''; }); JR.limit = 100; jrRender();
+    });
+    document.getElementById('jr_reload').addEventListener('click', function(){ jrLoad(); });
+    document.getElementById('jr_csv').addEventListener('click', jrCsv);
+    document.getElementById('tabJail').addEventListener('click', jrShow);
+    ['tabCases', 'tabNotices', 'tabRosters', 'tabScans'].forEach(function(id){ var e = document.getElementById(id); if(e) e.addEventListener('click', jrHide); });
+    if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secJail').style.display !== 'none') jrRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
   })();
 </script>
 

@@ -394,6 +394,10 @@ html,body{overflow-x:hidden;}
 .jr-pill{ display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; font-weight:600; border:1px solid var(--border); white-space:nowrap; background:rgba(42,90,132,.12); }
 .jr-pill.warn{ background:rgba(184,134,11,.16); }
 .jr-sub{ font-size:11.5px; color:var(--muted); }
+.ja-in{ width:100%; min-width:64px; box-sizing:border-box; padding:4px 6px; font:inherit; font-size:12.5px; border:1px solid var(--border); border-radius:6px; background:transparent; color:inherit; }
+.ja-no{ width:84px; } .ja-yr{ width:64px; }
+.ja-table td{ vertical-align:top; }
+.ja-ok{ color:#1b7a3d; } .ja-warn{ color:#b8860b; } .ja-bad{ color:#b3261e; }
 .lk-sort{ background:none; border:0; color:inherit; font:inherit; font-weight:inherit; cursor:pointer; padding:0; display:inline-flex; gap:5px; align-items:center; white-space:nowrap; }
 .lk-sort .ar{ font-size:10px; opacity:.55; }
 .lk-sort.on .ar{ opacity:1; }
@@ -625,6 +629,23 @@ html,body{overflow-x:hidden;}
 
   <!-- ===== Jail Reports (search by case number which jail report has been received; read-only) ===== -->
   <div id="secJail" style="display:none;">
+    <div class="lk-card" id="jr_addbox" style="display:none;">
+      <div class="lk-bar">
+        <b data-en="Add reports from files" data-ur="فائلوں سے رپورٹیں شامل کریں">Add reports from files</b>
+        <input type="file" id="ja_files" multiple accept=".pdf,application/pdf,image/*" style="display:none;">
+        <button class="lk-btn" type="button" id="ja_pick" data-en="Choose files (PDF / pictures)" data-ur="فائلیں چنیں (PDF / تصویریں)">Choose files (PDF / pictures)</button>
+        <button class="lk-btn ghost" type="button" id="ja_add" data-en="+ Add a row by hand" data-ur="+ ہاتھ سے ایک قطار شامل کریں">+ Add a row by hand</button>
+        <button class="lk-btn ghost" type="button" id="ja_stop" style="display:none;" data-en="Stop reading" data-ur="پڑھنا روکیں">Stop reading</button>
+      </div>
+      <div class="rl-status" id="ja_status" role="status" aria-live="polite"></div>
+      <div class="lk-wrap" id="ja_wrap" style="display:none;"><table class="lk-table ja-table"><thead id="ja_head"></thead><tbody id="ja_body"></tbody></table></div>
+      <datalist id="ja_jails"></datalist>
+      <div class="lk-bar" id="ja_bar" style="display:none;">
+        <button class="lk-btn" type="button" id="ja_save" data-en="Save selected reports" data-ur="منتخب رپورٹیں محفوظ کریں">Save selected reports</button>
+        <button class="lk-btn ghost" type="button" id="ja_clear" data-en="Discard this list" data-ur="یہ فہرست ختم کریں">Discard this list</button>
+        <span class="jr-sub" id="ja_skipped"></span>
+      </div>
+    </div>
     <div class="lk-card">
       <div class="lk-grid">
         <div class="field rl-grid-wide"><label for="jr_q" data-en="Search jail reports (case number, accused name, jail)" data-ur="جیل رپورٹس میں تلاش (کیس نمبر، ملزم کا نام، جیل)">Search jail reports (case number, accused name, jail)</label><input type="search" id="jr_q" autocomplete="off"></div>
@@ -2529,6 +2550,7 @@ html,body{overflow-x:hidden;}
   var JR = { rows:[], loaded:false, loading:false, err:'', limit:100, token:0, sigJail:'', sigType:'' };
   function jrInit(u){
     var tab = document.getElementById('tabJail'); if(tab) tab.style.display = '';
+    try{ jaInit(u); }catch(e){ console.error(e); }
   }
   function jrShow(){
     ['secCases', 'secNotices', 'secRosters', 'secScans'].forEach(function(id){ var e = document.getElementById(id); if(e) e.style.display = 'none'; });
@@ -2650,6 +2672,288 @@ html,body{overflow-x:hidden;}
     document.getElementById('tabJail').addEventListener('click', jrShow);
     ['tabCases', 'tabNotices', 'tabRosters', 'tabScans'].forEach(function(id){ var e = document.getElementById(id); if(e) e.addEventListener('click', jrHide); });
     if(window.MutationObserver) new MutationObserver(function(){ if(document.getElementById('secJail').style.display !== 'none') jrRender(); }).observe(document.body, {attributes:true, attributeFilter:['dir']});
+  })();
+
+  /* =====================================================================================================
+     JAIL REPORTS - "Add reports from files" (Admin / Super Admin only).
+     The person chooses PDF files or pictures saved from the WhatsApp group. Each page is read on this
+     computer (OCR in the browser; nothing is sent to any server of ours), the case number and the jail are
+     picked out, and a list is shown for checking. Nothing is saved until "Save selected reports" is pressed.
+     Only the small record is saved (case, accused, jail, hearing, note) - never the file itself.
+     Pages that are Supreme Court letters or memos are skipped.
+     ===================================================================================================== */
+  var JA = { canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], uid:0, libs:false, worker:null };
+  var JA_PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  var JA_TESS = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
+  var JA_TYPES = ['J.P.', 'Crl.P.L.A.', 'Crl.A.'];
+  var JA_PLACES = ['Mandi Bahauddin', 'Toba Tek Singh', 'Rahim Yar Khan', 'Dera Ghazi Khan', 'D.G. Khan', 'Nankana Sahib', 'Bahawalnagar', 'Bahawal Nagar', 'Bahawalpur',
+    'Lahore', 'Faisalabad', 'Rawalpindi', 'Multan', 'Gujranwala', 'Sargodha', 'Sahiwal', 'Mianwali', 'Jhelum', 'Attock', 'Chakwal', 'Gujrat', 'Sialkot', 'Narowal',
+    'Sheikhupura', 'Kasur', 'Okara', 'Pakpattan', 'Khanewal', 'Vehari', 'Lodhran', 'Muzaffargarh', 'Layyah', 'Bhakkar', 'Khushab', 'Hafizabad', 'Jhang', 'Rajanpur', 'Chiniot', 'Sahiwal'];
+  function jaEl(id){ return document.getElementById(id); }
+  function jaInit(u){
+    var r2 = (u && u.roleV2) || (u && u.role === 'admin' ? 'admin' : 'viewer');
+    JA.canAdd = !!u && (u.role === 'admin' || r2 === 'admin' || r2 === 'super_admin');
+    var b = jaEl('jr_addbox'); if(b) b.style.display = JA.canAdd ? '' : 'none';
+  }
+  function jaKey(type, no, year){ return String(type || '').toLowerCase().replace(/[^a-z]/g, '') + '|' + String(no || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^0+/, '') + '|' + String(year || '').replace(/\D/g, ''); }
+  function jaSlug(type, no, year){ return (String(type) + '-' + String(no) + '-' + String(year)).toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function jaNormType(t){
+    t = String(t || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if(t === 'JP' || t === 'JAILPETITION') return 'J.P.';
+    if(/^CRLPLA|^CRIMINALPETITION/.test(t)) return 'Crl.P.L.A.';
+    return 'Crl.A.';
+  }
+  var JA_RE = /\b(J\.?\s?P\b\.?|JAIL\s+PETITION|CRL\.?\s?P\.?\s?L\.?\s?A\.?|CRL\.?\s?A\.?)\s*(?:NO\.?|NUMBER)?[\s_.:]*(\d{1,5})(?:\s?-\s?(\d{1,2}|[A-Za-z]))?\s*(?:OF|\/)\s*(\d{4})/i;
+  function jaJail(text){
+    var head = String(text || '').slice(0, 1000), low = head.toLowerCase();
+    var re = /(central|district|high\s*security|special|women|borstal)?[\s,.]*(jail|prison)\b/gi, m, pick = null;
+    function nearest(seg, maxAt){
+      var best = null;
+      JA_PLACES.forEach(function(p){ var i = seg.indexOf(p.toLowerCase()); if(i >= 0 && i <= maxAt && (!best || i < best.i)) best = { i:i, p:p }; });
+      return best;
+    }
+    while((m = re.exec(head))){
+      var best = nearest(low.slice(m.index + m[0].length, m.index + m[0].length + 45), 25);
+      if(best){
+        var k = String(m[1] || '').toLowerCase().replace(/\s+/g, ''), isPrison = /prison/i.test(m[2]);
+        var kind = k === 'central' ? (isPrison ? 'Central Prison ' : 'Central Jail ') : k === 'district' ? 'District Jail ' : k === 'highsecurity' ? 'High Security Prison ' : k === 'special' ? 'Special Jail ' : k === 'women' ? 'Women Jail ' : k === 'borstal' ? 'Borstal Jail ' : '';
+        pick = best.p; break; /* bare place name, same as the existing records */
+      }
+    }
+    if(!pick){
+      JA_PLACES.forEach(function(p){
+        var i = low.indexOf(p.toLowerCase());
+        while(i >= 0){
+          if(!/^\s*(high\s*court|bench)/.test(low.slice(i + p.length, i + p.length + 14)) && !/high\s*court[\s,]*$/.test(low.slice(Math.max(0, i - 25), i))){
+            if(!pick || i < pick.i) pick = { i:i, p:p };
+            break;
+          }
+          i = low.indexOf(p.toLowerCase(), i + 1);
+        }
+      });
+      pick = pick ? pick.p : '';
+    }
+    return String(pick).replace(/D\.G\. Khan/, 'Dera Ghazi Khan').replace(/Bahawal Nagar/, 'Bahawalnagar');
+  }
+  function jaAccused(text, endIdx){
+    var tail = String(text || '').slice(endIdx, endIdx + 220).replace(/^[\s.,:_-]+/, '');
+    var m = tail.match(/([A-Za-z][A-Za-z.@'’\- ]{2,70}?)\s+(?:s\/o|S\/O|S\.O\.?|son of|d\/o|w\/o|Vs\.?|Versus|v\/s)(?=[\s.])/i);
+    if(!m) return '';
+    var n = m[1].replace(/\s+/g, ' ').trim().replace(/^.*\b(?:prisoner|namely)\s+(?:namely\s+|with\s+)?/i, '').replace(/^(respected sir|subject|kindly)\W*/i, '');
+    return n.slice(0, 150);
+  }
+  /* One page of text -> {row} or {skip:reason}. */
+  function jaParse(text, file, page){
+    var t = String(text || '');
+    if(/supremecourt\.gov\.pk|fixation\.b/i.test(t)) return { skip:'court letter' };
+    if(/\bMEMO\b/i.test(t) && !/SUPERINTENDENT/i.test(t)) return { skip:'memo' };
+    var m = JA_RE.exec(t);
+    if(!m) return { skip:'no case number' };
+    var type = jaNormType(m[1]), no = m[2].replace(/^0+(?=\d)/, ''), sfx = m[3] && /[A-Za-z]/.test(m[3]) ? '-' + m[3].toUpperCase() : '';
+    var year = m[4], flag = '';
+    var yr = parseInt(year, 10);
+    if(no.length > 4 || yr < 2005 || yr > new Date().getFullYear() + 1) flag = 'Check the case number';
+    var jail = jaJail(t);
+    if(!jail || !/jail|prison/i.test(t.slice(0, 1000))) flag = flag || 'Check the jail';
+    return { row:{ sel:true, type:type, no:no + sfx, year:year, accused:jaAccused(t, m.index + m[0].length), jail:jail, note:'', src:file + (page ? ' p.' + page : ''), flag:flag } };
+  }
+  function jaScript(src){
+    return new Promise(function(res, rej){ var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error('Could not load ' + src)); }; document.head.appendChild(s); });
+  }
+  async function jaLibs(){
+    if(JA.libs) return;
+    if(!window.pdfjsLib) await jaScript(JA_PDFJS + 'pdf.min.js');
+    if(!window.Tesseract) await jaScript(JA_TESS);
+    try{
+      var wt = await (await fetch(JA_PDFJS + 'pdf.worker.min.js')).text();
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([wt], { type:'text/javascript' }));
+    }catch(e){ window.pdfjsLib.GlobalWorkerOptions.workerSrc = JA_PDFJS + 'pdf.worker.min.js'; }
+    JA.libs = true;
+  }
+  async function jaOcr(canvas){
+    if(!JA.worker){ JA.worker = await window.Tesseract.createWorker('eng'); try{ await JA.worker.setParameters({ tessedit_pageseg_mode:'6' }); }catch(e){} }
+    var r = await JA.worker.recognize(canvas);
+    return String((r && r.data && r.data.text) || '');
+  }
+  /* Reads one file; calls onPage(text, pageNumber, pageCount) for each page. */
+  async function jaReadFile(file, onPage){
+    await jaLibs();
+    if(/\.pdf$/i.test(file.name) || file.type === 'application/pdf'){
+      var pdf = await window.pdfjsLib.getDocument({ data:await file.arrayBuffer() }).promise;
+      var n = Math.min(pdf.numPages, 12);
+      for(var i = 1; i <= n; i++){
+        if(JA.stop) return;
+        var page = await pdf.getPage(i), v0 = page.getViewport({ scale:1 });
+        var sc = Math.min(3, Math.max(1, 1240 / Math.max(v0.width, 1)));
+        var vp = page.getViewport({ scale:sc }), cv = document.createElement('canvas');
+        cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+        await page.render({ canvasContext:cv.getContext('2d'), viewport:vp }).promise;
+        await onPage(await jaOcr(cv), i, n);
+      }
+    }else{
+      var bmp = await createImageBitmap(file), k = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+      var c2 = document.createElement('canvas'); c2.width = Math.max(1, Math.floor(bmp.width * k)); c2.height = Math.max(1, Math.floor(bmp.height * k));
+      c2.getContext('2d').drawImage(bmp, 0, 0, c2.width, c2.height);
+      await onPage(await jaOcr(c2), 0, 1);
+    }
+  }
+  async function jaLoadCl(){
+    if(JA.cl) return JA.cl;
+    var map = {};
+    try{
+      var qs = await db.collection('causeLists').orderBy('savedAt', 'desc').limit(6).get();
+      qs.forEach(function(s){
+        var c = s.data() || {}, d = null;
+        try{ d = JSON.parse(c.payload); }catch(e){}
+        if(!d || !Array.isArray(d.rows)) return;
+        var nm = String(c.name || c.fileName || ''), lm = nm.match(/(?:list|fcl)\D{0,12}(\d{1,3})/i), ln = lm ? parseInt(lm[1], 10) : null;
+        d.rows.forEach(function(r){
+          if(!r || r.mine === false || !r.no || !r.iso) return;
+          var k = jaKey(r.type, r.no, r.year), old = map[k];
+          if(!old || String(r.iso) > old.iso) map[k] = { iso:String(r.iso), bench:String(r.bench || ''), serial:parseInt(r.serial, 10) || null, listNo:ln };
+        });
+      });
+    }catch(e){ console.error('ja cause lists', e); }
+    JA.cl = map; return map;
+  }
+  function jaStatusOf(r){
+    var k = jaKey(r.type, r.no, r.year), dup = '';
+    if(JR.rows.some(function(o){ return jaKey(o.caseType, o.caseNo, o.caseYear) === k; })) dup = 'saved';
+    else if(JA.rows.some(function(o){ return o !== r && o.id < r.id && jaKey(o.type, o.no, o.year) === k; })) dup = 'batch';
+    return dup;
+  }
+  function jaRefresh(){
+    JA.rows.forEach(function(r){
+      r.dup = jaStatusOf(r);
+      r.hit = (JA.cl && JA.cl[jaKey(r.type, r.no, r.year)]) || null;
+    });
+  }
+  function jaRender(){
+    var body = jaEl('ja_body'); if(!body) return;
+    var has = JA.rows.length > 0;
+    jaEl('ja_wrap').style.display = has ? '' : 'none';
+    jaEl('ja_bar').style.display = (has || JA.skipped.length) ? '' : 'none';
+    jaEl('ja_save').style.display = has ? '' : 'none';
+    jaEl('ja_save').disabled = JA.busy;
+    jaEl('ja_pick').disabled = JA.busy; jaEl('ja_add').disabled = JA.busy;
+    jaEl('ja_stop').style.display = JA.busy ? '' : 'none';
+    var dl = jaEl('ja_jails'), jails = {};
+    JR.rows.forEach(function(o){ if(o.jail) jails[o.jail] = 1; });
+    JA.rows.forEach(function(o){ if(o.jail) jails[o.jail] = 1; });
+    dl.innerHTML = Object.keys(jails).sort().map(function(j){ return '<option value="' + esc(j) + '">'; }).join('');
+    jaEl('ja_head').innerHTML = '<tr>' + ['', rlBi('قسم', 'Type'), rlBi('نمبر', 'No.'), rlBi('سال', 'Year'), rlBi('ملزم', 'Accused'), rlBi('جیل', 'Jail'), rlBi('سماعت', 'Hearing'), rlBi('نوٹ', 'Note'), rlBi('حالت', 'Status')].map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + '</tr>';
+    jaRefresh();
+    body.innerHTML = JA.rows.map(function(r){
+      var st = '';
+      if(r.dup === 'saved') st = '<span class="ja-warn">' + esc(rlBi('پہلے سے محفوظ ہے', 'Already saved')) + '</span>';
+      else if(r.dup === 'batch') st = '<span class="ja-warn">' + esc(rlBi('اس فہرست میں دوبارہ آیا', 'Repeated in this list')) + '</span>';
+      else if(r.flag) st = '<span class="ja-bad">' + esc(rlBi('دیکھ لیں: ', 'Please check: ') + r.flag) + '</span>';
+      else st = '<span class="ja-ok">' + esc(rlBi('نیا', 'New')) + '</span>';
+      var hearing = r.hit ? '<b>' + esc(rlDmy(r.hit.iso)) + '</b><br><span class="jr-sub">' + esc((r.hit.bench ? rlBi('بینچ ', 'Bench ') + r.hit.bench : '') + (r.hit.serial ? ' · ' + rlBi('سیریل ', 'Serial ') + r.hit.serial : '')) + '</span>' : '<span class="jr-sub">—</span>';
+      return '<tr data-id="' + r.id + '">' +
+        '<td><input type="checkbox" class="ja-sel" aria-label="' + esc(rlBi('محفوظ کریں', 'Save this one')) + '"' + (r.sel && !r.dup ? ' checked' : '') + (r.dup ? ' disabled' : '') + '></td>' +
+        '<td><select class="ja-in ja-f" data-f="type" aria-label="' + esc(rlBi('قسم', 'Type')) + '">' + JA_TYPES.map(function(t){ return '<option' + (t === r.type ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') + '</select></td>' +
+        '<td><input class="ja-in ja-no ja-f" data-f="no" value="' + esc(r.no) + '" maxlength="12" aria-label="' + esc(rlBi('نمبر', 'No.')) + '"></td>' +
+        '<td><input class="ja-in ja-yr ja-f" data-f="year" value="' + esc(r.year) + '" maxlength="4" inputmode="numeric" aria-label="' + esc(rlBi('سال', 'Year')) + '"></td>' +
+        '<td><input class="ja-in ja-f" data-f="accused" value="' + esc(r.accused) + '" maxlength="150" aria-label="' + esc(rlBi('ملزم', 'Accused')) + '"></td>' +
+        '<td><input class="ja-in ja-f" data-f="jail" list="ja_jails" value="' + esc(r.jail) + '" maxlength="80" aria-label="' + esc(rlBi('جیل', 'Jail')) + '"></td>' +
+        '<td>' + hearing + '</td>' +
+        '<td><input class="ja-in ja-f" data-f="note" value="' + esc(r.note) + '" maxlength="300" aria-label="' + esc(rlBi('نوٹ', 'Note')) + '"></td>' +
+        '<td>' + st + '<br><span class="jr-sub">' + esc(r.src) + '</span></td></tr>';
+    }).join('');
+    jaEl('ja_skipped').textContent = JA.skipped.length ? rlBi('چھوڑے گئے صفحات: ', 'Skipped pages: ') + JA.skipped.length + ' (' + JA.skipped.slice(0, 6).join('; ') + (JA.skipped.length > 6 ? '…' : '') + ')' : '';
+  }
+  function jaSay(msg, bad){ var s = jaEl('ja_status'); s.textContent = msg || ''; s.className = 'rl-status' + (bad ? ' bad' : ''); }
+  async function jaRun(files){
+    if(!JA.canAdd || JA.busy || !files.length) return;
+    JA.busy = true; JA.stop = false; jaRender();
+    try{
+      if(!JR.loaded) await jrLoad();
+      await jaLoadCl();
+      var added = 0, loadFail = false;
+      for(var fi = 0; fi < files.length && !JA.stop; fi++){
+        var f = files[fi];
+        jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ': ' + f.name + rlBi(' — پڑھی جا رہی ہے (پہلی بار لائبریری لوڈ ہونے میں ایک دو منٹ لگ سکتے ہیں)…', ' — reading (the first time, loading the reader can take a minute or two)…'));
+        try{
+          await window.jaReadFile(f, async function(text, p, n){
+            jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ' — ' + rlBi('صفحہ ', 'page ') + (p || 1) + ' / ' + n + ': ' + f.name);
+            var res = jaParse(text, f.name, p);
+            if(res.row){ res.row.id = ++JA.uid; res.row.sel = !!(JA.cl && JA.cl[jaKey(res.row.type, res.row.no, res.row.year)]); JA.rows.push(res.row); added++; jaRender(); }
+            else JA.skipped.push(f.name + (p ? ' p.' + p : '') + ' (' + res.skip + ')');
+          });
+        }catch(e){
+          console.error('ja read', e);
+          JA.skipped.push(f.name + ' (' + String((e && e.message) || e).slice(0, 80) + ')');
+          if(/Could not load|Failed to fetch|NetworkError/i.test(String((e && e.message) || e))){ loadFail = true; break; }
+        }
+      }
+      if(loadFail) jaSay(rlBi('پڑھنے والی لائبریری لوڈ نہیں ہو سکی۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', 'The reader could not be loaded. Check the internet and try again.') + (added ? rlBi(' (اب تک ملی رپورٹیں: ', ' (Found so far: ') + added + ')' : ''), true);
+      else jaSay((JA.stop ? rlBi('روک دیا گیا۔ ', 'Stopped. ') : '') + rlBi('پڑھائی مکمل۔ ملی ہوئی رپورٹیں: ', 'Finished reading. Reports found: ') + added + rlBi('۔ نیچے ہر قطار دیکھ لیں، غلط ہو تو درست کریں، پھر محفوظ کریں۔', '. Check every row below, correct it if wrong, then save.'));
+    }catch(e){
+      console.error('ja run', e); jaSay(rlBi('پڑھائی میں خرابی: ', 'Reading failed: ') + String((e && e.message) || e), true);
+    }
+    JA.busy = false; jaRender();
+  }
+  function jaRowOf(el){ var tr = el.closest('tr'); var id = tr ? parseInt(tr.getAttribute('data-id'), 10) : 0; return JA.rows.filter(function(r){ return r.id === id; })[0] || null; }
+  function jaValid(r){
+    if(!/^\d{1,5}(-[A-Z])?$/.test(r.no)) return rlBi('کیس نمبر درست نہیں', 'Case number is not valid');
+    if(!/^(19|20)\d\d$/.test(r.year)) return rlBi('سال درست نہیں', 'Year is not valid');
+    if(JA_TYPES.indexOf(r.type) < 0) return rlBi('قسم درست نہیں', 'Type is not valid');
+    if(!String(r.jail || '').trim()) return rlBi('جیل کا نام لکھیں', 'Write the jail name');
+    return '';
+  }
+  async function jaSave(){
+    if(!JA.canAdd || JA.busy) return;
+    jaRefresh();
+    var todo = JA.rows.filter(function(r){ return r.sel && !r.dup; });
+    if(!todo.length){ jaSay(rlBi('محفوظ کرنے کے لیے کوئی نئی قطار منتخب نہیں۔', 'No new row is ticked to save.'), true); return; }
+    for(var i = 0; i < todo.length; i++){
+      var bad = jaValid(todo[i]);
+      if(bad){ jaSay(rlBi('قطار ', 'Row ') + todo[i].type + ' ' + todo[i].no + '/' + todo[i].year + ': ' + bad, true); return; }
+    }
+    JA.busy = true; jaRender();
+    var saved = 0, skipped = 0, failed = '', now = new Date(), today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    for(var j = 0; j < todo.length; j++){
+      var r = todo[j], id = jaSlug(r.type, r.no, r.year);
+      try{
+        var ref = db.collection('jailReports').doc(id), ex = await ref.get();
+        if(ex.exists){ skipped++; r.sel = false; continue; }
+        var d = { caseType:r.type, caseNo:r.no, caseYear:r.year, jail:String(r.jail).trim().slice(0, 80), source:('Uploaded file: ' + String(r.src).replace(/\d{9,}/g, '…')).slice(0, 150), addedOn:today, addedBy:'Portal upload' };
+        if(String(r.accused || '').trim()) d.accused = String(r.accused).trim().slice(0, 150);
+        if(String(r.note || '').trim()) d.note = String(r.note).trim().slice(0, 300);
+        if(r.hit){ d.hearing = r.hit.iso; if(r.hit.bench) d.bench = r.hit.bench; if(r.hit.serial) d.serial = r.hit.serial; if(r.hit.listNo) d.listNo = r.hit.listNo; }
+        await ref.set(d); saved++; r.done = true;
+      }catch(e){ console.error('ja save', e); failed = String((e && e.message) || e); break; }
+    }
+    JA.rows = JA.rows.filter(function(r){ return !r.done; });
+    JA.busy = false;
+    jaSay(rlBi('محفوظ ہوئیں: ', 'Saved: ') + saved + (skipped ? rlBi('، پہلے سے موجود چھوڑی گئیں: ', ', already there (skipped): ') + skipped : '') + (failed ? rlBi('۔ خرابی: ', '. Error: ') + failed : ''), !!failed);
+    jaRender();
+    if(saved) jrLoad();
+  }
+  (function(){
+    var pick = jaEl('ja_pick'), inp = jaEl('ja_files'); if(!pick || !inp) return;
+    pick.addEventListener('click', function(){ inp.value = ''; inp.click(); });
+    inp.addEventListener('change', function(){ var fs = Array.prototype.slice.call(inp.files || []); jaRun(fs); });
+    jaEl('ja_add').addEventListener('click', function(){
+      if(!JA.canAdd) return;
+      JA.rows.push({ id:++JA.uid, sel:true, type:'J.P.', no:'', year:String(new Date().getFullYear()), accused:'', jail:'', note:'', src:'typed by hand', flag:'' });
+      jaRender();
+    });
+    jaEl('ja_stop').addEventListener('click', function(){ JA.stop = true; });
+    jaEl('ja_save').addEventListener('click', jaSave);
+    jaEl('ja_clear').addEventListener('click', function(){ if(JA.busy) return; JA.rows = []; JA.skipped = []; jaSay(''); jaRender(); });
+    var body = jaEl('ja_body');
+    body.addEventListener('input', function(e){
+      var t = e.target; if(!t.classList.contains('ja-f')) return;
+      var r = jaRowOf(t); if(!r) return; r[t.getAttribute('data-f')] = t.value;
+    });
+    body.addEventListener('change', function(e){
+      var t = e.target, r = jaRowOf(t); if(!r) return;
+      if(t.classList.contains('ja-sel')){ r.sel = t.checked; return; }
+      if(t.classList.contains('ja-f')){ var f = t.getAttribute('data-f'); if(f === 'type' || f === 'no' || f === 'year'){ r.flag = ''; jaRender(); } }
+    });
+    if(window.MutationObserver) new MutationObserver(function(){ if(JA.canAdd) jaRender(); }).observe(document.body, { attributes:true, attributeFilter:['dir'] });
   })();
 </script>
 

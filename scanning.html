@@ -1483,13 +1483,23 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
     if(s){ var d2 = isoDate(s[1].replace(/\s+/g, ' ')); if(d2) return d2; }
     return '';
   }
+  /* One tidy way to write offence sections: "302, 324, 34 PPC" (numbers separated by commas, act abbreviation last). */
+function tidySections(v){
+    v = String(v || '').replace(/\s+/g, ' ').trim();
+    var m = /^(.*?)[\s,(]*(PPC|P\.P\.C\.?|CNSA|PCA|ATA|Cr\.?P\.?C|Arms Ordinance|PECA)[\s.)]*$/.exec(v);
+    if(!m) return v;
+    var nums = m[1].replace(/\s+of\s+the\s+[A-Za-z\- ]+?(?:Code|Act|Ordinance)(?:\s*,?\s*\d{4})?\s*$/i, '').replace(/\s+of(?:\s+the)?\s*$/i, '')
+      .replace(/\s*(?:[\/&]|\band\b)\s*/gi, ', ').replace(/\s*,\s*/g, ', ').replace(/^[\s,]+|[\s,]+$/g, '').replace(/\s+/g, ' ').trim();
+    var act = m[2].replace(/^P\.P\.C\.?$/, 'PPC');
+    return nums ? nums + ' ' + act : act;
+  }
   function firOf(text){
     var t = flat(text), o = {};
     var m = /\bFIR\s*(?:No\.?)?\s*(\d{1,6})\s*(?:\/\s*(\d{4}))?\s*,?\s*(?:dated|dt\.?|registered\s+on)\s*([\d.\-\/ ]{6,12})/i.exec(t);
     if(m){ o.firNo = m[1]; var d = isoDate(m[3]); o.firYear = m[2] || (d ? d.slice(0, 4) : ''); }
     var after = m ? t.slice(m.index, m.index + 600) : t.slice(0, 3000);
     var s = /under\s+[Ss]ections?\s+([0-9][0-9A-Za-z()\/,\-\s&]*?)\s*(PPC|P\.P\.C\.?|CNSA|PCA|ATA|Cr\.?P\.?C|Arms Ordinance|PECA)/.exec(after);
-    if(s) o.sections = s[1].replace(/\s*[\/&]\s*/g, ', ').replace(/\s*,\s*/g, ', ').replace(/,\s*$/, '').replace(/\s+/g, ' ').trim() + ' ' + s[2].replace(/P\.P\.C\.?/, 'PPC');
+    if(s) o.sections = tidySections(s[1] + ' ' + s[2]);
     var p = /(?:police\s+station|P\.\s?S\.)\s+([A-Za-z][A-Za-z .\-]{1,40}?)\s*,?\s*(?:District|Distt\.?|Dist\.?)\s+([A-Za-z]+(?: [A-Za-z]+)?)/i.exec(after);
     if(p){ o.station = p[1].replace(/\s+/g, ' ').trim(); o.district = p[2].trim(); }
     return o;

@@ -634,9 +634,12 @@ html,body{overflow-x:hidden;}
         <b data-en="Add reports from files" data-ur="فائلوں سے رپورٹیں شامل کریں">Add reports from files</b>
         <input type="file" id="ja_files" multiple accept=".pdf,application/pdf,image/*" style="display:none;">
         <button class="lk-btn" type="button" id="ja_pick" data-en="Choose files (PDF / pictures)" data-ur="فائلیں چنیں (PDF / تصویریں)">Choose files (PDF / pictures)</button>
+        <input type="file" id="ja_dir" webkitdirectory multiple style="display:none;">
+        <button class="lk-btn" type="button" id="ja_pickdir" data-en="Choose a whole folder" data-ur="پورا فولڈر چنیں">Choose a whole folder</button>
         <button class="lk-btn ghost" type="button" id="ja_add" data-en="+ Add a row by hand" data-ur="+ ہاتھ سے ایک قطار شامل کریں">+ Add a row by hand</button>
         <button class="lk-btn ghost" type="button" id="ja_stop" style="display:none;" data-en="Stop reading" data-ur="پڑھنا روکیں">Stop reading</button>
       </div>
+      <label class="jr-sub" style="display:flex;gap:6px;align-items:center;margin:6px 0;"><input type="checkbox" id="ja_auto" checked><span data-en="Save automatically the reports whose case is found in a saved cause list (everything else waits for my check)" data-ur="جن رپورٹوں کا کیس محفوظ کاز لسٹ میں مل جائے انہیں خود محفوظ کریں (باقی میرے دیکھنے کے لیے رکھیں)">Save automatically the reports whose case is found in a saved cause list (everything else waits for my check)</span></label>
       <div class="rl-status" id="ja_status" role="status" aria-live="polite"></div>
       <div class="lk-wrap" id="ja_wrap" style="display:none;"><table class="lk-table ja-table"><thead id="ja_head"></thead><tbody id="ja_body"></tbody></table></div>
       <datalist id="ja_jails"></datalist>
@@ -2682,7 +2685,7 @@ html,body{overflow-x:hidden;}
      Only the small record is saved (case, accused, jail, hearing, note) - never the file itself.
      Pages that are Supreme Court letters or memos are skipped.
      ===================================================================================================== */
-  var JA = { canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], uid:0, libs:false, worker:null };
+  var JA = { auto:true, already:0, autoSaved:0, canAdd:false, rows:[], busy:false, stop:false, cl:null, skipped:[], uid:0, libs:false, worker:null };
   var JA_PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
   var JA_TESS = 'https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
   var JA_TYPES = ['J.P.', 'Crl.P.L.A.', 'Crl.A.'];
@@ -2835,7 +2838,7 @@ html,body{overflow-x:hidden;}
     jaEl('ja_bar').style.display = (has || JA.skipped.length) ? '' : 'none';
     jaEl('ja_save').style.display = has ? '' : 'none';
     jaEl('ja_save').disabled = JA.busy;
-    jaEl('ja_pick').disabled = JA.busy; jaEl('ja_add').disabled = JA.busy;
+    jaEl('ja_pick').disabled = JA.busy; jaEl('ja_add').disabled = JA.busy; if(jaEl('ja_pickdir')) jaEl('ja_pickdir').disabled = JA.busy;
     jaEl('ja_stop').style.display = JA.busy ? '' : 'none';
     var dl = jaEl('ja_jails'), jails = {};
     JR.rows.forEach(function(o){ if(o.jail) jails[o.jail] = 1; });
@@ -2864,21 +2867,40 @@ html,body{overflow-x:hidden;}
     jaEl('ja_skipped').textContent = JA.skipped.length ? rlBi('چھوڑے گئے صفحات: ', 'Skipped pages: ') + JA.skipped.length + ' (' + JA.skipped.slice(0, 6).join('; ') + (JA.skipped.length > 6 ? '…' : '') + ')' : '';
   }
   function jaSay(msg, bad){ var s = jaEl('ja_status'); s.textContent = msg || ''; s.className = 'rl-status' + (bad ? ' bad' : ''); }
-  async function jaRun(files){
+  /* Keeps only PDFs and ordinary pictures (not stickers / tiny thumbnails), newest first. */
+  function jaPick(list){
+    var keep = [], dropped = 0;
+    Array.prototype.forEach.call(list || [], function(f){
+      var n = String(f.name || ''), isPdf = /\.pdf$/i.test(n) || f.type === 'application/pdf', isImg = /\.(jpe?g|png)$/i.test(n) || /^image\/(jpeg|png)$/.test(f.type);
+      if(isPdf || (isImg && f.size >= 25000 && !/^STK-/i.test(n))) keep.push(f); else dropped++;
+    });
+    keep.sort(function(a, b){ return (b.lastModified || 0) - (a.lastModified || 0); });
+    return { files:keep, dropped:dropped };
+  }
+  async function jaRun(files, dropped){
     if(!JA.canAdd || JA.busy || !files.length) return;
-    JA.busy = true; JA.stop = false; jaRender();
+    JA.busy = true; JA.stop = false; JA.already = 0; JA.autoSaved = 0; jaRender();
     try{
       if(!JR.loaded) await jrLoad();
       await jaLoadCl();
       var added = 0, loadFail = false;
       for(var fi = 0; fi < files.length && !JA.stop; fi++){
         var f = files[fi];
-        jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ': ' + f.name + rlBi(' — پڑھی جا رہی ہے (پہلی بار لائبریری لوڈ ہونے میں ایک دو منٹ لگ سکتے ہیں)…', ' — reading (the first time, loading the reader can take a minute or two)…'));
+        jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ' (' + rlBi('خود محفوظ: ', 'auto-saved: ') + JA.autoSaved + '): ' + f.name + rlBi(' — پڑھی جا رہی ہے (پہلی بار لائبریری لوڈ ہونے میں ایک دو منٹ لگ سکتے ہیں)…', ' — reading (the first time, loading the reader can take a minute or two)…'));
         try{
           await window.jaReadFile(f, async function(text, p, n){
             jaSay(rlBi('فائل ', 'File ') + (fi + 1) + ' / ' + files.length + ' — ' + rlBi('صفحہ ', 'page ') + (p || 1) + ' / ' + n + ': ' + f.name);
             var res = jaParse(text, f.name, p);
-            if(res.row){ res.row.id = ++JA.uid; res.row.sel = !!(JA.cl && JA.cl[jaKey(res.row.type, res.row.no, res.row.year)]); JA.rows.push(res.row); added++; jaRender(); }
+            if(res.row){
+              var rw = res.row; rw.id = ++JA.uid; rw.hit = (JA.cl && JA.cl[jaKey(rw.type, rw.no, rw.year)]) || null; rw.sel = !!rw.hit;
+              if(jaStatusOf(rw) === 'saved'){ JA.already++; return; }
+              /* automatic save only when everything is certain: the case is in a saved cause list, nothing is flagged, all fields are valid */
+              if(JA.auto && rw.sel && !rw.flag && !jaValid(rw) && jaStatusOf(rw) === ''){
+                try{ if(await jaWrite(rw) === 'saved'){ JA.autoSaved++; added++; jaRender(); return; } else { JA.already++; return; } }
+                catch(e){ console.error('ja auto save', e); rw.flag = 'Could not save: ' + String((e && e.message) || e).slice(0, 60); }
+              }
+              JA.rows.push(rw); added++; jaRender();
+            }
             else JA.skipped.push(f.name + (p ? ' p.' + p : '') + ' (' + res.skip + ')');
           });
         }catch(e){
@@ -2888,11 +2910,11 @@ html,body{overflow-x:hidden;}
         }
       }
       if(loadFail) jaSay(rlBi('پڑھنے والی لائبریری لوڈ نہیں ہو سکی۔ انٹرنیٹ دیکھیں اور دوبارہ کوشش کریں۔', 'The reader could not be loaded. Check the internet and try again.') + (added ? rlBi(' (اب تک ملی رپورٹیں: ', ' (Found so far: ') + added + ')' : ''), true);
-      else jaSay((JA.stop ? rlBi('روک دیا گیا۔ ', 'Stopped. ') : '') + rlBi('پڑھائی مکمل۔ ملی ہوئی رپورٹیں: ', 'Finished reading. Reports found: ') + added + rlBi('۔ نیچے ہر قطار دیکھ لیں، غلط ہو تو درست کریں، پھر محفوظ کریں۔', '. Check every row below, correct it if wrong, then save.'));
+      else jaSay((JA.stop ? rlBi('روک دیا گیا۔ ', 'Stopped. ') : '') + rlBi('پڑھائی مکمل۔ خود محفوظ ہوئیں: ', 'Finished reading. Saved automatically: ') + JA.autoSaved + rlBi('۔ آپ کے دیکھنے کے لیے: ', '. Waiting for your check: ') + JA.rows.length + rlBi('۔ پہلے سے محفوظ تھیں: ', '. Already saved before: ') + JA.already + (dropped ? rlBi('۔ نہ پڑھی جانے والی فائلیں (اسٹیکر/چھوٹی تصویریں/دوسری قسم): ', '. Files not read (stickers, tiny pictures, other types): ') + dropped : '') + rlBi('۔ نیچے کی قطاریں دیکھ لیں، غلط ہو تو درست کریں، پھر محفوظ کریں۔', '. Check the rows below, correct any that are wrong, then save.'));
     }catch(e){
       console.error('ja run', e); jaSay(rlBi('پڑھائی میں خرابی: ', 'Reading failed: ') + String((e && e.message) || e), true);
     }
-    JA.busy = false; jaRender();
+    JA.busy = false; jaRender(); jrRender();
   }
   function jaRowOf(el){ var tr = el.closest('tr'); var id = tr ? parseInt(tr.getAttribute('data-id'), 10) : 0; return JA.rows.filter(function(r){ return r.id === id; })[0] || null; }
   function jaValid(r){
@@ -2901,6 +2923,19 @@ html,body{overflow-x:hidden;}
     if(JA_TYPES.indexOf(r.type) < 0) return rlBi('قسم درست نہیں', 'Type is not valid');
     if(!String(r.jail || '').trim()) return rlBi('جیل کا نام لکھیں', 'Write the jail name');
     return '';
+  }
+  function jaToday(){ var n = new Date(); return n.getFullYear() + '-' + ('0' + (n.getMonth() + 1)).slice(-2) + '-' + ('0' + n.getDate()).slice(-2); }
+  /* Writes one checked row; never overwrites an existing record. Returns 'saved' or 'exists'. */
+  async function jaWrite(r){
+    var id = jaSlug(r.type, r.no, r.year), ref = db.collection('jailReports').doc(id), ex = await ref.get();
+    if(ex.exists) return 'exists';
+    var d = { caseType:r.type, caseNo:r.no, caseYear:r.year, jail:String(r.jail).trim().slice(0, 80), source:('Uploaded file: ' + String(r.src).replace(/\d{9,}/g, '…')).slice(0, 150), addedOn:jaToday(), addedBy:'Portal upload' };
+    if(String(r.accused || '').trim()) d.accused = String(r.accused).trim().slice(0, 150);
+    if(String(r.note || '').trim()) d.note = String(r.note).trim().slice(0, 300);
+    if(r.hit){ d.hearing = r.hit.iso; if(r.hit.bench) d.bench = r.hit.bench; if(r.hit.serial) d.serial = r.hit.serial; if(r.hit.listNo) d.listNo = r.hit.listNo; }
+    await ref.set(d);
+    try{ JR.rows.push(jrMake(d)); }catch(e){}
+    return 'saved';
   }
   async function jaSave(){
     if(!JA.canAdd || JA.busy) return;
@@ -2912,17 +2947,13 @@ html,body{overflow-x:hidden;}
       if(bad){ jaSay(rlBi('قطار ', 'Row ') + todo[i].type + ' ' + todo[i].no + '/' + todo[i].year + ': ' + bad, true); return; }
     }
     JA.busy = true; jaRender();
-    var saved = 0, skipped = 0, failed = '', now = new Date(), today = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    var saved = 0, skipped = 0, failed = '';
     for(var j = 0; j < todo.length; j++){
-      var r = todo[j], id = jaSlug(r.type, r.no, r.year);
+      var r = todo[j];
       try{
-        var ref = db.collection('jailReports').doc(id), ex = await ref.get();
-        if(ex.exists){ skipped++; r.sel = false; continue; }
-        var d = { caseType:r.type, caseNo:r.no, caseYear:r.year, jail:String(r.jail).trim().slice(0, 80), source:('Uploaded file: ' + String(r.src).replace(/\d{9,}/g, '…')).slice(0, 150), addedOn:today, addedBy:'Portal upload' };
-        if(String(r.accused || '').trim()) d.accused = String(r.accused).trim().slice(0, 150);
-        if(String(r.note || '').trim()) d.note = String(r.note).trim().slice(0, 300);
-        if(r.hit){ d.hearing = r.hit.iso; if(r.hit.bench) d.bench = r.hit.bench; if(r.hit.serial) d.serial = r.hit.serial; if(r.hit.listNo) d.listNo = r.hit.listNo; }
-        await ref.set(d); saved++; r.done = true;
+        var res = await jaWrite(r);
+        if(res === 'exists'){ skipped++; r.sel = false; continue; }
+        saved++; r.done = true;
       }catch(e){ console.error('ja save', e); failed = String((e && e.message) || e); break; }
     }
     JA.rows = JA.rows.filter(function(r){ return !r.done; });
@@ -2934,7 +2965,13 @@ html,body{overflow-x:hidden;}
   (function(){
     var pick = jaEl('ja_pick'), inp = jaEl('ja_files'); if(!pick || !inp) return;
     pick.addEventListener('click', function(){ inp.value = ''; inp.click(); });
-    inp.addEventListener('change', function(){ var fs = Array.prototype.slice.call(inp.files || []); jaRun(fs); });
+    inp.addEventListener('change', function(){ var k = jaPick(inp.files); jaRun(k.files, k.dropped); });
+    var dir = jaEl('ja_dir'), pd = jaEl('ja_pickdir'), au = jaEl('ja_auto');
+    if(pd && dir){
+      pd.addEventListener('click', function(){ dir.value = ''; dir.click(); });
+      dir.addEventListener('change', function(){ var k = jaPick(dir.files); if(!k.files.length){ jaSay(rlBi('اس فولڈر میں کوئی PDF یا تصویر نہیں ملی۔', 'No PDF or picture was found in that folder.'), true); return; } jaRun(k.files, k.dropped); });
+    }
+    if(au) au.addEventListener('change', function(){ JA.auto = au.checked; });
     jaEl('ja_add').addEventListener('click', function(){
       if(!JA.canAdd) return;
       JA.rows.push({ id:++JA.uid, sel:true, type:'J.P.', no:'', year:String(new Date().getFullYear()), accused:'', jail:'', note:'', src:'typed by hand', flag:'' });

@@ -692,12 +692,32 @@ html,body{overflow-x:hidden;}
               </div>
             </div>
             <div class="hidden" id="otpDisableStep" style="margin-top:12px">
-              <div class="field-hint">کوڈ کتنی دیر کے لیے بند کرنا ہے؟ وقت پورا ہوتے ہی یہ خود بخود دوبارہ آن ہو جائے گا، چاہے آپ بھول جائیں۔ <span dir="ltr">For how long should the code be OFF? When the time is up it turns itself back ON, even if you forget.</span></div>
+              <div class="field-hint">کوڈ کتنی دیر کے لیے بند کرنا ہے؟ مدت پوری ہوتے ہی یہ خود بخود دوبارہ آن ہو جائے گا، چاہے آپ بھول جائیں۔ <span dir="ltr">For how long should the code be OFF? When the time is up it turns itself back ON, even if you forget.</span></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
                 <button type="button" class="btn danger" data-otph="1">1 گھنٹہ / 1 hour</button>
                 <button type="button" class="btn danger" data-otph="4">4 گھنٹے / 4 hours</button>
                 <button type="button" class="btn danger" data-otph="24">1 دن / 1 day</button>
+                <button type="button" class="btn danger" data-otph="168">1 ہفتہ / 1 week</button>
+                <button type="button" class="btn danger" data-otph="360">15 دن / 15 days</button>
+              </div>
+              <div style="margin-top:10px">
+                <label for="otpd_until">اپنی تاریخ اور وقت چنیں / Pick your own date and time</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                  <input type="datetime-local" id="otpd_until" dir="ltr" style="max-width:240px">
+                  <button type="button" class="btn danger" id="otpd_untilBtn">اس وقت تک بند کریں / OFF until then</button>
+                </div>
+                <div class="field-hint">کم از کم 5 منٹ بعد اور زیادہ سے زیادہ ایک سال کے اندر۔ <span dir="ltr">At least 5 minutes ahead and within one year. Time is your computer's local time.</span></div>
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="btn danger" id="otpd_forever">مستقل بند / OFF until I turn it ON</button>
                 <button type="button" class="btn" id="otpd_no">منسوخ / Cancel</button>
+              </div>
+              <div class="hidden" id="otpForeverSure" style="margin-top:10px">
+                <div class="field-hint"><b>خبردار:</b> مستقل بند میں یہ خود دوبارہ آن نہیں ہو گا، اور سپر ایڈمن اکاؤنٹ پر ای میل کوڈ کی اضافی حفاظت نہیں رہے گی۔ جب چاہیں یہیں سے آن کر دیں۔ <span dir="ltr"><b>Warning:</b> in this mode it will NOT turn itself back ON, and the Super Admin account loses the extra e-mail-code protection. Turn it ON again here whenever you wish.</span></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+                  <button type="button" class="btn danger" id="otpd_foreverYes">ہاں، مستقل بند کریں / Yes, turn OFF permanently</button>
+                  <button type="button" class="btn" id="otpd_foreverNo">نہیں / No</button>
+                </div>
               </div>
             </div>
             <div id="otpBoxMsg" class="msg-box hidden" role="status"></div>
@@ -1328,7 +1348,7 @@ function otpBoxShow(){
   var on = OTP_SWITCH_ON;
   var chip = document.getElementById("otpStateChip"), btn = document.getElementById("otpToggleBtn");
   if(on === null){ chip.textContent = "…"; btn.disabled = true; btn.textContent = "…"; return; }
-  chip.textContent = on ? "آن / ON" : (OTP_OFF_UNTIL > Date.now() ? "بند / OFF — " + otpClock(OTP_OFF_UNTIL) + " تک / until" : "بند / OFF");
+  chip.textContent = on ? "آن / ON" : (OTP_OFF_UNTIL > Date.now() ? "بند / OFF — " + otpClock(OTP_OFF_UNTIL) + " تک / until" : "مستقل بند / OFF (no time limit)");
   btn.disabled = false;
   btn.textContent = on ? "کوڈ بند کریں / Turn OFF" : "ابھی دوبارہ آن کریں / Turn ON now";
   btn.className = on ? "btn danger" : "btn primary";
@@ -1346,15 +1366,24 @@ function refreshOtpBox(){
     if(r.status !== 200) otpBoxMsg("سوئچ کی حالت معلوم نہیں ہو سکی۔", "Could not read the switch state.", "error");
   }).catch(function(){ OTP_SWITCH_ON = null; otpBoxShow(); otpBoxMsg("سرور سے رابطہ نہیں ہو سکا۔", "Could not reach the server.", "error"); });
 }
-function otpSetSwitch(enabled, hours){
-  var payload = enabled ? { enabled: true } : { enabled: false, hours: hours };
+function otpSetSwitch(enabled, opt){
+  /* opt (only when turning OFF): a number = hours (1,4,24,168,360), or {untilMs:ms}, or {forever:true} */
+  var payload = { enabled: true };
+  if(!enabled){
+    payload = { enabled: false };
+    if(typeof opt === "number") payload.hours = opt;
+    else if(opt && opt.forever) payload.forever = true;
+    else if(opt && opt.untilMs) payload.untilMs = opt.untilMs;
+  }
   return callFn("campOtpSetting", payload, true).then(function(r){
     var j = r.json || {};
     if(r.status === 200 && j.ok){
       OTP_SWITCH_ON = !!j.enabled; OTP_OFF_UNTIL = j.enabled ? 0 : (j.offUntilMs || 0); otpBoxShow();
       document.getElementById("otpEnableStep").classList.add("hidden");
       document.getElementById("otpDisableStep").classList.add("hidden");
+      document.getElementById("otpForeverSure").classList.add("hidden");
       if(OTP_SWITCH_ON) otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ آن ہو گیا۔ اب ہر لاگ اِن پر ای میل کا کوڈ پوچھا جائے گا۔", "Super Admin sign-in code is now ON. Every sign-in will ask for the e-mailed code.", "ok");
+      else if(!OTP_OFF_UNTIL) otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ مستقل بند ہو گیا۔ یہ خود آن نہیں ہو گا؛ جب چاہیں یہاں سے آن کر دیں۔", "Super Admin sign-in code is OFF with no time limit. It will not turn itself back ON; turn it ON here whenever you wish.", "ok");
       else otpBoxMsg("سپر ایڈمن لاگ اِن کوڈ بند ہو گیا۔ یہ " + otpClock(OTP_OFF_UNTIL) + " پر خود بخود دوبارہ آن ہو جائے گا۔", "Super Admin sign-in code is OFF. It turns itself back ON at " + otpClock(OTP_OFF_UNTIL) + ".", "ok");
       return true;
     }
@@ -1371,7 +1400,19 @@ document.getElementById("otpToggleBtn").addEventListener("click", function(){
     if(ok){ document.getElementById("otpEnableStep").classList.remove("hidden"); document.getElementById("otpb_code").value = ""; try{ document.getElementById("otpb_code").focus(); }catch(e){} }
   });
 });
-document.getElementById("otpd_no").addEventListener("click", function(){ document.getElementById("otpDisableStep").classList.add("hidden"); });
+document.getElementById("otpd_no").addEventListener("click", function(){ document.getElementById("otpDisableStep").classList.add("hidden"); document.getElementById("otpForeverSure").classList.add("hidden"); });
+document.getElementById("otpd_forever").addEventListener("click", function(){ document.getElementById("otpForeverSure").classList.remove("hidden"); });
+document.getElementById("otpd_foreverNo").addEventListener("click", function(){ document.getElementById("otpForeverSure").classList.add("hidden"); });
+document.getElementById("otpd_foreverYes").addEventListener("click", function(){ otpSetSwitch(false, { forever: true }); });
+document.getElementById("otpd_untilBtn").addEventListener("click", function(){
+  var msg = document.getElementById("otpBoxMsg");
+  var v = document.getElementById("otpd_until").value;
+  var ms = v ? new Date(v).getTime() : NaN;
+  var now = Date.now();
+  if(!isFinite(ms) || ms < now + 5 * 60 * 1000){ showMsg(msg, "تاریخ اور وقت کم از کم 5 منٹ آگے کا چنیں۔", "Pick a date and time at least 5 minutes ahead.", "error"); return; }
+  if(ms > now + 365 * 24 * 3600 * 1000){ showMsg(msg, "زیادہ سے زیادہ ایک سال کے اندر کی تاریخ چنیں۔ اس سے لمبے کے لیے مستقل بند استعمال کریں۔", "Pick a date within one year. For longer, use permanent OFF.", "error"); return; }
+  otpSetSwitch(false, { untilMs: ms });
+});
 Array.prototype.forEach.call(document.querySelectorAll("[data-otph]"), function(b){
   b.addEventListener("click", function(){ otpSetSwitch(false, parseInt(b.getAttribute("data-otph"), 10)); });
 });

@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-activity.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><script src="camp-activity.js"></script><script src="camp-perm.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-check-compat.js"></script><script src="/app-check.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script><script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
 <style>
 html,body{overflow-x:hidden;}
 
@@ -54,6 +54,8 @@ html,body{overflow-x:hidden;}
   .center-wrap{ max-width:420px; margin:60px auto; padding:0 16px; }
   .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:24px; }
   .card + .card{ margin-top:16px; }
+  .ob-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .ob-row select{ flex:1 1 260px; min-width:0; max-width:100%; padding:9px 10px; border:1px solid var(--border-strong); border-radius:8px; background:var(--surface); color:var(--text); font-size:14px; }
   label{ display:block; font-weight:600; margin:12px 0 4px; font-size:13px; color:var(--muted); }
   input[type=email],input[type=password]{ width:100%; padding:10px 12px; border:1px solid var(--border-strong); border-radius:6px; font-size:14px; background:var(--surface); color:var(--text); }
   .btn{ display:inline-flex; align-items:center; gap:6px; justify-content:center; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:10px 16px; border-radius:6px; cursor:pointer; font-size:14px; font-weight:600; }
@@ -279,6 +281,25 @@ html,body{overflow-x:hidden;}
     <table class="row-count-table hidden" id="recordCountTable"></table>
   </div>
 
+  <div class="card needs-backup" id="obCard">
+    <h2 data-i18n="obTitle">Officer-wise Backup</h2>
+    <p class="field-hint" data-i18n="obHint">Saves the data of one officer (or of every officer) under that officer's name: Daily Cases, Case Notices, saved Monthly Progress Reports and Inspection entries. Nothing is written to the database; files are made on this computer.</p>
+    <div class="ob-row">
+      <label for="obOfficer" data-i18n="obPick">Officer</label>
+      <select id="obOfficer" disabled><option value="">…</option></select>
+      <button class="btn small" id="obReload" type="button"><span data-i18n="obReload">Reload</span></button>
+    </div>
+    <div id="obCounts" class="field-hint"></div>
+    <div class="ob-row" style="margin-top:12px">
+      <button class="btn primary" id="obXlsx" type="button" disabled><span data-i18n="obXlsx">⬇️ Excel file</span></button>
+      <button class="btn primary" id="obJson" type="button" disabled><span data-i18n="obJson">⬇️ JSON file (can be restored)</span></button>
+      <button class="btn" id="obBoth" type="button" disabled><span data-i18n="obBoth">⬇️ Both together (ZIP)</span></button>
+    </div>
+    <div id="obProgress" class="field-hint hidden"></div>
+    <div id="obError" class="error-box hidden"></div>
+    <p class="field-hint" data-i18n="obNote">The JSON file has the same layout as the full backup, so Restore (Super Admin) can read it; it only adds or overwrites that officer's records and never deletes anything. This does not count as the "last successful backup" — take the full backup as well.</p>
+  </div>
+
   <div class="card">
     <h2 data-i18n="protectTitle">🛡 Automatic protection by Google (in addition to this page)</h2>
     <p class="field-hint" data-i18n="protect1">Every Sunday the whole database is saved automatically and each copy is kept for 98 days.</p>
@@ -347,6 +368,11 @@ var I18N = {
     backupStaleWarn:"⚠ The last backup is more than 7 days old — please take a new one now.",
     dbBackupTitle:"Database Backup / Export",
     dbBackupHint:"Downloads one JSON file containing all shared office data (Users, Daily Cases, Case Notices, Monthly Reports, Cause Lists, Inspection Desk (all proformas), Scanning Desk records, Employee Directory, Bill Register, Daily Case Management, Gallery photo records, Team Chat, shared lists). Documents/photos themselves stay on Cloudinary, and the scanned PDF files of the Scanning Desk stay in Firebase Storage — this file has their records and links, not the actual files. Take a backup every week and keep the file somewhere safe (another computer or a USB drive).",
+    obTitle:"Officer-wise Backup", obHint:"Saves the data of one officer (or of every officer) under that officer's name: Daily Cases, Case Notices, saved Monthly Progress Reports and Inspection entries. Nothing is written to the database; files are made on this computer.",
+    obPick:"Officer", obReload:"Reload", obXlsx:"⬇️ Excel file", obJson:"⬇️ JSON file (can be restored)", obBoth:"⬇️ Both together (ZIP)", obAll:"All officers (one ZIP)", obNone:"(no officer written)",
+    obLoading:"Reading the officers' data…", obReady:"Officers found: {n}. Pick one, or choose All officers.", obCountsLine:"Daily Cases {c} · Case Notices {n} · Monthly Reports {m} · Inspection entries {i}",
+    obBuilding:"Building the file…", obDone:"Done — {f} downloaded.", obFail:"Could not finish: {e}", obNoLib:"The Excel/ZIP helper has not loaded yet. Check the internet and press Reload.", obEmpty:"This officer has no records.",
+    obNote:"The JSON file has the same layout as the full backup, so Restore (Super Admin) can read it; it only adds or overwrites that officer's records and never deletes anything. This does not count as the \"last successful backup\" — take the full backup as well.",
     btnRunBackup:"⬇️ Download Full Backup Now",
     backupRunning:"Reading data and building backup file…",
     backupDone:"✅ Backup downloaded and logged successfully.",
@@ -392,6 +418,11 @@ var I18N = {
     backupStaleWarn:"⚠ آخری بیک اپ 7 دن سے زیادہ پرانا ہے — براہ کرم ابھی نیا بیک اپ لیں۔",
     dbBackupTitle:"ڈیٹا بیس بیک اپ / ایکسپورٹ",
     dbBackupHint:"ایک JSON فائل ڈاؤن لوڈ ہوگی جس میں تمام مشترکہ دفتری ڈیٹا شامل ہوگا (Users، یومیہ کیسز، کیس نوٹسز، ماہانہ رپورٹس، کاز لسٹس، انسپکشن ڈیسک (تمام پروفارمے)، اسکیننگ ڈیسک کا ریکارڈ، ملازمین کی ڈائریکٹری، Bill Register، Daily Case Management، Gallery تصاویر کا ریکارڈ، Team Chat، مشترکہ فہرستیں)۔ اصل دستاویزات/تصاویر Cloudinary پر اور اسکیننگ ڈیسک کی اسکین شدہ PDF فائلیں Firebase Storage میں ہی رہیں گی — اس فائل میں صرف ان کا ریکارڈ اور لنکس ہوں گے۔ ہر ہفتے ایک بیک اپ لیں اور فائل کسی محفوظ جگہ (دوسرا کمپیوٹر یا USB) رکھیں۔",
+    obTitle:"آفیسر وائز بیک اپ", obHint:"ایک آفیسر (یا سب آفیسرز) کا ڈیٹا اس کے نام سے محفوظ کرتا ہے: روزانہ کیسز، کیس نوٹسز، محفوظ شدہ ماہانہ پیش رفت رپورٹیں اور انسپکشن اندراجات۔ ڈیٹا بیس میں کچھ نہیں لکھا جاتا؛ فائلیں اسی کمپیوٹر پر بنتی ہیں۔",
+    obPick:"آفیسر", obReload:"دوبارہ لوڈ", obXlsx:"⬇️ ایکسل فائل", obJson:"⬇️ JSON فائل (واپس ڈالی جا سکتی ہے)", obBoth:"⬇️ دونوں اکٹھی (ZIP)", obAll:"تمام آفیسرز (ایک ZIP)", obNone:"(آفیسر کا نام درج نہیں)",
+    obLoading:"آفیسرز کا ڈیٹا پڑھا جا رہا ہے…", obReady:"آفیسرز ملے: {n}۔ ایک چنیں، یا تمام آفیسرز چنیں۔", obCountsLine:"روزانہ کیسز {c} · کیس نوٹسز {n} · ماہانہ رپورٹیں {m} · انسپکشن اندراجات {i}",
+    obBuilding:"فائل بنائی جا رہی ہے…", obDone:"مکمل — {f} ڈاؤن لوڈ ہو گئی۔", obFail:"مکمل نہیں ہو سکا: {e}", obNoLib:"ایکسل/ZIP کا مددگار ابھی لوڈ نہیں ہوا۔ انٹرنیٹ دیکھیں اور دوبارہ لوڈ دبائیں۔", obEmpty:"اس آفیسر کا کوئی ریکارڈ نہیں۔",
+    obNote:"JSON فائل مکمل بیک اپ جیسی ساخت میں ہے، اس لیے Restore (سپر ایڈمن) اسے پڑھ سکتا ہے؛ وہ صرف اسی آفیسر کے ریکارڈ شامل یا اوور رائٹ کرتا ہے، کچھ ڈیلیٹ نہیں کرتا۔ یہ \"آخری کامیاب بیک اپ\" میں شمار نہیں ہوتا — مکمل بیک اپ بھی لیتے رہیں۔",
     btnRunBackup:"⬇️ ابھی مکمل بیک اپ ڈاؤن لوڈ کریں",
     backupRunning:"ڈیٹا پڑھا جا رہا ہے اور بیک اپ فائل بنائی جا رہی ہے…",
     backupDone:"✅ بیک اپ کامیابی سے ڈاؤن لوڈ اور محفوظ ہو گیا۔",
@@ -889,6 +920,196 @@ applyI18n();
 </script>
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
+<script>
+/* ============================================================
+   Officer-wise Backup (8 Nov 2026) — read-only: nothing is written to the database.
+   Collections that carry an "officer" field: cases, caseNotices, monthlyReports, inspectionManual, inspectionB.
+   Files are made in the browser: Excel (one workbook per officer) and JSON in the SAME layout as the full backup
+   (so the existing Restore reads it; Restore only set()s the listed records, it never deletes).
+   ============================================================ */
+var OB_COLS = ["cases","caseNotices","monthlyReports","inspectionManual","inspectionB"];
+var OB_SHEETS = { cases:"Daily Cases", caseNotices:"Case Notices", monthlyReports:"Monthly Reports", inspectionManual:"Inspection manual", inspectionB:"Inspection B" };
+var OB_PREF = {
+  cases:["date","officer","judge","bench","serial","type","caseNo","year","title","versus","nature","result","relief","remarks","section","source"],
+  caseNotices:["date","officer","type","caseNo","year","title","versus","relief","firNo","firYear","sections","policeStation","tehsil","district","bench","serial","hearing","signatory","designation","mobile","office"],
+  monthlyReports:["year","month","monthName","officer","clerk","caseCount"],
+  inspectionManual:["inspectionId","officer"],
+  inspectionB:["inspectionId","officer"]
+};
+var OB = { data:null, groups:{}, loaded:false, busy:false };
+
+function obT(k){ return (I18N[currentLang] && I18N[currentLang][k]) || I18N.en[k] || k; }
+function obNorm(s){ return String(s == null ? "" : s).replace(/[‒-―−]/g, "-").replace(/\s+/g, " ").trim().toLowerCase(); }
+function obShort(name){ return String(name || "").replace(/\s*[-—–]\s*(APG|DPG)\s*$/i, "").trim(); }
+function obFileName(name, i){
+  var b = obShort(name).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  var role = (/(APG|DPG)\s*$/i.exec(String(name || "")) || [""])[0].trim().toUpperCase();
+  if(!b) b = "officer-" + (i || 0);
+  return b + (role ? "_" + role : "");
+}
+function obStamp(){ return new Date().toISOString().slice(0, 10); }
+function obMsg(id, text, show){ var el = document.getElementById(id); if(!el) return; el.textContent = text || ""; el.classList.toggle("hidden", !show); }
+
+function obLoad(){
+  if(!CAN_BACKUP || OB.busy) return Promise.resolve();
+  OB.busy = true; OB.loaded = false;
+  obMsg("obError", "", false); obMsg("obProgress", obT("obLoading"), true);
+  document.getElementById("obOfficer").disabled = true;
+  ["obXlsx","obJson","obBoth"].forEach(function(id){ document.getElementById(id).disabled = true; });
+  var data = {};
+  return Promise.all(OB_COLS.map(function(name){
+    return db.collection(name).get().then(function(qs){
+      var rows = []; qs.forEach(function(d){ rows.push(Object.assign({ id:d.id }, d.data())); });
+      data[name] = rows;
+    });
+  })).then(function(){
+    OB.data = data; OB.groups = {};
+    OB_COLS.forEach(function(name){
+      data[name].forEach(function(r){
+        var key = obNorm(r.officer);
+        var g = OB.groups[key] || (OB.groups[key] = { key:key, names:{}, rows:{} });
+        var raw = String(r.officer == null ? "" : r.officer).trim();
+        if(raw) g.names[raw] = (g.names[raw] || 0) + 1;
+        (g.rows[name] = g.rows[name] || []).push(r);
+      });
+    });
+    Object.keys(OB.groups).forEach(function(k){
+      var g = OB.groups[k], best = "", bc = -1;
+      Object.keys(g.names).forEach(function(n){ if(g.names[n] > bc){ best = n; bc = g.names[n]; } });
+      g.name = best;
+    });
+    OB.loaded = true; obFillSelect();
+    obMsg("obProgress", obT("obReady").replace("{n}", Object.keys(OB.groups).filter(function(k){ return k !== ""; }).length), true);
+  }).catch(function(err){
+    obMsg("obProgress", "", false); obMsg("obError", obT("obFail").replace("{e}", (err && err.message) || err), true);
+  }).then(function(){ OB.busy = false; });
+}
+function obGroupList(){
+  return Object.keys(OB.groups).map(function(k){ return OB.groups[k]; }).sort(function(a, b){
+    if(a.key === "") return 1; if(b.key === "") return -1; return a.name.localeCompare(b.name);
+  });
+}
+function obCounts(g){
+  function n(c){ return (g.rows[c] || []).length; }
+  return { c:n("cases"), n:n("caseNotices"), m:n("monthlyReports"), i:n("inspectionManual") + n("inspectionB") };
+}
+function obFillSelect(){
+  var sel = document.getElementById("obOfficer"), prev = sel.value, html = '<option value="__all__">' + esc(obT("obAll")) + "</option>";
+  obGroupList().forEach(function(g){
+    var c = obCounts(g);
+    html += '<option value="' + esc(g.key) + '">' + esc(g.key === "" ? obT("obNone") : g.name) + " — " + c.c + "</option>";
+  });
+  sel.innerHTML = html;
+  if(prev && sel.querySelector('option[value="' + prev.replace(/"/g, '\\"') + '"]')) sel.value = prev;
+  sel.disabled = false;
+  ["obXlsx","obJson","obBoth"].forEach(function(id){ document.getElementById(id).disabled = false; });
+  obShowCounts();
+}
+function obShowCounts(){
+  var v = document.getElementById("obOfficer").value, el = document.getElementById("obCounts");
+  if(!OB.loaded){ el.textContent = ""; return; }
+  if(v === "__all__"){
+    var t = { c:0, n:0, m:0, i:0 };
+    obGroupList().forEach(function(g){ var c = obCounts(g); t.c += c.c; t.n += c.n; t.m += c.m; t.i += c.i; });
+    el.textContent = obT("obCountsLine").replace("{c}", t.c).replace("{n}", t.n).replace("{m}", t.m).replace("{i}", t.i);
+  } else if(OB.groups[v]){
+    var c = obCounts(OB.groups[v]);
+    el.textContent = obT("obCountsLine").replace("{c}", c.c).replace("{n}", c.n).replace("{m}", c.m).replace("{i}", c.i);
+  } else el.textContent = "";
+}
+
+function obCell(v){
+  if(v == null) return "";
+  if(typeof v === "object"){
+    if(typeof v.seconds === "number" && "nanoseconds" in v){ return new Date(v.seconds * 1000).toISOString(); }
+    try{ v = JSON.stringify(v); }catch(e){ v = String(v); }
+  }
+  if(typeof v === "string" && v.length > 32000) v = v.slice(0, 32000);
+  return v;
+}
+function obSheet(colName, rows){
+  var set = {}; rows.forEach(function(r){ Object.keys(r).forEach(function(k){ set[k] = 1; }); });
+  var pref = (OB_PREF[colName] || []).filter(function(k){ return set[k]; });
+  var rest = Object.keys(set).filter(function(k){ return pref.indexOf(k) < 0 && k !== "id"; }).sort();
+  var cols = pref.concat(rest); if(set.id) cols.push("id");
+  var sorted = rows.slice().sort(function(a, b){ return String(a.date || a.year || "").localeCompare(String(b.date || b.year || "")) || String(a.id).localeCompare(String(b.id)); });
+  var aoa = [cols].concat(sorted.map(function(r){ return cols.map(function(k){ return obCell(r[k]); }); }));
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"] = cols.map(function(k){ var w = k.length; sorted.slice(0, 200).forEach(function(r){ var x = String(obCell(r[k])).length; if(x > w) w = x; }); return { wch: Math.min(Math.max(w + 2, 8), 50) }; });
+  return ws;
+}
+function obWorkbook(g, label){
+  var wb = XLSX.utils.book_new(), c = obCounts(g);
+  var sum = [["Officer-wise backup"], ["Officer", label], ["Made on", new Date().toISOString()], ["Made by", (auth.currentUser && auth.currentUser.email) || ""], [],
+    ["Part", "Records"], ["Daily Cases", c.c], ["Case Notices", c.n], ["Monthly Reports (saved)", c.m], ["Inspection entries", c.i]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), "Summary");
+  OB_COLS.forEach(function(name){
+    var rows = g.rows[name] || [];
+    if(rows.length) XLSX.utils.book_append_sheet(wb, obSheet(name, rows), OB_SHEETS[name]);
+  });
+  return wb;
+}
+function obJsonText(g, label){
+  var counts = {}, total = 0, cols = {};
+  OB_COLS.forEach(function(name){ var rows = g.rows[name] || []; if(rows.length){ cols[name] = rows; counts[name] = rows.length; total += rows.length; } });
+  var b = { generatedAt:new Date().toISOString(), generatedBy:(auth.currentUser && auth.currentUser.email) || "?",
+    manifest:{ version:2, counts:counts, totalRecords:total, failed:[], scope:"officer", officer:label },
+    collections:cols, sharedDocs:{}, officerBackup:{ officer:label, key:g.key } };
+  return JSON.stringify(b, null, 2);
+}
+function obSave(blob, filename){
+  var url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+}
+function obXlsxBlob(g, label){
+  var out = XLSX.write(obWorkbook(g, label), { bookType:"xlsx", type:"array" });
+  return new Blob([out], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function obRun(kind){
+  if(!OB.loaded || OB.busy) return;
+  obMsg("obError", "", false);
+  var v = document.getElementById("obOfficer").value, date = obStamp();
+  var needX = kind !== "json", needZip = (v === "__all__") || kind === "both";
+  if((needX && typeof XLSX === "undefined") || (needZip && typeof JSZip === "undefined")){ obMsg("obError", obT("obNoLib"), true); return; }
+  var groups = v === "__all__" ? obGroupList() : (OB.groups[v] ? [OB.groups[v]] : []);
+  if(!groups.length) return;
+  if(v !== "__all__"){ var cc = obCounts(groups[0]); if(!(cc.c + cc.n + cc.m + cc.i)){ obMsg("obError", obT("obEmpty"), true); return; } }
+  obMsg("obProgress", obT("obBuilding"), true);
+  try{
+    var made = [];
+    groups.forEach(function(g, i){
+      var label = g.key === "" ? obT("obNone") : g.name, base = (g.key === "" ? "no-officer" : obFileName(g.name, i + 1)) + "_" + date;
+      if(kind !== "json") made.push({ name: base + ".xlsx", data: obXlsxBlob(g, label) });
+      if(kind !== "xlsx") made.push({ name: base + ".json", data: new Blob([obJsonText(g, label)], { type:"application/json" }) });
+    });
+    if(!needZip){
+      obSave(made[0].data, made[0].name); obMsg("obProgress", obT("obDone").replace("{f}", made[0].name), true); return;
+    }
+    var zip = new JSZip(), folder = v === "__all__" ? "" : "";
+    made.forEach(function(f){ zip.file(f.name, f.data); });
+    zip.generateAsync({ type:"blob" }).then(function(zb){
+      var zn = (v === "__all__" ? "camp-office-officerwise-backup_" : obFileName(groups[0].name, 1) + "_backup_") + date + ".zip";
+      obSave(zb, zn); obMsg("obProgress", obT("obDone").replace("{f}", zn), true);
+    }).catch(function(err){ obMsg("obProgress", "", false); obMsg("obError", obT("obFail").replace("{e}", (err && err.message) || err), true); });
+  }catch(err){ obMsg("obProgress", "", false); obMsg("obError", obT("obFail").replace("{e}", (err && err.message) || err), true); }
+}
+document.getElementById("obReload").addEventListener("click", function(){ obLoad(); });
+document.getElementById("obOfficer").addEventListener("change", obShowCounts);
+document.getElementById("obXlsx").addEventListener("click", function(){ obRun("xlsx"); });
+document.getElementById("obJson").addEventListener("click", function(){ obRun("json"); });
+document.getElementById("obBoth").addEventListener("click", function(){ obRun("both"); });
+/* load once, as soon as the page is open for someone who may back up */
+(function(){
+  var tries = 0, t = setInterval(function(){
+    tries++;
+    var app = document.getElementById("mainApp");
+    if(CAN_BACKUP && app && !app.classList.contains("hidden")){ clearInterval(t); obLoad(); }
+    else if(tries > 120) clearInterval(t);
+  }, 500);
+})();
+
+</script>
 <script src="a11y.js" defer></script>
 <script>
 /* header buttons (same look as other pages) drive the page's existing language / theme selectors */

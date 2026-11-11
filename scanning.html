@@ -1348,7 +1348,7 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
         var kind = kindOf(label);
         if(!kind) continue;
         var no = m[1] + (m[2] ? m[2].replace(/\s+/g, '').toUpperCase() : ''), key = kind + '|' + no + '|' + m[4];
-        if(!seen[key]){ seen[key] = 1; out.push({kind:kind, no:no, year:m[4]}); }
+        if(!seen[key]){ seen[key] = 1; out.push({kind:kind, no:no, year:m[4], spelled:/criminal\s+petition/i.test(label)}); }
         /* "Criminal Appeals No.586 and 587 of 2023": every number in the list is its own case */
         (m[3] || '').replace(/(\d{1,6})(\s*-\s*[A-Za-z]{1,2})?/g, function(w, n2, sf){
           var no2 = n2 + (sf ? sf.replace(/\s+/g, '').toUpperCase() : ''), k2 = kind + '|' + no2 + '|' + m[4];
@@ -1578,10 +1578,13 @@ function tidySections(v){
     }
     /* still nothing: short forms like "J.P. 76 of 2023" or "J.P.254/2023 and Crl.P.L.A.635-L/2023" in the heading */
     if(!ids.length) ids = shortHeadIds(norm(first).slice(0, 1600));
+    var spelled0 = ids.length && ids[0].spelled;
     if(ids.length){ f.caseType = ids[0].kind; f.caseNo = ids[0].no; f.caseYear = ids[0].year; }
     if(ids.length){ ids = ids.filter(function(x, n){ return n === 0 || !(x.no === ids[0].no && x.year === ids[0].year); }); }
     if(ids.length > 1) notes.push('Also decided together: ' + ids.slice(1).map(function(i){ return i.kind + ' ' + i.no + '/' + i.year; }).join(', '));
     f.court = courtOf(first);
+    /* the office writes a Supreme Court "Criminal Petition No." as Crl.P.L.A. (user, 11 Nov 2026); plain Crl.P. there is a slip */
+    if(f.caseType === 'Crl.P.' && spelled0 && (f.court === 'Supreme Court of Pakistan' || (!f.court && /\b(?:Against|On\s+appeal\s+against)\s+the\s+judgment/i.test(first)))) f.caseType = 'Crl.P.L.A.';
     f.docType = docTypeOf(first);
     f.judges = bench(first);
     f.lower = lowerOf(first);

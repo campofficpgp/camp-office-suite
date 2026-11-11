@@ -711,6 +711,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
       <div class="grid">
         <div class="cl-field"><label for="fFirNo">FIR No / ایف آئی آر نمبر</label><input id="fFirNo"></div>
         <div class="cl-field"><label for="fFirYear">FIR Year / سال <span class="manage-link" role="button" tabindex="0" onclick="openListManage('year')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fFirYear"></select></div>
+        <div class="cl-field"><label for="fFirDate">FIR Date / ایف آئی آر کی تاریخ <span style="font-weight:400;opacity:.7">(optional · اگر پوری تاریخ لکھی ہو)</span></label><input type="date" id="fFirDate"></div>
         <div class="cl-field"><label for="fDistrict">District / ضلع <span class="manage-link" role="button" tabindex="0" onclick="openListManage('district')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fDistrict"></select></div>
         <div class="cl-field"><label for="fTehsil">Tehsil / تحصیل <span class="manage-link" role="button" tabindex="0" onclick="openListManage('tehsil')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fTehsil"></select></div>
         <div class="cl-field"><label for="fStation">Police Station / تھانہ <span class="manage-link" role="button" tabindex="0" onclick="openListManage('station')">(+ Add/Edit &nbsp;شامل/ترمیم)</span></label><select id="fStation"></select></div>
@@ -1295,7 +1296,7 @@ var EXTRACT = (function(){
   function pad(n){ return ('0' + n).slice(-2); }
   function norm(t){
     return String(t || '').replace(/\r/g, '').replace(/[“”]/g, '"').replace(/[‘’]/g, "'")
-      .replace(/[–—]/g, '-').replace(/[ \t ]+/g, ' ').replace(/ ?\n ?/g, '\n');
+      .replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/[–—]/g, '-').replace(/[ \t ]+/g, ' ').replace(/ ?\n ?/g, '\n');
   }
   function flat(t){ return norm(t).replace(/\s+/g, ' ').trim(); }
   function lines(t){ return norm(t).split('\n').map(function(l){ return l.trim(); }); }
@@ -1444,11 +1445,12 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
   var TAG = /[\(\{\[]\s*In\s+[^)\]}]*[\)\]}]?/ig;
   function titleOf(first){
     var ls = lines(first), v = -1, i;
-    for(i = 0; i < ls.length; i++) if(/^\W*(versus|vs\.?|v\/s|v\.)\W*$/i.test(ls[i])){ v = i; break; }
+    for(i = 0; i < ls.length; i++) if(/^\W*(?:[A-Za-z]{1,2}\s+)?(versus|vs\.?|v\/s|v\.)\W*$/i.test(ls[i])){ v = i; break; }
     if(v < 0) return '';
     function partyList(arr){
       var out = [];
       arr.forEach(function(l){
+        l = l.replace(/^(?:[^A-Za-z0-9\u0600-\u06FF]|\b[A-Za-z]\b)+\s*(?=\d+\s*[.,)]\s*[A-Za-z])/, '').replace(/^[\[|\u00a2\u00a3]\s*[A-Za-z]?\s+(?=[A-Z][a-z])/, '').replace(/^[A-Za-z]\s+(?=[A-Z][a-z]{2,})/, '');
         var tagged = /[\(\{\[]\s*In\s/i.test(l), numbered = /^\s*\d+\s*[.,)]\s*\S/.test(l);
         var c = l.replace(TAG, '').replace(/\.{2,}.*$/g, '').replace(/[\u00ab\u00bb]+\W*/g, ' ').replace(/\b(Petitioner|Respondent|Appellant|Complainant)s?\s*(\(s\))?\b.*$/i, '')
           .replace(/^\s*\d+\s*[.,)]\s*/, '').replace(/^[\s.,;:\-_|]+|[\s.,;:\-_|]+$/g, '').replace(/\s+/g, ' ');
@@ -1462,7 +1464,7 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
     while(j >= 0 && up.length < 10){
       var l = ls[j];
       if(!l){ j--; continue; }
-      if(/\)\s*$/.test(l) && !/[\(\{\[]\s*In\s/i.test(l)) break;
+      if(/\)\s*$/.test(l) && !/[\(\{\[]\s*In\s/i.test(l) && !/\b(?:Petitioner|Respondent|Appellant|Complainant)s?\s*(?:\(s\))?\W*$/i.test(l)) break;
       if(/^\(On\b|^PRESENT|^(MR\.?\s+)?JUSTICE\b/i.test(l)) break;
       if(/\bNo\.?\s*\d+.*(of|\/)\s*\d{4}/i.test(l) && !/[\(\{\[]\s*In\s/i.test(l)) break;
       up.unshift(l); j--;
@@ -1508,15 +1510,43 @@ function tidySections(v){
     var act = m[2].replace(/^P\.P\.C\.?$/, 'PPC');
     return nums ? nums + ' ' + act : act;
   }
+  var DIST_NAMES = ['Attock','Bahawalnagar','Bahawalpur','Bhakkar','Chakwal','Chiniot','Dera Ghazi Khan','Faisalabad','Gujranwala','Gujrat','Hafizabad','Jhang','Jhelum','Kasur','Khanewal','Khushab','Lahore','Layyah','Lodhran','Mandi Bahauddin','Mianwali','Multan','Muzaffargarh','Narowal','Nankana Sahib','Okara','Pakpattan','Rahim Yar Khan','Rajanpur','Rawalpindi','Sahiwal','Sargodha','Sheikhupura','Sialkot','Toba Tek Singh','Vehari'];
+  var ST_STOP = /^(district|distt|dist|the|and|in|on|under|vide|while|for|where|against|at|by|of|with|was|were|case|tehsil|teh|within|as|is|from|to|a|an|that|which|whereby|u\/s|section|sections|ppc|pursuant|registered|alleging|lodged|dated)$/i;
+  function yr2(y){ y = String(y || ''); if(y.length === 4) return y; var n = +y; return y ? String(n <= 40 ? 2000 + n : 1900 + n) : ''; }
+  /* FIR number / year / full date. OCR writes "No0.388/2010", "FIR - No.117/2013", "No.09/13" — all read here. The date is taken only when it is a full date; the year is always filled when it can be known. */
+  var FIR_RE = /\b(?:F\.?\s?I\.?\s?R\.?|First\s+Information\s+Report)\s*(?:[-–—]\s*)?(?:No[s0oO]?)?\s*[.:]?\s*[-–]?\s*(\d{1,6})(?:\s*(?:\/|of|-)\s*(\d{4}|\d{2})\b)?\s*[,;)]?\s*(?:(?:was\s+)?(?:dated|dt\.?|registered\s+on|lodged\s+on|on)\s*:?\s*(\d{1,2}\s*[.\-\/]\s*\d{1,2}\s*[.\-\/]\s*\d{4}|\d{1,2}\s*(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\.?,?\s*\d{4}))?/gi;
+  function canonDistrict(n){ var k = String(n).toLowerCase().replace(/[^a-z]/g, ''), i, e; if(k.length < 4) return n; for(i = 0; i < DIST_NAMES.length; i++){ e = DIST_NAMES[i].toLowerCase().replace(/[^a-z]/g, ''); if(e === k || (k.length >= 6 && e.indexOf(k) === 0)) return DIST_NAMES[i]; } return n; }
+  function cleanStation(raw){
+    var w = String(raw || '').replace(/\s+/g, ' ').trim().split(' '), out = [], i;
+    for(i = 0; i < w.length && out.length < 4; i++){ if(ST_STOP.test(w[i].replace(/[.,;:]+$/, ''))) break; out.push(w[i].replace(/[.,;:]+$/, '')); if(/[.,;:]$/.test(w[i])) break; }
+    return out.join(' ').replace(/^[\s\-]+|[\s\-]+$/g, '');
+  }
   function firOf(text){
-    var t = flat(text), o = {};
-    var m = /\bFIR\s*(?:No\.?)?\s*(\d{1,6})\s*(?:\/\s*(\d{4}))?\s*,?\s*(?:dated|dt\.?|registered\s+on)\s*([\d.\-\/ ]{6,12})/i.exec(t);
-    if(m){ o.firNo = m[1]; var d = isoDate(m[3]); o.firYear = m[2] || (d ? d.slice(0, 4) : ''); }
-    var after = m ? t.slice(m.index, m.index + 600) : t.slice(0, 3000);
+    var t = flat(text), o = {}, m, fm = null, re = new RegExp(FIR_RE.source, 'gi');
+    while((m = re.exec(t))){ fm = m; break; }
+    if(fm){
+      var d = isoDate(fm[3] || '');
+      o.firNo = fm[1];
+      o.firYear = (fm[2] && fm[2].length === 4) ? fm[2] : (d ? d.slice(0, 4) : yr2(fm[2]));
+      if(d) o.firDate = d;
+    }
+    var after = fm ? t.slice(fm.index, fm.index + 600) : t.slice(0, 3000);
     var s = /under\s+[Ss]ections?\s+([0-9][0-9A-Za-z()\/,\-\s&]*?)\s*(PPC|P\.P\.C\.?|CNSA|PCA|ATA|Cr\.?P\.?C|Arms Ordinance|PECA)/.exec(after);
     if(s) o.sections = tidySections(s[1] + ' ' + s[2]);
-    var p = /(?:police\s+station|P\.\s?S\.)\s+([A-Za-z][A-Za-z .\-]{1,40}?)\s*,?\s*(?:District|Distt\.?|Dist\.?)\s+([A-Za-z]+(?: [A-Za-z]+)?)/i.exec(after);
-    if(p){ o.station = p[1].replace(/\s+/g, ' ').trim(); o.district = p[2].trim(); }
+    /* police station: "police station X, District Y" / "at Police Station X." / "Police Staiton X" (OCR) / "P.S. X" */
+    var win = fm ? t.slice(Math.max(0, fm.index - 250), fm.index + 800) : t.slice(0, 3000);
+    var p = /(?:police\s+st[a-z]{3,6}n|police\s+stn|\bP\.\s?S\b\.?)\s*[:,\-]?\s+([A-Za-z][A-Za-z.,\-' ]{1,60})/i.exec(win);
+    if(p){
+      var st = cleanStation(p[1]), at = p[1].indexOf(st), stEnd = p.index + p[0].length - p[1].length + (at < 0 ? 0 : at) + st.length;
+      var dm = /^\s*,?\s*(?:District|Distt\.?|Dist\.?)\s+([A-Za-z]+(?:[ \-][A-Za-z]+){0,3})/i.exec(win.slice(stEnd));
+      var dist = dm ? dm[1].replace(/\s+/g, ' ').trim() : '';
+      if(!dist){ var dd = /\b(?:District|Distt\.?|Dist\.?)\s+([A-Z][A-Za-z]+(?:[ \-][A-Z][A-Za-z]+){0,3})/.exec(win); if(dd) dist = dd[1].trim(); }
+      /* "Saddar Chakwal" = Saddar station of Chakwal: the district name at the end is not part of the station */
+      var low = st.toLowerCase(), k;
+      for(k = 0; k < DIST_NAMES.length; k++){ var dn = DIST_NAMES[k].toLowerCase(); if(low.length > dn.length + 2 && low.slice(-dn.length - 1) === ' ' + dn){ if(!dist) dist = DIST_NAMES[k]; st = st.slice(0, st.length - dn.length - 1).trim(); break; } }
+      if(st.length >= 3) o.station = st;
+      if(dist) o.district = canonDistrict(dist.replace(/-/g, ' ').replace(/\s+/g, ' ').replace(/\s(?:ud|ul)\s.*$/i, ''));
+    }
     return o;
   }
   function sentenceOf(text, kind){
@@ -1527,11 +1557,19 @@ function tidySections(v){
     if(/\b(convicted|sentenced)\b/i.test(t)) return 'Other conviction';
     return '';
   }
+  /* scanned "Certified True Copy" stamp pages come out as gibberish at the very end: keep only lines made of real words before looking for the operative sentence */
+  function sane(text){
+    return norm(text).split('\n').filter(function(l){
+      var w = l.split(/\s+/).filter(Boolean); if(!w.length) return false;
+      var ok = w.filter(function(x){ return /^[A-Za-z][A-Za-z'\-]{2,}[.,;:)"]*$/.test(x) && /[aeiouAEIOU]/.test(x) && !/^[^a-z]*$/.test(x) || /^[A-Z][A-Z.]{1,5}[,.;:]?$/.test(x) || /^\d{1,4}([.\/\-]\d{1,4}){0,2}[.,;:]?$/.test(x); }).length;
+      return ok / w.length >= 0.6;
+    }).join('\n');
+  }
   function decisive(text){
-    var t = flat(text).toLowerCase();
+    var t = flat(sane(text)).toLowerCase();
     var checks = [
       ['Partly Allowed', /partly\s+(allowed|dismissed)|allowed\s+in\s+part|partially\s+allowed/],
-      ['Allowed', /(converted\s+into\s+(an\s+)?appeal[^.]{0,80}(is|are)\s+(hereby\s+)?allowed|(appeal|petition)\s+is\s+(hereby\s+)?allowed|(is|are)\s+(hereby\s+)?acquitted|stand(s)?\s+acquitted|acquitted\s+of\s+(all\s+)?the\s+charges?)/],
+      ['Allowed', /(converted\s+into\s+(an\s+)?appeal[^.]{0,80}\b(is|are|and)\s+(hereby\s+)?allowed|(appeal|petition)\s+is\s+(hereby\s+)?allowed|(is|are)\s+(hereby\s+)?acquitted|stand(s)?\s+acquitted|acquitted\s+of\s+(all\s+)?the\s+charges?)/],
       ['Leave granted', /leave\s+(to\s+appeal\s+)?(is\s+)?(hereby\s+)?granted/],
       ['Disposed of', /disposed\s+of/],
       ['Withdrawn', /(dismissed|disposed\s+of)\s+as\s+withdrawn|(petition|appeal)\s+(is\s+)?(hereby\s+)?withdrawn|permission\s+to\s+withdraw/],
@@ -1761,8 +1799,8 @@ function downloadBlob(blob, name){
 /* ---------- the add / edit dialog ---------- */
 var SC = { mode:'add', editId:null, busy:false, builtPdf:null };
 var PARTS = [], PID = 0;
-var FIELDS = ['docType','docTypeOther','date','officer','court','caseType','caseNo','caseYear','title','outcome','sections','firNo','firYear','district','tehsil','station','opinionStatus','opinionBy','opinionDate','opinionText','scType','scNo','scYear','notes','ocrText','judges','lower','sentence','acDate','grounds','linkedTo','opinionAi'];
-var FMAP = { docType:'fDocType', docTypeOther:'fDocOther', date:'fDate', officer:'fOfficer', court:'fCourt', caseType:'fCaseType', caseNo:'fCaseNo', caseYear:'fCaseYear', title:'fTitle', outcome:'fOutcome', sections:'fSections', firNo:'fFirNo', firYear:'fFirYear', district:'fDistrict', tehsil:'fTehsil', station:'fStation', opinionStatus:'fOpStatus', opinionBy:'fOpBy', opinionDate:'fOpDate', opinionText:'fOpText', scType:'fScType', scNo:'fScNo', scYear:'fScYear', notes:'fNotes', ocrText:'fOcr', judges:'fJudges', lower:'fLower', sentence:'fSentence', acDate:'fAcDate', grounds:'fGrounds', linkedTo:'fLinkTo', opinionAi:'fOpAi' };
+var FIELDS = ['docType','docTypeOther','date','officer','court','caseType','caseNo','caseYear','title','outcome','sections','firNo','firYear','firDate','district','tehsil','station','opinionStatus','opinionBy','opinionDate','opinionText','scType','scNo','scYear','notes','ocrText','judges','lower','sentence','acDate','grounds','linkedTo','opinionAi'];
+var FMAP = { docType:'fDocType', docTypeOther:'fDocOther', date:'fDate', officer:'fOfficer', court:'fCourt', caseType:'fCaseType', caseNo:'fCaseNo', caseYear:'fCaseYear', title:'fTitle', outcome:'fOutcome', sections:'fSections', firNo:'fFirNo', firYear:'fFirYear', firDate:'fFirDate', district:'fDistrict', tehsil:'fTehsil', station:'fStation', opinionStatus:'fOpStatus', opinionBy:'fOpBy', opinionDate:'fOpDate', opinionText:'fOpText', scType:'fScType', scNo:'fScNo', scYear:'fScYear', notes:'fNotes', ocrText:'fOcr', judges:'fJudges', lower:'fLower', sentence:'fSentence', acDate:'fAcDate', grounds:'fGrounds', linkedTo:'fLinkTo', opinionAi:'fOpAi' };
 
 function getForm(){
   var d = {};
@@ -2129,7 +2167,7 @@ function applyRecord(rec, pagesText){
   put('title', f.title); put('judges', f.judges); put('lower', f.lower);
   put('outcome', E.pick(LISTS.outcomes, f.outcome) || f.outcome);
   put('sentence', E.pick(LISTS.sentences, f.sentence) || f.sentence);
-  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear);
+  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear); put('firDate', f.firDate);
   var dist = E.matchDistrict(DISTRICTS, f.district);
   if(dist && !$('fDistrict').dataset.touched){ putAuto('district', dist); n++; refreshTehsilStation('', f.station || ''); if(f.station) $('fStation').classList.add('sc-auto'); }
   var off = E.matchOfficer(LISTS.officers, f.counsel); put('officer', off);
@@ -2150,7 +2188,7 @@ function applyOpinion(rec, pagesText){
   put('opinionStatus', E.pick(LISTS.opinions, f.opinionStatus) || (f.opinionStatus === 'Not fit' ? E.pick(LISTS.opinions, 'Not fit') : '') || f.opinionStatus);
   var by = E.matchOfficer(LISTS.officers, f.signer); put('opinionBy', by); put('officer', by);
   put('opinionDate', f.opinionDate); put('acDate', f.acDate); put('opinionText', f.opinionText);
-  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear);
+  put('sections', f.sections); put('firNo', f.firNo); put('firYear', E.pick(YEARS, f.firYear) || f.firYear); put('firDate', f.firDate);
   var dist = E.matchDistrict(DISTRICTS, f.district);
   if(dist && !$('fDistrict').dataset.touched){ putAuto('district', dist); n++; refreshTehsilStation('', f.station || ''); if(f.station) $('fStation').classList.add('sc-auto'); }
   var c = candidatesFor(f), pick = (c.length === 1 || (c.length > 1 && c[0].exact && !c[1].exact)) ? c[0].s.id : '';

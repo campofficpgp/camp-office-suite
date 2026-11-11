@@ -927,6 +927,15 @@ var SRC = { caseEntry:{}, caseNotice:{}, scanning:{}, shared:{} };   // last dat
 var LISTS = { officers: [], types: BASE_TYPES.slice(), courts: COURTS.slice(), outcomes: OUTCOMES.slice(), docTypes: DOC_TYPES.slice(), opinions: OPINIONS.slice(), sentences: SENTENCES.slice() };
 var MAX_BYTES = 25 * 1024 * 1024;
 var OCR_CAP = 30000;               // characters of search text kept per document
+var OCR_MARK = '\n\n[… middle part not stored / درمیانی حصہ محفوظ نہیں …]\n\n';
+var READ_MAX = 40, READ_TAIL = 4, READ_RETRY_CONF = 70;  // pages read per file; when a file is longer, the LAST READ_TAIL pages (the operative order) are always read
+/* too long: keep the beginning and the end (the final order is at the end), never just the first part */
+function capText(t){
+  t = String(t == null ? '' : t);
+  if(t.length <= OCR_CAP) return t;
+  var head = Math.floor(OCR_CAP * 0.6), tail = OCR_CAP - head - OCR_MARK.length;
+  return t.slice(0, head) + OCR_MARK + t.slice(t.length - tail);
+}
 var SHOWN = 100;                   // rows shown before "Show more"
 
 function $(id){ return document.getElementById(id); }
@@ -1968,7 +1977,7 @@ async function buildPdf(){
 /* ---------- search text: PDF text layer first, OCR for scanned pages ---------- */
 function setOcrText(t){
   t = String(t || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-  if(t.length > OCR_CAP) t = t.slice(0, OCR_CAP);
+  t = capText(t);
   $('fOcr').value = t; formHistPush();
 }
 async function textLayer(bytes, maxPages){
@@ -1985,22 +1994,28 @@ async function autoTextLayer(){
   if(!PARTS.length || PARTS.some(function(p){ return p.kind !== 'pdf'; }) || PARTS.length !== 1) return;
   if($('fOcr').value.trim()) return;
   try{
-    var r = await textLayer(new Uint8Array(PARTS[0].buf), 30);
+    var r = await textLayer(new Uint8Array(PARTS[0].buf), 300);
     if(r.text.replace(/\s+/g, '').length > 80){ setOcrText(r.text); $('ocrInfo').textContent = '✔ ' + 'Text found inside the PDF — no OCR needed. / PDF میں پہلے سے متن موجود ہے، OCR کی ضرورت نہیں۔'; }
   }catch(e){ console.warn('textLayer', e); }
 }
 var OCR_BUSY = false;
-/* text of every page (max maxP): the PDF's own text where it has some, OCR for scanned pages */
+/* text of every page (max maxP): the PDF's own text where it has some, OCR for scanned pages.
+   If the file is longer than maxP, the first pages and the LAST READ_TAIL pages are read (the final order is at the end);
+   the pages in between are left empty so page numbers stay correct, and the caller is told which ones. */
 async function readPages(maxP){
   var prog = $('ocrProg'), bar = prog.firstElementChild; prog.style.display = ''; bar.style.width = '2%';
   $('ocrInfo').textContent = '⏳ ' + 'Preparing… / تیاری…';
-  var built = await buildPdf(), total = Math.min(built.pages, maxP), out = [];
-  var tl = null; try{ tl = await textLayer(built.bytes, maxP); }catch(e){ console.warn(e); }
+  var built = await buildPdf(), total = built.pages, out = [];
+  var skipFrom = 0, skipTo = 0;
+  if(total > maxP){ skipFrom = maxP - READ_TAIL + 1; skipTo = total - READ_TAIL; }
+  var toRead = total - (skipFrom ? skipTo - skipFrom + 1 : 0), done = 0;
+  var tl = null; try{ tl = await textLayer(built.bytes, total); }catch(e){ console.warn(e); }
   var pdfjs = await loadPdfjs();
   var doc = tl ? tl.doc : await pdfjs.getDocument({data:built.bytes.slice(0)}).promise;
   var worker = null, lang = $('ocrUrdu').checked ? 'eng+urd' : 'eng', texts = (tl ? tl.text : '').split('\n\n');
   try{
     for(var i = 1; i <= total; i++){
+      if(skipFrom && i >= skipFrom && i <= skipTo){ out.push(''); continue; }
       var have = (texts[i-1] || '').replace(/\s+/g, '');
       if(have.length > 40){ out.push(texts[i-1]); }
       else {
@@ -2009,27 +2024,48 @@ async function readPages(maxP){
           $('ocrInfo').textContent = '⏳ ' + 'Loading OCR engine (first time takes a minute)… / OCR انجن لوڈ ہو رہا ہے (پہلی بار ایک منٹ لگتا ہے)…';
           worker = await Tesseract.createWorker(lang, 1, {});
         }
-        var pg = await doc.getPage(i), vp = pg.getViewport({scale:2.4}), c = document.createElement('canvas');
-        c.width = Math.round(vp.width); c.height = Math.round(vp.height);
-        await pg.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
-        var r = await worker.recognize(c);
-        out.push(r && r.data && r.data.text || '');
+        var pg = await doc.getPage(i), base = pg.getViewport({scale:1});
+        var ocrAt = async function(scale){
+          var vp = pg.getViewport({scale:scale}), c = document.createElement('canvas');
+          c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+          await pg.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
+          var rr = await worker.recognize(c); c.width = c.height = 0;
+          return { text:(rr && rr.data && rr.data.text) || '', conf:(rr && rr.data && typeof rr.data.confidence === 'number') ? rr.data.confidence : null };
+        };
+        var best = await ocrAt(2.4);
+        /* a weak page gets a second try with a sharper picture (about 250-300 dpi on the long side); the better reading is kept */
+        var hi = Math.max(3.0, Math.min(4.2, 3300 / Math.max(base.width, base.height)));
+        if(best.conf !== null && best.conf < READ_RETRY_CONF){
+          try{ var again = await ocrAt(hi); if(again.conf !== null && again.conf > best.conf && again.text.trim()) best = again; }catch(e){ console.warn('retry', e); }
+        }
+        out.push(best.text);
       }
-      bar.style.width = Math.round(i / total * 100) + '%';
+      done++;
+      bar.style.width = Math.round(done / toRead * 100) + '%';
       $('ocrInfo').textContent = '⏳ ' + 'Reading page ' + i + ' of ' + total + ' / صفحہ ' + i + ' از ' + total;
     }
   } finally { if(worker){ try{ await worker.terminate(); }catch(e){} } }
-  return { pages:out, built:built, truncated:built.pages > maxP };
+  return { pages:out, built:built, truncated:!!skipFrom, skipFrom:skipFrom, skipTo:skipTo, total:total };
+}
+/* all page texts in one string; a long file gets a visible note where pages were not read */
+function joinPages(r){ return r.pages.map(function(p, i){ return (r.truncated && i + 1 === r.skipFrom) ? '[pages ' + r.skipFrom + '-' + r.skipTo + ' not read / صفحات نہیں پڑھے گئے]' : p; }).join('\n\n'); }
+/* plain-words warning for pages that were not read / text that was shortened */
+function readWarn(r, chars){
+  var w = [];
+  if(r && r.truncated) w.push(bi('فائل لمبی ہے: صفحہ ' + r.skipFrom + ' سے ' + r.skipTo + ' تک نہیں پڑھے گئے؛ شروع کے اور آخری ' + READ_TAIL + ' صفحات (فیصلے کا آخری حکم) پڑھ لیے گئے۔', 'Long file: pages ' + r.skipFrom + '–' + r.skipTo + ' were not read; the first pages and the last ' + READ_TAIL + ' pages (the final order) were read.'));
+  if(chars > OCR_CAP) w.push(bi('متن بہت لمبا تھا: تلاش کے لیے صرف شروع اور آخر کا حصہ محفوظ ہو گا۔', 'The text was very long: only the beginning and the end are kept for search.'));
+  return w;
 }
 async function runOcr(){
   if(OCR_BUSY) return;
   if(!PARTS.length){ showModal('⚠ ' + bi('پہلے فائل یا تصویریں شامل کریں۔', 'Add a file or photos first.'), 'err'); return; }
   OCR_BUSY = true; $('btnOcr').disabled = true; $('btnAuto').disabled = true; showModal('');
   try{
-    var maxP = 15, r = await readPages(maxP);
-    setOcrText(r.pages.join('\n\n'));
-    var ok = $('fOcr').value.length;
-    $('ocrInfo').textContent = (ok ? '✔ ' : '⚠ ') + ok + ' characters / حروف' + (r.truncated ? ' — first ' + maxP + ' pages only / پہلے ' + maxP + ' صفحات' : '') + '. ' + 'Please check; OCR can make mistakes. / براہ کرم دیکھ لیں، OCR میں غلطی ممکن ہے۔';
+    var r = await readPages(READ_MAX), full = joinPages(r);
+    setOcrText(full);
+    var ok = $('fOcr').value.length, w = readWarn(r, full.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().length);
+    $('ocrInfo').textContent = (ok ? '✔ ' : '⚠ ') + ok + ' characters / حروف. ' + 'Please check; OCR can make mistakes. / براہ کرم دیکھ لیں، OCR میں غلطی ممکن ہے۔';
+    if(w.length) showModal('⚠ ' + w.join('<br>'));
   }catch(e){
     console.error(e);
     $('ocrInfo').textContent = '';
@@ -2076,7 +2112,7 @@ function applyRecord(rec, pagesText){
   var off = E.matchOfficer(LISTS.officers, f.counsel); put('officer', off);
   var notes = [f.notes, (f.counsel && !off) ? 'State counsel: ' + f.counsel : ''].filter(Boolean).join('\n');
   put('notes', notes); put('grounds', f.grounds);
-  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = t.slice(0, OCR_CAP); }
+  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = capText(t); }
   formHistPush();
   return n;
 }
@@ -2098,7 +2134,7 @@ function applyOpinion(rec, pagesText){
   fillLinkOptions(pick, c);
   if(pick){ $('fLinkTo').classList.add('sc-auto'); n++; }
   linkInfoShow(pick, c.length);
-  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = t.slice(0, OCR_CAP); }
+  if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = capText(t); }
   formHistPush();
   return n;
 }
@@ -2364,12 +2400,14 @@ async function autoFill(){
   if(!PARTS.length){ showModal('⚠ ' + bi('پہلے فائل یا تصویریں شامل کریں۔', 'Add a file or photos first.'), 'err'); return; }
   AUTO.busy = OCR_BUSY = true; $('btnAuto').disabled = true; $('btnOcr').disabled = true; showModal(''); $('autoInfo').innerHTML = '';
   try{
-    var r = await readPages(30);
+    var r = await readPages(READ_MAX);
     SC.src = r.built; SC.pagesText = r.pages;
     var res = EXTRACT.run(r.pages); SC.res = res;
+    if(r.truncated && res.unreadable) res.unreadable = res.unreadable.filter(function(n){ return n < r.skipFrom || n > r.skipTo; });
     var total = r.pages.join('\n\n').length;
-    $('ocrInfo').textContent = '✔ ' + total + ' characters / حروف';
-    if(r.truncated) showModal('⚠ ' + bi('صرف پہلے 30 صفحات پڑھے گئے۔', 'Only the first 30 pages were read.'));
+    $('ocrInfo').textContent = '✔ ' + Math.min(total, OCR_CAP) + ' characters / حروف';
+    var w0 = readWarn(r, total);
+    if(w0.length) showModal('⚠ ' + w0.join('<br>'));
     var recs = res.records;
     if(!total || !recs.length){ $('autoInfo').innerHTML = '⚠ ' + bi('اس فائل سے کوئی متن نہیں پڑھا جا سکا (صاف PDF یا سیدھی تصویر لیں)۔ تفصیل خود لکھیں۔', 'No text could be read from this file (use a clear PDF or a straight photo). Please fill the details yourself.'); return; }
     if(recs.length > 1){
@@ -2384,7 +2422,7 @@ async function autoFill(){
     if(SC.queue){ await loadQueued(); }
     else {
       var rec = recs[0], one = recs.length === 1 ? rec : rec;
-      var n = applyRecord(one, r.pages.join('\n\n'));
+      var n = applyRecord(one, joinPages(r));
       autoInfoShow(n, one, res, false);
     }
   }catch(e){
@@ -2453,7 +2491,7 @@ async function doAdd(d){
     });
     var doc = {};
     FIELDS.forEach(function(k){ doc[k] = d[k]; });
-    doc.ocrText = (d.ocrText || '').slice(0, OCR_CAP);
+    doc.ocrText = capText(d.ocrText || '');
     doc.fileName = name; doc.filePath = path; doc.fileSize = built.bytes.length; doc.pages = built.pages; doc.contentType = 'application/pdf';
     doc.createdBy = CTX.user.email; doc.createdByUid = CTX.user.uid; doc.createdAt = firebase.firestore.FieldValue.serverTimestamp();
     try{ await db.collection('scans').doc(id).set(doc); }
@@ -2485,7 +2523,7 @@ async function doEdit(d){
   try{
     var old = SCANS.filter(function(s){ return s.id === SC.editId; })[0] || {};
     var patch = {}, before = {};
-    FIELDS.forEach(function(k){ var nv = k === 'ocrText' ? (d[k] || '').slice(0, OCR_CAP) : d[k]; if((old[k] || '') !== nv){ patch[k] = nv; before[k] = old[k] == null ? '' : old[k]; } });
+    FIELDS.forEach(function(k){ var nv = k === 'ocrText' ? capText(d[k] || '') : d[k]; if((old[k] || '') !== nv){ patch[k] = nv; before[k] = old[k] == null ? '' : old[k]; } });
     if(!Object.keys(patch).length){ setBusy(false); $('editBg').classList.remove('show'); showAct(bi('کوئی تبدیلی نہیں تھی۔', 'No changes.')); return; }
     var full = Object.assign({}, patch, { updatedBy: CTX.user.email, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     await db.collection('scans').doc(SC.editId).update(full);

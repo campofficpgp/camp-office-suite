@@ -568,7 +568,8 @@ table.pf-t td.sm div{ line-height:1.35; }
     </div>
     <div class="cl-bar exp-bar">
       <div class="cl-field" style="min-width:340px"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
-      <button class="cl-btn ghost needs-export" onclick="exportPrint()" title="Print on A4 landscape">🖨 Print / پرنٹ</button>
+      <div class="cl-field" style="min-width:170px"><label for="expPaper">Paper / کاغذ</label><select id="expPaper" onchange="expPaperSave()"><option value="legal">Legal (8.5 × 14 in)</option><option value="foolscap">Foolscap (8.5 × 13 in)</option><option value="a4">A4 (landscape)</option></select></div>
+      <button class="cl-btn ghost needs-export" onclick="exportPrint()" title="Print on the chosen paper (landscape)">🖨 Print / پرنٹ</button>
       <button class="cl-btn needs-export" onclick="exportFile('pdf')">📄 PDF</button>
       <button class="cl-btn needs-export" onclick="exportFile('xlsx')">📊 Excel</button>
       <button class="cl-btn needs-export" onclick="exportFile('docx')">📝 Word</button>
@@ -1902,6 +1903,21 @@ function modelI(){
 
 /* ---- scopes ---- */
 var EXP_SCOPES = [['cur', 'This page only / صرف یہ صفحہ'], ['ab', 'A + B of selected prosecutor / منتخب پراسیکیوٹر کے A اور B'], ['ac', 'Appeal Committee C–I / اپیل کمیٹی C تا I'], ['all', 'Complete file — all prosecutors + C–I / مکمل فائل']];
+
+/* Paper for Print / PDF / Word / Excel (landscape). Default Legal (his printer paper); choice is remembered in this browser only. */
+var EXP_PAPERS = {
+  legal:    {pw:1008,   ph:612,    css:'14in 8.5in', dw:12240, dh:20160, xl:5},
+  foolscap: {pw:936,    ph:612,    css:'13in 8.5in', dw:12240, dh:18720, xl:14},
+  a4:       {pw:841.89, ph:595.28, css:'A4 landscape', dw:11906, dh:16838, xl:9}
+};
+function expPaperKey(){
+  var s = $('expPaper'), k = s ? s.value : '';
+  if(!EXP_PAPERS[k]){ try{ k = localStorage.getItem('ins_paper') || ''; }catch(e){ k = ''; } }
+  return EXP_PAPERS[k] ? k : 'legal';
+}
+function expPaper(){ return EXP_PAPERS[expPaperKey()]; }
+function expPaperSave(){ try{ localStorage.setItem('ins_paper', expPaperKey()); }catch(e){} }
+function expPaperInit(){ var s = $('expPaper'); if(s) s.value = expPaperKey(); }
 function curModel(){
   var t = UI.tab, o = UI.officer;
   if(t === 'A') return {sheets:modelA(o), label:'Proforma_A_' + shortOff(o)};
@@ -1985,7 +2001,7 @@ function gridHead(sh, nCols){
 async function buildExpPdf(sheets){
   var L = PDFLib, doc = await L.PDFDocument.create();
   var F = await doc.embedFont(L.StandardFonts.Helvetica), FB = await doc.embedFont(L.StandardFonts.HelveticaBold), FI = await doc.embedFont(L.StandardFonts.HelveticaOblique);
-  var PW = 841.89, PH = 595.28, M = 28, TOP = 26, FOOT = 38, BOT = M;
+  var PP = expPaper(), PW = PP.pw, PH = PP.ph, M = 28, TOP = 26, FOOT = 38, BOT = M;
   var navy = L.rgb(.106, .247, .388), navy2 = L.rgb(.165, .353, .518), goldL = L.rgb(.722, .525, .043), goldT = L.rgb(.973, .922, .769), ink = L.rgb(.09, .11, .14), grey = L.rgb(.4, .42, .46), white = L.rgb(1, 1, 1);
   var zebra = L.rgb(.957, .968, .982), border = L.rgb(.62, .68, .75), lineC = L.rgb(.72, .72, .72), totBg = navy;
   var RAS = {}, emb = null, embBytes = await expEmblemPng();
@@ -2155,7 +2171,7 @@ async function buildExpPdf(sheets){
 function expHtml(sheets){
   var gen = expToday();
   function cell(c, tag){ return c; }
-  var h = '<style>@page{ size:A4 landscape; margin:9mm 9mm 15mm; @bottom-left{ content:""; font:7pt Arial; color:#666 } @bottom-center{ content:"Generated ' + gen + '"; font:7pt Arial; color:#666 } @bottom-right{ content:"Page " counter(page) " of " counter(pages); font:bold 7.4pt Arial; color:#1B3F63 } }</style>';
+  var h = '<style>@page{ size:' + expPaper().css + '; margin:9mm 9mm 15mm; @bottom-left{ content:""; font:7pt Arial; color:#666 } @bottom-center{ content:"Generated ' + gen + '"; font:7pt Arial; color:#666 } @bottom-right{ content:"Page " counter(page) " of " counter(pages); font:bold 7.4pt Arial; color:#1B3F63 } }</style>';
   sheets.forEach(function(sh){
     var sum = sh.widths.reduce(function(a, b){ return a + b; }, 0), nCols = sh.widths.length;
     var fsz = nCols >= 10 ? '8.4pt' : nCols >= 8 ? '8.8pt' : '9.4pt';
@@ -2329,7 +2345,7 @@ async function buildExpXlsx(sheets){
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"' + (si === 0 ? ' tabSelected="1"' : '') + '>' + freeze + '</sheetView></sheetViews>' +
       '<sheetFormatPr defaultRowHeight="15"/><cols>' + cw.map(function(w, i){ return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
       '<sheetData>' + sd + '</sheetData>' + (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function(m){ return '<mergeCell ref="' + m + '"/>'; }).join('') + '</mergeCells>' : '') +
-      '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.65" header="0.25" footer="0.3"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
+      '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.5" bottom="0.65" header="0.25" footer="0.3"/><pageSetup paperSize="' + expPaper().xl + '" orientation="landscape" fitToWidth="1" fitToHeight="0"/>' +
       '<headerFooter><oddFooter>&amp;C&amp;8Generated ' + xe(expToday()) + '&amp;R&amp;8Page &amp;P of &amp;N</oddFooter></headerFooter>' +
       ((emb || pI) ? '<drawing r:id="rId1"/>' : '') + '</worksheet>');
   });
@@ -2374,7 +2390,7 @@ async function buildExpXlsx(sheets){
 /* ---------------- Word (.docx via docx library, from the model) ---------------- */
 async function buildExpDocx(sheets){
   var D = window.docx, FONT = 'Calibri', emb = await expEmblemPng(), pI = window.CampLogos ? await CampLogos.info('pros') : null;
-  var PWT = 15704;                                                // usable width in twips (A4 landscape, 1 cm margins)
+  var PWT = expPaper().dh - 1134;                                  // usable width in twips (chosen paper, landscape, 1 cm margins)
   var NAVY = '1B3F63', NAVY2 = '2A5A84', GOLD = 'B8860B', GOLDT = 'F8EBC4', ZEB = 'F4F7FB';
   function isAr(t){ return /[؀-ۿ]/.test(t); }
   function run(t, o){
@@ -2452,7 +2468,7 @@ async function buildExpDocx(sheets){
         borders:{top:none, bottom:none, left:none, right:none, insideHorizontal:none, insideVertical:none}}));
     }
     sections.push({
-      properties:{page:{size:{width:11906, height:16838, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:760, left:567, right:567, footer:330}}},
+      properties:{page:{size:{width:expPaper().dw, height:expPaper().dh, orientation:D.PageOrientation.LANDSCAPE}, margin:{top:567, bottom:760, left:567, right:567, footer:330}}},
       footers:{default:new D.Footer({children:[new D.Paragraph({tabStops:[{type:D.TabStopType.CENTER, position:Math.round(PWT / 2)}, {type:D.TabStopType.RIGHT, position:PWT}],
         border:{top:{style:D.BorderStyle.SINGLE, size:4, color:'B8B8B8', space:3}},
         children:[new D.TextRun({children:['\tGenerated ' + expToday() + '\tPage ', D.PageNumber.CURRENT, ' of ', D.PageNumber.TOTAL_PAGES], font:FONT, size:14, color:'666666'})]})]})},
@@ -2858,6 +2874,7 @@ auth.onAuthStateChanged(function(user){
 document.body.setAttribute('data-theme', currentTheme);
 renderThemePicker();
 expFillScopes();
+expPaperInit();
 renderAll();
 
 </script>

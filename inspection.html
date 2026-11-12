@@ -1226,10 +1226,22 @@ function saveManual(officer, row, field, val){
 /* ---------- Scanning Desk suggestions for the Appeal Committee register (Proformas C-I) ---------- */
 var SCNAT = {'Death sentence':[0,2], 'Life imprisonment':[1,3], 'Other conviction':[4,5]};
 function scFirNo(s){ var n = String(s.firNo || '').trim(), y = String(s.firYear || '').trim(); if(!n) return ''; return (y && n.indexOf('/') < 0) ? n + '/' + y : n; }
+/* Daily Case Entry is the master: the case's category (Relief Sought) and result decide the Nature; the scan is only the fallback */
+var DC_SENT = {'death sentence':'Death sentence', 'life imprisonment':'Life imprisonment', 'other sentence':'Other conviction'};
+function dailyFor(s){
+  var k = scKey(s.caseType, s.caseNo, s.caseYear); if(k === '||') return null;
+  var hits = CASES.filter(function(c){ return scKey(c.type, c.caseNo, c.year) === k; });
+  return hits.filter(function(c){ return c.date === s.date; })[0] || hits[0] || null;
+}
 function scNature(s){
-  var p = SCNAT[s.sentence]; if(!p) return '';
-  if(s.outcome === 'Acquittal') return String(p[0]);
-  if(s.outcome === 'Partly Allowed') return String(p[1]);
+  var dc = dailyFor(s), sent = s.sentence, out = s.outcome;
+  if(dc){
+    if(DC_SENT[String(dc.relief || '').toLowerCase()]) sent = DC_SENT[String(dc.relief).toLowerCase()];
+    if(dc.result === 'Allowed' || dc.result === 'Partly Allowed') out = dc.result;
+  }
+  var p = SCNAT[sent]; if(!p) return '';
+  if(out === 'Acquittal') return String(p[0]);
+  if(out === 'Partly Allowed') return String(p[1]);
   return '';          /* "Allowed" may be acquittal or conversion: the clerk chooses */
 }
 /* scans of the same case become ONE candidate: a judgment scan plus any opinion scan linked to it or carrying the same case number */

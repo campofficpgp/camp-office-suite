@@ -1127,6 +1127,22 @@ function m4Chips(s){
     return '<i class="' + (ok ? 'y' : 'n') + '">' + (ok ? '✓ ' : '✗ ') + m[1] + ' · ' + m[2] + '</i>';
   }).join('') + '</span>';
 }
+/* ---------- Match with Daily Cases (advice only; nothing is written) ---------- */
+var DAILY = {}, DAILY_READY = false;
+function dKey(t, no, y){ return kk(t) + '|' + kk(no) + '|' + String(y || '').replace(/\D/g, ''); }
+function dailyChip(s){
+  if(!DAILY_READY || !m4Applies(s) || !s.caseNo) return '';
+  var list = DAILY[dKey(s.caseType, s.caseNo, s.caseYear)] || [];
+  if(!list.length) return '<span class="sc-m4" title="Not found in Daily Case Entry / روزانہ کیس انٹری میں نہیں ملا"><i class="n">✗ Daily Case: not found · روزانہ کیس میں نہیں</i></span>';
+  var c = list.filter(function(x){ return x.date === s.date; })[0], bad = [];
+  if(!c){ c = list[0]; bad.push('date · تاریخ (Daily: ' + dmy(c.date) + ')'); }
+  if(!s.outcome) bad.push('result empty · نتیجہ خالی (Daily: ' + (c.result || '—') + ')');
+  else if(c.result && kk(c.result) !== kk(s.outcome)) bad.push('result · نتیجہ (Daily: ' + c.result + ')');
+  var sk = /^life/i.test(s.sentence || '') ? 'life' : (/^death/i.test(s.sentence || '') ? 'death' : (/^other/i.test(s.sentence || '') ? 'other' : '')), rk = /^life/i.test(c.relief || '') ? 'life' : (/^death/i.test(c.relief || '') ? 'death' : (/^other/i.test(c.relief || '') ? 'other' : ''));
+  if(sk && rk && sk !== rk) bad.push('sentence · سزا (Daily: ' + c.relief + ')');
+  if(!bad.length) return '<span class="sc-m4" title="Matches Daily Case Entry / روزانہ کیس انٹری سے مل گیا"><i class="y">✓ Daily Case match · روزانہ کیس سے مل گیا</i></span>';
+  return '<span class="sc-m4" title="Differs from Daily Case Entry / روزانہ کیس انٹری سے فرق"><i class="n">✗ Daily Case differs: ' + esc(bad.join('; ')) + '</i></span>';
+}
 function filtered(){
   var q = $('qBox').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
   var t = $('flDocType').value, o = $('flOfficer').value, d = $('flDistrict').value, y = $('flYear').value, f = $('flFrom').value, to = $('flTo').value;
@@ -1178,7 +1194,7 @@ function renderList(reset){
     return '<tr' + (NEWIDS[s.id] ? ' class="sc-new"' : '') + '>' +
       '<td data-l="Date / تاریخ" class="cl-c">' + esc(dmy(s.date)) + '</td>' +
       '<td data-l="Document / دستاویز"><span class="sc-badge">' + esc(docTypeName(s)) + '</span>' + (ur && s.docType !== 'Other' ? '<span class="sc-sub">' + esc(ur) + '</span>' : '') + (s.court ? '<span class="sc-sub">' + esc(s.court) + '</span>' : '') + '</td>' +
-      '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + m4Chips(s) + snippet(s, q) + '</td>' +
+      '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + m4Chips(s) + dailyChip(s) + snippet(s, q) + '</td>' +
       '<td data-l="Result / نتیجہ">' + esc(s.outcome || '—') + (s.sentence ? '<span class="sc-sub">' + esc(s.sentence) + (UR[s.sentence] ? ' · ' + esc(UR[s.sentence]) : '') + '</span>' : '') + '</td>' +
       '<td data-l="FIR · Place / مقام">' + esc([firText(s), s.station, s.tehsil, s.district].filter(Boolean).join(' · ') || '—') + '<span class="sc-sub">' + esc(s.officer || '') + '</span></td>' +
       '<td data-l="Opinion / رائے">' + (s.opinionStatus ? '<span class="sc-op' + opc + '">' + esc(s.opinionStatus) + '</span>' : '—') + (s.opinionBy ? '<span class="sc-sub">' + esc(s.opinionBy) + (s.opinionDate ? ' · ' + esc(dmy(s.opinionDate)) : '') + '</span>' : '') + (scText(s) ? '<span class="sc-sub">→ ' + esc(scText(s)) + '</span>' : '') + (s.opinionText ? '<span class="sc-sub" dir="auto">' + esc(s.opinionText) + '</span>' : '') + '' + opFileBtn(s, i) + '</td>' +
@@ -1234,6 +1250,11 @@ function startLiveData(){
   db.collection('appData_sharedDropdowns').doc('shared').onSnapshot(function(doc){
     SRC.shared = doc.exists ? doc.data() : {}; listsChanged();
   }, function(err){ console.error('shared lists', err); });
+  db.collection('cases').onSnapshot(function(qs){
+    var m = {};
+    qs.forEach(function(d){ var c = d.data(); if(!c.caseNo) return; var k = dKey(c.type, c.caseNo, c.year); (m[k] = m[k] || []).push(c); });
+    DAILY = m; DAILY_READY = true; if(SCANS.length) renderList(false);
+  }, function(err){ console.error('daily cases', err); });
   db.collection('scans').onSnapshot(function(qs){
     var arr = [];
     qs.forEach(function(d){ var c = d.data(); c.id = d.id; c.createdMs = c.createdAt && c.createdAt.toMillis ? c.createdAt.toMillis() : 0; arr.push(c); });

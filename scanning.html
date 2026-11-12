@@ -1164,7 +1164,7 @@ function renderList(reset){
       '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + snippet(s, q) + '</td>' +
       '<td data-l="Result / نتیجہ">' + esc(s.outcome || '—') + (s.sentence ? '<span class="sc-sub">' + esc(s.sentence) + (UR[s.sentence] ? ' · ' + esc(UR[s.sentence]) : '') + '</span>' : '') + '</td>' +
       '<td data-l="FIR · Place / مقام">' + esc([firText(s), s.station, s.tehsil, s.district].filter(Boolean).join(' · ') || '—') + '<span class="sc-sub">' + esc(s.officer || '') + '</span></td>' +
-      '<td data-l="Opinion / رائے">' + (s.opinionStatus ? '<span class="sc-op' + opc + '">' + esc(s.opinionStatus) + '</span>' : '—') + (s.opinionBy ? '<span class="sc-sub">' + esc(s.opinionBy) + (s.opinionDate ? ' · ' + esc(dmy(s.opinionDate)) : '') + '</span>' : '') + (scText(s) ? '<span class="sc-sub">→ ' + esc(scText(s)) + '</span>' : '') + (s.opinionText ? '<span class="sc-sub" dir="auto">' + esc(s.opinionText) + '</span>' : '') + (s.opinionAi ? '<span class="sc-sub">✨ AI draft / AI مسودہ</span>' : '') + opFileBtn(s, i) + '</td>' +
+      '<td data-l="Opinion / رائے">' + (s.opinionStatus ? '<span class="sc-op' + opc + '">' + esc(s.opinionStatus) + '</span>' : '—') + (s.opinionBy ? '<span class="sc-sub">' + esc(s.opinionBy) + (s.opinionDate ? ' · ' + esc(dmy(s.opinionDate)) : '') + '</span>' : '') + (scText(s) ? '<span class="sc-sub">→ ' + esc(scText(s)) + '</span>' : '') + (s.opinionText ? '<span class="sc-sub" dir="auto">' + esc(s.opinionText) + '</span>' : '') + '' + opFileBtn(s, i) + '</td>' +
       '<td data-l="Pages / صفحات" class="cl-c">' + (s.pages ? esc(s.pages) : '—') + '<span class="sc-sub">' + (s.fileSize ? mb(s.fileSize) : '') + '</span></td>' +
       '<td class="sc-act sc-actcol">' +
         '<button class="go" data-a="open" data-i="' + i + '" title="Open / کھولیں">👁 Open</button> ' +
@@ -2899,4 +2899,4 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 </body>
 </html>
 
-<!-- build 2026-11-12c -->
+<!-- build 2026-11-12d -->

@@ -1413,6 +1413,12 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
     if(/APPELLATE\s+JURISDICTION|ORIGINAL\s+JURISDICTION/.test(t.slice(0, 400).toUpperCase())) return 'Supreme Court of Pakistan';
     return '';
   }
+  /* the "SUPREME COURT" line is sometimes lost to OCR: an appeal "against the judgment of the High Court / Sessions Court" with Justices on the bench can only be in the Supreme Court */
+  function courtGuess(first){
+    var t = flat(first).slice(0, 900);
+    if(/\b(?:Against|On\s+appeal\s+against)\s+(?:the\s+|impugned\s+)?(?:judgment|judgement|order)/i.test(t) && /High\s+Court/i.test(t) && /JUSTICE/i.test(t)) return 'Supreme Court of Pakistan';
+    return '';
+  }
   function docTypeOf(first){
     var ls = lines(first), i;
     for(i = 0; i < ls.length; i++){
@@ -1421,15 +1427,38 @@ function stripParen(t){ return norm(t).replace(/\(\s*(?:On|Against|Arising)\b[\s
     }
     return '';
   }
+  var KNOWN_JUDGES = ["Justice Ageel Ahmed Abbasi", "Justice Aqeel Ahmed Abbasi", "Justice Aqeel Ahmed Abbasi |", "Justice Ishtiaq Ibrahim", "Justice Ishtiaq Ibrahim \"", "Justice Malik Shahzad Ahmad Khan", "Justice Malik Shahzad Ahmad Khan 9 H L", "Justice Malik Shahzad Ahmad Khan Justice Aqeel Ahmed Abbasi Justice Ishtiaq Ibrahim Jail Petition No. 293 Of 2022 (On Appeal Against The Judgment Dated 23.05.2022", "Justice Malik Shahzad Ahmad Khan Justice Aqeel Ahmed Abbasi Justice Ishtiaq Ibrahim Jail Petition No. 316 Of 2019 (On Appeal Against The Judgment Dated 09.04.2019", "Justice Malik Shahzad Ahmad Khan Po", "Justice Miangul Hassan Aurangzeb", "Justice Muhammad Hashim Khan Kakar", "Justice Muhammad Hashim Khan Kakkar", "Justice Salahuddin Panhwar", "Justice Shakeel Ahmad"];
+  function editDist(a, b){
+    var m = a.length, n = b.length, d = [], i, j;
+    for(i = 0; i <= m; i++){ d[i] = [i]; }
+    for(j = 1; j <= n; j++) d[0][j] = j;
+    for(i = 1; i <= m; i++) for(j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a.charAt(i-1) === b.charAt(j-1) ? 0 : 1));
+    return d[m][n];
+  }
+  /* an OCR slip in a judge's name ("Munammad") is repaired only when exactly one known name is within 2 letters */
+  function fixJudge(name){
+    var low = name.toLowerCase(), best = null, bd = 99, tie = false;
+    for(var i = 0; i < KNOWN_JUDGES.length; i++){
+      var k = KNOWN_JUDGES[i], dd = editDist(low, k.toLowerCase());
+      if(dd === 0) return k;
+      if(dd < bd){ bd = dd; best = k; tie = false; } else if(dd === bd) tie = true;
+    }
+    return (best && bd <= 2 && !tie && name.length > 12) ? best : name;
+  }
   function bench(first){
-    var m = /PRESENT\s*[:;.]?\s*\n?([\s\S]{0,260})/i.exec(norm(first)); if(!m) return '';
-    var out = [];
-    m[1].split('\n').forEach(function(l){
-      l = l.trim(); if(!l) return;
-      if(/^(MR\.?\s+)?JUSTICE\b/i.test(l) || /^(DR\.?|MR\.?|MS\.?)\s+JUSTICE/i.test(l)) out.push(l.replace(/^MR\.?\s+/i, ''));
-    });
+    var t = norm(first).slice(0, 1100), pm = /PRESENT\s*[:;.]?/i.exec(t), out = [];
+    function scan(seg){
+      var got = [];
+      seg.split('\n').forEach(function(l){
+        var m = /(?:^|[^A-Za-z])((?:MR\.?\s+|DR\.?\s+|MS\.?\s+|MRS\.?\s+)?JUSTICE\s+[A-Za-z][A-Za-z.\- ]{3,60})/i.exec(l);
+        if(m) got.push(m[1].replace(/^(?:MR|MS|MRS)\.?\s+(?=JUSTICE)/i, '').replace(/[\s.,:;|\-]+$/, '').replace(/\s+/g, ' '));
+      });
+      return got;
+    }
+    if(pm) out = scan(t.slice(pm.index + pm[0].length, pm.index + pm[0].length + 330));
+    if(!out.length) out = scan(t.slice(0, 700));
     out = out.slice(0, 7).map(function(n){
-      return n.toLowerCase().replace(/\b([a-z])/g, function(c){ return c.toUpperCase(); }).replace(/\bAhmad\b/, 'Ahmad');
+      return fixJudge(n.toLowerCase().replace(/\b([a-z])/g, function(c){ return c.toUpperCase(); }));
     });
     return out.join(', ');
   }
@@ -1533,6 +1562,11 @@ function tidySections(v){
     var after = fm ? t.slice(fm.index, fm.index + 600) : t.slice(0, 3000);
     var s = /under\s+[Ss]ections?\s+([0-9][0-9A-Za-z()\/,\-\s&]*?)\s*(PPC|P\.P\.C\.?|CNSA|PCA|ATA|Cr\.?P\.?C|Arms Ordinance|PECA)/.exec(after);
     if(s) o.sections = tidySections(s[1] + ' ' + s[2]);
+    /* no FIR sentence: "conviction under section 9(1)3(c) of the Control of Narcotic Substances Act" (the judgment's own words) */
+    if(!o.sections){
+      var s2 = /[Ss]ections?\s+([0-9][0-9A-Za-z()\/,\-\s&]{0,40}?)\s+of\s+(?:the\s+)?(Pakistan\s+Penal\s+Code|Control\s+of\s+Narcotic\s+Substances\s+Act)/i.exec(t.slice(0, 4000));
+      if(s2) o.sections = tidySections(s2[1] + ' ' + (/^p/i.test(s2[2]) ? 'PPC' : 'CNSA'));
+    }
     /* police station: "police station X, District Y" / "at Police Station X." / "Police Staiton X" (OCR) / "P.S. X" */
     var win = fm ? t.slice(Math.max(0, fm.index - 250), fm.index + 800) : t.slice(0, 3000);
     var p = /(?:police\s+st[a-z]{3,6}n|police\s+stn|\bP\.\s?S\b\.?)\s*[:,\-]?\s+([A-Za-z][A-Za-z.,\-' ]{1,60})/i.exec(win);
@@ -1620,7 +1654,7 @@ function tidySections(v){
     if(ids.length){ f.caseType = ids[0].kind; f.caseNo = ids[0].no; f.caseYear = ids[0].year; }
     if(ids.length){ ids = ids.filter(function(x, n){ return n === 0 || !(x.no === ids[0].no && x.year === ids[0].year); }); }
     if(ids.length > 1) notes.push('Also decided together: ' + ids.slice(1).map(function(i){ return i.kind + ' ' + i.no + '/' + i.year; }).join(', '));
-    f.court = courtOf(first);
+    f.court = courtOf(first) || courtGuess(first);
     /* the office writes a Supreme Court "Criminal Petition No." as Crl.P.L.A. (user, 11 Nov 2026); plain Crl.P. there is a slip */
     if(f.caseType === 'Crl.P.' && spelled0 && (f.court === 'Supreme Court of Pakistan' || (!f.court && /\b(?:Against|On\s+appeal\s+against)\s+the\s+judgment/i.test(first)))) f.caseType = 'Crl.P.L.A.';
     f.docType = docTypeOf(first);
@@ -2775,4 +2809,4 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 </body>
 </html>
 
-<!-- build 2026-11-11b -->
+<!-- build 2026-11-12a -->

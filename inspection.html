@@ -1824,7 +1824,7 @@ function modelB(officer){
   sh.widths = [5, 22, 12, 18, 43];
   sh.head = [[H('Sr. No.'), H('Appeal / Petition No.'), H('Date of Judgment'), H('Date of submission of copy of judgment to AC (If submitted)'), H('Major and material grounds of acquittal or conversion i.e. any prosecution evidence / witness was withheld or any expert / forensic report was not produced or any case property was not produced during trial etc.')]];
   sh.rows = rows.length ? rows.map(function(r, i){
-    return {c:[Cn((i + 1) + '.'), Cc(r.appealNo, {b:true, sub:r.c ? r.c.title : ''}), Cn(dt(r.judgDate)), Cn(r.notSubmitted ? 'Not submitted' : dt(r.submitDate)), Cc(r.grounds || r.defGrounds)]};
+    return {c:[Cn((i + 1) + '.'), Cc(r.appealNo, {b:true, sub:r.c ? r.c.title : ''}), Cn(dt(r.judgDate)), Cn(r.notSubmitted ? 'Not submitted' : dt(r.submitDate)), Cc(r.grounds || '—')]};   /* no grounds entered: print a dash, never the relief/result words (they are not grounds) */
   }) : [{c:[Cn(''), Cc('Nil'), Cn(''), Cn(''), Cc('No acquitted / converted death or life imprisonment cases in this period.')]}];
   sh.sign = signProsecutorModel(officer);
   return [sh];

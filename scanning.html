@@ -542,6 +542,11 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 .lm-row{display:flex;gap:6px}
 .lm-row input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--card);color:var(--text)}
 .sc-auto{background:#fff6c2 !important;border-color:#d9a400 !important;color:#222 !important}
+.sc-ok{background:#dff3e4 !important;border-color:#2e8b57 !important;color:#222 !important}
+.sc-bad{background:#fde1e1 !important;border-color:#c0392b !important;color:#222 !important}
+.sc-rv{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
+.sc-rv-g,.sc-rv-y,.sc-rv-r{display:inline-block;border-radius:10px;padding:0 8px;font-size:11.5px;border:1px solid}
+.sc-rv-g{background:#dff3e4;border-color:#2e8b57;color:#16542f}.sc-rv-y{background:#fff6c2;border-color:#d9a400;color:#5c4500}.sc-rv-r{background:#fde1e1;border-color:#c0392b;color:#7a1f16}
 .sc-aut-note{display:inline-block;background:#fff6c2;border:1px solid #d9a400;color:#5c4500;border-radius:10px;padding:0 8px;font-size:11.5px}
 .sc-t tr.sc-new,.sc-t tr.sc-new td{background:#e6f6e9 !important}
 .sc-t tr.sc-new td:first-child{box-shadow:inset 4px 0 0 #2e8b57}
@@ -2191,14 +2196,15 @@ async function runOcr(){
 
 /* ---------- read the judgment and fill the details by itself ---------- */
 var AUTO = { busy:false };
+var REVIEW = { on:false, ok:0, warn:0, bad:0 };
 function resetAuto(){
   Array.prototype.forEach.call(document.querySelectorAll('#editBg [data-touched]'), function(el){ delete el.dataset.touched; });
   clearAutoMarks(); $('autoInfo').innerHTML = '';
 }
-function clearAutoMarks(){ Array.prototype.forEach.call(document.querySelectorAll('#editBg .sc-auto'), function(el){ el.classList.remove('sc-auto'); }); }
+function clearAutoMarks(){ Array.prototype.forEach.call(document.querySelectorAll('#editBg .sc-auto, #editBg .sc-ok, #editBg .sc-bad'), function(el){ el.classList.remove('sc-auto', 'sc-ok', 'sc-bad'); }); REVIEW.on = false; }
 /* a field the person typed or chose is never overwritten; touching a yellow field makes it normal */
-$('editBg').addEventListener('input', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto'); } });
-$('editBg').addEventListener('change', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto'); } });
+$('editBg').addEventListener('input', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto', 'sc-bad'); if(REVIEW.on && e.target.id !== 'fOcr') e.target.classList.add('sc-ok'); } });
+$('editBg').addEventListener('change', function(e){ if(e.isTrusted && e.target){ e.target.dataset.touched = '1'; e.target.classList.remove('sc-auto', 'sc-bad'); if(REVIEW.on && e.target.id !== 'fOcr') e.target.classList.add('sc-ok'); } });
 function putAuto(key, value, marks){
   if(value == null || value === '') return false;
   var el = $(FMAP[key]); if(!el || el.dataset.touched) return false;
@@ -2206,6 +2212,68 @@ function putAuto(key, value, marks){
   el.value = value; if(marks !== false) el.classList.add('sc-auto');
   if(key === 'caseType' || key === 'caseNo' || key === 'caseYear') caseMatchShow();
   return true;
+}
+/* ---------- colour review: green = looks right, yellow = please check, red = missing or wrong ---------- */
+function reviewMark(el, level){
+  if(!el) return;
+  el.classList.remove('sc-auto', 'sc-ok', 'sc-bad');
+  if(level === 'ok') el.classList.add('sc-ok'); else if(level === 'bad') el.classList.add('sc-bad'); else if(level === 'warn') el.classList.add('sc-auto');
+}
+/* a date written in the usual ways in the judgment: 13.05.2026, 13-05-2026, 13/05/2026, 13th May 2026 */
+function dateSeen(txt, iso){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); if(!m) return false;
+  var d = +m[3], mo = +m[2], y = m[1], names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var re = new RegExp('(?:\\b0?' + d + '\\s*[.\\-/]\\s*0?' + mo + '\\s*[.\\-/]\\s*' + y + '\\b)|(?:\\b0?' + d + '(?:st|nd|rd|th)?\\s*(?:of\\s+)?' + names[mo - 1].slice(0, 3) + '[a-z]*[.,]?\\s*' + y + '\\b)', 'i');
+  return re.test(txt);
+}
+function idSeen(txt, no, yr){
+  if(!no || !yr) return 0;
+  var n = String(no).replace(/-/g, '\\s*-?\\s*'), re = new RegExp('\\b' + n + '\\s*(?:\\/|of|-)\\s*' + yr + '\\b', 'gi');
+  return (txt.match(re) || []).length;
+}
+function reviewFields(){
+  var txt = $('fOcr').value || '';
+  if(!txt.trim()) return;
+  REVIEW.on = true;
+  var isOp = $('fDocType').value === 'Opinion', yNow = new Date().getFullYear(), today = todayIso(), tail = txt.slice(-3500);
+  function el(k){ return $(FMAP[k]); }
+  function val(k){ var e = el(k); return e ? String(e.value || '').trim() : ''; }
+  var lv = {};
+  function set(k, level){
+    var e = el(k); if(!e) return;
+    if(e.dataset.touched){ reviewMark(e, 'ok'); lv[k] = 'ok'; return; }     /* typed or chosen by the person = checked */
+    if(level === 'skip') return;
+    reviewMark(e, level); lv[k] = level;
+  }
+  var no = val('caseNo'), yr = val('caseYear'), seen = idSeen(txt, no, yr), idOk = false;
+  if(!no) set('caseNo', 'bad');
+  else if(!/^\d{1,8}(-[A-Z]{1,2})?$/.test(no) || !/^\d{4}$/.test(yr) || +yr < 1950 || +yr > yNow + 1) set('caseNo', 'bad');
+  else { idOk = seen >= 2; set('caseNo', idOk ? 'ok' : 'warn'); }
+  set('caseYear', !/^\d{4}$/.test(yr) ? 'bad' : (idOk ? 'ok' : 'warn'));
+  set('caseType', !val('caseType') ? 'bad' : (idOk ? 'ok' : 'warn'));
+  var dt = val('date');
+  if(!dt) set('date', 'bad'); else if(!/^\d{4}-\d{2}-\d{2}$/.test(dt) || dt > today || dt < '2000-01-01') set('date', 'bad'); else set('date', dateSeen(txt, dt) ? 'ok' : 'warn');
+  var ti = val('title');
+  if(!ti) set('title', 'bad'); else set('title', (/\b(?:Vs\.?|v\/s|Versus)\b/i.test(ti) && ti.length >= 8 && ti.length <= 250 && !/[^A-Za-z0-9\s.,&@()'\/\-]{3}/.test(ti)) ? 'ok' : 'warn');
+  if(!isOp){
+    var co = val('court'); set('court', !co ? 'bad' : (Array.prototype.some.call(el('court').options || [], function(o){ return o.value === co; }) ? 'ok' : 'warn'));
+    var jg = val('judges'), names = jg ? jg.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+    var jOk = names.length && names.every(function(n){ return /^(?:Dr\.?\s+)?Justice\s+[A-Za-z.]+(?:\s+[A-Za-z.]+){1,4}$/.test(n); });
+    set('judges', !jg ? 'bad' : (jOk && names.length >= 2 ? 'ok' : 'warn'));
+    var oc = val('outcome');
+    if(!oc && ($('fDocType').value === 'Judgment' || $('fDocType').value === 'Order')) set('outcome', 'bad');
+    else if(oc) set('outcome', /allowed|dismiss|acquit|convert|dispos|remand|set\s+aside|accepted|rejected|leave|refus|withdrawn|upheld|maintain/i.test(tail) ? 'ok' : 'warn');
+  }
+  var fn = val('firNo'), fy = val('firYear');
+  if(fn){ set('firNo', (/^\d{1,6}$/.test(fn) && /^\d{4}$/.test(fy) && +fy >= 1980 && +fy <= yNow) ? 'ok' : 'warn'); set('firYear', (/^\d{4}$/.test(fy) && +fy >= 1980 && +fy <= yNow) ? 'ok' : 'warn'); }
+  if(val('district') && el('district').value) set('district', Array.prototype.some.call(DISTRICTS || [], function(d){ return d === val('district'); }) ? 'ok' : 'warn');
+  var c = { ok:0, warn:0, bad:0 };
+  Object.keys(lv).forEach(function(k){ c[lv[k]]++; });
+  REVIEW.ok = c.ok; REVIEW.warn = c.warn; REVIEW.bad = c.bad;
+}
+function reviewSummary(){
+  if(!REVIEW.on) return '';
+  return '<span class="sc-rv"><span class="sc-rv-g">🟢 ' + REVIEW.ok + ' ' + bi('پکے', 'looks right') + '</span> <span class="sc-rv-y">🟡 ' + REVIEW.warn + ' ' + bi('دیکھ لیں', 'check') + '</span> <span class="sc-rv-r">🔴 ' + REVIEW.bad + ' ' + bi('خالی/غلط', 'missing/wrong') + '</span></span>';
 }
 function applyRecord(rec, pagesText){
   var f = rec.fields, n = 0, E = EXTRACT;
@@ -2227,6 +2295,7 @@ function applyRecord(rec, pagesText){
   var notes = [f.notes, (f.counsel && !off) ? 'State counsel: ' + f.counsel : ''].filter(Boolean).join('\n');
   put('notes', notes); put('grounds', f.grounds);
   if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = capText(t); }
+  reviewFields();
   formHistPush();
   return n;
 }
@@ -2249,6 +2318,7 @@ function applyOpinion(rec, pagesText){
   if(pick){ $('fLinkTo').classList.add('sc-auto'); n++; }
   linkInfoShow(pick, c.length);
   if(pagesText){ var t = pagesText.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim(); $('fOcr').value = capText(t); }
+  reviewFields();
   formHistPush();
   return n;
 }
@@ -2307,6 +2377,7 @@ async function caseMatchRun(){
   function show(c){ return esc(((c.type || '') + ' ' + (c.caseNo || '') + '/' + (c.year || '')).trim()); }
   if(exact.length){
     st = 'ok';
+    if(REVIEW.on) ['fCaseType', 'fCaseNo', 'fCaseYear'].forEach(function(id){ var e = $(id); if(e && !e.dataset.touched && !e.classList.contains('sc-bad')){ e.classList.remove('sc-auto'); e.classList.add('sc-ok'); } });
     var dates = exact.map(function(c){ return c.date ? dmy(c.date) : ''; }).filter(Boolean).sort().slice(0, 4).join(', ');
     h = '✔ ' + bi('روزانہ کیس انٹری میں یہ کیس ملا', 'Found in Daily Case Entry') + (dates ? ' — ' + esc(dates) : '') + (exact.length > 1 ? ' (' + exact.length + ' ' + bi('پیشیاں', 'hearings') + ')' : '');
     if(off && exact.every(function(c){ return c.officer && c.officer !== off; })) h += '<br>⚠ ' + bi('وہاں آفیسر مختلف ہے: ', 'The officer there is different: ') + esc(exact[0].officer);
@@ -2497,7 +2568,7 @@ function autoInfoShow(n, rec, res, queued){
   if(queued) parts.push(bi('فیصلہ ', 'Judgment ') + (SC.qi + 1) + bi(' از ', ' of ') + SC.queue.length);
   if(res.unreadable && res.unreadable.length) parts.push('⚠ ' + bi('صفحہ ' + res.unreadable.join('، ') + ' الٹے یا دھندلے ہیں؛ ان میں سے تفصیل نہیں پڑھی گئی۔', 'Page(s) ' + res.unreadable.join(', ') + ' look upside-down or blurred; nothing was read from them.'));
   if(rec && !rec.fields.caseNo) parts.push('⚠ ' + bi('کیس نمبر خود نہیں ملا، خود لکھیں۔', 'Case number not found; please type it.'));
-  $('autoInfo').innerHTML = parts.join(' · ');
+  $('autoInfo').innerHTML = parts.join(' · ') + (REVIEW.on ? '<div style="margin-top:6px">' + reviewSummary() + '</div>' : '');
 }
 function qBanner(h){ var b = $('qBan'); b.innerHTML = h || ''; b.style.display = h ? '' : 'none'; }
 async function loadQueued(){
@@ -2828,4 +2899,4 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 </body>
 </html>
 
-<!-- build 2026-11-12b -->
+<!-- build 2026-11-12c -->

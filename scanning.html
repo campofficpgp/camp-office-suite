@@ -937,6 +937,10 @@ function capText(t){
   var head = Math.floor(OCR_CAP * 0.6), tail = OCR_CAP - head - OCR_MARK.length;
   return t.slice(0, head) + OCR_MARK + t.slice(t.length - tail);
 }
+/* common English words: a page read the right way up has plenty of them, a sideways page read as gibberish has almost none */
+var WORD_HITS_RE = /\b(?:the|and|of|to|in|that|was|is|for|with|by|has|have|are|this|not|be|his|as|on|it|which|case|court|petitioner|appeal|accused|state|from|were|been|evidence|learned|prosecution|also|under|said|or|an|at|no|had|but|their|there)\b/gi;
+function wordHits(t){ return (String(t || '').match(WORD_HITS_RE) || []).length; }
+var ROT_MIN_HITS = 15;             // fewer real words than this on a page with plenty of letters = page is probably sideways / upside down
 var SHOWN = 100;                   // rows shown before "Show more"
 
 function $(id){ return document.getElementById(id); }
@@ -2107,7 +2111,7 @@ async function readPages(maxP){
   var tl = null; try{ tl = await textLayer(built.bytes, total); }catch(e){ console.warn(e); }
   var pdfjs = await loadPdfjs();
   var doc = tl ? tl.doc : await pdfjs.getDocument({data:built.bytes.slice(0)}).promise;
-  var worker = null, lang = $('ocrUrdu').checked ? 'eng+urd' : 'eng', texts = (tl ? tl.text : '').split('\n\n');
+  var turned = [], worker = null, lang = $('ocrUrdu').checked ? 'eng+urd' : 'eng', texts = (tl ? tl.text : '').split('\n\n');
   try{
     for(var i = 1; i <= total; i++){
       if(skipFrom && i >= skipFrom && i <= skipTo){ out.push(''); continue; }
@@ -2120,8 +2124,8 @@ async function readPages(maxP){
           worker = await Tesseract.createWorker(lang, 1, {});
         }
         var pg = await doc.getPage(i), base = pg.getViewport({scale:1});
-        var ocrAt = async function(scale){
-          var vp = pg.getViewport({scale:scale}), c = document.createElement('canvas');
+        var ocrAt = async function(scale, turn){
+          var vp = pg.getViewport(turn ? {scale:scale, rotation:(((pg.rotate || 0) + turn) % 360)} : {scale:scale}), c = document.createElement('canvas');
           c.width = Math.round(vp.width); c.height = Math.round(vp.height);
           await pg.render({canvasContext:c.getContext('2d'), viewport:vp}).promise;
           var rr = await worker.recognize(c); c.width = c.height = 0;
@@ -2133,6 +2137,20 @@ async function readPages(maxP){
         if(best.conf !== null && best.conf < READ_RETRY_CONF){
           try{ var again = await ocrAt(hi); if(again.conf !== null && again.conf > best.conf && again.text.trim()) best = again; }catch(e){ console.warn('retry', e); }
         }
+        /* a page scanned sideways or upside down reads as gibberish: try it turned 90 / 270 / 180 degrees and keep the reading with the most real English words */
+        var h0 = wordHits(best.text), len0 = best.text.replace(/\s+/g, '').length;
+        if(h0 < ROT_MIN_HITS && (len0 > 200 || (best.conf !== null && best.conf < 45))){
+          var pick = null, ph = h0, turns = [90, 270, 180];
+          $('ocrInfo').textContent = '⏳ ' + 'Page ' + i + ' looks sideways, turning it… / صفحہ ' + i + ' ترچھا لگ رہا ہے، سیدھا کر رہا ہوں…';
+          for(var ti = 0; ti < turns.length; ti++){
+            try{
+              var tr = await ocrAt(2.4, turns[ti]), th = wordHits(tr.text);
+              if(th > ph + 8){ ph = th; pick = tr; }
+              if(th >= 40) break;
+            }catch(e){ console.warn('turn', e); }
+          }
+          if(pick){ best = pick; turned.push(i); }
+        }
         out.push(best.text);
       }
       done++;
@@ -2140,7 +2158,7 @@ async function readPages(maxP){
       $('ocrInfo').textContent = '⏳ ' + 'Reading page ' + i + ' of ' + total + ' / صفحہ ' + i + ' از ' + total;
     }
   } finally { if(worker){ try{ await worker.terminate(); }catch(e){} } }
-  return { pages:out, built:built, truncated:!!skipFrom, skipFrom:skipFrom, skipTo:skipTo, total:total };
+  return { pages:out, built:built, turned:turned, truncated:!!skipFrom, skipFrom:skipFrom, skipTo:skipTo, total:total };
 }
 /* all page texts in one string; a long file gets a visible note where pages were not read */
 function joinPages(r){ return r.pages.map(function(p, i){ return (r.truncated && i + 1 === r.skipFrom) ? '[pages ' + r.skipFrom + '-' + r.skipTo + ' not read / صفحات نہیں پڑھے گئے]' : p; }).join('\n\n'); }
@@ -2148,6 +2166,7 @@ function joinPages(r){ return r.pages.map(function(p, i){ return (r.truncated &&
 function readWarn(r, chars){
   var w = [];
   if(r && r.truncated) w.push(bi('فائل لمبی ہے: صفحہ ' + r.skipFrom + ' سے ' + r.skipTo + ' تک نہیں پڑھے گئے؛ شروع کے اور آخری ' + READ_TAIL + ' صفحات (فیصلے کا آخری حکم) پڑھ لیے گئے۔', 'Long file: pages ' + r.skipFrom + '–' + r.skipTo + ' were not read; the first pages and the last ' + READ_TAIL + ' pages (the final order) were read.'));
+  if(r && r.turned && r.turned.length) w.push(bi('صفحہ ' + r.turned.join('، ') + ' ترچھا/الٹا سکین ہوا تھا؛ خود سیدھا کر کے پڑھا گیا۔ براہ کرم متن دیکھ لیں۔', 'Page ' + r.turned.join(', ') + ' was scanned sideways or upside down and was turned automatically. Please check the text.'));
   if(chars > OCR_CAP) w.push(bi('متن بہت لمبا تھا: تلاش کے لیے صرف شروع اور آخر کا حصہ محفوظ ہو گا۔', 'The text was very long: only the beginning and the end are kept for search.'));
   return w;
 }
@@ -2809,4 +2828,4 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 </body>
 </html>
 
-<!-- build 2026-11-12a -->
+<!-- build 2026-11-12b -->

@@ -494,6 +494,10 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
 .sc-op.op-fit{background:#e8f5ec;border-color:#2e7d4f;color:#1b5e3a}
 .sc-op.op-no{background:#eee;border-color:#999;color:#444}
 .sc-op.op-wait{background:#fff3b0;border-color:#d9a400;color:#5c4500}
+.sc-m4{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.sc-m4 i{font-style:normal;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid;white-space:nowrap}
+.sc-m4 i.y{background:#e8f5ec;border-color:#2e7d4f;color:#1b5e3a}
+.sc-m4 i.n{background:#fdecea;border-color:#c0392b;color:#8e2418}
 .sc-act button,.sc-act a{border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:6px;cursor:pointer;padding:4px 8px;font-size:12px;text-decoration:none;display:inline-block;font-family:inherit}
 .sc-act button:hover,.sc-act a:hover{background:rgba(0,0,0,.06)}
 .sc-act .go{border-color:var(--navy);color:var(--navy);font-weight:700}
@@ -649,6 +653,7 @@ table.sc-t tr:nth-child(even) td{background:rgba(0,0,0,.025)}
       <div class="cl-field"><label for="flCaseType">Case type / قسم</label><select id="flCaseType" onchange="renderList(true)"></select></div>
       <div class="cl-field"><label for="flOutcome">Judgment result / فیصلہ</label><select id="flOutcome" onchange="renderList(true)"></select></div>
       <div class="cl-field"><label for="flOpinion">Opinion / رائے</label><select id="flOpinion" onchange="renderList(true)"></select></div>
+      <div class="cl-field"><label for="flM4">Mandatory 4 / لازمی چار (FIR, FIR date, station, opinion)</label><select id="flM4" onchange="renderList(true)"><option value="">All / سب</option><option value="inc">Incomplete / ادھورے</option><option value="ok">Complete / مکمل</option></select></div>
       <div class="cl-field"><label for="flOfficer">Officer / آفیسر</label><select id="flOfficer" onchange="renderList(true)"></select></div>
       <div class="cl-field"><label for="flDistrict">District / ضلع</label><select id="flDistrict" onchange="renderList(true)"></select></div>
       <div class="cl-field"><label for="flYear">Case year / سال</label><select id="flYear" onchange="renderList(true)"></select></div>
@@ -1098,7 +1103,7 @@ function fillFilters(){
   ids.forEach(function(k){ $(k).value = keep[k]; });
 }
 function clearFilters(){
-  ['qBox','flDocType','flCaseType','flOutcome','flOpinion','flOfficer','flDistrict','flYear','flFrom','flTo'].forEach(function(i){ $(i).value = ''; });
+  ['qBox','flDocType','flCaseType','flOutcome','flOpinion','flM4','flOfficer','flDistrict','flYear','flFrom','flTo'].forEach(function(i){ $(i).value = ''; });
   renderList(true);
 }
 
@@ -1111,6 +1116,17 @@ function firText(s){ return s.firNo ? ('FIR ' + s.firNo + (s.firYear ? '/' + s.f
 function hay(s){
   return [docTypeName(s), docTypeUr(s), s.court, caseText(s), s.caseNo, s.caseYear, s.title, s.outcome, s.sections, s.officer, s.notes, firText(s), s.station, s.district, s.tehsil, s.judges, s.lower, s.sentence, s.grounds, s.opinionStatus, s.opinionBy, s.opinionText, scText(s), s.date, dmy(s.date), s.fileName].join(' ').toLowerCase();
 }
+/* the four things the in-charge wants on every judgment / order: FIR no, FIR date, police station and the 2-line opinion */
+var M4 = [['firNo', 'FIR', 'ایف آئی آر'], ['firDate', 'FIR date', 'تاریخ'], ['station', 'Station', 'تھانہ'], ['opinionText', 'Opinion', 'رائے']];
+function m4Applies(s){ return s.docType === 'Judgment' || s.docType === 'Order'; }
+function m4Missing(s){ return m4Applies(s) ? M4.filter(function(m){ return !String(s[m[0]] == null ? '' : s[m[0]]).trim(); }) : []; }
+function m4Chips(s){
+  if(!m4Applies(s)) return '';
+  return '<span class="sc-m4" title="Mandatory: FIR no, FIR date, police station, 2-line opinion / لازمی: ایف آئی آر نمبر، تاریخ، تھانہ، دو لائن رائے">' + M4.map(function(m){
+    var ok = !!String(s[m[0]] == null ? '' : s[m[0]]).trim();
+    return '<i class="' + (ok ? 'y' : 'n') + '">' + (ok ? '✓ ' : '✗ ') + m[1] + ' · ' + m[2] + '</i>';
+  }).join('') + '</span>';
+}
 function filtered(){
   var q = $('qBox').value.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
   var t = $('flDocType').value, o = $('flOfficer').value, d = $('flDistrict').value, y = $('flYear').value, f = $('flFrom').value, to = $('flTo').value;
@@ -1119,6 +1135,7 @@ function filtered(){
     if($('flCaseType').value && s.caseType !== $('flCaseType').value) return false;
     if($('flOutcome').value && s.outcome !== $('flOutcome').value) return false;
     if($('flOpinion').value && s.opinionStatus !== $('flOpinion').value) return false;
+    if($('flM4').value){ if(!m4Applies(s)) return false; var mm = m4Missing(s).length; if($('flM4').value === 'inc' ? !mm : mm) return false; }
     if(o && s.officer !== o) return false;
     if(d && s.district !== d) return false;
     if(y && String(s.caseYear) !== y) return false;
@@ -1150,7 +1167,7 @@ function renderList(reset){
   var list = filtered(); LIST_VIEW = list;
   var q = $('qBox').value.trim();
   var tot = SCANS.reduce(function(n, s){ return n + (s.fileSize || 0); }, 0);
-  $('stats').innerHTML = '<span class="cl-chip">Total / کل <b>' + SCANS.length + '</b></span><span class="cl-chip ok">Shown / نتائج <b>' + list.length + '</b></span><span class="cl-chip">Stored / ذخیرہ <b>' + mb(tot) + '</b></span>';
+  $('stats').innerHTML = '<span class="cl-chip">Total / کل <b>' + SCANS.length + '</b></span><span class="cl-chip ok">Shown / نتائج <b>' + list.length + '</b></span><span class="cl-chip">Stored / ذخیرہ <b>' + mb(tot) + '</b></span>' + (function(){ var n = SCANS.filter(function(s){ return m4Missing(s).length; }).length; return n ? '<span class="cl-chip" style="border-color:#c0392b;color:#8e2418">Incomplete / ادھورے <b>' + n + '</b></span>' : '<span class="cl-chip ok">Mandatory 4 complete / لازمی مکمل ✓</span>'; })();
   $('printTitle').innerHTML = '<h1>Scanning Desk — Scanned Documents</h1><div>Documents: ' + list.length + ' &nbsp;|&nbsp; Prepared: ' + dmy(todayIso()) + '</div>';
   if(!list.length){
     $('listBox').innerHTML = '<div class="cl-empty">' + (SCANS.length ? bi('کوئی دستاویز نہیں ملی۔ تلاش یا فلٹر بدلیں۔', 'No document matches. Change the search or filters.') : bi('ابھی کوئی اسکین محفوظ نہیں۔ «نئی اسکین» دبائیں۔', 'No scans saved yet. Press “New scan”.')) + '</div>';
@@ -1161,7 +1178,7 @@ function renderList(reset){
     return '<tr' + (NEWIDS[s.id] ? ' class="sc-new"' : '') + '>' +
       '<td data-l="Date / تاریخ" class="cl-c">' + esc(dmy(s.date)) + '</td>' +
       '<td data-l="Document / دستاویز"><span class="sc-badge">' + esc(docTypeName(s)) + '</span>' + (ur && s.docType !== 'Other' ? '<span class="sc-sub">' + esc(ur) + '</span>' : '') + (s.court ? '<span class="sc-sub">' + esc(s.court) + '</span>' : '') + '</td>' +
-      '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + snippet(s, q) + '</td>' +
+      '<td data-l="Case / کیس"><b>' + esc(caseText(s) || '—') + '</b>' + (s.title ? '<span class="sc-sub" dir="auto">' + esc(s.title) + '</span>' : '') + linkSub(s) + (s.sections ? '<span class="sc-sub">' + esc(s.sections) + '</span>' : '') + m4Chips(s) + snippet(s, q) + '</td>' +
       '<td data-l="Result / نتیجہ">' + esc(s.outcome || '—') + (s.sentence ? '<span class="sc-sub">' + esc(s.sentence) + (UR[s.sentence] ? ' · ' + esc(UR[s.sentence]) : '') + '</span>' : '') + '</td>' +
       '<td data-l="FIR · Place / مقام">' + esc([firText(s), s.station, s.tehsil, s.district].filter(Boolean).join(' · ') || '—') + '<span class="sc-sub">' + esc(s.officer || '') + '</span></td>' +
       '<td data-l="Opinion / رائے">' + (s.opinionStatus ? '<span class="sc-op' + opc + '">' + esc(s.opinionStatus) + '</span>' : '—') + (s.opinionBy ? '<span class="sc-sub">' + esc(s.opinionBy) + (s.opinionDate ? ' · ' + esc(dmy(s.opinionDate)) : '') + '</span>' : '') + (scText(s) ? '<span class="sc-sub">→ ' + esc(scText(s)) + '</span>' : '') + (s.opinionText ? '<span class="sc-sub" dir="auto">' + esc(s.opinionText) + '</span>' : '') + '' + opFileBtn(s, i) + '</td>' +
@@ -2899,4 +2916,4 @@ fillForm(); fillFilters(); renderList(true); histBtns();
 </body>
 </html>
 
-<!-- build 2026-11-12d -->
+<!-- build 2026-11-12e -->

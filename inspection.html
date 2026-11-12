@@ -856,7 +856,7 @@ function compTxt(r){ return r.compliance === 'yes' ? 'YES' : r.compliance === 'n
 function refMissing(r){
   var m = [];
   if(!r.diaryNo) m.push('Diary No'); if(!r.diaryDate) m.push('Diary date'); if(!r.firNo) m.push('FIR No'); if(!r.firDate) m.push('FIR date'); if(!r.sections) m.push('U/S'); if(!r.ps) m.push('Police Station'); if(!r.judgmentDate) m.push('Judgment date');
-  if(!r.submitDate) m.push('Submission date'); if(!r.opinion) m.push('AC opinion');
+  if(!r.submitDate) m.push('Submission date'); if(!r.opinion) m.push('AC opinion'); if(!r.opinionNote) m.push('Opinion (2 lines)');
   if(r.opinion === 'fit' && !r.filingStatus) m.push('Filing status');
   if(!r.compliance) m.push('Compliance sought');
   return m;
@@ -1258,7 +1258,8 @@ function scanRefCands(){
     out.push({
       key: k, scanId: base.id, scanKey: k, title: base.title || '', caseTxt: [base.caseType, (base.caseNo || '') + (base.caseYear ? '/' + base.caseYear : '')].filter(Boolean).join(' '), n: list.length,
       v: { source: 'sc', nature: jud ? scNature(jud) : '', firNo: scFirNo(ref), firDate: ref.firDate || '', sections: ref.sections || '', ps: ref.station || '', judgmentDate: jdate || '', submitDate: ac || '',
-           opinion: op ? (op.opinionStatus === 'Not fit' ? 'notfit' : 'fit') : '' }
+           opinion: op ? (op.opinionStatus === 'Not fit' ? 'notfit' : 'fit') : '',
+           opinionNote: String(((op && op.opinionText) ? op.opinionText : (list.filter(function(s){ return s.opinionText; })[0] || {}).opinionText) || '').trim() }
     });
   });
   return out;
@@ -1274,7 +1275,7 @@ function scRefMatch(c){
     return !rp || !nps || rp.indexOf(nps) >= 0 || nps.indexOf(rp) >= 0 || (r.judgmentDate && r.judgmentDate === v.judgmentDate);
   })[0] || null;
 }
-var SCF = ['nature', 'firNo', 'firDate', 'sections', 'ps', 'judgmentDate', 'submitDate', 'opinion'];
+var SCF = ['nature', 'firNo', 'firDate', 'sections', 'ps', 'judgmentDate', 'submitDate', 'opinion', 'opinionNote'];
 function scanRefSug(){
   var out = [];
   scanRefCands().forEach(function(c){
@@ -1295,7 +1296,7 @@ function openScanRef(){
   var items = scanRefSug(); if(!items.length){ toast(bi('کوئی نئی تجویز نہیں', 'No new suggestions')); return; }
   var Y = 'background:#fff3b0;color:#28394A', nNew = items.filter(function(x){ return !x.ex; }).length;
   var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('یہ ریفرنس اسکین ڈیسک کے فیصلوں/رائے سے بنے ہیں (جن کی اپیل کمیٹی کو جمع کرانے کی تاریخ یا فٹ/ناٹ فٹ رائے درج ہے)۔ ایک کیس کا ایک ہی ریفرنس بنتا ہے؛ جو رجسٹر میں پہلے سے ہے اس کے صرف خالی خانے بھرے جاتے ہیں۔ <b>ڈائری نمبر اور تاریخ اسکین میں نہیں ہوتے، آپ خود لکھیں</b> (خالی چھوڑ دیں تو رجسٹر میں ⚠ رہے گا)۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔', 'These references are built from Scanning Desk judgments / opinions that have a date of submission to AC or a fit / not fit opinion. One reference per case; if it is already in the register only its empty cells are filled. <b>Diary no. and date are not on the scans: type them yourself</b> (if left blank the register shows ⚠). Nothing is saved until you press Send.') + '</div>' +
-    '<div class="cl-tw"><table class="pf-t" id="scRefT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th class="l">' + bi('کارروائی', 'Action') + '</th><th>Source</th><th>Diary No</th><th>Diary date</th><th class="l">Nature</th><th>FIR No</th><th>FIR date</th><th>U/S</th><th>Police Station</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th></tr></thead><tbody>';
+    '<div class="cl-tw"><table class="pf-t" id="scRefT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th class="l">' + bi('کارروائی', 'Action') + '</th><th>Source</th><th>Diary No</th><th>Diary date</th><th class="l">Nature</th><th>FIR No</th><th>FIR date</th><th>U/S</th><th>Police Station</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th><th class="l">Opinion in 2 lines</th></tr></thead><tbody>';
   function cell(it, f, mk){
     var ex = it.ex, val = it.c.v[f] || '';
     if(ex && String(ex[f] == null ? '' : ex[f]).trim()) return '<td class="sm" style="color:#6b7a89">' + esc(f === 'nature' ? natureName(ex) : f === 'opinion' ? opinionTxt(ex) : /Date$/.test(f) ? dt(ex[f]) : ex[f]) + '</td>';
@@ -1304,6 +1305,7 @@ function openScanRef(){
   }
   function inp(f, type){ return function(v){ return '<input data-k="' + f + '"' + (type ? ' type="' + type + '"' : '') + ' value="' + esc(v) + '" style="min-width:90px;' + (v ? Y : '') + '">'; }; }
   function sel(f, opts){ return function(v){ var x = '<select data-k="' + f + '" style="min-width:' + (f === 'nature' ? '230' : '100') + 'px;' + (v ? Y : '') + '"><option value="">—</option>'; opts.forEach(function(o){ x += '<option value="' + esc(o[0]) + '"' + (String(v) === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }); return x + '</select>'; }; }
+  function area(f){ return function(v){ return '<textarea data-k="' + f + '" rows="3" style="min-width:260px;' + (v ? Y : '') + '">' + esc(v) + '</textarea>'; }; }
   var natOpts = NATURES.map(function(n, i){ return [String(i), (i + 1) + '. ' + n]; });
   items.forEach(function(it, i){
     var ex = it.ex, ok = !!ex || !!it.c.v.nature;
@@ -1313,7 +1315,7 @@ function openScanRef(){
       (ex ? '<td class="sm" style="color:#6b7a89">' + (ex.source === 'other' ? 'Other' : 'SC') + '</td><td class="sm" style="color:#6b7a89">' + esc(ex.diaryNo || '') + '</td><td class="sm" style="color:#6b7a89">' + dt(ex.diaryDate) + '</td>'
             : '<td>' + sel('source', [['sc', 'SC (C/D)'], ['other', 'Other (E/F)']])('sc') + '</td><td>' + inp('diaryNo')('') + '</td><td>' + inp('diaryDate', 'date')('') + '</td>') +
       cell(it, 'nature', sel('nature', natOpts)) + cell(it, 'firNo', inp('firNo')) + cell(it, 'firDate', inp('firDate', 'date')) + cell(it, 'sections', inp('sections')) + cell(it, 'ps', inp('ps')) +
-      cell(it, 'judgmentDate', inp('judgmentDate', 'date')) + cell(it, 'submitDate', inp('submitDate', 'date')) + cell(it, 'opinion', sel('opinion', [['fit', 'FIT'], ['notfit', 'NOT FIT']])) + '</tr>';
+      cell(it, 'judgmentDate', inp('judgmentDate', 'date')) + cell(it, 'submitDate', inp('submitDate', 'date')) + cell(it, 'opinion', sel('opinion', [['fit', 'FIT'], ['notfit', 'NOT FIT']])) + cell(it, 'opinionNote', area('opinionNote')) + '</tr>';
   });
   h += '</tbody></table></div><div class="cl-note">' + bi('نیا ریفرنس: ' + nNew + ' · موجود میں اضافہ: ' + (items.length - nNew) + '۔ جس قطار میں "Nature" خالی ہو وہ پہلے سے ٹک نہیں، نوعیت چن کر ٹک کریں۔', 'New: ' + nNew + ' · additions to existing: ' + (items.length - nNew) + '. A row whose Nature is empty is not ticked: choose the nature, then tick it.') + '</div>';
   openModal('Reference suggestions / ریفرنس کی تجاویز — Check and send / چیک کریں اور بھیجیں', h, [
@@ -1541,7 +1543,7 @@ function viewDF(src){
   rs.forEach(function(r, i){
     var nf = r.opinion === 'notfit', na = sc && nf ? 'N.A' : '';
     var sendC = nf ? (sc ? 'N.A' : (r.returnedDate ? 'Sent back on ' + dt(r.returnedDate) : '')) : dt(r.sentProvDate);
-    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + diaryCell(r) + '</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + judgCell(r, !sc) + '</td><td class="n sm">' + dt(r.submitDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b></td>' +
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + diaryCell(r) + '</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + judgCell(r, !sc) + '</td><td class="n sm">' + dt(r.submitDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b>' + (r.opinionNote ? '<div class="pf-sub" style="text-align:left;min-width:170px">' + esc(r.opinionNote) + '</div>' : '') + '</td>' +
       '<td class="n sm">' + esc(sendC) + '</td><td class="n sm">' + (na || dt(r.receivedForFilingDate)) + '</td><td class="n sm">' + (na || dt(r.entrustFileDate)) + '</td><td class="sm">' + (na || petCell(r)) + '</td><td class="n"><b>' + compTxt(r) + '</b></td>' +
       '<td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
   });
@@ -1573,7 +1575,7 @@ function viewH(){
   h += '<div class="cl-tw"><table class="pf-t"><thead><tr><th>Sr. No.</th><th class="l">Case FIR No. &amp; Police Station</th><th>Date of entrustment</th><th class="l">Name of prosecutor to whom reference was entrusted</th><th>Whether reference returned or yet pending</th><th>Date of returning</th><th>Opinion regarding Fit / Not Fit</th><th>Whether Compliance report was sought or not by AC</th><th class="pf-act no-print"></th></tr></thead><tbody>';
   if(!rs.length) h += '<tr><td colspan="9" class="cl-empty">' + bi('کوئی ریفرنس رائے کے لیے سپرد درج نہیں۔ رجسٹر میں "رائے کے لیے سپردگی" کی تاریخ/پراسیکیوٹر بھریں۔', 'No reference entrusted for opinion is recorded. Fill the "entrusted for opinion" fields in the register.') + '</td></tr>';
   rs.slice().sort(function(a, b){ return (a.entrustOpDate || '').localeCompare(b.entrustOpDate || ''); }).forEach(function(r, i){
-    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + dt(r.entrustOpDate) + '</td><td class="sm">' + esc(offShort(r.opinionBy)) + '</td><td class="n">' + (r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : '') + '</td><td class="n sm">' + dt(r.opinionReturnDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b></td><td class="n"><b>' + compTxt(r) + '</b></td><td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
+    h += '<tr><td class="n">' + (i + 1) + '.</td><td class="sm">' + firCell(r) + '</td><td class="n sm">' + dt(r.entrustOpDate) + '</td><td class="sm">' + esc(offShort(r.opinionBy)) + '</td><td class="n">' + (r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : '') + '</td><td class="n sm">' + dt(r.opinionReturnDate) + '</td><td class="n"><b>' + opinionTxt(r) + '</b>' + (r.opinionNote ? '<div class="pf-sub" style="text-align:left;min-width:170px">' + esc(r.opinionNote) + '</div>' : '') + '</td><td class="n"><b>' + compTxt(r) + '</b></td><td class="pf-act no-print">' + (canEdit() ? '<button onclick="editRef(\'' + r.id + '\')">✎</button>' : '') + '</td></tr>';
   });
   return h + '</tbody></table></div>' + signAC() + '</div>';
 }
@@ -1626,6 +1628,7 @@ var RF = [
   ['sect', 'Judgment and Appeal Committee opinion / فیصلہ اور اپیل کمیٹی کی رائے'],
   ['judgmentDate', 'Date of Judgment / Order', 'date'], ['submitDate', 'Date of submission to AC', 'date'],
   ['opinion', 'Opinion of AC', 'sel', [['fit', 'FIT'], ['notfit', 'NOT FIT']]],
+  ['opinionNote', 'Opinion in 2 lines / رائے دو سطروں میں', 'area'],
   ['sentProvDate', 'Sending date to Dir. App / PPD (or for sanction)', 'date'], ['sanctionDate', 'Date submitted for sanction (Proforma C, if any)', 'date'], ['returnedDate', 'If NOT FIT (from other quarters): sent-back date', 'date'],
   ['sect', 'Entrusted to prosecutor for opinion (Proforma H) / رائے کے لیے سپردگی'],
   ['entrustOpDate', 'Date of entrustment', 'date'], ['opinionBy', 'Prosecutor', 'offsel'], ['opinionStatus', 'Returned or pending', 'sel', [['returned', 'Returned'], ['pending', 'Pending']]], ['opinionReturnDate', 'Date of returning', 'date'],
@@ -1639,6 +1642,7 @@ var RF = [
 function fieldHtml(f, v){
   var id = 'rf_' + f[0], dis = canEdit() ? '' : ' disabled';
   if(f[2] === 'txt') return '<div class="cl-field"><label>' + esc(f[1]) + '</label><input id="' + id + '" value="' + esc(v) + '"' + dis + '></div>';
+  if(f[2] === 'area') return '<div class="cl-field" style="grid-column:1/-1"><label>' + esc(f[1]) + '</label><textarea id="' + id + '" rows="3" style="width:100%"' + dis + '>' + esc(v) + '</textarea></div>';
   if(f[2] === 'date') return '<div class="cl-field"><label>' + esc(f[1]) + '</label><input type="date" id="' + id + '" value="' + esc(v) + '"' + dis + '></div>';
   var opts = [['', '—']];
   if(f[2] === 'sel') opts = opts.concat(f[3]);
@@ -1854,12 +1858,12 @@ function modelCE(src){
 function modelDF(src){
   var sc = src === 'sc', pf = sc ? 'D' : 'F', rs = refsHere(src);
   var sh = sheetBase(pf, 'Proforma ' + pf, 'Proforma ' + pf, [], sc ? 'FIR wise detail of references received from Prosecutors conducting prosecution in SC' : 'FIR wise detail of references (references received from other quarter(s) / Appeal Committees)');
-  sh.widths = [4, 11, 13, 10, 8, 7, 8.5, 8.5, 9, 13, 8];
+  sh.widths = [3.5, 9.5, 12, 9, 7.5, 18, 7.5, 7.5, 8, 11.5, 7];
   sh.head = [[H('Sr. No.'), H('Diary No & Date'), H('FIR No. & U/S & Police Station'), H(sc ? 'Date of Judgment / Order' : 'Date of Judgment / Order & nature'), H('Date of submission to AC'), H('Opinion of AC Fit / Not Fit'), H(sc ? 'Sending date to Dir. App / PPD' : 'Sending date for sanction'), H('Date receiving to AC for filing'), H('Date of entrustment to prosecutor for filing'), H('Filing status with Petition No. allotted by court & date'), H('Compliance report sought by AC or not')]];
   sh.rows = rs.length ? rs.map(function(r, i){
     var nf = r.opinion === 'notfit', na = sc && nf ? 'N.A' : '';
     var send = nf ? (sc ? 'N.A' : (r.returnedDate ? 'Sent back on ' + dt(r.returnedDate) : '')) : dt(r.sentProvDate);
-    return {c:[Cn((i + 1) + '.'), Cc(lns([r.diaryNo, dt(r.diaryDate)]), {b:true}), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(lns([dt(r.judgmentDate), sc ? '' : natureName(r)])), Cn(dt(r.submitDate)), Cn(opinionTxt(r), {b:true}), Cn(send),
+    return {c:[Cn((i + 1) + '.'), Cc(lns([r.diaryNo, dt(r.diaryDate)]), {b:true}), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(lns([dt(r.judgmentDate), sc ? '' : natureName(r)])), Cn(dt(r.submitDate)), Cc(opinionTxt(r), {b:true, sub:r.opinionNote, a:'c'}), Cn(send),
       Cn(na || dt(r.receivedForFilingDate)), Cn(na || dt(r.entrustFileDate)), Cc(na || (r.filingStatus === 'filed' ? lns([r.petitionNo, r.petitionTitle, dt(r.filingDate)]) : '')), Cn(compTxt(r), {b:true})]};
   }) : [{c:[Cn('')].concat([Cc('Nil')]).concat([1,2,3,4,5,6,7,8,9].map(function(){ return Cc(''); }))}];
   sh.sign = signACModel();
@@ -1880,10 +1884,10 @@ function modelG(){
 function modelH(){
   var rs = gCounts().eo.slice().sort(function(a, b){ return (a.entrustOpDate || '').localeCompare(b.entrustOpDate || ''); });
   var sh = sheetBase('H', 'Proforma H', 'Proforma-H', [], 'Detail of references entrusted for Opinion');
-  sh.widths = [5, 22, 11, 22, 12, 11, 9, 8];
+  sh.widths = [4.5, 18, 10, 17, 10, 10, 24, 8];
   sh.head = [[H('Sr. No.'), H('Case FIR No. & Police Station'), H('Date of entrustment'), H('Name of prosecutor to whom reference was entrusted'), H('Whether reference returned or yet pending'), H('Date of returning'), H('Opinion regarding Fit / Not Fit'), H('Whether Compliance report was sought or not by AC')]];
   sh.rows = rs.length ? rs.map(function(r, i){
-    return {c:[Cn((i + 1) + '.'), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(dt(r.entrustOpDate)), Cc(offShort(r.opinionBy)), Cn(r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : ''), Cn(dt(r.opinionReturnDate)), Cn(opinionTxt(r), {b:true}), Cn(compTxt(r), {b:true})]};
+    return {c:[Cn((i + 1) + '.'), Cc(lns([r.firNo, dt(r.firDate), r.sections, r.ps])), Cn(dt(r.entrustOpDate)), Cc(offShort(r.opinionBy)), Cn(r.opinionStatus === 'returned' ? 'Returned' : r.opinionStatus === 'pending' ? 'Pending' : ''), Cn(dt(r.opinionReturnDate)), Cc(opinionTxt(r), {b:true, sub:r.opinionNote, a:'c'}), Cn(compTxt(r), {b:true})]};
   }) : [{c:[Cn(''), Cc('Nil')].concat([1,2,3,4,5,6].map(function(){ return Cc(''); }))}];
   sh.sign = signACModel();
   return [sh];
@@ -2600,7 +2604,7 @@ window.addEventListener('load', function(){ if(window.__formHistory) window.__fo
 var CHK = {groups:[], total:0, failN:0};
 function pct(done, total){ return total ? Math.round(done * 100 / total) : 100; }
 function refChecks(r){
-  var t = 11, f = [], m = refMissing(r);
+  var t = 12, f = [], m = refMissing(r);
   m.forEach(function(x){ f.push(x + ' ' + bi('درج نہیں', 'missing')); });
   function more(applies, ok, ur, en){ if(applies){ t++; if(!ok) f.push(bi(ur, en)); } }
   more(r.judgmentDate && r.submitDate, r.submitDate >= r.judgmentDate, 'اے سی کو بھیجنے کی تاریخ فیصلے کی تاریخ سے پہلے ہے', 'Submission date is before the judgment date');

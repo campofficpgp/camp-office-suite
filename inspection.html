@@ -855,7 +855,7 @@ function filingTxt(r){
 function compTxt(r){ return r.compliance === 'yes' ? 'YES' : r.compliance === 'no' ? 'NO' : ''; }
 function refMissing(r){
   var m = [];
-  if(!r.diaryNo) m.push('Diary No'); if(!r.diaryDate) m.push('Diary date'); if(!r.firNo) m.push('FIR No'); if(!r.judgmentDate) m.push('Judgment date');
+  if(!r.diaryNo) m.push('Diary No'); if(!r.diaryDate) m.push('Diary date'); if(!r.firNo) m.push('FIR No'); if(!r.firDate) m.push('FIR date'); if(!r.sections) m.push('U/S'); if(!r.ps) m.push('Police Station'); if(!r.judgmentDate) m.push('Judgment date');
   if(!r.submitDate) m.push('Submission date'); if(!r.opinion) m.push('AC opinion');
   if(r.opinion === 'fit' && !r.filingStatus) m.push('Filing status');
   if(!r.compliance) m.push('Compliance sought');
@@ -1257,7 +1257,7 @@ function scanRefCands(){
     var ref = list.filter(function(s){ return s.firNo; })[0] || base;
     out.push({
       key: k, scanId: base.id, scanKey: k, title: base.title || '', caseTxt: [base.caseType, (base.caseNo || '') + (base.caseYear ? '/' + base.caseYear : '')].filter(Boolean).join(' '), n: list.length,
-      v: { source: 'sc', nature: jud ? scNature(jud) : '', firNo: scFirNo(ref), sections: ref.sections || '', ps: ref.station || '', judgmentDate: jdate || '', submitDate: ac || '',
+      v: { source: 'sc', nature: jud ? scNature(jud) : '', firNo: scFirNo(ref), firDate: ref.firDate || '', sections: ref.sections || '', ps: ref.station || '', judgmentDate: jdate || '', submitDate: ac || '',
            opinion: op ? (op.opinionStatus === 'Not fit' ? 'notfit' : 'fit') : '' }
     });
   });
@@ -1274,7 +1274,7 @@ function scRefMatch(c){
     return !rp || !nps || rp.indexOf(nps) >= 0 || nps.indexOf(rp) >= 0 || (r.judgmentDate && r.judgmentDate === v.judgmentDate);
   })[0] || null;
 }
-var SCF = ['nature', 'firNo', 'sections', 'ps', 'judgmentDate', 'submitDate', 'opinion'];
+var SCF = ['nature', 'firNo', 'firDate', 'sections', 'ps', 'judgmentDate', 'submitDate', 'opinion'];
 function scanRefSug(){
   var out = [];
   scanRefCands().forEach(function(c){
@@ -1295,7 +1295,7 @@ function openScanRef(){
   var items = scanRefSug(); if(!items.length){ toast(bi('کوئی نئی تجویز نہیں', 'No new suggestions')); return; }
   var Y = 'background:#fff3b0;color:#28394A', nNew = items.filter(function(x){ return !x.ex; }).length;
   var h = '<div class="cl-note" style="background:#fff8d6;border:1px solid #e3c700;color:#28394A">' + bi('یہ ریفرنس اسکین ڈیسک کے فیصلوں/رائے سے بنے ہیں (جن کی اپیل کمیٹی کو جمع کرانے کی تاریخ یا فٹ/ناٹ فٹ رائے درج ہے)۔ ایک کیس کا ایک ہی ریفرنس بنتا ہے؛ جو رجسٹر میں پہلے سے ہے اس کے صرف خالی خانے بھرے جاتے ہیں۔ <b>ڈائری نمبر اور تاریخ اسکین میں نہیں ہوتے، آپ خود لکھیں</b> (خالی چھوڑ دیں تو رجسٹر میں ⚠ رہے گا)۔ آپ کے "بھیجیں" دبانے تک کچھ محفوظ نہیں ہوگا۔', 'These references are built from Scanning Desk judgments / opinions that have a date of submission to AC or a fit / not fit opinion. One reference per case; if it is already in the register only its empty cells are filled. <b>Diary no. and date are not on the scans: type them yourself</b> (if left blank the register shows ⚠). Nothing is saved until you press Send.') + '</div>' +
-    '<div class="cl-tw"><table class="pf-t" id="scRefT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th class="l">' + bi('کارروائی', 'Action') + '</th><th>Source</th><th>Diary No</th><th>Diary date</th><th class="l">Nature</th><th>FIR No</th><th>U/S</th><th>Police Station</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th></tr></thead><tbody>';
+    '<div class="cl-tw"><table class="pf-t" id="scRefT"><thead><tr><th></th><th class="l">' + bi('کیس', 'Case') + '</th><th class="l">' + bi('کارروائی', 'Action') + '</th><th>Source</th><th>Diary No</th><th>Diary date</th><th class="l">Nature</th><th>FIR No</th><th>FIR date</th><th>U/S</th><th>Police Station</th><th>Judgment</th><th>Submitted to AC</th><th>Opinion</th></tr></thead><tbody>';
   function cell(it, f, mk){
     var ex = it.ex, val = it.c.v[f] || '';
     if(ex && String(ex[f] == null ? '' : ex[f]).trim()) return '<td class="sm" style="color:#6b7a89">' + esc(f === 'nature' ? natureName(ex) : f === 'opinion' ? opinionTxt(ex) : /Date$/.test(f) ? dt(ex[f]) : ex[f]) + '</td>';
@@ -1312,7 +1312,7 @@ function openScanRef(){
       '<td class="sm">' + (ex ? '<b>' + bi('موجود ریفرنس میں خالی خانے', 'Fills empty cells') + '</b><span class="pf-sub">Diary ' + esc(ex.diaryNo || '—') + '</span>' : '<b>' + bi('نیا ریفرنس', 'New reference') + '</b>') + '</td>' +
       (ex ? '<td class="sm" style="color:#6b7a89">' + (ex.source === 'other' ? 'Other' : 'SC') + '</td><td class="sm" style="color:#6b7a89">' + esc(ex.diaryNo || '') + '</td><td class="sm" style="color:#6b7a89">' + dt(ex.diaryDate) + '</td>'
             : '<td>' + sel('source', [['sc', 'SC (C/D)'], ['other', 'Other (E/F)']])('sc') + '</td><td>' + inp('diaryNo')('') + '</td><td>' + inp('diaryDate', 'date')('') + '</td>') +
-      cell(it, 'nature', sel('nature', natOpts)) + cell(it, 'firNo', inp('firNo')) + cell(it, 'sections', inp('sections')) + cell(it, 'ps', inp('ps')) +
+      cell(it, 'nature', sel('nature', natOpts)) + cell(it, 'firNo', inp('firNo')) + cell(it, 'firDate', inp('firDate', 'date')) + cell(it, 'sections', inp('sections')) + cell(it, 'ps', inp('ps')) +
       cell(it, 'judgmentDate', inp('judgmentDate', 'date')) + cell(it, 'submitDate', inp('submitDate', 'date')) + cell(it, 'opinion', sel('opinion', [['fit', 'FIT'], ['notfit', 'NOT FIT']])) + '</tr>';
   });
   h += '</tbody></table></div><div class="cl-note">' + bi('نیا ریفرنس: ' + nNew + ' · موجود میں اضافہ: ' + (items.length - nNew) + '۔ جس قطار میں "Nature" خالی ہو وہ پہلے سے ٹک نہیں، نوعیت چن کر ٹک کریں۔', 'New: ' + nNew + ' · additions to existing: ' + (items.length - nNew) + '. A row whose Nature is empty is not ticked: choose the nature, then tick it.') + '</div>';
@@ -2600,7 +2600,7 @@ window.addEventListener('load', function(){ if(window.__formHistory) window.__fo
 var CHK = {groups:[], total:0, failN:0};
 function pct(done, total){ return total ? Math.round(done * 100 / total) : 100; }
 function refChecks(r){
-  var t = 8, f = [], m = refMissing(r);
+  var t = 11, f = [], m = refMissing(r);
   m.forEach(function(x){ f.push(x + ' ' + bi('درج نہیں', 'missing')); });
   function more(applies, ok, ur, en){ if(applies){ t++; if(!ok) f.push(bi(ur, en)); } }
   more(r.judgmentDate && r.submitDate, r.submitDate >= r.judgmentDate, 'اے سی کو بھیجنے کی تاریخ فیصلے کی تاریخ سے پہلے ہے', 'Submission date is before the judgment date');

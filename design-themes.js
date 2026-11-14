@@ -1,8 +1,8 @@
 /* design-themes.js — whole-portal designs (layout + style), chosen with one click.
    8 designs: classic (the existing look, keeps the 🎨 colour picker), govt, court, tiles,
    command, glass, register, board. The choice is saved in this browser (localStorage
-   "cmpDesign"); an Admin can set an office default for everyone (Firestore lookupLists/portalDesign),
-   which applies to every user who has not picked his own. It applies to every page that loads this file. Only looks change: no data,
+   "cmpDesign"). Only the Super Admin chooses the design, from the Control Panel; it is saved in
+   Firestore lookupLists/portalDesign and applies to every user and every page. Only looks change: no data,
    no page logic and no print/PDF output is touched (all rules are @media screen).
    It is loaded on the Camp Office suite pages by /pwa.js; remove those loader lines from
    /pwa.js to take it out again. */
@@ -22,18 +22,13 @@
   function valid(id){ for(var i=0;i<DESIGNS.length;i++) if(DESIGNS[i].id===id) return true; return false; }
   function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
   function lset(k,v){ try{ if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
-  /* cmpDesign = look in use, cmpDesignOwn = '1' when this person picked it himself,
-     cmpDesignOffice = the office default set by an Admin (cached copy of lookupLists/portalDesign) */
-  if(ls('cmpDesignOwn')===null && valid(ls(KEY)) && ls(KEY)!=='classic') lset('cmpDesignOwn','1');
+  /* cmpDesign = look in use, cmpDesignOffice = the design chosen by the Super Admin
+     (cached copy of lookupLists/portalDesign). Personal choices are no longer used. */
+  lset('cmpDesignOwn', null);
   function nameOf(id){ for(var i=0;i<DESIGNS.length;i++) if(DESIGNS[i].id===id) return (i+1)+'. '+DESIGNS[i].en; return id; }
-  function pick(){
-    var own = ls('cmpDesignOwn')==='1', mine = ls(KEY), office = ls('cmpDesignOffice');
-    if(own && valid(mine)) return mine;
-    if(valid(office)) return office;
-    return valid(mine) ? mine : 'classic';
-  }
+  function pick(){ var office = ls('cmpDesignOffice'); return valid(office) ? office : 'classic'; }
   var current = pick();
-  var isAdmin = false, officeUser = null;
+  var isSuper = false, officeUser = null;
   var root = document.documentElement;
   root.setAttribute('data-design', current);
 
@@ -179,12 +174,11 @@
     var links = document.querySelectorAll('.sidebar .nav-item, .sidebar .nav-group-head, .sidebar-foot a, .sidebar .nav-subitem');
     for(var i=0;i<links.length;i++){ if(!links[i].title) links[i].title = (links[i].textContent||'').trim(); }
   }
-  function setDesign(id, fromOffice){
+  function setDesign(id){
     if(!valid(id)) return;
     current = id;
     root.setAttribute('data-design', id);
     lset(KEY, id);
-    if(!fromOffice) lset('cmpDesignOwn','1');
     applyBodyBits();
     var cards = document.querySelectorAll('.cmpd-card');
     for(var i=0;i<cards.length;i++) cards[i].setAttribute('aria-pressed', cards[i].getAttribute('data-id')===id ? 'true':'false');
@@ -202,7 +196,7 @@
       var d=DESIGNS[i];
       h += '<button type="button" class="cmpd-card" data-id="'+d.id+'" aria-pressed="'+(d.id===current?'true':'false')+'"><span class="cmpd-sw"><i style="background:'+d.c[0]+'"></i><i style="background:'+d.c[1]+'"></i><i style="background:'+d.c[2]+'"></i></span><span class="cmpd-t"><b>'+(i+1)+'. '+d.en+'</b><span>'+d.ur+'</span></span></button>';
     }
-    h += '</div><div class="cmpd-office" id="cmpdOffice"></div><div class="cmpd-note">The design is saved in this browser and applies to every portal page. Printing and PDFs are not affected. / ڈیزائن اس براؤزر میں محفوظ رہتا ہے اور ہر صفحے پر لگتا ہے۔ پرنٹ اور PDF پر کوئی اثر نہیں۔</div></div>';
+    h += '</div><div class="cmpd-office" id="cmpdOffice"></div><div class="cmpd-note">Click a design to apply it for every user, on every page and system. Printing and PDFs are not affected. / کسی ڈیزائن پر کلک کریں تو وہ ہر صارف کے لیے، ہر صفحے اور سسٹم پر لگ جائے گا۔ پرنٹ اور PDF پر کوئی اثر نہیں۔</div></div>';
     ov.innerHTML = h;
     document.body.appendChild(ov);
     function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); document.removeEventListener('keydown', onKey); }
@@ -210,40 +204,37 @@
     document.addEventListener('keydown', onKey);
     ov.addEventListener('click', function(e){
       if(e.target===ov || e.target.closest('.cmpd-x')) return close();
-      var c = e.target.closest('.cmpd-card'); if(c){ setDesign(c.getAttribute('data-id')); drawOffice(); return; }
-      if(e.target.closest('#cmpdUseOffice')){ lset('cmpDesignOwn',null); var o=ls('cmpDesignOffice'); setDesign(valid(o)?o:'classic', true); drawOffice(); return; }
-      if(e.target.closest('#cmpdMakeOffice')) saveOffice(current);
+      var c = e.target.closest('.cmpd-card');
+      if(c){ if(isSuper) saveOffice(c.getAttribute('data-id')); else drawOffice('Only the Super Admin can change the design. / ڈیزائن صرف Super Admin بدل سکتا ہے۔', true); }
     });
     drawOffice();
     var first = ov.querySelector('.cmpd-card[aria-pressed="true"]') || ov.querySelector('.cmpd-card');
     if(first) first.focus();
   }
-  function addButton(){
-    if(document.getElementById('cmpdBtn')) return;
-    var host = document.querySelector('.topbar .right-controls, .topbar2 .topbar-right, .topbar-right, .right-controls');
-    if(!host) return;
-    var b = document.createElement('button');
-    b.type='button'; b.id='cmpdBtn'; b.className='cmpd-btn';
-    b.title='Portal design / ڈیزائن'; b.setAttribute('aria-label','Portal design');
-    b.textContent='🖼️ Design';
-    b.addEventListener('click', openPicker);
-    host.insertBefore(b, host.firstChild);
-  }
   /* ---------- office default (Admin / Super Admin sets it for everyone) ---------- */
   function drawOffice(msg, err){
+    var st = document.getElementById('cmpdCardStat');
+    if(st) st.textContent = 'Now: ' + nameOf(current) + ' / ابھی: ' + nameOf(current);
     var box = document.getElementById('cmpdOffice'); if(!box) return;
-    var office = ls('cmpDesignOffice'), own = ls('cmpDesignOwn')==='1';
-    var h = '<span>Office default / دفتر کا ڈیزائن: <b>'+(valid(office)?nameOf(office):'1. Classic Sidebar')+'</b>'+(own?' · <i>you use your own choice / آپ کا اپنا انتخاب</i>':'')+'</span>';
-    if(own) h += '<button type="button" class="cmpd-act" id="cmpdUseOffice">Use office default / دفتر والا لگائیں</button>';
-    if(isAdmin) h += '<button type="button" class="cmpd-act pri" id="cmpdMakeOffice">Make "'+nameOf(current)+'" the default for everyone / سب کے لیے لگائیں</button>';
+    var h = '<span>Design for everyone / سب کے لیے ڈیزائن: <b>'+nameOf(current)+'</b></span>';
     if(msg) h += '<span class="cmpd-msg'+(err?' err':'')+'">'+msg+'</span>';
     box.innerHTML = h;
+  }
+  function mountControlPanel(){
+    if(!isSuper || !/control-panel\.html$/.test(location.pathname || '') || document.getElementById('cmpdCard')) return;
+    var grid = document.querySelector('.cp-sec .cp-grid'); if(!grid) return;
+    var c = document.createElement('div');
+    c.className = 'md-card cp-card'; c.id = 'cmpdCard';
+    c.innerHTML = '<h4>Portal design / پورٹل کا ڈیزائن</h4><p>Layout and style of the whole portal and every system, for all users. Only the Super Admin can change it. / پورے پورٹل اور تمام سسٹمز کا ڈیزائن، سب صارفین کے لیے۔ اسے صرف Super Admin بدل سکتا ہے۔</p><div class="cp-stat" id="cmpdCardStat"></div><div class="cp-act"><button class="mdb" type="button" id="cmpdCardBtn">🖼️ Choose design / ڈیزائن چنیں</button></div>';
+    grid.insertBefore(c, grid.firstChild);
+    document.getElementById('cmpdCardBtn').addEventListener('click', openPicker);
+    drawOffice();
   }
   function db(){ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.firestore() : null; }catch(e){ return null; } }
   function saveOffice(id){
     var d = db(); if(!d || !officeUser){ drawOffice('Not signed in. / سائن اِن نہیں۔', true); return; }
     d.collection('lookupLists').doc('portalDesign').set({ design:id, updatedBy: officeUser.email || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
-      .then(function(){ lset('cmpDesignOffice', id); drawOffice('Saved: every user without an own choice now sees "'+nameOf(id)+'". / محفوظ ہو گیا۔'); })
+      .then(function(){ lset('cmpDesignOffice', id); setDesign(id); drawOffice('Saved: every user now sees "'+nameOf(id)+'". / محفوظ ہو گیا، اب سب کو یہی ڈیزائن نظر آئے گا۔'); })
       .catch(function(e){ drawOffice('Could not save: '+((e&&e.code)||'error')+' / محفوظ نہیں ہوا', true); });
   }
   function syncOffice(){
@@ -255,14 +246,16 @@
         var d = db(); if(!d) return;
         d.collection('lookupLists').doc('portalDesign').get().then(function(doc){
           var o = doc && doc.exists ? (doc.data()||{}).design : null;
-          if(valid(o)){ lset('cmpDesignOffice', o); if(ls('cmpDesignOwn')!=='1' && o!==current) setDesign(o, true); }
-          else lset('cmpDesignOffice', null);
+          if(!valid(o)) o = 'classic';
+          lset('cmpDesignOffice', o);
+          if(o!==current) setDesign(o);
           drawOffice();
         }).catch(function(){});
         d.collection('users').doc(u.uid).get().then(function(doc){
           var x = doc && doc.exists ? doc.data()||{} : {};
           var r = x.roleV2 || (x.role==='admin' ? 'admin' : '');
-          isAdmin = (r==='admin' || r==='super_admin');
+          isSuper = (r==='super_admin');
+          mountControlPanel();
           drawOffice();
         }).catch(function(){});
       });
@@ -274,6 +267,6 @@
   /* other tabs/pages in this browser follow a change */
   window.addEventListener('storage', function(e){ if(e.key===KEY && valid(e.newValue) && e.newValue!==current){ current=e.newValue; root.setAttribute('data-design', current); applyBodyBits(); } });
 
-  function ready(){ applyBodyBits(); addButton(); syncOffice(); }
+  function ready(){ applyBodyBits(); syncOffice(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 })();

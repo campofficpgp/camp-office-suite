@@ -152,10 +152,12 @@
   '.cmpd-act.pri{background:#2563eb;color:#fff;border-color:#2563eb}' +
   '.cmpd-msg{font-size:12px;color:#1f7a3f;width:100%}.cmpd-msg.err{color:#b42318}' +
   '}';
-  var st = document.createElement('style');
-  st.id = 'cmp-design-css';
+  /* /pwa.js may already have put a cached copy of these styles in place (so the page shows the
+     right design sooner); refresh it, and keep the cache up to date for the next page. */
+  var st = document.getElementById('cmp-design-css');
+  if(!st){ st = document.createElement('style'); st.id = 'cmp-design-css'; (document.head || root).appendChild(st); }
   st.textContent = css;
-  (document.head || root).appendChild(st);
+  lset('cmpDesignCss', css);
 
   /* ---------- apply ---------- */
   var savedTheme = null;

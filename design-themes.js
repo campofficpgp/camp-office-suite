@@ -1,7 +1,8 @@
 /* design-themes.js — whole-portal designs (layout + style), chosen with one click.
    8 designs: classic (the existing look, keeps the 🎨 colour picker), govt, court, tiles,
    command, glass, register, board. The choice is saved in this browser (localStorage
-   "cmpDesign") and applies to every page that loads this file. Only looks change: no data,
+   "cmpDesign"); an Admin can set an office default for everyone (Firestore lookupLists/portalDesign),
+   which applies to every user who has not picked his own. It applies to every page that loads this file. Only looks change: no data,
    no page logic and no print/PDF output is touched (all rules are @media screen).
    It is loaded on the Camp Office suite pages by /pwa.js; remove those loader lines from
    /pwa.js to take it out again. */
@@ -19,8 +20,20 @@
     {id:'board',    en:'Case Board',        ur:'کیس بورڈ، ٹیل',          c:['#134e4a','#0f766e','#f4f5f7']}
   ];
   function valid(id){ for(var i=0;i<DESIGNS.length;i++) if(DESIGNS[i].id===id) return true; return false; }
-  function read(){ try{ var v=localStorage.getItem(KEY); return valid(v)?v:'classic'; }catch(e){ return 'classic'; } }
-  var current = read();
+  function ls(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lset(k,v){ try{ if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); }catch(e){} }
+  /* cmpDesign = look in use, cmpDesignOwn = '1' when this person picked it himself,
+     cmpDesignOffice = the office default set by an Admin (cached copy of lookupLists/portalDesign) */
+  if(ls('cmpDesignOwn')===null && valid(ls(KEY)) && ls(KEY)!=='classic') lset('cmpDesignOwn','1');
+  function nameOf(id){ for(var i=0;i<DESIGNS.length;i++) if(DESIGNS[i].id===id) return (i+1)+'. '+DESIGNS[i].en; return id; }
+  function pick(){
+    var own = ls('cmpDesignOwn')==='1', mine = ls(KEY), office = ls('cmpDesignOffice');
+    if(own && valid(mine)) return mine;
+    if(valid(office)) return office;
+    return valid(mine) ? mine : 'classic';
+  }
+  var current = pick();
+  var isAdmin = false, officeUser = null;
   var root = document.documentElement;
   root.setAttribute('data-design', current);
 
@@ -139,6 +152,10 @@
   '.cmpd-t b{font-size:13px}' +
   '.cmpd-t span{font-size:12.5px;color:#5b6676;direction:rtl;text-align:right}' +
   '.cmpd-note{font-size:12px;color:#5b6676;margin-top:12px;line-height:1.6}' +
+  '.cmpd-office{margin-top:12px;padding:10px 12px;background:#f3f6fa;border-radius:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}' +
+  '.cmpd-act{border:1px solid #c9d3e0;background:#fff;color:#18212d;border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit;font-size:12.5px}' +
+  '.cmpd-act.pri{background:#2563eb;color:#fff;border-color:#2563eb}' +
+  '.cmpd-msg{font-size:12px;color:#1f7a3f;width:100%}.cmpd-msg.err{color:#b42318}' +
   '}';
   var st = document.createElement('style');
   st.id = 'cmp-design-css';
@@ -162,11 +179,12 @@
     var links = document.querySelectorAll('.sidebar .nav-item, .sidebar .nav-group-head, .sidebar-foot a, .sidebar .nav-subitem');
     for(var i=0;i<links.length;i++){ if(!links[i].title) links[i].title = (links[i].textContent||'').trim(); }
   }
-  function setDesign(id){
+  function setDesign(id, fromOffice){
     if(!valid(id)) return;
     current = id;
     root.setAttribute('data-design', id);
-    try{ localStorage.setItem(KEY, id); }catch(e){}
+    lset(KEY, id);
+    if(!fromOffice) lset('cmpDesignOwn','1');
     applyBodyBits();
     var cards = document.querySelectorAll('.cmpd-card');
     for(var i=0;i<cards.length;i++) cards[i].setAttribute('aria-pressed', cards[i].getAttribute('data-id')===id ? 'true':'false');
@@ -184,7 +202,7 @@
       var d=DESIGNS[i];
       h += '<button type="button" class="cmpd-card" data-id="'+d.id+'" aria-pressed="'+(d.id===current?'true':'false')+'"><span class="cmpd-sw"><i style="background:'+d.c[0]+'"></i><i style="background:'+d.c[1]+'"></i><i style="background:'+d.c[2]+'"></i></span><span class="cmpd-t"><b>'+(i+1)+'. '+d.en+'</b><span>'+d.ur+'</span></span></button>';
     }
-    h += '</div><div class="cmpd-note">The design is saved in this browser and applies to every portal page. Printing and PDFs are not affected. / ڈیزائن اس براؤزر میں محفوظ رہتا ہے اور ہر صفحے پر لگتا ہے۔ پرنٹ اور PDF پر کوئی اثر نہیں۔</div></div>';
+    h += '</div><div class="cmpd-office" id="cmpdOffice"></div><div class="cmpd-note">The design is saved in this browser and applies to every portal page. Printing and PDFs are not affected. / ڈیزائن اس براؤزر میں محفوظ رہتا ہے اور ہر صفحے پر لگتا ہے۔ پرنٹ اور PDF پر کوئی اثر نہیں۔</div></div>';
     ov.innerHTML = h;
     document.body.appendChild(ov);
     function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); document.removeEventListener('keydown', onKey); }
@@ -192,8 +210,11 @@
     document.addEventListener('keydown', onKey);
     ov.addEventListener('click', function(e){
       if(e.target===ov || e.target.closest('.cmpd-x')) return close();
-      var c = e.target.closest('.cmpd-card'); if(c) setDesign(c.getAttribute('data-id'));
+      var c = e.target.closest('.cmpd-card'); if(c){ setDesign(c.getAttribute('data-id')); drawOffice(); return; }
+      if(e.target.closest('#cmpdUseOffice')){ lset('cmpDesignOwn',null); var o=ls('cmpDesignOffice'); setDesign(valid(o)?o:'classic', true); drawOffice(); return; }
+      if(e.target.closest('#cmpdMakeOffice')) saveOffice(current);
     });
+    drawOffice();
     var first = ov.querySelector('.cmpd-card[aria-pressed="true"]') || ov.querySelector('.cmpd-card');
     if(first) first.focus();
   }
@@ -208,11 +229,51 @@
     b.addEventListener('click', openPicker);
     host.insertBefore(b, host.firstChild);
   }
+  /* ---------- office default (Admin / Super Admin sets it for everyone) ---------- */
+  function drawOffice(msg, err){
+    var box = document.getElementById('cmpdOffice'); if(!box) return;
+    var office = ls('cmpDesignOffice'), own = ls('cmpDesignOwn')==='1';
+    var h = '<span>Office default / دفتر کا ڈیزائن: <b>'+(valid(office)?nameOf(office):'1. Classic Sidebar')+'</b>'+(own?' · <i>you use your own choice / آپ کا اپنا انتخاب</i>':'')+'</span>';
+    if(own) h += '<button type="button" class="cmpd-act" id="cmpdUseOffice">Use office default / دفتر والا لگائیں</button>';
+    if(isAdmin) h += '<button type="button" class="cmpd-act pri" id="cmpdMakeOffice">Make "'+nameOf(current)+'" the default for everyone / سب کے لیے لگائیں</button>';
+    if(msg) h += '<span class="cmpd-msg'+(err?' err':'')+'">'+msg+'</span>';
+    box.innerHTML = h;
+  }
+  function db(){ try{ return (window.firebase && firebase.apps && firebase.apps.length) ? firebase.firestore() : null; }catch(e){ return null; } }
+  function saveOffice(id){
+    var d = db(); if(!d || !officeUser){ drawOffice('Not signed in. / سائن اِن نہیں۔', true); return; }
+    d.collection('lookupLists').doc('portalDesign').set({ design:id, updatedBy: officeUser.email || '', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
+      .then(function(){ lset('cmpDesignOffice', id); drawOffice('Saved: every user without an own choice now sees "'+nameOf(id)+'". / محفوظ ہو گیا۔'); })
+      .catch(function(e){ drawOffice('Could not save: '+((e&&e.code)||'error')+' / محفوظ نہیں ہوا', true); });
+  }
+  function syncOffice(){
+    var tries = 0;
+    (function wait(){
+      if(!(window.firebase && firebase.apps && firebase.apps.length && firebase.auth)){ if(++tries < 60) setTimeout(wait, 500); return; }
+      firebase.auth().onAuthStateChanged(function(u){
+        officeUser = u || null; if(!u) return;
+        var d = db(); if(!d) return;
+        d.collection('lookupLists').doc('portalDesign').get().then(function(doc){
+          var o = doc && doc.exists ? (doc.data()||{}).design : null;
+          if(valid(o)){ lset('cmpDesignOffice', o); if(ls('cmpDesignOwn')!=='1' && o!==current) setDesign(o, true); }
+          else lset('cmpDesignOffice', null);
+          drawOffice();
+        }).catch(function(){});
+        d.collection('users').doc(u.uid).get().then(function(doc){
+          var x = doc && doc.exists ? doc.data()||{} : {};
+          var r = x.roleV2 || (x.role==='admin' ? 'admin' : '');
+          isAdmin = (r==='admin' || r==='super_admin');
+          drawOffice();
+        }).catch(function(){});
+      });
+    })();
+  }
+
   window.cmpDesign = { list: DESIGNS.map(function(d){ return {id:d.id,en:d.en,ur:d.ur}; }), get: function(){ return current; }, set: setDesign, open: openPicker };
 
   /* other tabs/pages in this browser follow a change */
-  window.addEventListener('storage', function(e){ if(e.key===KEY && valid(e.newValue) && e.newValue!==current) setDesign(e.newValue); });
+  window.addEventListener('storage', function(e){ if(e.key===KEY && valid(e.newValue) && e.newValue!==current){ current=e.newValue; root.setAttribute('data-design', current); applyBodyBits(); } });
 
-  function ready(){ applyBodyBits(); addButton(); }
+  function ready(){ applyBodyBits(); addButton(); syncOffice(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 })();

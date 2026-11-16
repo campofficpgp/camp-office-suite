@@ -265,6 +265,19 @@ html,body{overflow-x:hidden;}
     }
   }
 
+/* One notice = one printed page (16-Nov-2026). The preview is a position:fixed pop-up; Chrome repeats fixed
+   elements on EVERY printed page, and the notice list behind it (only made invisible) made the print 2-3 pages
+   long, so the notice came out 2-3 times. While printing (class added by beforeprint, so the PDF / picture
+   download is not affected) everything except the preview is taken out and the pop-up is printed as a normal block. */
+@media print{
+  body.cn-printing > *:not(.app-shell),
+  body.cn-printing .app-shell > *:not(.main-col),
+  body.cn-printing .main-col > *:not(#previewModal){display:none !important;}
+  body.cn-printing .app-shell, body.cn-printing .main-col{display:block !important; margin:0 !important; padding:0 !important; min-height:0 !important; height:auto !important; overflow:visible !important;}
+  body.cn-printing #previewModal{position:static !important; display:block !important; inset:auto !important; overflow:visible !important; padding:0 !important; background:none !important; height:auto !important;}
+  body.cn-printing #previewModal > .modal-panel{position:static !important; max-height:none !important; overflow:visible !important; box-shadow:none !important; transform:none !important; margin:0 !important; padding:0 !important; border:none !important; max-width:none !important; width:auto !important;}
+}
+
 .app-footer{
   text-align:left;
   direction:ltr;
@@ -1448,6 +1461,8 @@ html,body{overflow-x:hidden;}
      .heading-icon, the tiny ✎/↺/✓/✕ edit controls) instead of duplicating it, and fixes
      those icons showing up in the downloaded image/PDF, which html2canvas never hid on its
      own since it only ever renders the normal on-screen (not print) styles. */
+  window.addEventListener('beforeprint', function(){ document.body.classList.add('cn-printing'); });
+  window.addEventListener('afterprint', function(){ document.body.classList.remove('cn-printing'); });
   function withPrintRulesActive(fn){
     var touched = [];
     Array.prototype.forEach.call(document.styleSheets, function(sheet){

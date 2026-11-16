@@ -567,7 +567,7 @@ table.pf-t td.sm div{ line-height:1.35; }
       <button class="cl-btn ghost" id="btnRedo" type="button" onclick="hxRedo()" style="display:none" title="Redo (Ctrl+Y)">↷ دوبارہ / Redo</button>
     </div>
     <div class="cl-bar exp-bar">
-      <div class="cl-field" style="min-width:340px"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
+      <div class="cl-field" style="min-width:min(340px,100%)"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
       <div class="cl-field" style="min-width:170px"><label for="expPaper">Paper / کاغذ</label><select id="expPaper" onchange="expPaperSave()"><option value="legal">Legal (8.5 × 14 in)</option><option value="foolscap">Foolscap (8.5 × 13 in)</option><option value="a4">A4 (landscape)</option></select></div>
       <button class="cl-btn ghost needs-export" onclick="exportPrint()" title="Print on the chosen paper (landscape)">🖨 Print / پرنٹ</button>
       <button class="cl-btn needs-export" onclick="exportFile('pdf')">📄 PDF</button>

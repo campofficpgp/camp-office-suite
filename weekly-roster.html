@@ -1556,5 +1556,32 @@ html,body{overflow-x:hidden;}
     </div><!-- /.main-col -->
   </div><!-- /.app-shell -->
 <script src="a11y.js" defer></script>
+<script>
+/* One printout = one copy (16-Nov-2026). The roster is printed from a position:fixed pop-up; Chrome repeats fixed
+   elements on every printed page and the page behind it (only made invisible) made the print several pages long,
+   so the roster came out 2-3 times. While printing, everything around the print sheet is taken out (display:none)
+   and the pop-up around it is printed as a normal block; all of it is put back after printing. */
+(function(){
+  var undo = [];
+  function set(el, prop, val){ undo.push([el, prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]); el.style.setProperty(prop, val, "important"); }
+  function restore(){ while(undo.length){ var u = undo.pop(); if(u[2]) u[0].style.setProperty(u[1], u[2], u[3]); else u[0].style.removeProperty(u[1]); } }
+  window.addEventListener("beforeprint", function(){
+    restore();
+    var a = document.getElementById("rosterPrintArea");
+    if(!a || !a.innerHTML.trim()) return;
+    var el = a;
+    while(el && el !== document.body){
+      var p = el.parentElement; if(!p) break;
+      Array.prototype.forEach.call(p.children, function(c){ if(c !== el && !/^(SCRIPT|STYLE|LINK)$/.test(c.tagName)) set(c, "display", "none"); });
+      if(p !== document.body){
+        if(getComputedStyle(p).display === "none") set(p, "display", "block");
+        ["position:static", "overflow:visible", "max-height:none", "height:auto", "min-height:0", "transform:none", "padding:0", "margin:0", "box-shadow:none", "background:none", "border:none", "max-width:none", "width:auto"].forEach(function(x){ var i = x.indexOf(":"); set(p, x.slice(0, i), x.slice(i + 1)); });
+      }
+      el = p;
+    }
+  });
+  window.addEventListener("afterprint", restore);
+})();
+</script>
 </body>
 </html>

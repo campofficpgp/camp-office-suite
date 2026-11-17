@@ -539,9 +539,14 @@ function autoBackupEnabled(){ try{ return localStorage.getItem("cmpAutoBackup") 
   cb.checked = autoBackupEnabled();
   cb.addEventListener("change", function(){ try{ localStorage.setItem("cmpAutoBackup", cb.checked ? "1" : "0"); }catch(e){} });
 })();
+/* "Run Backup Now" from the dashboard reminder opens this page with ?run=1: the backup starts by itself once. */
+var RUN_NOW = /[?&]run=1\b/.test(location.search);
+if(RUN_NOW){ try{ history.replaceState(null, "", location.pathname); }catch(e){} }
 function maybeAutoBackup(stale){
   if(!CAN_BACKUP) return;
-  if(AUTO_BACKUP_DONE || !stale || !autoBackupEnabled()) return;
+  if(AUTO_BACKUP_DONE) return;
+  if(RUN_NOW){ RUN_NOW = false; stale = true; }
+  else if(!stale || !autoBackupEnabled()) return;
   var btn = document.getElementById("btnRunBackup");
   if(!btn || btn.disabled || document.getElementById("mainApp").classList.contains("hidden")) return;
   AUTO_BACKUP_DONE = true;

@@ -2159,7 +2159,7 @@ function checkBackupReminder(){
   BACKUP_STATE = null; renderBackupReminder();
   db.collection("appData_backupmeta").orderBy("timestamp","desc").limit(25).get().then(function(qs){
     var d = null;
-    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore") d = v; });
+    qs.forEach(function(x){ var v = x.data(); if(!d && v.type !== "restore" && v.hadErrors !== true) d = v; });
     var when = d && d.timestamp && d.timestamp.toDate ? d.timestamp.toDate() : null;
     var days = when ? Math.max(0, Math.floor((Date.now() - when.getTime()) / 86400000)) : null;
     BACKUP_STATE = (days === null || days > 7) ? { days: days } : null;
@@ -2178,6 +2178,34 @@ function renderBackupReminder(){
   el.innerHTML = "<span>" + backupReminderText() + "</span><a href='backup-center.html'>" + (isUr ? "ابھی بیک اپ لیں (Backup Center)" : "Take a backup now (Backup Center)") + "</a>";
   el.classList.remove("hidden");
   if(typeof renderNotifDot === "function") renderNotifDot();
+  showBackupModal();
+}
+/* Pop-up reminder (Admin / Super Admin): when the last good backup is older than 7 days, or there is none, a box opens once
+   per sign-in session with a "Run Backup Now" button. That button opens the Backup Center, which starts the backup by itself. */
+function showBackupModal(){
+  if(!BACKUP_STATE || document.getElementById("backupModal")) return;
+  try{ if(sessionStorage.getItem("cmpBackupModalShown") === "1") return; sessionStorage.setItem("cmpBackupModalShown", "1"); }catch(e){}
+  var isUr = currentLang === "ur";
+  var ov = document.createElement("div");
+  ov.id = "backupModal";
+  ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); ov.setAttribute("aria-labelledby", "backupModalTitle");
+  ov.style.cssText = "position:fixed;inset:0;z-index:2147483100;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:16px";
+  ov.innerHTML =
+    "<div style='background:var(--surface,#fff);color:var(--text,#1b2a3a);max-width:440px;width:100%;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);border-top:6px solid #b3261e;padding:22px 22px 18px;" + (isUr ? "direction:rtl;text-align:right;" : "") + "'>" +
+      "<div id='backupModalTitle' style='font-size:18px;font-weight:800;margin-bottom:8px'>" + (isUr ? "🛡️ بیک اپ لینے کا وقت ہو گیا ہے" : "🛡️ Time to take a backup") + "</div>" +
+      "<div style='font-size:14.5px;line-height:1.7;margin-bottom:6px'>" + backupReminderText() + "</div>" +
+      "<div style='font-size:13px;opacity:.85;line-height:1.7;margin-bottom:16px'>" + (isUr ? "پورٹل کا سارا ڈیٹا محفوظ رکھنے کے لیے ہر ہفتے کم از کم ایک بیک اپ ضروری ہے۔" : "Take at least one backup every week so all portal data stays safe.") + "</div>" +
+      "<div style='display:flex;gap:10px;flex-wrap:wrap'>" +
+        "<a id='backupModalRun' href='backup-center.html?run=1' style='flex:1 1 180px;text-align:center;background:#b3261e;color:#fff;font-weight:800;text-decoration:none;padding:11px 14px;border-radius:9px'>" + (isUr ? "⬇️ ابھی بیک اپ لیں" : "⬇️ Run Backup Now") + "</a>" +
+        "<button type='button' id='backupModalLater' style='flex:1 1 120px;background:transparent;color:inherit;border:1px solid currentColor;font-weight:700;padding:10px 14px;border-radius:9px;cursor:pointer'>" + (isUr ? "بعد میں" : "Remind me later") + "</button>" +
+      "</div></div>";
+  document.body.appendChild(ov);
+  function close(){ if(ov.parentNode) ov.parentNode.removeChild(ov); document.removeEventListener("keydown", onKey); }
+  function onKey(e){ if(e.key === "Escape") close(); }
+  document.getElementById("backupModalLater").addEventListener("click", close);
+  ov.addEventListener("click", function(e){ if(e.target === ov) close(); });
+  document.addEventListener("keydown", onKey);
+  setTimeout(function(){ var r = document.getElementById("backupModalRun"); if(r) r.focus(); }, 50);
 }
 function notifSeenKey(){ return "notifSeenCounts_" + (CURRENT_UID || "anon"); }
 function loadSeenCounts(){

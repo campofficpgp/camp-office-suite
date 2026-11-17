@@ -328,6 +328,13 @@ html,body{overflow-x:hidden;}
 [data-theme="green"] .topbar2 .lang-btn{ background:#C9A227; }
 [data-theme="teal"] .topbar2 .lang-btn{ background:#96762a; color:#fff; }
 [data-theme="night"] .topbar2 .lang-btn{ background:#d4a13d; }
+  /* Floating bars at the bottom (auto sign-out, accessibility, red maintenance bar) must never cover the last cards:
+     fixed empty space under the dashboard content and under the side menu. Screen only, so printing is unchanged. */
+  @media screen{
+    .main-col .content-area, .main-col .content-area:not(#x){ padding-bottom:140px !important; }
+    aside.sidebar, #sidebar{ padding-bottom:110px !important; }
+    body{ padding-bottom:20px; }
+  }
 </style>
 <!-- PWA: installable app -->
 <link rel="manifest" href="/manifest.webmanifest">

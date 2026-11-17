@@ -568,7 +568,7 @@ table.pf-t td.sm div{ line-height:1.35; }
     </div>
     <div class="cl-bar exp-bar">
       <div class="cl-field" style="min-width:min(340px,100%)"><label for="expScope">Print / download — what? / پرنٹ یا ڈاؤن لوڈ — کیا؟</label><select id="expScope"></select></div>
-      <div class="cl-field" style="min-width:170px"><label for="expPaper">Paper / کاغذ</label><select id="expPaper" onchange="expPaperSave()"><option value="legal">Legal (8.5 × 14 in)</option><option value="foolscap">Foolscap (8.5 × 13 in)</option><option value="a4">A4 (landscape)</option></select></div>
+      <div class="cl-field" style="min-width:170px"><label for="expPaper">Paper / کاغذ</label><select id="expPaper" onchange="expPaperSave()"><option value="a4">A4 (landscape)</option><option value="legal">Legal (8.5 × 14 in)</option><option value="foolscap">Foolscap (8.5 × 13 in)</option></select></div>
       <button class="cl-btn ghost needs-export" onclick="exportPrint()" title="Print on the chosen paper (landscape)">🖨 Print / پرنٹ</button>
       <button class="cl-btn needs-export" onclick="exportFile('pdf')">📄 PDF</button>
       <button class="cl-btn needs-export" onclick="exportFile('xlsx')">📊 Excel</button>
@@ -1928,12 +1928,12 @@ var EXP_PAPERS = {
 };
 function expPaperKey(){
   var s = $('expPaper'), k = s ? s.value : '';
-  if(!EXP_PAPERS[k]){ try{ k = localStorage.getItem('ins_paper') || ''; }catch(e){ k = ''; } }
-  return EXP_PAPERS[k] ? k : 'legal';
+  if(!EXP_PAPERS[k]){ try{ k = localStorage.getItem('ins_paper2') || ''; }catch(e){ k = ''; } }
+  return EXP_PAPERS[k] ? k : 'a4';
 }
 function expPaper(){ return EXP_PAPERS[expPaperKey()]; }
-function expPaperSave(){ try{ localStorage.setItem('ins_paper', expPaperKey()); }catch(e){} }
-function expPaperInit(){ var s = $('expPaper'); if(s) s.value = expPaperKey(); }
+function expPaperSave(){ try{ localStorage.setItem('ins_paper2', expPaperKey()); }catch(e){} }
+function expPaperInit(){ var s = $('expPaper'), k = ''; try{ k = localStorage.getItem('ins_paper2') || ''; }catch(e){} if(s) s.value = EXP_PAPERS[k] ? k : 'a4'; }   /* A4 is the safe default: it prints whole on A4, Foolscap and Legal sheets; the saved choice is restored */
 function curModel(){
   var t = UI.tab, o = UI.officer;
   if(t === 'A') return {sheets:modelA(o), label:'Proforma_A_' + shortOff(o)};

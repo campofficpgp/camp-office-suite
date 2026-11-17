@@ -328,6 +328,40 @@ html,body{overflow-x:hidden;}
 [data-theme="green"] .topbar2 .lang-btn{ background:#C9A227; }
 [data-theme="teal"] .topbar2 .lang-btn{ background:#96762a; color:#fff; }
 [data-theme="night"] .topbar2 .lang-btn{ background:#d4a13d; }
+
+  /* ================= Dashboard refresh — modern, clean, professional (works with every colour theme) ================= */
+  .gi{ width:1.15em; height:1.15em; display:inline-block; vertical-align:-0.2em; flex:none; }
+  .nav-item .ico, .nav-group-head .ico, .nav-subitem .ico, .sidebar-foot .ico{ display:inline-flex; align-items:center; justify-content:center; width:22px; font-size:17px; opacity:.92; }
+  .nav-subitem .ico, .sidebar-foot .ico{ font-size:15px; }
+  .nav-item.active .ico{ opacity:1; }
+  .welcome-banner{ border-radius:16px; padding:24px 26px; box-shadow:0 10px 30px -14px rgba(16,38,61,.55); position:relative; overflow:hidden; }
+  .welcome-banner::after{ content:""; position:absolute; inset-inline-end:-60px; top:-60px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,.06); pointer-events:none; }
+  .welcome-banner h1{ font-size:22px; letter-spacing:.2px; }
+  .summary-grid{ grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:22px; }
+  @media (min-width:1100px){ .summary-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .summary-card.link-card{ display:flex; color:inherit; }
+  .summary-card.link-card:hover{ border-color:var(--sc-c); }
+  .summary-card{ display:flex; align-items:flex-start; gap:14px; border-radius:14px; padding:18px; box-shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 18px -10px rgba(16,24,40,.18); transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; position:relative; overflow:hidden; }
+  .summary-card::before{ content:""; position:absolute; inset-block:0; inset-inline-start:0; width:4px; background:var(--sc-c, var(--navy)); }
+  .summary-card:hover{ transform:translateY(-2px); box-shadow:0 2px 4px rgba(16,24,40,.06), 0 14px 28px -12px rgba(16,24,40,.28); }
+  .sc-ic{ width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex:none; font-size:24px; color:var(--sc-c, var(--navy)); background:color-mix(in srgb, var(--sc-c, var(--navy)) 12%, transparent); }
+  .sc-body{ min-width:0; }
+  .summary-card .sc-l{ margin:0; font-size:12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  body.lang-ur .summary-card .sc-l{ text-transform:none; font-size:13px; }
+  .summary-card .sc-n{ font-size:30px; line-height:1.15; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
+  .sc-s{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .sc-go{ font-size:26px; color:var(--sc-c, var(--navy)); }
+  .sc-c1{ --sc-c:#2563eb; } .sc-c2{ --sc-c:#0e9f6e; } .sc-c3{ --sc-c:#d97706; } .sc-c4{ --sc-c:#7c3aed; } .sc-c5{ --sc-c:#0891b2; } .sc-c6{ --sc-c:#be123c; }
+  .panel{ border-radius:14px; padding:18px 20px; box-shadow:0 1px 2px rgba(16,24,40,.05), 0 6px 18px -12px rgba(16,24,40,.18); }
+  .panel-head h2{ font-size:16px; letter-spacing:.2px; }
+  .quick-grid{ grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:14px; }
+  .quick-tile{ flex-direction:row; justify-content:flex-start; gap:12px; padding:14px 14px; border-radius:12px; background:var(--surface); box-shadow:0 1px 2px rgba(16,24,40,.04); font-weight:600; font-size:13px; line-height:1.35; text-align:start; color:var(--text); text-decoration:none; transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease; }
+  .quick-tile .qi{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; color:var(--navy); background:var(--navy-tint); transition:background-color .18s ease, color .18s ease; }
+  .quick-tile:hover{ transform:translateY(-2px); border-color:var(--navy); background:var(--surface); box-shadow:0 12px 24px -14px rgba(16,24,40,.35); }
+  .quick-tile:hover .qi{ background:var(--navy); color:#fff; }
+  [data-theme="night"] .quick-tile .qi{ color:#fff; }
+  @media (max-width:640px){ .summary-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .summary-card{ padding:14px; gap:10px; flex-direction:column; } .sc-ic{ width:38px; height:38px; font-size:20px; } .summary-card .sc-n{ font-size:24px; } .quick-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (prefers-reduced-motion: reduce){ .summary-card:hover, .quick-tile:hover{ transform:none; } }
   /* Floating bars at the bottom (auto sign-out, accessibility, red maintenance bar) must never cover the last cards:
      fixed empty space under the dashboard content and under the side menu. Screen only, so printing is unchanged. */
   @media screen{
@@ -346,6 +380,8 @@ html,body{overflow-x:hidden;}
 <script src="/logo-control.js?v=2" defer></script>
 </head>
 <body class="auth-booting">
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><symbol id="ic-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol><symbol id="ic-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol><symbol id="ic-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol><symbol id="ic-import" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol><symbol id="ic-clipcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 13l2 2 4-4"/></symbol><symbol id="ic-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M4 12h16"/></symbol><symbol id="ic-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="ic-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol><symbol id="ic-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol><symbol id="ic-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7"/></symbol><symbol id="ic-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></symbol><symbol id="ic-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol><symbol id="ic-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol><symbol id="ic-calclock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13v3l2 1"/></symbol><symbol id="ic-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></symbol><symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/></symbol><symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol><symbol id="ic-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></symbol><symbol id="ic-usercheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 11l2 2 4-4"/></symbol><symbol id="ic-sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol><symbol id="ic-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></symbol><symbol id="ic-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></symbol><symbol id="ic-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></symbol><symbol id="ic-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></symbol><symbol id="ic-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4"/><circle cx="12" cy="3" r="1"/><path d="M9 13v1M15 13v1"/><path d="M9.5 17h5"/></symbol><symbol id="ic-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><ellipse cx="12" cy="19" rx="8" ry="2"/></symbol><symbol id="ic-listcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/></symbol><symbol id="ic-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></symbol><symbol id="ic-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol><symbol id="ic-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14"/><path d="M12 17.5h.01"/></symbol><symbol id="ic-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 21h10"/><path d="M5 7h14"/><path d="M5 7l-3 6a3 3 0 0 0 6 0z"/><path d="M19 7l-3 6a3 3 0 0 0 6 0z"/></symbol><symbol id="ic-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol><symbol id="ic-gavel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6"/><path d="M11 7l6 6"/><path d="M12.5 5.5l5 5-3 3-5-5z"/><path d="M10 11L3 18l2 2 7-7"/><path d="M13 21h8"/></symbol><symbol id="ic-arrowup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></symbol><symbol id="ic-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></symbol></svg>
+
 
 <div id="bootSplash" role="status" aria-live="polite"><div class="bs-spin"></div><div>کھل رہا ہے… / Opening…</div></div>
 
@@ -522,53 +558,53 @@ html,body{overflow-x:hidden;}
         <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse">◧</button>
       </div>
       <nav class="sidebar-nav">
-        <a class="nav-item active" href="#" data-en-l="Dashboard" data-ur-l="ڈیش بورڈ"><span class="ico">🏠</span><span class="label" data-en="Dashboard" data-ur="ڈیش بورڈ">Dashboard</span></a>
+        <a class="nav-item active" href="#" data-en-l="Dashboard" data-ur-l="ڈیش بورڈ"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-grid"/></svg></span><span class="label" data-en="Dashboard" data-ur="ڈیش بورڈ">Dashboard</span></a>
 
-        <a class="nav-item" href="lookup.html"><span class="ico">🔎</span><span class="label" data-en="Lookup" data-ur="تلاش">Lookup</span></a>
-        <a class="nav-item" href="cause-list.html"><span class="ico">📥</span><span class="label" data-en="Cause List Import" data-ur="کاز لسٹ امپورٹ">Cause List Import</span></a>
-        <a class="nav-item" href="inspection.html"><span class="ico">📑</span><span class="label" data-en="Inspection Desk" data-ur="انسپیکشن ڈیسک">Inspection Desk</span></a>
-        <a class="nav-item" href="scanning.html"><span class="ico">📠</span><span class="label" data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</span></a>
+        <a class="nav-item" href="lookup.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-search"/></svg></span><span class="label" data-en="Lookup" data-ur="تلاش">Lookup</span></a>
+        <a class="nav-item" href="cause-list.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-import"/></svg></span><span class="label" data-en="Cause List Import" data-ur="کاز لسٹ امپورٹ">Cause List Import</span></a>
+        <a class="nav-item" href="inspection.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-clipcheck"/></svg></span><span class="label" data-en="Inspection Desk" data-ur="انسپیکشن ڈیسک">Inspection Desk</span></a>
+        <a class="nav-item" href="scanning.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-scan"/></svg></span><span class="label" data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</span></a>
 
         <div class="nav-group open" id="navGroupCase">
-          <button class="nav-group-head" data-group="navGroupCase"><span class="ico">📁</span><span class="label" data-en="Case Management" data-ur="کیس مینجمنٹ">Case Management</span><span class="chev">›</span></button>
+          <button class="nav-group-head" data-group="navGroupCase"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-folder"/></svg></span><span class="label" data-en="Case Management" data-ur="کیس مینجمنٹ">Case Management</span><span class="chev">›</span></button>
           <div class="nav-submenu">
-            <a class="nav-subitem" href="case-entry.html"><span class="ico">📋</span><span data-en="Daily Cases" data-ur="یومیہ کیسز">Daily Cases</span></a>
-            <a class="nav-subitem" href="case-notice.html"><span class="ico">📨</span><span data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</span></a>
-            <a class="nav-subitem" href="register-desk.html"><span class="ico">📖</span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
+            <a class="nav-subitem" href="case-entry.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-list"/></svg></span><span data-en="Daily Cases" data-ur="یومیہ کیسز">Daily Cases</span></a>
+            <a class="nav-subitem" href="case-notice.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-mail"/></svg></span><span data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</span></a>
+            <a class="nav-subitem" href="register-desk.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-book"/></svg></span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
             
-            <a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/"><span class="ico">📚</span><span data-en="Record Section" data-ur="ریکارڈ سیکشن">Record Section</span></a>
+            <a class="nav-subitem" href="https://cmpofficepgp.org/record-section-system/"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-archive"/></svg></span><span data-en="Record Section" data-ur="ریکارڈ سیکشن">Record Section</span></a>
           </div>
         </div>
 
-        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/"><span class="ico">🧾</span><span class="label" data-en="Bill Register" data-ur="بل رجسٹر">Bill Register</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-receipt"/></svg></span><span class="label" data-en="Bill Register" data-ur="بل رجسٹر">Bill Register</span></a>
 
 
-        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="ico">🗂️</span><span class="label" data-en="Weekly Court Roster" data-ur="ویکلی کورٹ روسٹر">Weekly Court Roster</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-calendar"/></svg></span><span class="label" data-en="Weekly Court Roster" data-ur="ویکلی کورٹ روسٹر">Weekly Court Roster</span></a>
 
-        <a class="nav-item" href="gallery.html"><span class="ico">🖼️</span><span class="label" data-en="Gallery" data-ur="گیلری">Gallery</span></a>
+        <a class="nav-item" href="gallery.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-image"/></svg></span><span class="label" data-en="Gallery" data-ur="گیلری">Gallery</span></a>
 
-        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports"><span class="ico">📊</span><span class="label" data-en="Reports" data-ur="رپورٹس">Reports</span></a>
+        <a class="nav-item" href="https://cmpofficepgp.org/bill-register-system/#reports"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-chart"/></svg></span><span class="label" data-en="Reports" data-ur="رپورٹس">Reports</span></a>
 
         <div class="nav-group" id="navGroupUsers">
-          <button class="nav-group-head" data-group="navGroupUsers"><span class="ico">⚙️</span><span class="label" data-en="Users &amp; Settings" data-ur="یوزرز و سیٹنگز">Users &amp; Settings</span><span class="chev">›</span></button>
+          <button class="nav-group-head" data-group="navGroupUsers"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-gear"/></svg></span><span class="label" data-en="Users &amp; Settings" data-ur="یوزرز و سیٹنگز">Users &amp; Settings</span><span class="chev">›</span></button>
           <div class="nav-submenu">
-            <a class="nav-subitem" href="employee-directory.html"><span class="ico">🗂️</span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
-            <button class="nav-subitem needs-admin hidden" id="openAdminPanelBtn"><span class="ico">✅</span><span data-en="User Approvals" data-ur="یوزر منظوری">User Approvals</span></button>
-            <a class="nav-subitem hidden" id="controlPanelLink" href="control-panel.html"><span class="ico">🎛️</span><span data-en="Control Panel" data-ur="کنٹرول پینل">Control Panel</span></a>
-            <a class="nav-subitem hidden" id="masterDataLink" href="master-data.html"><span class="ico">🧩</span><span data-en="Master Data" data-ur="ماسٹر ڈیٹا">Master Data</span></a>
-            <a class="nav-subitem hidden" id="resultListLink" href="result-list.html"><span class="ico">🏁</span><span data-en="Result List" data-ur="نتیجہ کی فہرست">Result List</span></a>
-            <a class="nav-subitem hidden" id="activityLogLink" href="activity-log.html"><span class="ico">📜</span><span data-en="Activity Log" data-ur="سرگرمی لاگ">Activity Log</span></a>
+            <a class="nav-subitem" href="employee-directory.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-users"/></svg></span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
+            <button class="nav-subitem needs-admin hidden" id="openAdminPanelBtn"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-usercheck"/></svg></span><span data-en="User Approvals" data-ur="یوزر منظوری">User Approvals</span></button>
+            <a class="nav-subitem hidden" id="controlPanelLink" href="control-panel.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-sliders"/></svg></span><span data-en="Control Panel" data-ur="کنٹرول پینل">Control Panel</span></a>
+            <a class="nav-subitem hidden" id="masterDataLink" href="master-data.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-database"/></svg></span><span data-en="Master Data" data-ur="ماسٹر ڈیٹا">Master Data</span></a>
+            <a class="nav-subitem hidden" id="resultListLink" href="result-list.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-flag"/></svg></span><span data-en="Result List" data-ur="نتیجہ کی فہرست">Result List</span></a>
+            <a class="nav-subitem hidden" id="activityLogLink" href="activity-log.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-history"/></svg></span><span data-en="Activity Log" data-ur="سرگرمی لاگ">Activity Log</span></a>
           </div>
         </div>
       </nav>
       <div class="sidebar-foot">
-        <a href="chat-system.html"><span class="ico">💬</span><span class="label" data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</span></a>
-        <a href="ai-assistant.html"><span class="ico">🤖</span><span class="label" data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></a>
-        <a href="backup-center.html"><span class="ico">💾</span><span class="label" data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</span></a>
-        <a href="shared-dropdown-manager.html"><span class="ico">📋</span><span class="label" data-en="Shared Dropdown Lists" data-ur="مشترکہ ڈراپ ڈاؤن لسٹیں">Shared Dropdown Lists</span></a>
-        <a href="about.html"><span class="ico">ℹ️</span><span class="label" data-en="About" data-ur="تعارف">About</span></a>
-        <a href="contact-us.html"><span class="ico">☎️</span><span class="label" data-en="Contact Us" data-ur="رابطہ">Contact Us</span></a>
-        <a href="help.html"><span class="ico">❓</span><span class="label" data-en="Help" data-ur="مدد">Help</span></a>
+        <a href="chat-system.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-chat"/></svg></span><span class="label" data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</span></a>
+        <a href="ai-assistant.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-bot"/></svg></span><span class="label" data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></a>
+        <a href="backup-center.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-save"/></svg></span><span class="label" data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</span></a>
+        <a href="shared-dropdown-manager.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-listcheck"/></svg></span><span class="label" data-en="Shared Dropdown Lists" data-ur="مشترکہ ڈراپ ڈاؤن لسٹیں">Shared Dropdown Lists</span></a>
+        <a href="about.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-info"/></svg></span><span class="label" data-en="About" data-ur="تعارف">About</span></a>
+        <a href="contact-us.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-phone"/></svg></span><span class="label" data-en="Contact Us" data-ur="رابطہ">Contact Us</span></a>
+        <a href="help.html"><span class="ico"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-help"/></svg></span><span class="label" data-en="Help" data-ur="مدد">Help</span></a>
       </div>
     </aside>
 
@@ -618,14 +654,13 @@ html,body{overflow-x:hidden;}
         </div>
 
         <div class="summary-grid">
-          <div class="summary-card"><div class="sc-n" id="scTotal">—</div><div class="sc-l" data-en="Total Cases" data-ur="کل کیسز">Total Cases</div></div>
-          <div class="summary-card"><div class="sc-n" id="scToday">—</div><div class="sc-l" data-en="Today's Cases" data-ur="آج کے کیسز">Today's Cases</div></div>
-          <div class="summary-card"><div class="sc-n" id="scPending">—</div><div class="sc-l" data-en="Pending" data-ur="زیرِ التوا">Pending</div></div>
-          <div class="summary-card"><div class="sc-n" id="scDecided">—</div><div class="sc-l" data-en="Decided" data-ur="فیصلہ شدہ">Decided</div></div>
-          <div class="summary-card"><div class="sc-n" id="scNotices">—</div><div class="sc-l" data-en="Notices" data-ur="نوٹسز">Notices</div></div>
-          <a class="summary-card link-card hidden" id="pendingBillsCard" href="https://cmpofficepgp.org/bill-register-system/">
-            <div class="sc-n">↗</div>
-            <div class="sc-l" data-en="Pending Bills — open Bill Register" data-ur="زیرِ التوا بلز — بل رجسٹر کھولیں">Pending Bills — open Bill Register</div>
+          <div class="summary-card sc-c1"><span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-scale"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Total Cases" data-ur="کل کیسز">Total Cases</div><div class="sc-n" id="scTotal">—</div><div class="sc-s" id="scTotalSub"></div></div></div>
+          <div class="summary-card sc-c2"><span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-calclock"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Today's Hearings" data-ur="آج کی سماعتیں">Today's Hearings</div><div class="sc-n" id="scToday">—</div><div class="sc-s" id="scTodaySub"></div></div></div>
+          <div class="summary-card sc-c3"><span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-hourglass"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Pending Cases" data-ur="زیرِ التوا کیسز">Pending Cases</div><div class="sc-n" id="scPending">—</div><div class="sc-s" id="scPendingSub"></div></div></div>
+          <div class="summary-card sc-c4"><span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-gavel"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Recent Decisions" data-ur="حالیہ فیصلے">Recent Decisions</div><div class="sc-n" id="scDecided">—</div><div class="sc-s" id="scDecidedSub"></div></div></div>
+          <div class="summary-card sc-c5"><span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-mail"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Notices" data-ur="نوٹسز">Notices</div><div class="sc-n" id="scNotices">—</div><div class="sc-s" id="scNoticesSub"></div></div></div>
+          <a class="summary-card link-card sc-c6 hidden" id="pendingBillsCard" href="https://cmpofficepgp.org/bill-register-system/">
+            <span class="sc-ic"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-receipt"/></svg></span><div class="sc-body"><div class="sc-l" data-en="Pending Bills" data-ur="زیرِ التوا بلز">Pending Bills</div><div class="sc-n sc-go"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-arrowup"/></svg></div><div class="sc-s" data-en="Open Bill Register" data-ur="بل رجسٹر کھولیں">Open Bill Register</div></div>
           </a>
         </div>
 
@@ -659,18 +694,18 @@ html,body{overflow-x:hidden;}
         <div class="panel" style="margin-bottom:18px;">
           <div class="panel-head"><h2 data-en="Quick Access" data-ur="فوری رسائی">Quick Access</h2></div>
           <div class="quick-grid">
-            <a class="quick-tile" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="qi">🗂️</span><span data-en="Weekly Roster" data-ur="ویکلی روسٹر">Weekly Roster</span></a>
-            <a class="quick-tile" href="case-notice.html"><span class="qi">📨</span><span data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</span></a>
-            <a class="quick-tile" href="register-desk.html"><span class="qi">📖</span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
-            <a class="quick-tile" href="cause-list.html"><span class="qi">📥</span><span data-en="Cause List Import" data-ur="کاز لسٹ امپورٹ">Cause List Import</span></a>
-            <a class="quick-tile" href="inspection.html"><span class="qi">📑</span><span data-en="Inspection Desk" data-ur="انسپیکشن ڈیسک">Inspection Desk</span></a>
-            <a class="quick-tile" href="scanning.html"><span class="qi">📠</span><span data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</span></a>
-            <a class="quick-tile" href="chat-system.html"><span class="qi">💬</span><span data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</span></a>
-            <a class="quick-tile" href="ai-assistant.html"><span class="qi">🤖</span><span data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></a>
-            <a class="quick-tile" href="gallery.html"><span class="qi">🖼️</span><span data-en="Gallery" data-ur="گیلری">Gallery</span></a>
-            <a class="quick-tile" href="https://cmpofficepgp.org/bill-register-system/"><span class="qi">🧾</span><span data-en="Bill Register" data-ur="بل رجسٹر">Bill Register</span></a>
-            <a class="quick-tile" href="employee-directory.html"><span class="qi">🗂️</span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
-            <a class="quick-tile" href="backup-center.html"><span class="qi">💾</span><span data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</span></a>
+            <a class="quick-tile" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-calendar"/></svg></span><span data-en="Weekly Roster" data-ur="ویکلی روسٹر">Weekly Roster</span></a>
+            <a class="quick-tile" href="case-notice.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-mail"/></svg></span><span data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</span></a>
+            <a class="quick-tile" href="register-desk.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-book"/></svg></span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
+            <a class="quick-tile" href="cause-list.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-import"/></svg></span><span data-en="Cause List Import" data-ur="کاز لسٹ امپورٹ">Cause List Import</span></a>
+            <a class="quick-tile" href="inspection.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-clipcheck"/></svg></span><span data-en="Inspection Desk" data-ur="انسپیکشن ڈیسک">Inspection Desk</span></a>
+            <a class="quick-tile" href="scanning.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-scan"/></svg></span><span data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</span></a>
+            <a class="quick-tile" href="chat-system.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-chat"/></svg></span><span data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</span></a>
+            <a class="quick-tile" href="ai-assistant.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-bot"/></svg></span><span data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></a>
+            <a class="quick-tile" href="gallery.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-image"/></svg></span><span data-en="Gallery" data-ur="گیلری">Gallery</span></a>
+            <a class="quick-tile" href="https://cmpofficepgp.org/bill-register-system/"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-receipt"/></svg></span><span data-en="Bill Register" data-ur="بل رجسٹر">Bill Register</span></a>
+            <a class="quick-tile" href="employee-directory.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-users"/></svg></span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
+            <a class="quick-tile" href="backup-center.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-save"/></svg></span><span data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</span></a>
           </div>
         </div>
 
@@ -2374,16 +2409,32 @@ function loadDashboardData(){
   }).catch(function(err){ console.error("caseNotices load error", err); });
 }
 function renderSummaryCards(){
-  var today = todayISO();
-  var totalCases = ALL_CASES.length;
+  /* Cases are counted once each (type + number + year); a case is decided when its latest hearing has a final result. */
+  var today = todayISO(), U = (typeof currentLang !== "undefined" && currentLang === "ur");
+  var FINAL = /dismiss|allow|convert|compromise|disposed|decided|withdraw|abate|infructuous|accepted|rejected|quash|acquit/i;
+  var latest = {};
+  ALL_CASES.forEach(function(c){
+    var k = String(c.type || "").toLowerCase() + "|" + String(c.caseNo || "").replace(/\s+/g, "").toUpperCase() + "|" + String(c.year || "");
+    if(!latest[k] || String(c.date || "") > String(latest[k].date || "")) latest[k] = c;
+  });
+  var keys = Object.keys(latest), totalCases = keys.length, hearings = ALL_CASES.length;
   var todayCases = ALL_CASES.filter(function(c){ return c.date === today; }).length;
-  var pending = ALL_CASES.filter(function(c){ return !c.result || c.result === "Pending" || c.result === "—"; }).length;
-  var decided = totalCases - pending;
-  document.getElementById("scTotal").textContent = totalCases;
-  document.getElementById("scToday").textContent = todayCases;
-  document.getElementById("scPending").textContent = pending;
-  document.getElementById("scDecided").textContent = decided;
-  document.getElementById("scNotices").textContent = ALL_NOTICES.length;
+  var d30 = new Date(); d30.setDate(d30.getDate() - 30);
+  var lim = d30.getFullYear() + "-" + String(d30.getMonth() + 1).padStart(2, "0") + "-" + String(d30.getDate()).padStart(2, "0");
+  var pending = 0, decidedAll = 0, recent = 0;
+  keys.forEach(function(k){ var c = latest[k]; if(FINAL.test(String(c.result || ""))){ decidedAll++; if(String(c.date || "") >= lim) recent++; } else pending++; });
+  var upcoming = ALL_NOTICES.filter(function(n){ return String(n.date || "") >= today; }).length;
+  function set(id, v){ var el = document.getElementById(id); if(el) el.textContent = v; }
+  set("scTotal", totalCases.toLocaleString("en-US"));
+  set("scTotalSub", U ? (hearings + " پیشیاں درج") : (hearings.toLocaleString("en-US") + " hearings recorded"));
+  set("scToday", todayCases);
+  set("scTodaySub", U ? "آج کی تاریخ کے اندراج" : "listed for today");
+  set("scPending", pending.toLocaleString("en-US"));
+  set("scPendingSub", totalCases ? (Math.round(pending * 100 / totalCases) + (U ? "٪ کیسز ابھی جاری" : "% of cases still open")) : "");
+  set("scDecided", recent);
+  set("scDecidedSub", U ? ("پچھلے 30 دن · کل فیصلے " + decidedAll) : ("last 30 days · " + decidedAll.toLocaleString("en-US") + " decided in all"));
+  set("scNotices", ALL_NOTICES.length.toLocaleString("en-US"));
+  set("scNoticesSub", U ? (upcoming + " آج یا آگے کی تاریخ") : (upcoming + " dated today or later"));
 }
 function resultBadgeClass(result){
   if(!result || result==="Pending" || result==="—") return "pending";

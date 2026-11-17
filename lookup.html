@@ -453,6 +453,26 @@ html,body{overflow-x:hidden;}
 .hist-table th{ background:var(--navy); color:#fff; padding:7px 9px; text-align:start; white-space:nowrap; }
 .hist-table td{ padding:7px 9px; border-bottom:1px solid var(--border); vertical-align:top; }
 .hist-table tr.cur td{ background:rgba(184,134,11,.14); }
+/* ---- case timeline (visual life of the case: year of case, notices, every hearing, current stage) ---- */
+.tl-wrap{ margin:2px 0 14px; }
+.tl-stage{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:9px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg,transparent); font-size:13px; margin-bottom:10px; }
+.tl-stage .tl-badge{ font-weight:800; padding:3px 10px; border-radius:999px; color:#fff; white-space:nowrap; }
+.tl-bar{ flex:1 1 160px; height:8px; border-radius:99px; background:var(--border); overflow:hidden; min-width:120px; }
+.tl-bar i{ display:block; height:100%; border-radius:99px; }
+.tl-track{ display:flex; align-items:stretch; overflow-x:auto; padding:6px 2px 10px; scroll-snap-type:x proximity; }
+.tl-node{ position:relative; flex:0 0 132px; scroll-snap-align:start; padding:0 6px; text-align:center; }
+.tl-node::before{ content:""; position:absolute; top:13px; inset-inline-start:0; inset-inline-end:0; height:3px; background:var(--border); }
+.tl-node:first-child::before{ inset-inline-start:50%; }
+.tl-node:last-child::before{ inset-inline-end:50%; }
+.tl-dot{ position:relative; z-index:1; width:28px; height:28px; margin:0 auto 6px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; color:#fff; box-shadow:0 0 0 3px var(--card); }
+.tl-node.now .tl-dot{ box-shadow:0 0 0 3px var(--card), 0 0 0 6px rgba(184,134,11,.55); }
+.tl-node.cur .tl-dot{ outline:2px dashed var(--gold,#B8860B); outline-offset:3px; }
+.tl-k{ font-weight:800; font-size:12.5px; color:var(--text); line-height:1.35; }
+.tl-d{ font-size:12px; color:var(--navy); font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+.tl-x{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.4; overflow-wrap:anywhere; }
+.tl-legend{ display:flex; flex-wrap:wrap; gap:4px 14px; font-size:11.5px; color:var(--muted); }
+.tl-legend span::before{ content:""; display:inline-block; width:10px; height:10px; border-radius:50%; margin-inline-end:5px; vertical-align:-1px; background:var(--c); }
+@media print{ .tl-track{ flex-wrap:wrap; overflow:visible; } .tl-node{ flex-basis:120px; margin-bottom:8px; } }
 .lk-head{ margin:4px 2px 14px; }
 .lk-head h2{ margin:0 0 4px; color:var(--navy); font-size:20px; }
 .lk-head p{ margin:0; color:var(--muted); font-size:13px; }
@@ -2124,6 +2144,55 @@ html,body{overflow-x:hidden;}
     box.innerHTML = html;
   }
 
+  /* ---- Case timeline: one glance at the life of the case ----
+     Year of the case (from the case number), every notice saved for it, every hearing (adjourned / pending / leave granted /
+     decided) and the stage it is in now. Built only from records already in the portal; nothing is saved. */
+  var TL_FINAL = /dismiss|allow|convert|compromise|disposed|decided|withdraw|abate|infructuous|accepted|rejected|quash|acquit/i;
+  function tlDate(v){ var m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '-' + m[2] + '-' + m[1] : String(v || ''); }
+  function tlKind(res){
+    var r = String(res || '').trim();
+    if(!r || r === '—' || /^pending$/i.test(r) || /adjourn/i.test(r) || /^other$/i.test(r)) return 'adj';
+    if(/leave granted/i.test(r)) return 'leave';
+    if(TL_FINAL.test(r)) return /dismiss|reject|abate|infructuous/i.test(r) ? 'lost' : 'won';
+    return 'adj';
+  }
+  var TL_COL = { filed:'#1B3F63', notice:'#6a4fb3', adj:'#c98a0b', leave:'#1d6fd1', won:'#1a7f4b', lost:'#b3261e', now:'#5b6b7d' };
+  function caseTimelineHtml(r0, rows, curId){
+    var U = isUrdu, key = caseIdent(r0), ev = [];
+    if(r0.year) ev.push({ k:'filed', ico:'📁', t:U ? 'کیس کا سال' : 'Case of year', d:String(r0.year), x:(r0.type || '') + ' ' + (r0.caseNo || ''), sort:String(r0.year) + '-00-00' });
+    (DATA.notices || []).filter(function(n){ return caseIdent(n) === key; }).forEach(function(n){
+      ev.push({ k:'notice', ico:'✉', t:U ? 'نوٹس' : 'Notice issued', d:tlDate(n.date), x:(n.hearing ? (U ? 'پیشی: ' : 'For hearing: ') + n.hearing : '') + (n.bench ? ' · ' + (U ? 'بینچ ' : 'Bench ') + n.bench : ''), sort:String(n.date || '') });
+    });
+    var decided = null;
+    rows.forEach(function(r){
+      var kd = tlKind(r.result);
+      var label = kd === 'adj' ? (U ? 'پیشی — ملتوی / زیرِ التوا' : 'Hearing — adjourned / pending') : kd === 'leave' ? (U ? 'اجازت (Leave) منظور' : 'Leave granted') : (U ? 'فیصلہ: ' : 'Decided: ') + r.result;
+      if(kd === 'won' || kd === 'lost') decided = r;
+      ev.push({ k:kd, ico:kd === 'adj' ? '⚖' : kd === 'leave' ? '✔' : '🏁', t:label, d:tlDate(r.date), x:[r.bench ? (U ? 'بینچ ' : 'Bench ') + r.bench : '', r.officer || ''].filter(Boolean).join(' · '), sort:String(r.date || ''), cur:String(r.id) === String(curId) });
+    });
+    ev.sort(function(a, b){ return a.sort.localeCompare(b.sort); });
+    var last = rows[rows.length - 1] || r0, days = null, m = String(last.date || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) days = Math.max(0, Math.round((Date.now() - new Date(+m[1], +m[2] - 1, +m[3]).getTime()) / 86400000));
+    var stageK = decided ? tlKind(decided.result) : 'now';
+    var stageTxt = decided ? ((U ? 'فیصلہ شدہ — ' : 'Decided — ') + decided.result + (U ? ' (' : ' on ') + tlDate(decided.date) + (U ? ')' : ''))
+      : rows.some(function(r){ return tlKind(r.result) === 'leave'; }) ? (U ? 'اجازت منظور — مقدمہ جاری ہے' : 'Leave granted — case continues')
+      : (U ? 'زیرِ التوا' : 'Pending');
+    if(!decided) ev.push({ k:'now', ico:'⏳', t:U ? 'موجودہ مرحلہ' : 'Current stage', d:stageTxt, x:days != null ? (U ? 'آخری پیشی کو ' + days + ' دن' : days + ' days since last hearing') : '', sort:'9999', now:true });
+    else ev[ev.length - 1].now = true;
+    var nHear = rows.length, pct = decided ? 100 : Math.min(90, 20 + nHear * 10);
+    var html = '<div class="tl-wrap" aria-label="' + (U ? 'کیس کی ٹائم لائن' : 'Case timeline') + '">' +
+      '<div class="tl-stage"><span class="tl-badge" style="background:' + TL_COL[stageK] + '">' + esc(decided ? (U ? 'فیصلہ شدہ' : 'Decided') : (U ? 'زیرِ التوا' : 'Pending')) + '</span>' +
+      '<span>' + esc(stageTxt) + '</span><span style="color:var(--muted)">' + (U ? 'پیشیاں: ' : 'Hearings: ') + '<b>' + nHear + '</b>' + (days != null && !decided ? ' · ' + (U ? 'آخری پیشی: ' : 'Last hearing: ') + '<b>' + esc(tlDate(last.date)) + '</b>' : '') + '</span>' +
+      '<span class="tl-bar" title="' + (U ? 'پیش رفت' : 'Progress') + '"><i style="width:' + pct + '%;background:' + TL_COL[stageK] + '"></i></span></div>' +
+      '<div class="tl-track" role="list">' + ev.map(function(e){
+        return '<div class="tl-node' + (e.now ? ' now' : '') + (e.cur ? ' cur' : '') + '" role="listitem"><div class="tl-dot" style="background:' + TL_COL[e.k] + '" aria-hidden="true">' + e.ico + '</div>' +
+          '<div class="tl-k">' + esc(e.t) + '</div><div class="tl-d">' + esc(e.d) + '</div>' + (e.x ? '<div class="tl-x">' + esc(e.x) + '</div>' : '') + '</div>';
+      }).join('') + '</div>' +
+      '<div class="tl-legend">' + [['filed', U ? 'کیس کا سال' : 'Case year'], ['notice', U ? 'نوٹس' : 'Notice'], ['adj', U ? 'ملتوی / زیرِ التوا' : 'Adjourned / pending'], ['leave', U ? 'اجازت منظور' : 'Leave granted'], ['won', U ? 'منظور' : 'Allowed'], ['lost', U ? 'خارج' : 'Dismissed']].map(function(p){ return '<span style="--c:' + TL_COL[p[0]] + '">' + esc(p[1]) + '</span>'; }).join('') +
+      (ev.length > 6 ? '<span>' + (U ? '← → سکرول کریں' : 'Scroll sideways for all ↔') + '</span>' : '') + '</div></div>';
+    setTimeout(function(){ var tr = document.querySelector('#histBody .tl-track'); if(tr){ tr.scrollLeft = isUrdu ? -tr.scrollWidth : tr.scrollWidth; } }, 30);
+    return html;
+  }
   var HIST_FROM = null;
   function openHistory(id, from){
     var r0 = DATA.cases.filter(function(r){ return String(r.id) === String(id); })[0];
@@ -2142,7 +2211,7 @@ html,body{overflow-x:hidden;}
       '<span>' + (isUrdu ? 'تازہ نتیجہ: ' : 'Latest result: ') + '<b>' + esc(dash(last.result)) + '</b></span>' +
       '<span>' + (isUrdu ? 'زمرہ: ' : 'Category: ') + '<b>' + esc(dash(last.relief)) + '</b></span>';
     var H = isUrdu ? ['#','تاریخ','بینچ','جج','سیریل','آفیسر','نتیجہ','زمرہ','ریمارکس'] : ['#','Date','Bench','Judge','Sr. No','Officer','Result','Category','Remarks'];
-    document.getElementById('histBody').innerHTML = '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + (CAN_EDIT_REC.cases ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr></thead><tbody>' +
+    document.getElementById('histBody').innerHTML = caseTimelineHtml(r0, rows, id) + '<table class="hist-table"><thead><tr>' + H.map(function(h){ return '<th>' + esc(h) + '</th>'; }).join('') + (CAN_EDIT_REC.cases ? '<th>' + (isUrdu ? 'ترمیم' : 'Edit') + '</th>' : '') + '</tr></thead><tbody>' +
       rows.map(function(r, i){
         return '<tr' + (String(r.id) === String(id) ? ' class="cur"' : '') + '><td>' + (i + 1) + '</td><td>' + esc(dash(r.date)) + '</td><td>' + esc(dash(r.bench)) + '</td><td>' + esc(dash(r.judge)) + '</td><td>' + esc(dash(r.serial)) + '</td><td>' + esc(dash(r.officer)) + '</td><td>' + esc(dash(r.result)) + '</td><td>' + esc(dash(r.relief)) + '</td><td>' + esc(r.remarks && r.remarks !== '—' ? r.remarks : '—') + '</td>' +
           (CAN_EDIT_REC.cases ? '<td>' + (canEditRec('cases', r) ? '<a class="lk-btn ghost" style="text-decoration:none; padding:3px 12px;" href="case-entry.html?edit=' + encodeURIComponent(r.id) + '">' + (isUrdu ? 'ترمیم' : 'Edit') + '</a>' : '<span style="color:var(--muted); font-size:11.5px;">' + (isUrdu ? 'صرف دیکھنے کے لیے' : 'View only') + '</span>') + '</td>' : '') + '</tr>';

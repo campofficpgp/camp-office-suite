@@ -48,6 +48,7 @@
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head'; }).join(',') + '{padding:7px 10px!important;font-size:13.5px!important;white-space:nowrap}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +
       '.mi-more .nav-submenu{right:0;left:auto!important;min-width:230px}.mi-more .nav-submenu>.nav-item{display:flex!important;width:100%;white-space:nowrap}.mi-more .nav-submenu>.nav-item>.ico{display:inline-flex!important}' +
+      '.mi-chip-top .topbar .right-controls{display:flex;align-items:center;gap:10px}.mi-chip-top .topbar .user-chip-sm{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.28)!important;color:#fff!important;box-shadow:none!important;padding:3px 4px 3px 12px!important;border-radius:999px!important;font-size:12px!important;display:inline-flex;align-items:center;gap:8px;margin:0!important}.mi-chip-top .topbar .user-chip-sm *{color:inherit!important}.mi-chip-top .topbar .user-chip-sm>*:last-child{background:rgba(255,255,255,.92)!important;color:#0f4f4a!important;border-radius:999px!important;padding:2px 9px!important}.heading-icon{opacity:.35;font-size:.8em;transition:opacity .15s}.brand:hover .heading-icon,.heading-icon:focus{opacity:.9}' +
       '@media screen and (min-width:961px){nav.sidenav{flex-wrap:wrap!important;overflow:visible!important;gap:5px!important;padding:7px 12px!important;position:static!important;border-bottom:1px solid #e3e8ee!important;box-shadow:0 2px 6px rgba(15,23,42,.05)}nav.sidenav>.tab-btn{padding:5px 11px!important;border:1px solid #dfe5ec!important;border-radius:999px!important;font-size:12.5px!important;line-height:1.3!important;background:#f7f9fb!important;color:#334155!important;white-space:nowrap;margin:0!important;transition:background .15s,border-color .15s}nav.sidenav>.tab-btn:hover{background:#eef4f3!important;border-color:#b9d3cf!important}nav.sidenav>.tab-btn.active{background:var(--primary,#0f766e)!important;border-color:var(--primary,#0f766e)!important;color:#fff!important;box-shadow:0 1px 3px rgba(15,118,110,.35)}nav.sidenav>.tab-btn.active *{color:#fff!important}nav.sidenav>.tab-btn .dot{display:none!important}}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-foot'; }).join(',') + '{padding:4px 8px!important;margin-left:auto}' +
     '}' +
@@ -121,6 +122,74 @@
       tn.parentNode.insertBefore(sp, tn);
     });
   }
+  /* ---------- one menu on every page: add the main links a page is missing (never removes or re-orders) ---------- */
+  var SUITE = 'https://cmpofficepgp.org/camp-office-suite/';
+  var CANON = [['index.html','camp-office-suite','Dashboard','ڈیش بورڈ','ic-grid'],['lookup.html','lookup.html','Lookup','تلاش','ic-search'],
+    ['cause-list.html','cause-list.html','Cause List Import','کاز لسٹ امپورٹ','ic-import'],['inspection.html','inspection.html','Inspection Desk','انسپیکشن ڈیسک','ic-clipcheck'],
+    ['scanning.html','scanning.html','Scanning Desk','اسکین ڈیسک','ic-scan'],['#case','#case'],
+    ['https://cmpofficepgp.org/bill-register-system/','bill-register-system','Bill Register','بل رجسٹر','ic-receipt'],
+    ['https://cmpofficepgp.org/weekly-court-roster/','weekly-court-roster','Weekly Court Roster','ویکلی کورٹ روسٹر','ic-calendar'],
+    ['gallery.html','gallery.html','Gallery','گیلری','ic-image'],['https://cmpofficepgp.org/bill-register-system/#reports','#reports','Reports','رپورٹس','ic-chart']];
+  var CASESUB = [['case-entry.html','case-entry.html','Daily Cases','یومیہ کیسز','ic-list'],['case-notice.html','case-notice.html','Case Notices','کیس نوٹسز','ic-mail'],
+    ['register-desk.html','register-desk.html','Register Desk','رجسٹر ڈیسک','ic-book'],['https://cmpofficepgp.org/record-section-system/','record-section-system','Record Section','ریکارڈ سیکشن','ic-archive']];
+  function inSuite(){ return /\/camp-office-suite\//.test(location.pathname); }
+  function linkFor(c){ return /^https?:/.test(c[0]) ? c[0] : (inSuite() ? c[0] : SUITE + c[0]); }
+  function isUrNow(){ return (document.documentElement.getAttribute('lang') || '').indexOf('ur') === 0; }
+  function findIn(box, c){
+    var as = box.querySelectorAll('a[href]');
+    for(var i = 0; i < as.length; i++){
+      var k = hrefKey(as[i]); if(k === c[1]) return as[i];
+      var lb = as[i].querySelector('[data-en]'); lb = lb ? lb.getAttribute('data-en') : (as[i].textContent || '').trim();
+      if(lb && lb.toLowerCase() === c[2].toLowerCase()) return as[i];
+    }
+    return null;
+  }
+  function mk(c, cls){
+    var a = document.createElement('a'); a.className = cls; a.href = linkFor(c); a.setAttribute('data-mi-added', '1');
+    var tx = isUrNow() ? c[3] : c[2];
+    a.innerHTML = '<span class="ico">' + svg(c[4]) + '</span><span ' + (cls === 'nav-item' ? 'class="label" ' : '') + 'data-en="' + c[2] + '" data-ur="' + c[3] + '">' + tx + '</span>';
+    if(cls === 'nav-item'){ a.setAttribute('data-en-l', c[2]); a.setAttribute('data-ur-l', c[3]); }
+    return a;
+  }
+  function topOf(nav, el){ while(el && el.parentNode !== nav) el = el.parentNode; return el; }
+  function unifyNav(){
+    try{
+      var nav = document.querySelector('#sidebar .sidebar-nav, .sidebar .sidebar-nav'); if(!nav || nav.getAttribute('data-mi-unified')) return;
+      nav.setAttribute('data-mi-unified', '1');
+      var caseGrp = null, ce = findIn(nav, CASESUB[0]); if(ce) caseGrp = ce.closest('.nav-group');
+      var prev = null;
+      CANON.forEach(function(c){
+        if(c[0] === '#case'){ if(caseGrp && caseGrp.parentNode === nav) prev = caseGrp; return; }
+        var f = findIn(nav, c);
+        if(f){ var tp = topOf(nav, f); if(tp && !tp.classList.contains('mi-more')) prev = tp; return; }
+        var a = mk(c, 'nav-item');
+        if(prev && prev.parentNode === nav) nav.insertBefore(a, prev.nextSibling); else nav.insertBefore(a, nav.firstChild);
+        prev = a;
+      });
+      if(caseGrp){
+        var sub = caseGrp.querySelector('.nav-submenu'), sp = null;
+        if(sub) CASESUB.forEach(function(c){
+          var f = findIn(sub, c);
+          if(f){ sp = f; return; }
+          var a = mk(c, 'nav-subitem');
+          if(sp && sp.parentNode === sub) sub.insertBefore(a, sp.nextSibling); else sub.insertBefore(a, sub.firstChild);
+          sp = a;
+        });
+      }
+    }catch(e){ if(window.console) console.warn('ui-modern nav', e); }
+  }
+  /* ---------- page header: name/role chip goes into the header bar; an empty page title gets the page name ---------- */
+  function tidyHeader(){
+    try{
+      if(window.innerWidth >= 700){
+        var ub = document.querySelector('.userbar-ce'), ch = ub && ub.querySelector('.user-chip-sm'), rc = document.querySelector('.topbar .right-controls');
+        if(ub && ch && rc && ub.children.length === 1 && !rc.contains(ch)){ rc.insertBefore(ch, rc.firstChild); ub.style.display = 'none'; document.documentElement.classList.add('mi-chip-top'); }
+      }
+      Array.prototype.forEach.call(document.querySelectorAll('.page-heading-text'), function(h){
+        if(!(h.textContent || '').trim()){ var nm = (document.title || '').split(/[|—–-]/)[0].trim(); if(nm) h.textContent = nm; }
+      });
+    }catch(e){}
+  }
   /* ---------- top-menu designs: whatever does not fit on one line goes into a "More" menu ---------- */
   var moreBusy = false;
   function isTopnav(){ var d = document.documentElement.getAttribute('data-design'); return TOPNAV.indexOf(d) >= 0 && window.innerWidth >= 961; }
@@ -161,7 +230,7 @@
     roots.forEach(function(r){ if(r.isConnected) run(r); });
   }
   function start(){
-    run(document.body); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
+    unifyNav(); tidyHeader(); setTimeout(tidyHeader, 2500); run(document.body); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
     new MutationObserver(function(ms){
       if(Date.now() - lastFit > 500 && ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-nav'); })) fitSoon();
       ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType === 1 && n.id !== 'cmp-ui-icons') pending.push(n); else if(n.nodeType === 3 && n.parentNode && n.parentNode.nodeType === 1) pending.push(n.parentNode); }); });

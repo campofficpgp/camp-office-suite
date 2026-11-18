@@ -43,7 +43,7 @@
     both('.main-col h1,.main-col h2') + '{letter-spacing:-.01em}' +
     /* designs that turn the side menu into a top menu (wide screens): the side menu's bottom space (kept clear of the
        floating bars) must not become an empty band, and the menu stays one compact row */
-    '@media (min-width:961px){' + TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar'; }).join(',') + '{padding-bottom:0!important;min-height:0!important}' +
+    '@media (min-width:961px){' + TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar,html[data-design="' + d + '"] #sidebar'; }).join(',') + '{padding-bottom:0!important;min-height:0!important}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav'; }).join(',') + '{gap:0!important;padding:4px 6px!important}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head'; }).join(',') + '{padding:7px 10px!important;font-size:13.5px!important;white-space:nowrap}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +

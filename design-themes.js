@@ -272,3 +272,10 @@
   function ready(){ applyBodyBits(); syncOffice(); }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ready); else ready();
 })();
+
+/* one look for every page: cards, shadows, buttons and the Dashboard's line icons everywhere (see ui-modern.js) */
+(function(){
+  if(window.__cmpUiModernLoader) return; window.__cmpUiModernLoader = true;
+  var s = document.createElement('script'); s.src = '/camp-office-suite/ui-modern.js?v=1'; s.async = true;
+  (document.head || document.documentElement).appendChild(s);
+})();

@@ -71,7 +71,11 @@
   function hrefKey(a){
     var h = (a && a.getAttribute && a.getAttribute('href')) || ''; if(!h || h === '#') return '';
     if(h.indexOf('#reports') >= 0) return '#reports';
-    var m = h.replace(/[?#].*$/, '').replace(/\/+$/, '').split('/'); return m[m.length - 1] || '';
+    /* full address, so "index.html" inside the Bill Register means the Bill Register, not the Dashboard */
+    var u; try{ u = new URL(h, location.href); }catch(e){ return ''; }
+    var seg = u.pathname.split('/').filter(Boolean), last = seg[seg.length - 1] || '';
+    if(!last || last === 'index.html') return seg.length > (last ? 1 : 0) ? seg[seg.length - (last ? 2 : 1)] : '';
+    return last;
   }
   function doMenu(rootEl){
     Array.prototype.forEach.call(rootEl.querySelectorAll('.sidebar .ico'), function(ic){

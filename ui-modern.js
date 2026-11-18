@@ -47,6 +47,7 @@
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav'; }).join(',') + '{gap:0!important;padding:4px 6px!important}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head'; }).join(',') + '{padding:7px 10px!important;font-size:13.5px!important;white-space:nowrap}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +
+      '.mi-more .nav-submenu{right:0;left:auto!important;min-width:230px}.mi-more .nav-submenu>.nav-item{display:flex!important;width:100%;white-space:nowrap}.mi-more .nav-submenu>.nav-item>.ico{display:inline-flex!important}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-foot'; }).join(',') + '{padding:4px 8px!important;margin-left:auto}' +
     '}' +
     /* laptops: the top menu keeps to one line by showing the words without the small icons */
@@ -119,6 +120,39 @@
       tn.parentNode.insertBefore(sp, tn);
     });
   }
+  /* ---------- top-menu designs: whatever does not fit on one line goes into a "More" menu ---------- */
+  var moreBusy = false;
+  function isTopnav(){ var d = document.documentElement.getAttribute('data-design'); return TOPNAV.indexOf(d) >= 0 && window.innerWidth >= 961; }
+  function fitTopNav(){
+    if(moreBusy) return; var nav = document.querySelector('.sidebar-nav'); if(!nav) return;
+    moreBusy = true;
+    try{
+      var more = nav.querySelector('.nav-group.mi-more'), moved;
+      if(more){ moved = Array.prototype.slice.call(more.querySelectorAll('.nav-submenu > [data-mi-idx]')); moved.sort(function(a, b){ return a.getAttribute('data-mi-idx') - b.getAttribute('data-mi-idx'); }); moved.forEach(function(n){ nav.insertBefore(n, more); }); }
+      if(!isTopnav()){ if(more) more.style.display = 'none'; return; }
+      Array.prototype.forEach.call(nav.children, function(c, i){ if(!c.classList.contains('mi-more') && !c.hasAttribute('data-mi-idx')) c.setAttribute('data-mi-idx', i); });
+      if(!more){
+        more = document.createElement('div'); more.className = 'nav-group mi-more';
+        more.innerHTML = '<button type="button" class="nav-group-head"><span class="ico">' + svg('ic-menu') + '</span><span class="label">More · مزید</span><span class="chev">›</span></button><div class="nav-submenu"></div>';
+      }
+      nav.appendChild(more); more.style.display = '';
+      var sub = more.querySelector('.nav-submenu');
+      function wraps(){ var kids = Array.prototype.filter.call(nav.children, function(c){ return c.offsetParent !== null; }); if(kids.length < 2) return false; var t = kids[0].offsetTop; return kids.some(function(c){ return c.offsetTop > t + 6; }); }
+      var guard = 0;
+      while(wraps() && guard++ < 40){
+        var cands = Array.prototype.filter.call(nav.children, function(c){ return c !== more && c.classList.contains('nav-item') && !c.classList.contains('active'); });
+        if(!cands.length) break;
+        var last = cands[cands.length - 1]; sub.insertBefore(last, sub.firstChild);
+      }
+      if(!sub.children.length) more.style.display = 'none';
+    } finally { moreBusy = false; lastFit = Date.now(); }
+  }
+  var lastFit = 0;
+  var fitT = null, navRO = null; function fitSoon(){ clearTimeout(fitT); fitT = setTimeout(fitTopNav, 150); }
+  /* the menu is measured again when it first appears (after sign-in) or changes size for any other reason */
+  function watchNav(){ var nav = document.querySelector('.sidebar-nav'); if(!nav || navRO || !window.ResizeObserver) return; navRO = new ResizeObserver(function(){ if(Date.now() - lastFit > 500) fitSoon(); }); navRO.observe(nav); }
+  window.addEventListener('resize', fitSoon);
+  new MutationObserver(fitSoon).observe(document.documentElement, {attributes: true, attributeFilter: ['data-design']});
   function run(rootEl){ try{ addSprite(); doMenu(rootEl); doEmoji(rootEl); }catch(e){ if(window.console) console.warn('ui-modern', e); } }
   var pending = [], timer = null;
   function flush(){
@@ -126,8 +160,9 @@
     roots.forEach(function(r){ if(r.isConnected) run(r); });
   }
   function start(){
-    run(document.body);
+    run(document.body); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
     new MutationObserver(function(ms){
+      if(Date.now() - lastFit > 500 && ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-nav'); })) fitSoon();
       ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType === 1 && n.id !== 'cmp-ui-icons') pending.push(n); else if(n.nodeType === 3 && n.parentNode && n.parentNode.nodeType === 1) pending.push(n.parentNode); }); });
       if(pending.length && !timer) timer = setTimeout(flush, 120);
     }).observe(document.body, {childList: true, subtree: true});

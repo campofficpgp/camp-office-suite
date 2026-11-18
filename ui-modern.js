@@ -49,6 +49,8 @@
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-foot'; }).join(',') + '{padding:4px 8px!important;margin-left:auto}' +
     '}' +
+    /* laptops: the top menu keeps to one line by showing the words without the small icons */
+    '@media (min-width:961px) and (max-width:1365px){' + TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item>.ico,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head>.ico'; }).join(',') + '{display:none!important}}' +
   '}';
   function addCss(){ if(document.getElementById('cmp-ui-modern-css')) return; var s = document.createElement('style'); s.id = 'cmp-ui-modern-css'; s.textContent = css; (document.head || document.documentElement).appendChild(s); }
   addCss();

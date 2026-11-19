@@ -326,5 +326,7 @@
       if(ms.some(function(m){ return m.addedNodes && m.addedNodes.length; })) tidySoon();
     }).observe(document.body, {childList: true, subtree: true});
   }
+  /* one employee record: Employee Directory and Bill Register keep each other up to date (Super Admin only) */
+  if(/employee-directory\.html|\/bill-register-system\//.test(location.pathname)){ var es = document.createElement('script'); es.src = '/camp-office-suite/emp-sync.js?v=1'; es.defer = true; (document.head || document.documentElement).appendChild(es); }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

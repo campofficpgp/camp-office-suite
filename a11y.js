@@ -81,12 +81,12 @@
     // motion
     s += 'html.a11y-motion *,html.a11y-motion *::before,html.a11y-motion *::after{animation:none !important;transition:none !important;scroll-behavior:auto !important;}';
     // toolbar
-    s += '#a11y-root{position:fixed;inset-inline-end:14px;bottom:14px;z-index:99990;font:14px/1.5 "Segoe UI",Tahoma,Arial,sans-serif;color:#10263D;}';
+    s += '#a11y-root{position:fixed;inset-inline-end:14px;bottom:14px;z-index:99990;display:flex;flex-direction:column;align-items:flex-end;gap:8px;font:14px/1.5 "Segoe UI",Tahoma,Arial,sans-serif;color:#10263D;}';
     s += '#a11y-fab{display:flex;align-items:center;gap:8px;background:#10263D;color:#fff;border:2px solid #fff;border-radius:999px;padding:9px 15px;cursor:pointer;font:700 13px/1.2 "Segoe UI",Tahoma,Arial,sans-serif;box-shadow:0 3px 14px rgba(0,0,0,.35);min-height:44px;}';
     s += '#a11y-fab:hover{background:#1a3a5e;}';
-    s += '#a11y-panel{position:absolute;bottom:56px;inset-inline-end:0;width:min(320px,calc(100vw - 28px));max-height:calc(100vh - 90px);overflow:auto;background:#fff;color:#10263D;border:2px solid #10263D;border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);}';
+    s += '#a11y-panel{position:absolute;bottom:calc(100% + 8px);inset-inline-end:0;width:min(320px,calc(100vw - 28px));max-height:calc(100vh - 90px);overflow:auto;background:#fff;color:#10263D;border:2px solid #10263D;border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,.35);}';
     s += '#a11y-panel[hidden]{display:none;}';
-    s += '#a11y-min{position:absolute;top:-11px;inset-inline-start:-9px;width:26px;height:26px;min-height:0;border-radius:50%;background:#fff;color:#10263D;border:2px solid #10263D;cursor:pointer;padding:0;font:700 16px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1;}';
+    s += '#a11y-min{position:static;order:-1;margin-inline-end:9px;width:26px;height:26px;min-height:0;border-radius:50%;background:#fff;color:#10263D;border:2px solid #10263D;cursor:pointer;padding:0;font:700 16px/1 Arial,sans-serif;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1;}';
     s += '#a11y-min:hover{background:#eef3f8;}';
     s += '#a11y-root.mini #a11y-fab{padding:0;width:44px;justify-content:center;opacity:.9;}';
     s += '#a11y-root.mini #a11y-fab .t{display:none;}';

@@ -274,6 +274,7 @@
     unifyNav(); tidyHeader(); setTimeout(tidyHeader, 2500); run(document.body); footFix(); setTimeout(footFix, 1500); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
     new MutationObserver(function(ms){
       if(Date.now() - lastFit > 500 && ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-nav'); })) fitSoon();
+      if(ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-foot'); })) setTimeout(footFix, 60);
       ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType === 1 && n.id !== 'cmp-ui-icons') pending.push(n); else if(n.nodeType === 3 && n.parentNode && n.parentNode.nodeType === 1) pending.push(n.parentNode); }); });
       if(pending.length && !timer) timer = setTimeout(flush, 120);
     }).observe(document.body, {childList: true, subtree: true});

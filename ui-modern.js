@@ -48,6 +48,7 @@
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head'; }).join(',') + '{padding:7px 10px!important;font-size:13.5px!important;white-space:nowrap}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +
       '.mi-more .nav-submenu{right:0;left:auto!important;min-width:230px}.mi-more .nav-submenu>.nav-item{display:flex!important;width:100%;white-space:nowrap}.mi-more .nav-submenu>.nav-item>.ico{display:inline-flex!important}' +
+      '.mi-dup{display:none!important}#miFiltersBtn{display:inline-flex;align-items:center;gap:6px}#miFiltersBtn svg{width:16px;height:16px}' +
       '.mi-topnav .sidebar-foot{display:flex!important;align-items:center!important;gap:4px!important;padding:0 0 0 10px!important;margin-left:6px!important;border-left:1px solid rgba(255,255,255,.18)!important;border-top:0!important}.mi-topnav .sidebar-foot>a,.mi-topnav .sidebar-foot>button{width:34px!important;height:34px!important;min-width:34px;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:10px!important;background:transparent!important;border:1px solid transparent!important;transition:background .15s,border-color .15s,transform .15s}.mi-topnav .sidebar-foot>a:hover,.mi-topnav .sidebar-foot>button:hover,.mi-topnav .sidebar-foot>a:focus-visible{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.28)!important;transform:translateY(-1px)}.mi-topnav .sidebar-foot>.mi-out:hover{background:rgba(239,68,68,.28)!important;border-color:rgba(254,202,202,.5)!important}.mi-topnav .sidebar-foot .ico{margin:0!important;display:inline-flex!important}.mi-topnav .sidebar-foot .ico svg{width:18px;height:18px}#mi-tip{position:fixed;z-index:2147483000;left:0;top:0;max-width:260px;background:#0f172a;color:#fff;padding:7px 11px;border-radius:9px;font:600 12.5px/1.35 system-ui,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(15,23,42,.28);pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .12s,transform .12s}#mi-tip.on{opacity:1;transform:none}#mi-tip::before{content:"";position:absolute;top:-5px;left:calc(var(--ax,50%) - 5px);width:10px;height:10px;background:#0f172a;transform:rotate(45deg)}#mi-tip b{display:block;font-weight:700;white-space:nowrap}#mi-tip small{display:block;margin-top:2px;font-weight:500;opacity:.8;direction:rtl;text-align:right;font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",Tahoma,serif;font-size:12px;line-height:1.9}#mi-tip .u{font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",Tahoma,serif;font-weight:600}@media print{#mi-tip{display:none!important}}' +
       '.mi-chip-top .topbar .right-controls{display:flex;align-items:center;gap:10px}.mi-chip-top .topbar .user-chip-sm{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.28)!important;color:#fff!important;box-shadow:none!important;padding:3px 4px 3px 12px!important;border-radius:999px!important;font-size:12px!important;display:inline-flex;align-items:center;gap:8px;margin:0!important}.mi-chip-top .topbar .user-chip-sm *{color:inherit!important}.mi-chip-top .topbar .user-chip-sm>*:last-child{background:rgba(255,255,255,.92)!important;color:#0f4f4a!important;border-radius:999px!important;padding:2px 9px!important}.heading-icon{opacity:.35;font-size:.8em;transition:opacity .15s}.brand:hover .heading-icon,.heading-icon:focus{opacity:.9}' +
       '@media screen and (min-width:961px){nav.sidenav{flex-wrap:wrap!important;overflow:visible!important;gap:5px!important;padding:7px 12px!important;position:static!important;border-bottom:1px solid #e3e8ee!important;box-shadow:0 2px 6px rgba(15,23,42,.05)}nav.sidenav>.tab-btn{padding:5px 11px!important;border:1px solid #dfe5ec!important;border-radius:999px!important;font-size:12.5px!important;line-height:1.3!important;background:#f7f9fb!important;color:#334155!important;white-space:nowrap;margin:0!important;transition:background .15s,border-color .15s}nav.sidenav>.tab-btn:hover{background:#eef4f3!important;border-color:#b9d3cf!important}nav.sidenav>.tab-btn.active{background:var(--primary,#0f766e)!important;border-color:var(--primary,#0f766e)!important;color:#fff!important;box-shadow:0 1px 3px rgba(15,118,110,.35)}nav.sidenav>.tab-btn.active *{color:#fff!important}nav.sidenav>.tab-btn .dot{display:none!important}}' +
@@ -130,7 +131,7 @@
     ['scanning.html','scanning.html','Scanning Desk','اسکین ڈیسک','ic-scan'],['#case','#case'],
     ['https://cmpofficepgp.org/bill-register-system/','bill-register-system','Bill Register','بل رجسٹر','ic-receipt'],
     ['https://cmpofficepgp.org/weekly-court-roster/','weekly-court-roster','Weekly Court Roster','ویکلی کورٹ روسٹر','ic-calendar'],
-    ['gallery.html','gallery.html','Gallery','گیلری','ic-image'],['https://cmpofficepgp.org/bill-register-system/#reports','#reports','Reports','رپورٹس','ic-chart']];
+    ['gallery.html','gallery.html','Gallery','گیلری','ic-image']];
   var CASESUB = [['case-entry.html','case-entry.html','Daily Cases','یومیہ کیسز','ic-list'],['case-notice.html','case-notice.html','Case Notices','کیس نوٹسز','ic-mail'],
     ['register-desk.html','register-desk.html','Register Desk','رجسٹر ڈیسک','ic-book'],['https://cmpofficepgp.org/record-section-system/','record-section-system','Record Section','ریکارڈ سیکشن','ic-archive']];
   function inSuite(){ return /\/camp-office-suite\//.test(location.pathname); }
@@ -231,6 +232,50 @@
     }catch(e){}
   }
   window.addEventListener('scroll', tipHide, true);
+  /* ---------- one clean set of controls: doubled / unneeded buttons are hidden on screen (nothing is deleted) ---------- */
+  function visEl(el){ return !!(el && el.offsetParent !== null); }
+  function footHas(re){ return Array.prototype.some.call(document.querySelectorAll('.sidebar-foot > a, .sidebar-foot > button'), function(a){ return visEl(a) && re.test((a.textContent || '') + ' ' + (a.getAttribute('href') || '')); }); }
+  function isSuper(){ var t = ''; Array.prototype.forEach.call(document.querySelectorAll('#currentUserRole,.role-badge,.role-chip,[id$="UserRole"],.user-chip,.user-chip-sm'), function(e){ t += ' ' + e.textContent; }); return /super\s*admin|سپر ایڈمن/i.test(t); }
+  function dup(el){ if(el) el.classList.add('mi-dup'); }
+  function pageHelpBtn(){ return document.querySelector('#btnHelp, #helpBtn, nav.sidenav .tab-btn[data-tab="help"]'); }
+  function addHelpIcon(){
+    var f = document.querySelector('.sidebar-foot'); if(!f || f.querySelector('[data-mi-help]')) return;
+    var a = document.createElement('a'); a.href = SUITE + 'help.html'; a.setAttribute('data-mi-help', '1');
+    a.innerHTML = '<span class="ico">' + svg('ic-help') + '</span><span class="label" data-en="Help" data-ur="مدد">Help / مدد</span>';
+    a.addEventListener('click', function(e){ var b = pageHelpBtn(); if(b){ e.preventDefault(); b.click(); } });
+    var out = f.querySelector('[data-cg-logout]'); f.insertBefore(a, out || null);
+  }
+  function filtersToggle(){
+    var box = document.getElementById('ceFilters'), act = document.querySelector('#caseListSection .ce-actions'); if(!box || !act || document.getElementById('miFiltersBtn')) return;
+    var chips = document.getElementById('ceChips'), open = false;
+    try{ open = localStorage.getItem('miCeFilters') === '1'; }catch(e){}
+    var b = document.createElement('button'); b.type = 'button'; b.id = 'miFiltersBtn'; b.className = 'btn ghost';
+    function sync(){ box.classList.toggle('mi-dup', !open); if(chips) chips.classList.toggle('mi-dup', !open); b.innerHTML = svg('ic-sliders') + ' <span>' + (open ? 'Hide filters · فلٹر بند' : 'Filters · فلٹر') + '</span>'; b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    b.addEventListener('click', function(){ open = !open; try{ localStorage.setItem('miCeFilters', open ? '1' : '0'); }catch(e){} sync(); });
+    act.insertBefore(b, act.children[1] || null); sync();
+  }
+  function tidyButtons(){
+    try{
+      addHelpIcon(); filtersToggle();
+      var outOk = footHas(/logout|log out|لاگ آؤٹ/i), homeOk = footHas(/portal|home|camp-office-suite\/?$/i), sup = isSuper();
+      var onDash = /\/camp-office-suite\/?(index\.html)?$/.test(location.pathname);
+      Array.prototype.forEach.call(document.querySelectorAll('button, a, select'), function(el){
+        if(el.closest('.sidebar-foot, .sidebar-nav, .modal, .modal-overlay, [role=dialog]') || el.classList.contains('mi-dup')) return;
+        var t = (el.textContent || '').replace(/\s+/g, ' ').trim(), id = el.id || '';
+        if(outOk && (/^(mainSignOut|logoutBtn|signOutBtn)$/.test(id) || (/^(log ?out|sign ?out)$/i.test(t) && el.closest('.userbar,.userbar-ce,.topbar,header,.tool-strip,.right-controls')))) return dup(el);
+        if(homeOk && el.tagName === 'A' && /^home$/i.test(t)) return dup(el);
+        if(!onDash && /اشتہارات\s*\/\s*Ads/.test(t)) return dup(el);
+        if(/^(btnHelp|helpBtn)$/.test(id)) return dup(el);
+        if(id === 'themeSwitcher' && el.tagName === 'SELECT') return dup(el);
+        if(t === '☰' && el.tagName === 'BUTTON' && isTopnav() && el.closest('.topbar,header')) return dup(el);
+        if(!sup && (id === 'btnBackup' || id === 'btnRestore' || /^(backup \(save file\)|restore from file)$/i.test(t))) return dup(el);
+      });
+      if(!sup){ var dm = document.getElementById('brDataMenu'); if(dm) dup(dm); Array.prototype.forEach.call(document.querySelectorAll('#pageHeadingBox .heading-icon'), dup); }
+      Array.prototype.forEach.call(document.querySelectorAll('#chatMinBtn, #a11y-min'), dup);
+      Array.prototype.forEach.call(document.querySelectorAll('.sidebar-nav a'), function(a){ if(hrefKey(a) === '#reports') dup(a); });
+    }catch(e){}
+  }
+  var tidyT = null; function tidySoon(){ clearTimeout(tidyT); tidyT = setTimeout(tidyButtons, 250); }
   /* ---------- top-menu designs: whatever does not fit on one line goes into a "More" menu ---------- */
   var moreBusy = false;
   function isTopnav(){ var d = document.documentElement.getAttribute('data-design'); return TOPNAV.indexOf(d) >= 0 && window.innerWidth >= 961; }
@@ -271,12 +316,13 @@
     roots.forEach(function(r){ if(r.isConnected) run(r); });
   }
   function start(){
-    unifyNav(); tidyHeader(); setTimeout(tidyHeader, 2500); run(document.body); footFix(); setTimeout(footFix, 1500); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
+    unifyNav(); tidyHeader(); setTimeout(tidyHeader, 2500); run(document.body); footFix(); setTimeout(footFix, 1500); tidyButtons(); setTimeout(tidyButtons, 1500); setTimeout(tidyButtons, 4000); watchNav(); fitSoon(); setTimeout(fitTopNav, 1200);
     new MutationObserver(function(ms){
       if(Date.now() - lastFit > 500 && ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-nav'); })) fitSoon();
       if(ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-foot'); })) setTimeout(footFix, 60);
       ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType === 1 && n.id !== 'cmp-ui-icons') pending.push(n); else if(n.nodeType === 3 && n.parentNode && n.parentNode.nodeType === 1) pending.push(n.parentNode); }); });
       if(pending.length && !timer) timer = setTimeout(flush, 120);
+      if(ms.some(function(m){ return m.addedNodes && m.addedNodes.length; })) tidySoon();
     }).observe(document.body, {childList: true, subtree: true});
   }
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

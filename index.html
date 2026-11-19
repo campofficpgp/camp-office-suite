@@ -193,6 +193,10 @@ html,body{overflow-x:hidden;}
   [data-theme="night"] .panel-head h2{ color:#fff; }
   .panel-head a{ font-size:12px; color:var(--navy); font-weight:700; text-decoration:none; }
   #recentCasesTable td, #recentCasesTable th{ font-size:12px; }
+  .rc-vs{ color:var(--muted, #64748b); font-size:11px; font-weight:600; margin:0 2px; }
+  .rc-role{ display:block; margin-top:2px; font-size:10.5px; font-weight:600; color:var(--muted, #64748b); letter-spacing:.02em; line-height:1.3; }
+  .rc-party .rc-role::before{ content:"— "; opacity:.7; }
+  #recentCasesTable td:first-child, #recentCasesTable td:nth-child(4), #recentCasesTable .badge{ white-space:nowrap; }
   #upcomingHearingsList{ list-style:none; margin:0; padding:0; }
   #upcomingHearingsList li{ padding:9px 0; border-bottom:1px solid var(--border); font-size:12.5px; }
   #upcomingHearingsList li:last-child{ border-bottom:none; }
@@ -648,7 +652,7 @@ html,body{overflow-x:hidden;}
 
       <div class="content-area">
         <div class="welcome-banner">
-          <h1><span data-i18n="welcomeTitle2">Welcome back</span>, <span id="welcomeName"></span> 👋</h1>
+          <h1><span data-i18n="welcomeTitle2">Welcome back,</span> <span id="welcomeName"></span> 👋</h1>
           <p id="welcomeDateLine"></p>
           <div id="backupReminder" class="backup-reminder hidden" role="status"></div>
         </div>
@@ -852,7 +856,7 @@ var I18N = {
     rejectedTitle:"Access Not Approved",
     rejectedBody:"An Administrator has not approved this account for access. Please contact your office Administrator.",
     btnSignOut:"Sign Out", signedInAs:"Signed in as",
-    welcomeTitle2:"Welcome back",
+    welcomeTitle2:"Welcome back,",
     adminControls:"Admin Controls",
     adminHint:"Approve new accounts and set their role here. Only Admin and Super Admin can see this panel; only Super Admin can grant the Super Admin role.",
     thEmail:"Email", thStatus:"Status", thRole:"Role", thActions:"Actions", thOfficer:"Officer", officerHint:"A Data Entry user is tied to one officer: they can add, edit and delete only that officer's data and can only view everyone else's. Choose the officer in the Officer column. A Data Entry user with no officer can only view. Admin / Super Admin are not restricted.", officerNone:"— not assigned (view only) —", officerAll:"All officers",
@@ -883,7 +887,7 @@ var I18N = {
     rejectedTitle:"رسائی منظور نہیں",
     rejectedBody:"اس اکاؤنٹ کو ابھی رسائی کی اجازت نہیں دی گئی۔ براہ کرم اپنے دفتر کے Administrator سے رابطہ کریں۔",
     btnSignOut:"لاگ آؤٹ", signedInAs:"لاگ اِن ہیں بطور",
-    welcomeTitle2:"خوش آمدید",
+    welcomeTitle2:"خوش آمدید،",
     adminControls:"انتظامی کنٹرولز",
     adminHint:"یہاں نئے اکاؤنٹس منظور کریں اور ان کا کردار مقرر کریں۔ صرف Admin اور Super Admin یہ پینل دیکھ سکتے ہیں؛ صرف Super Admin کسی کو Super Admin بنا سکتا ہے۔",
     thEmail:"ای میل", thStatus:"حیثیت", thRole:"کردار", thActions:"اعمال", thOfficer:"آفیسر", officerHint:"ڈیٹا انٹری یوزر ایک آفیسر سے منسلک ہوتا ہے: وہ صرف اسی آفیسر کا ڈیٹا شامل، ایڈٹ اور ڈیلیٹ کر سکتا ہے اور باقی سب کا ڈیٹا صرف دیکھ سکتا ہے۔ آفیسر کے خانے میں آفیسر منتخب کریں۔ جس ڈیٹا انٹری یوزر کا آفیسر مقرر نہ ہو وہ صرف دیکھ سکتا ہے۔ Admin / Super Admin پر کوئی پابندی نہیں۔", officerNone:"— مقرر نہیں (صرف دیکھ سکتا ہے) —", officerAll:"تمام آفیسرز",
@@ -969,6 +973,13 @@ function applyI18n(){
     el.textContent = currentLang === "ur" ? el.getAttribute("data-ur") : el.getAttribute("data-en");
   });
   renderThemeMenu();
+  /* text that was built by code (role, date, card notes, table) is built again in the chosen language */
+  try{
+    var rb = document.getElementById("curRoleBadge2");
+    if(rb && window.__CUR_ROLE) rb.textContent = ROLE_LABELS[currentLang][window.__CUR_ROLE] || window.__CUR_ROLE;
+    if(window.__clockTick) window.__clockTick();
+    if(ALL_CASES.length || ALL_NOTICES.length){ renderSummaryCards(); renderRecentCases(); renderUpcomingHearings(); }
+  }catch(e){}
 }
 function comingSoon(e, nameEn, nameUr){
   e.preventDefault();
@@ -1193,6 +1204,12 @@ function showAuthLoadError(err){
   detailEl.textContent = "(" + code + ")";
 }
 
+/* the name shown in the welcome line: the saved display name, else built from the email ("ahmed.khan12" -> "Ahmed Khan") */
+function niceName(user, data){
+  var n = (data && (data.displayName || data.fullName || data.name)) || (user && user.displayName) || "";
+  if(!n) n = String((user && user.email) || "").split("@")[0].replace(/[._\-+]+/g, " ").replace(/\d+/g, " ");
+  return n.replace(/\s+/g, " ").trim().split(" ").map(function(w){ return w ? w.charAt(0).toUpperCase() + w.slice(1) : w; }).join(" ");
+}
 function enterApp(user, data){
   var jumpBack = false;
   /* came here from a system's page because nobody was signed in: go back to that page now that the sign-in is done */
@@ -1206,10 +1223,11 @@ function enterApp(user, data){
   }catch(e){}
   if(!jumpBack) showOnly("mainApp");
   document.getElementById("curEmail2").textContent = user.email;
-  document.getElementById("welcomeName").textContent = user.email.split("@")[0];
+  document.getElementById("welcomeName").textContent = niceName(user, data);
   document.getElementById("userAvatar").textContent = user.email.charAt(0).toUpperCase();
   var roleBadge = document.getElementById("curRoleBadge2");
   var role = data.roleV2 || "viewer";
+  window.__CUR_ROLE = role;
   roleBadge.textContent = (ROLE_LABELS[currentLang][role] || role);
   roleBadge.className = "badge " + role;
   var isAdminUp = (role === "admin" || role === "super_admin");
@@ -2380,7 +2398,7 @@ function startClock(){
     if(tbDate) tbDate.textContent = str;
     if(wLine) wLine.textContent = str;
   }
-  tick();
+  tick(); window.__clockTick = tick;
   setInterval(tick, 30000);
 }
 
@@ -2436,6 +2454,24 @@ function renderSummaryCards(){
   set("scNotices", ALL_NOTICES.length.toLocaleString("en-US"));
   set("scNoticesSub", U ? (upcoming + " آج یا آگے کی تاریخ") : (upcoming + " dated today or later"));
 }
+/* "Asad Nawaz Khan and another ADDITIONAL REGISTRAR (J)": a designation typed in capitals after the party
+   names is shown on its own line in small grey text ("Additional Registrar (J)") */
+function splitRole(s){
+  s = String(s || "").replace(/\s+/g, " ").trim();
+  var m = s.match(/^(.*[a-z][^A-Z]*?)\s+((?:[A-Z][A-Z.&\/'-]*|\([A-Z.\/ ]+\))(?:\s+(?:[A-Z][A-Z.&\/'-]*|\([A-Z.\/ ]+\)))*)$/);
+  if(!m || m[2].replace(/[^A-Z]/g, "").length < 4 || !/[A-Z]{2}/.test(m[2])) return [s, ""];
+  var role = m[2].split(" ").map(function(w){ return (/^[A-Z]{4,}$/.test(w)) ? w.charAt(0) + w.slice(1).toLowerCase() : w; }).join(" ");
+  return [m[1].replace(/[,\s]+$/, ""), role];
+}
+function partyHtml(title, versus){
+  var a = splitRole(title), b = splitRole(versus);
+  function one(p){ return esc(p[0] || "—") + (p[1] ? "<span class='rc-role'>" + esc(p[1]) + "</span>" : ""); }
+  return "<span class='rc-party'>" + one(a) + "</span> <span class='rc-vs'>" + (currentLang === "ur" ? "بنام" : "vs") + "</span> <span class='rc-party'>" + one(b) + "</span>";
+}
+function resultLabel(r){
+  if(!r || r === "Pending" || r === "—") return currentLang === "ur" ? "زیرِ التوا" : "Pending";
+  return r;
+}
 function resultBadgeClass(result){
   if(!result || result==="Pending" || result==="—") return "pending";
   if(String(result).indexOf("Dismissed")===0) return "rejected";
@@ -2449,10 +2485,10 @@ function renderRecentCases(){
     return;
   }
   body.innerHTML = recent.map(function(c){
-    var party = esc(c.title||"—") + " vs " + esc(c.versus||"—");
+    var party = partyHtml(c.title, c.versus);
     var cno = esc((c.caseNo||"") + "/" + (c.year||""));
     return "<tr><td>"+cno+"</td><td>"+party+"</td><td>"+esc(c.bench||"—")+"</td><td>"+esc(c.date||"—")+"</td>"+
-      "<td><span class='badge "+resultBadgeClass(c.result)+"'>"+esc(c.result||"Pending")+"</span></td></tr>";
+      "<td><span class='badge "+resultBadgeClass(c.result)+"'>"+esc(resultLabel(c.result))+"</span></td></tr>";
   }).join("");
 }
 function renderUpcomingHearings(){
@@ -2466,7 +2502,7 @@ function renderUpcomingHearings(){
     return;
   }
   list.innerHTML = upcoming.map(function(n){
-    var party = esc(n.title||"—") + " vs " + esc(n.versus||"—");
+    var party = partyHtml(n.title, n.versus);
     return "<li><span class='uh-date'>"+esc(n.hearing)+"</span>"+party+" <span class='field-hint'>("+esc(n.bench||"—")+")</span></li>";
   }).join("");
 }

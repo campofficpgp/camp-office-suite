@@ -229,6 +229,8 @@ html,body{overflow-x:hidden;}
     .content-area{ padding:12px; }
     .tb-date{ display:none; }
   }
+  /* the date and time are in the top bar; under the welcome line they show only on phones, where the top bar hides them */
+  @media (min-width: 621px){ #welcomeDateLine{ display:none; } }
   /* ---- unified header: same look as every other page ---- */
   .topbar2{ background:linear-gradient(135deg,color-mix(in srgb,var(--navy) 88%,#fff),var(--navy)); color:#fff; padding:14px 22px; border-bottom:0; box-shadow:none; }
   .topbar2 .brand{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; flex:none; }
@@ -2436,12 +2438,17 @@ function renderSummaryCards(){
     if(!latest[k] || String(c.date || "") > String(latest[k].date || "")) latest[k] = c;
   });
   var keys = Object.keys(latest), totalCases = keys.length, hearings = ALL_CASES.length;
-  var todayCases = ALL_CASES.filter(function(c){ return c.date === today; }).length;
+  /* today's hearings = cases entered for today (Daily Cases) + case notices whose hearing is today, each case counted once */
+  var todayKeys = {};
+  function ck(x){ return String(x.type || "").toLowerCase() + "|" + String(x.caseNo || "").replace(/\s+/g, "").toUpperCase() + "|" + String(x.year || ""); }
+  ALL_CASES.forEach(function(c){ if(c.date === today) todayKeys[ck(c)] = 1; });
+  ALL_NOTICES.forEach(function(n){ if(n.hearing === today) todayKeys[ck(n)] = 1; });
+  var todayCases = Object.keys(todayKeys).length;
   var d30 = new Date(); d30.setDate(d30.getDate() - 30);
   var lim = d30.getFullYear() + "-" + String(d30.getMonth() + 1).padStart(2, "0") + "-" + String(d30.getDate()).padStart(2, "0");
   var pending = 0, decidedAll = 0, recent = 0;
   keys.forEach(function(k){ var c = latest[k]; if(FINAL.test(String(c.result || ""))){ decidedAll++; if(String(c.date || "") >= lim) recent++; } else pending++; });
-  var upcoming = ALL_NOTICES.filter(function(n){ return String(n.date || "") >= today; }).length;
+  var upcoming = ALL_NOTICES.filter(function(n){ return String(n.hearing || "") >= today; }).length;   /* hearing date, same as the Upcoming Hearings list */
   function set(id, v){ var el = document.getElementById(id); if(el) el.textContent = v; }
   set("scTotal", totalCases.toLocaleString("en-US"));
   set("scTotalSub", U ? (hearings + " پیشیاں درج") : (hearings.toLocaleString("en-US") + " hearings recorded"));
@@ -2452,7 +2459,7 @@ function renderSummaryCards(){
   set("scDecided", recent);
   set("scDecidedSub", U ? ("پچھلے 30 دن · کل فیصلے " + decidedAll) : ("last 30 days · " + decidedAll.toLocaleString("en-US") + " decided in all"));
   set("scNotices", ALL_NOTICES.length.toLocaleString("en-US"));
-  set("scNoticesSub", U ? (upcoming + " آج یا آگے کی تاریخ") : (upcoming + " dated today or later"));
+  set("scNoticesSub", U ? (upcoming + " کی پیشی آج یا آگے") : (upcoming + " with a hearing today or later"));
 }
 /* "Asad Nawaz Khan and another ADDITIONAL REGISTRAR (J)": a designation typed in capitals after the party
    names is shown on its own line in small grey text ("Additional Registrar (J)") */

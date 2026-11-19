@@ -240,6 +240,7 @@
   function pageHelpBtn(){ return document.querySelector('#btnHelp, #helpBtn, nav.sidenav .tab-btn[data-tab="help"]'); }
   function addHelpIcon(){
     var f = document.querySelector('.sidebar-foot'); if(!f || f.querySelector('[data-mi-help]')) return;
+    if(Array.prototype.some.call(f.querySelectorAll('a[href]'), function(x){ return /help\.html/.test(x.getAttribute('href')); })) return;
     var a = document.createElement('a'); a.href = SUITE + 'help.html'; a.setAttribute('data-mi-help', '1');
     a.innerHTML = '<span class="ico">' + svg('ic-help') + '</span><span class="label" data-en="Help" data-ur="مدد">Help / مدد</span>';
     a.addEventListener('click', function(e){ var b = pageHelpBtn(); if(b){ e.preventDefault(); b.click(); } });

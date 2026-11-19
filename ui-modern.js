@@ -224,6 +224,12 @@
   /* who sees the Admin group / admin items that this page did not have before */
   function navRoles(){
     var adm = isAdminNow(), sup = isSuper();
+    /* pages without a role chip (e.g. Weekly Court Roster) use the role last seen for the same signed-in email (menu only; each page still checks access) */
+    try{ var em = ''; Array.prototype.some.call(document.querySelectorAll('.user-chip,.user-chip-sm,#currentUserEmail,[id$="UserEmail"]'), function(e){ var m = (e.textContent || '').match(/[\w.+-]+@[\w.-]+/); if(m){ em = m[0].toLowerCase(); return true; } });
+      var t = ''; Array.prototype.forEach.call(document.querySelectorAll('#currentUserRole,.role-badge,.role-chip,[id$="UserRole"],.user-chip,.user-chip-sm'), function(e){ t += ' ' + e.textContent; });
+      var known = /admin|ایڈمن|data entry|viewer|user|صارف/i.test(t.replace(/[\w.+-]+@[\w.-]+/g, ''));
+      if(em && known) localStorage.setItem('miNavRole', JSON.stringify({e: em, a: adm, s: sup}));
+      else if(em){ var sv = JSON.parse(localStorage.getItem('miNavRole') || 'null'); if(sv && sv.e === em){ adm = !!sv.a; sup = !!sv.s; } } }catch(e){}
     Array.prototype.forEach.call(document.querySelectorAll('.mi-grp [data-mi-added][data-mi-role]'), function(a){ var r = a.getAttribute('data-mi-role'); a.classList.toggle('mi-dup', r === 'super' ? !sup : !adm); });
     Array.prototype.forEach.call(document.querySelectorAll('.mi-grp'), function(g){
       var any = Array.prototype.some.call(g.querySelectorAll('.nav-submenu > *'), function(a){ return !a.classList.contains('mi-dup') && !a.classList.contains('hidden') && a.style.display !== 'none'; });

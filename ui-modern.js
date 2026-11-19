@@ -48,6 +48,7 @@
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-nav>.nav-item,html[data-design="' + d + '"] .sidebar-nav>.nav-group>.nav-group-head'; }).join(',') + '{padding:7px 10px!important;font-size:13.5px!important;white-space:nowrap}' +
       TOPNAV.map(function(d){ return 'html[data-design="' + d + '"] .sidebar-head'; }).join(',') + '{padding:6px 10px!important}' +
       '.mi-more .nav-submenu{right:0;left:auto!important;min-width:230px}.mi-more .nav-submenu>.nav-item{display:flex!important;width:100%;white-space:nowrap}.mi-more .nav-submenu>.nav-item>.ico{display:inline-flex!important}' +
+      '.mi-ls{display:none}.mi-topnav .mi-ls{display:inline}.mi-topnav .mi-lf{display:none}.mi-topnav .mi-grp.mi-grp-active>.nav-group-head{background:rgba(255,255,255,.16)!important;border-radius:8px}.mi-grp .nav-submenu>.nav-subitem{white-space:nowrap}.mi-grp:not(.mi-grp-active)>.nav-group-head{opacity:1}' +
       '.mi-dup{display:none!important}#miFiltersBtn{display:inline-flex;align-items:center;gap:6px}#miFiltersBtn svg{width:16px;height:16px}' +
       '.mi-topnav .sidebar-foot{display:flex!important;align-items:center!important;gap:4px!important;padding:0 0 0 10px!important;margin-left:6px!important;border-left:1px solid rgba(255,255,255,.18)!important;border-top:0!important}.mi-topnav .sidebar-foot>a,.mi-topnav .sidebar-foot>button{width:34px!important;height:34px!important;min-width:34px;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:10px!important;background:transparent!important;border:1px solid transparent!important;transition:background .15s,border-color .15s,transform .15s}.mi-topnav .sidebar-foot>a:hover,.mi-topnav .sidebar-foot>button:hover,.mi-topnav .sidebar-foot>a:focus-visible{background:rgba(255,255,255,.16)!important;border-color:rgba(255,255,255,.28)!important;transform:translateY(-1px)}.mi-topnav .sidebar-foot>.mi-out:hover{background:rgba(239,68,68,.28)!important;border-color:rgba(254,202,202,.5)!important}.mi-topnav .sidebar-foot .ico{margin:0!important;display:inline-flex!important}.mi-topnav .sidebar-foot .ico svg{width:18px;height:18px}#mi-tip{position:fixed;z-index:2147483000;left:0;top:0;max-width:260px;background:#0f172a;color:#fff;padding:7px 11px;border-radius:9px;font:600 12.5px/1.35 system-ui,Segoe UI,Arial,sans-serif;box-shadow:0 8px 24px rgba(15,23,42,.28);pointer-events:none;opacity:0;transform:translateY(-4px);transition:opacity .12s,transform .12s}#mi-tip.on{opacity:1;transform:none}#mi-tip::before{content:"";position:absolute;top:-5px;left:calc(var(--ax,50%) - 5px);width:10px;height:10px;background:#0f172a;transform:rotate(45deg)}#mi-tip b{display:block;font-weight:700;white-space:nowrap}#mi-tip small{display:block;margin-top:2px;font-weight:500;opacity:.8;direction:rtl;text-align:right;font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",Tahoma,serif;font-size:12px;line-height:1.9}#mi-tip .u{font-family:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq",Tahoma,serif;font-weight:600}@media print{#mi-tip{display:none!important}}' +
       '.mi-chip-top .topbar .right-controls{display:flex;align-items:center;gap:10px}.mi-chip-top .topbar .user-chip-sm{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.28)!important;color:#fff!important;box-shadow:none!important;padding:3px 4px 3px 12px!important;border-radius:999px!important;font-size:12px!important;display:inline-flex;align-items:center;gap:8px;margin:0!important}.mi-chip-top .topbar .user-chip-sm *{color:inherit!important}.mi-chip-top .topbar .user-chip-sm>*:last-child{background:rgba(255,255,255,.92)!important;color:#0f4f4a!important;border-radius:999px!important;padding:2px 9px!important}.heading-icon{opacity:.35;font-size:.8em;transition:opacity .15s}.brand:hover .heading-icon,.heading-icon:focus{opacity:.9}' +
@@ -124,61 +125,110 @@
       tn.parentNode.insertBefore(sp, tn);
     });
   }
-  /* ---------- one menu on every page: add the main links a page is missing (never removes or re-orders) ---------- */
+  /* ---------- ONE menu in 5 groups on every page (Overview · Cases & Hearings · Desks & Registers · Admin · Support) ----------
+     Existing menu links are MOVED into the groups (so their page code, ids and click handlers keep working);
+     links a page does not have are added. Nothing is lost: any unknown old link goes into Support. */
   var SUITE = 'https://cmpofficepgp.org/camp-office-suite/';
-  var CANON = [['index.html','camp-office-suite','Dashboard','ڈیش بورڈ','ic-grid'],['lookup.html','lookup.html','Lookup','تلاش','ic-search'],
-    ['cause-list.html','cause-list.html','Cause List Import','کاز لسٹ امپورٹ','ic-import'],['inspection.html','inspection.html','Inspection Desk','انسپیکشن ڈیسک','ic-clipcheck'],
-    ['scanning.html','scanning.html','Scanning Desk','اسکین ڈیسک','ic-scan'],['#case','#case'],
-    ['https://cmpofficepgp.org/bill-register-system/','bill-register-system','Bill Register','بل رجسٹر','ic-receipt'],
-    ['https://cmpofficepgp.org/weekly-court-roster/','weekly-court-roster','Weekly Court Roster','ویکلی کورٹ روسٹر','ic-calendar'],
-    ['gallery.html','gallery.html','Gallery','گیلری','ic-image']];
-  var CASESUB = [['case-entry.html','case-entry.html','Daily Cases','یومیہ کیسز','ic-list'],['case-notice.html','case-notice.html','Case Notices','کیس نوٹسز','ic-mail'],
-    ['register-desk.html','register-desk.html','Register Desk','رجسٹر ڈیسک','ic-book'],['https://cmpofficepgp.org/record-section-system/','record-section-system','Record Section','ریکارڈ سیکشن','ic-archive']];
+  /* [match key (hrefKey), href, English, Urdu, icon, role ('', 'admin', 'super'), element id to match] */
+  var GROUPS = [
+    ['overview', 'Overview & Search', 'جائزہ و تلاش', 'Overview', 'جائزہ', 'ic-grid', '', [
+      ['camp-office-suite', 'index.html', 'Dashboard', 'ڈیش بورڈ', 'ic-grid'],
+      ['lookup.html', 'lookup.html', 'Lookup', 'تلاش', 'ic-search'],
+      ['#reports', 'https://cmpofficepgp.org/bill-register-system/#reports', 'Reports', 'رپورٹس', 'ic-chart']]],
+    ['cases', 'Case & Hearing Operations', 'کیس و سماعت', 'Cases & Hearings', 'کیس و سماعت', 'ic-scale', '', [
+      ['case-entry.html', 'case-entry.html', 'Daily Cases', 'یومیہ کیسز', 'ic-list'],
+      ['case-notice.html', 'case-notice.html', 'Case Notices', 'کیس نوٹسز', 'ic-mail'],
+      ['cause-list.html', 'cause-list.html', 'Cause List Import', 'کاز لسٹ امپورٹ', 'ic-import'],
+      ['weekly-court-roster', 'https://cmpofficepgp.org/weekly-court-roster/', 'Weekly Court Roster', 'ویکلی کورٹ روسٹر', 'ic-calendar']]],
+    ['desks', 'Desks & Registers', 'ڈیسک و رجسٹر', 'Desks & Registers', 'ڈیسک و رجسٹر', 'ic-book', '', [
+      ['register-desk.html', 'register-desk.html', 'Register Desk', 'رجسٹر ڈیسک', 'ic-book'],
+      ['record-section-system', 'https://cmpofficepgp.org/record-section-system/', 'Record Section', 'ریکارڈ سیکشن', 'ic-archive'],
+      ['inspection.html', 'inspection.html', 'Inspection Desk', 'انسپیکشن ڈیسک', 'ic-clipcheck'],
+      ['scanning.html', 'scanning.html', 'Scanning Desk', 'اسکین ڈیسک', 'ic-scan'],
+      ['bill-register-system', 'https://cmpofficepgp.org/bill-register-system/', 'Bill Register', 'بل رجسٹر', 'ic-receipt'],
+      ['employee-directory.html', 'employee-directory.html', 'Employee Directory', 'ایمپلائی ڈائریکٹری', 'ic-users']]],
+    ['admin', 'Administration & Settings', 'انتظامیہ و ترتیبات', 'Admin', 'انتظامیہ', 'ic-gear', 'admin', [
+      ['user-approvals', 'index.html#user-approvals', 'User Approvals', 'یوزر منظوری', 'ic-usercheck', 'admin', 'openAdminPanelBtn'],
+      ['control-panel.html', 'control-panel.html', 'Control Panel', 'کنٹرول پینل', 'ic-sliders', 'super', 'controlPanelLink'],
+      ['master-data.html', 'master-data.html', 'Master Data', 'ماسٹر ڈیٹا', 'ic-database', 'admin', 'masterDataLink'],
+      ['result-list.html', 'result-list.html', 'Result List', 'نتیجہ کی فہرست', 'ic-flag', 'admin', 'resultListLink'],
+      ['shared-dropdown-manager.html', 'shared-dropdown-manager.html', 'Shared Dropdown Lists', 'مشترکہ ڈراپ ڈاؤن فہرستیں', 'ic-listcheck', 'admin'],
+      ['activity-log.html', 'activity-log.html', 'Activity Log', 'سرگرمی لاگ', 'ic-history', 'admin', 'activityLogLink'],
+      ['backup-center.html', 'backup-center.html', 'Backup Center', 'بیک اپ سینٹر', 'ic-save', 'admin'],
+      ['maintenance.html', 'maintenance.html', 'Maintenance', 'مینٹیننس', 'ic-lock', 'super']]],
+    ['support', 'Support & Info', 'معاونت و معلومات', 'Support', 'معاونت', 'ic-help', '', [
+      ['chat-system.html', 'chat-system.html', 'Team Chat', 'ٹیم چیٹ', 'ic-chat'],
+      ['ai-assistant.html', 'ai-assistant.html', 'AI Assistant', 'اے آئی اسسٹنٹ', 'ic-bot'],
+      ['gallery.html', 'gallery.html', 'Gallery', 'گیلری', 'ic-image'],
+      ['help.html', 'help.html', 'Help', 'مدد', 'ic-help'],
+      ['about.html', 'about.html', 'About', 'ہمارے بارے میں', 'ic-info'],
+      ['contact-us.html', 'contact-us.html', 'Contact Us', 'رابطہ', 'ic-phone']]]
+  ];
   function inSuite(){ return /\/camp-office-suite\//.test(location.pathname); }
-  function linkFor(c){ return /^https?:/.test(c[0]) ? c[0] : (inSuite() ? c[0] : SUITE + c[0]); }
+  function linkFor(h){ return /^https?:/.test(h) ? h : (inSuite() ? h : SUITE + h); }
   function isUrNow(){ return (document.documentElement.getAttribute('lang') || '').indexOf('ur') === 0; }
-  function findIn(box, c){
-    var as = box.querySelectorAll('a[href]');
-    for(var i = 0; i < as.length; i++){
-      var k = hrefKey(as[i]); if(k === c[1]) return as[i];
-      var lb = as[i].querySelector('[data-en]'); lb = lb ? lb.getAttribute('data-en') : (as[i].textContent || '').trim();
-      if(lb && lb.toLowerCase() === c[2].toLowerCase()) return as[i];
-    }
-    return null;
-  }
-  function mk(c, cls){
-    var a = document.createElement('a'); a.className = cls; a.href = linkFor(c); a.setAttribute('data-mi-added', '1');
-    var tx = isUrNow() ? c[3] : c[2];
-    a.innerHTML = '<span class="ico">' + svg(c[4]) + '</span><span ' + (cls === 'nav-item' ? 'class="label" ' : '') + 'data-en="' + c[2] + '" data-ur="' + c[3] + '">' + tx + '</span>';
-    if(cls === 'nav-item'){ a.setAttribute('data-en-l', c[2]); a.setAttribute('data-ur-l', c[3]); }
+  function labelOf(el){ var l = el.querySelector('[data-en]'); return ((l && l.getAttribute('data-en')) || el.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  /* old addresses that now live in the suite (case-notice-system) or were retired (daily-case-management-system, archived) */
+  var ALIAS = {'camp-office-gallery': 'gallery.html', 'case-notice-system': 'case-notice.html'}, RETIRED = ['daily-case-management-system'];
+  function keyOf(el){ if(el.id === 'openAdminPanelBtn') return 'user-approvals'; var k = hrefKey(el); return ALIAS[k] || k; }
+  function isAdminNow(){ var t = ''; Array.prototype.forEach.call(document.querySelectorAll('#currentUserRole,.role-badge,.role-chip,[id$="UserRole"],.user-chip,.user-chip-sm'), function(e){ t += ' ' + e.textContent; }); return /admin|ایڈمن/i.test(t); }
+  function mkItem(it){
+    var a = document.createElement('a'); a.className = 'nav-subitem'; a.href = linkFor(it[1]); a.setAttribute('data-mi-added', '1');
+    if(it[5]) a.setAttribute('data-mi-role', it[5]);
+    a.innerHTML = '<span class="ico">' + svg(it[4]) + '</span><span data-en="' + it[2] + '" data-ur="' + it[3] + '">' + (isUrNow() ? it[3] : it[2]) + '</span>';
     return a;
   }
-  function topOf(nav, el){ while(el && el.parentNode !== nav) el = el.parentNode; return el; }
+  function asSub(el, it){
+    el.classList.remove('nav-item'); el.classList.add('nav-subitem');
+    var lab = el.querySelector('.label'); if(lab) lab.classList.remove('label');
+    if(!el.querySelector('.ico')){ var s = document.createElement('span'); s.className = 'ico'; s.innerHTML = svg(it[4]); el.insertBefore(s, el.firstChild); }
+    return el;
+  }
   function unifyNav(){
     try{
       var nav = document.querySelector('#sidebar .sidebar-nav, .sidebar .sidebar-nav'); if(!nav || nav.getAttribute('data-mi-unified')) return;
-      nav.setAttribute('data-mi-unified', '1');
-      var caseGrp = null, ce = findIn(nav, CASESUB[0]); if(ce) caseGrp = ce.closest('.nav-group');
-      var prev = null;
-      CANON.forEach(function(c){
-        if(c[0] === '#case'){ if(caseGrp && caseGrp.parentNode === nav) prev = caseGrp; return; }
-        var f = findIn(nav, c);
-        if(f){ var tp = topOf(nav, f); if(tp && !tp.classList.contains('mi-more')) prev = tp; return; }
-        var a = mk(c, 'nav-item');
-        if(prev && prev.parentNode === nav) nav.insertBefore(a, prev.nextSibling); else nav.insertBefore(a, nav.firstChild);
-        prev = a;
-      });
-      if(caseGrp){
-        var sub = caseGrp.querySelector('.nav-submenu'), sp = null;
-        if(sub) CASESUB.forEach(function(c){
-          var f = findIn(sub, c);
-          if(f){ sp = f; return; }
-          var a = mk(c, 'nav-subitem');
-          if(sp && sp.parentNode === sub) sub.insertBefore(a, sp.nextSibling); else sub.insertBefore(a, sub.firstChild);
-          sp = a;
+      nav.setAttribute('data-mi-unified', '2');
+      var old = Array.prototype.slice.call(nav.children);
+      var pool = Array.prototype.slice.call(nav.querySelectorAll('a[href], button.nav-subitem, button.nav-item, #openAdminPanelBtn'));
+      var used = [];
+      var here = location.pathname.replace(/index\.html$/, '');
+      GROUPS.forEach(function(g){
+        var grp = document.createElement('div'); grp.className = 'nav-group mi-grp'; grp.setAttribute('data-mi-grp', g[0]); if(g[6]) grp.setAttribute('data-mi-role', g[6]);
+        grp.innerHTML = '<button type="button" class="nav-group-head" aria-expanded="false" title="' + g[1] + ' · ' + g[2] + '"><span class="ico">' + svg(g[5]) + '</span>' +
+          '<span class="label"><span class="mi-lf" data-en="' + g[1] + '" data-ur="' + g[2] + '">' + (isUrNow() ? g[2] : g[1]) + '</span><span class="mi-ls" data-en="' + g[3] + '" data-ur="' + g[4] + '">' + (isUrNow() ? g[4] : g[3]) + '</span></span><span class="chev">›</span></button><div class="nav-submenu"></div>';
+        var sub = grp.querySelector('.nav-submenu');
+        g[7].forEach(function(it){
+          var f = null;
+          for(var i = 0; i < pool.length && !f; i++){ var el = pool[i]; if(used.indexOf(el) >= 0) continue; if((it[6] && el.id === it[6]) || keyOf(el) === it[0] || labelOf(el) === it[2].toLowerCase()) f = el; }
+          if(it[0] === 'camp-office-suite' && !f){ for(var j = 0; j < pool.length && !f; j++){ if(used.indexOf(pool[j]) < 0 && labelOf(pool[j]) === 'dashboard') f = pool[j]; } }
+          var node = f ? asSub(f, it) : mkItem(it); if(f){ used.push(f); if(f.tagName === 'A' && ALIAS[hrefKey(f)]) f.setAttribute('href', linkFor(it[1])); }
+          if(it[5] && !node.getAttribute('data-mi-role')) node.setAttribute('data-mi-role', it[5]);
+          sub.appendChild(node);
         });
-      }
+        nav.appendChild(grp);
+      });
+      /* anything the page had that is not in the list stays reachable under Support */
+      var sup = nav.querySelector('[data-mi-grp="support"] .nav-submenu');
+      pool.forEach(function(el){ if(used.indexOf(el) < 0 && !el.closest('.mi-grp') && (el.getAttribute('href') || el.id)){ var h = el.getAttribute('href') || ''; if((h === '#' && /dashboard/.test(labelOf(el))) || RETIRED.indexOf(hrefKey(el)) >= 0) return; sup.appendChild(asSub(el, [0,0,0,0,'ic-link'])); } });
+      old.forEach(function(o){ o.classList.add('mi-dup'); o.setAttribute('aria-hidden', 'true'); });
+      Array.prototype.forEach.call(nav.querySelectorAll('.mi-grp'), function(g){
+        var act = Array.prototype.some.call(g.querySelectorAll('.nav-subitem'), function(a){ if(a.classList.contains('active')) return true; var h = a.getAttribute('href'); if(!h || h === '#') return false; try{ var u = new URL(h, location.href); if(u.hash === '#reports') return location.hash === '#reports'; if(u.hash) return false; return u.pathname.replace(/index\.html$/, '') === here; }catch(e){ return false; } });
+        if(act){ g.classList.add('mi-grp-active'); if(!isTopnav()) g.classList.add('open'); }
+        g.querySelector('.nav-group-head').addEventListener('click', function(ev){ ev.stopPropagation(); var o = !g.classList.contains('open'); Array.prototype.forEach.call(nav.querySelectorAll('.mi-grp.open'), function(x){ if(x !== g && isTopnav()) x.classList.remove('open'); }); g.classList.toggle('open', o); this.setAttribute('aria-expanded', o); });
+      });
+      document.addEventListener('click', function(ev){ if(isTopnav() && !ev.target.closest('.mi-grp')) Array.prototype.forEach.call(nav.querySelectorAll('.mi-grp.open'), function(x){ x.classList.remove('open'); }); });
+      /* Dashboard: the User Approvals link from other pages opens the approvals dialog */
+      if(/user-approvals/.test(location.hash)) setTimeout(function(){ var b = document.getElementById('openAdminPanelBtn'); if(b) b.click(); }, 2500);
     }catch(e){ if(window.console) console.warn('ui-modern nav', e); }
+  }
+  /* who sees the Admin group / admin items that this page did not have before */
+  function navRoles(){
+    var adm = isAdminNow(), sup = isSuper();
+    Array.prototype.forEach.call(document.querySelectorAll('.mi-grp [data-mi-added][data-mi-role]'), function(a){ var r = a.getAttribute('data-mi-role'); a.classList.toggle('mi-dup', r === 'super' ? !sup : !adm); });
+    Array.prototype.forEach.call(document.querySelectorAll('.mi-grp'), function(g){
+      var any = Array.prototype.some.call(g.querySelectorAll('.nav-submenu > *'), function(a){ return !a.classList.contains('mi-dup') && !a.classList.contains('hidden') && a.style.display !== 'none'; });
+      g.classList.toggle('mi-dup', !any || (g.getAttribute('data-mi-role') === 'admin' && !adm));
+    });
   }
   /* ---------- page header: name/role chip goes into the header bar; an empty page title gets the page name ---------- */
   function tidyHeader(){
@@ -273,7 +323,8 @@
       });
       if(!sup){ var dm = document.getElementById('brDataMenu'); if(dm) dup(dm); Array.prototype.forEach.call(document.querySelectorAll('#pageHeadingBox .heading-icon'), dup); }
       Array.prototype.forEach.call(document.querySelectorAll('#chatMinBtn, #a11y-min'), dup);
-      Array.prototype.forEach.call(document.querySelectorAll('.sidebar-nav a'), function(a){ if(hrefKey(a) === '#reports') dup(a); });
+      Array.prototype.forEach.call(document.querySelectorAll('.sidebar-foot > a, .sidebar-foot > button'), function(a){ if(a.hasAttribute('data-cg-logout') || a.hasAttribute('data-mi-help') || /help\.html/.test(a.getAttribute('href') || '')) return; dup(a); });
+      navRoles();
     }catch(e){}
   }
   var tidyT = null; function tidySoon(){ clearTimeout(tidyT); tidyT = setTimeout(tidyButtons, 250); }

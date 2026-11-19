@@ -54,6 +54,8 @@
               var useE = null;
               if(!had){ if(!nv(bVal)) useE = true; else if(!nv(eVal)) useE = false; }
               else if(same(bVal, ob)) useE = true; else if(same(eVal, ob)) useE = false;
+              /* safety: a sync never blanks a filled field (an old browser tab saving an empty value must not wipe data) */
+              if(useE === true && !nv(eVal) && nv(bVal)) useE = false; else if(useE === false && !nv(bVal) && nv(eVal)) useE = true;
               if(useE === null){ conflicts.push(b.name + ' — ' + label + ': Bill Register "' + nv(bVal) + '" / Directory "' + nv(eVal) + '"'); return; }
               if(useE){ setB(nv(eVal)); o[key] = nv(eVal); copied.push(b.name + ' · ' + label + ' → Bill Register'); }
               else { setE(nv(bVal)); o[key] = nv(bVal); copied.push(b.name + ' · ' + label + ' → Directory'); }

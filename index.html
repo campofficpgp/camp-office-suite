@@ -2459,7 +2459,7 @@ function renderSummaryCards(){
   set("scDecided", recent);
   set("scDecidedSub", U ? ("پچھلے 30 دن · کل فیصلے " + decidedAll) : ("last 30 days · " + decidedAll.toLocaleString("en-US") + " decided in all"));
   set("scNotices", ALL_NOTICES.length.toLocaleString("en-US"));
-  set("scNoticesSub", U ? (upcoming + " کی پیشی آج یا آگے") : (upcoming + " with a hearing today or later"));
+  set("scNoticesSub", U ? ("آج یا آگے کی پیشیاں: " + upcoming) : (upcoming + " with a hearing today or later"));
 }
 /* "Asad Nawaz Khan and another ADDITIONAL REGISTRAR (J)": a designation typed in capitals after the party
    names is shown on its own line in small grey text ("Additional Registrar (J)") */

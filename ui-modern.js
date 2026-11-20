@@ -14,6 +14,8 @@
   function both(sel){ return sel.split(',').map(function(s){ s = s.trim(); return P + s + ',' + PN + s; }).join(','); }
   var TOPNAV = ['govt', 'court', 'tiles', 'glass', 'register', 'board'];
   var css = '@media screen{' +
+    /* every screen size: hidden duplicates stay hidden, the short group names only show in the top menu */
+    '.mi-dup,.sidebar-foot>a.mi-dup,.sidebar-foot>button.mi-dup{display:none!important}.mi-ls{display:none}.mi-maint-on::after{content:\"ON\";margin-inline-start:auto;background:#b3261e;color:#fff;font:700 10px/1 system-ui,sans-serif;padding:3px 6px;border-radius:6px}' +
     ':root{--m-r:12px;--m-r-sm:8px;--m-sh:0 1px 2px rgba(15,23,42,.05),0 3px 12px rgba(15,23,42,.06);--m-sh-h:0 2px 6px rgba(15,23,42,.07),0 10px 26px rgba(15,23,42,.10);--m-line:rgba(15,23,42,.10);--m-focus:0 0 0 3px rgba(42,90,132,.20)}' +
     /* icons */
     '.gi{width:1.15em;height:1.15em;display:inline-block;vertical-align:-0.2em;flex:none}' +
@@ -329,6 +331,16 @@
       });
       if(!sup){ var dm = document.getElementById('brDataMenu'); if(dm) dup(dm); Array.prototype.forEach.call(document.querySelectorAll('#pageHeadingBox .heading-icon'), dup); }
       Array.prototype.forEach.call(document.querySelectorAll('#chatMinBtn, #a11y-min'), dup);
+      /* one sign-out: in the top menu it is the icon at the right; with the side menu (smaller screens) the page's own
+         header Sign Out button is used and the one at the bottom of the side menu is hidden */
+      var hdrOut = document.querySelector('#mainSignOut, #logoutBtn, #signOutBtn'), footOut = document.querySelector('.sidebar-foot [data-cg-logout]');
+      if(hdrOut && footOut){ var tn = isTopnav(); footOut.classList.toggle('mi-dup', !tn); hdrOut.classList.toggle('mi-dup', tn); }
+      /* User Approvals on the Dashboard opens the panel; the address then shows #user-approvals so the page can be reopened or bookmarked */
+      var ua = document.getElementById('openAdminPanelBtn');
+      if(ua && !ua.__miUa){ ua.__miUa = true; ua.title = 'User Approvals — approve accounts, roles, permissions / یوزر منظوری'; ua.addEventListener('click', function(){ try{ history.replaceState(null, '', '#user-approvals'); }catch(e){} }); }
+      /* quick search (top bar) and Lookup explain each other */
+      var gs = document.getElementById('globalSearch'); if(gs) gs.title = 'Quick search: first matches only. Press Enter (or All results) to open the full Lookup page with filters, print and export. / فوری تلاش؛ مکمل تلاش کے لیے Enter دبائیں';
+      Array.prototype.forEach.call(document.querySelectorAll('.mi-grp a[href$="lookup.html"]'), function(a){ a.title = 'Lookup — full search & filter of Daily Cases, Case Notices, rosters, scans and jail reports / مکمل تلاش و فلٹر'; });
       /* while the portal is closed (red Maintenance strip), the menu's Maintenance item says so too */
       var mOn = !!document.querySelector('.cg-ro[href*="maintenance.html"]');
       Array.prototype.forEach.call(document.querySelectorAll('.mi-grp a[href$="maintenance.html"]'), function(a){ a.classList.toggle('mi-maint-on', mOn); });
@@ -383,7 +395,7 @@
   var fitT = null, navRO = null; function fitSoon(){ clearTimeout(fitT); fitT = setTimeout(fitTopNav, 150); }
   /* the menu is measured again when it first appears (after sign-in) or changes size for any other reason */
   function watchNav(){ var nav = document.querySelector('.sidebar-nav'); if(!nav || navRO || !window.ResizeObserver) return; navRO = new ResizeObserver(function(){ if(Date.now() - lastFit > 500) fitSoon(); }); navRO.observe(nav); }
-  window.addEventListener('resize', fitSoon);
+  window.addEventListener('resize', function(){ fitSoon(); tidySoon(); });
   new MutationObserver(fitSoon).observe(document.documentElement, {attributes: true, attributeFilter: ['data-design']});
   function run(rootEl){ try{ addSprite(); doMenu(rootEl); doEmoji(rootEl); }catch(e){ if(window.console) console.warn('ui-modern', e); } }
   var pending = [], timer = null;

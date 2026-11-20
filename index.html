@@ -244,6 +244,20 @@ html,body{overflow-x:hidden;}
   .topbar2 .user-chip .badge{ background:rgba(255,255,255,.2); color:#fff; padding:1px 8px; font-size:11px; }
   .topbar2 .user-chip .btn{ background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); color:#fff; border-radius:20px; }
   .topbar2 .user-chip .btn:hover{ background:rgba(255,255,255,.24); }
+  /* phones: one tidy row (menu, page name, bell, language, account), the search box full width below it */
+  @media (max-width: 620px){
+    .topbar2{ padding:10px 12px; gap:10px 8px; align-items:center; }
+    .topbar2 .brand{ flex:1 1 auto; min-width:0; font-size:14px; }
+    .topbar2 .brand > span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .topbar2 .topbar-right{ flex:none; gap:6px; margin-inline-start:auto; }
+    .topbar2 .icon-btn{ padding:6px 9px; }
+    .topbar2 .lang-btn{ padding:6px 11px; }
+    .topbar2 .user-chip{ gap:4px; padding:2px 3px 2px 2px; }
+    .topbar2 #mainSignOut{ padding:5px 10px; font-size:12px; margin-inline-start:0 !important; }
+    .topbar2 .topbar-logo-sm{ display:none; }
+    .topbar2 .search-wrap{ margin-top:2px; }
+    .topbar2 .search-wrap input{ font-size:14px; padding-top:10px; padding-bottom:10px; }
+  }
   .topbar-logo-sm{ height:30px; width:auto; display:block; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.25)); flex:none; }
 
   /* ================= NEW SECURE LOGIN DESIGN (12 Oct 2026) ================= */
@@ -620,7 +634,7 @@ html,body{overflow-x:hidden;}
         <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-en="Dashboard" data-ur="ڈیش بورڈ">Dashboard</span></div>
         <div class="search-wrap">
           <span class="sic">🔎</span>
-          <input type="text" id="globalSearch" data-i18n-ph="searchPh" placeholder="Quick search: case no., party, AOR… (Enter = full Lookup)">
+          <input type="text" id="globalSearch" data-i18n-ph="searchPh" placeholder="Quick search: case no., party, AOR…">
           <div class="search-results hidden" id="searchResults"></div>
         </div>
         <div class="topbar-right">
@@ -860,7 +874,7 @@ var I18N = {
     authLoadErrorTitle:"Could Not Load Your Profile",
     authLoadErrorBody:"You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.",
     btnRetry:"Retry",
-    searchPh:"Quick search: case no., party, AOR… (Enter = full Lookup)",
+    searchPh:"Quick search: case no., party, AOR…",
     noResults:"No matches found.",
     caseTag:"CASE", noticeTag:"NOTICE",
     noUpcoming:"No upcoming hearings found.",
@@ -891,7 +905,7 @@ var I18N = {
     authLoadErrorTitle:"پروفائل لوڈ نہیں ہو سکا",
     authLoadErrorBody:"آپ کامیابی سے سائن اِن ہو گئے ہیں، مگر آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ عام طور پر یہ عارضی کنکشن کا مسئلہ ہوتا ہے۔",
     btnRetry:"دوبارہ کوشش کریں",
-    searchPh:"فوری تلاش: کیس نمبر، فریق، AOR… (Enter = مکمل Lookup)",
+    searchPh:"فوری تلاش: کیس نمبر، فریق، AOR…",
     noResults:"کوئی نتیجہ نہیں ملا۔",
     caseTag:"کیس", noticeTag:"نوٹس",
     noUpcoming:"کوئی آئندہ سماعت موجود نہیں۔",

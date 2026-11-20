@@ -620,7 +620,7 @@ html,body{overflow-x:hidden;}
         <div class="brand"><img class="brand-logo-img" id="brandLogo" src="logo-punjab-govt.png" alt="Government of Punjab"> <span data-en="Dashboard" data-ur="ڈیش بورڈ">Dashboard</span></div>
         <div class="search-wrap">
           <span class="sic">🔎</span>
-          <input type="text" id="globalSearch" data-i18n-ph="searchPh" placeholder="Search case no., party, AOR/signatory, employee…">
+          <input type="text" id="globalSearch" data-i18n-ph="searchPh" placeholder="Quick search: case no., party, AOR… (Enter = full Lookup)">
           <div class="search-results hidden" id="searchResults"></div>
         </div>
         <div class="topbar-right">
@@ -700,18 +700,13 @@ html,body{overflow-x:hidden;}
         <div class="panel" style="margin-bottom:18px;">
           <div class="panel-head"><h2 data-en="Quick Access" data-ur="فوری رسائی">Quick Access</h2></div>
           <div class="quick-grid">
-            <a class="quick-tile" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-calendar"/></svg></span><span data-en="Weekly Roster" data-ur="ویکلی روسٹر">Weekly Roster</span></a>
+            <!-- the 6 everyday tasks; everything else is in the top menu -->
+            <a class="quick-tile" href="case-entry.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-list"/></svg></span><span data-en="Daily Cases" data-ur="یومیہ کیسز">Daily Cases</span></a>
             <a class="quick-tile" href="case-notice.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-mail"/></svg></span><span data-en="Case Notices" data-ur="کیس نوٹسز">Case Notices</span></a>
-            <a class="quick-tile" href="register-desk.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-book"/></svg></span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
             <a class="quick-tile" href="cause-list.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-import"/></svg></span><span data-en="Cause List Import" data-ur="کاز لسٹ امپورٹ">Cause List Import</span></a>
-            <a class="quick-tile" href="inspection.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-clipcheck"/></svg></span><span data-en="Inspection Desk" data-ur="انسپیکشن ڈیسک">Inspection Desk</span></a>
-            <a class="quick-tile" href="scanning.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-scan"/></svg></span><span data-en="Scanning Desk" data-ur="اسکین ڈیسک">Scanning Desk</span></a>
-            <a class="quick-tile" href="chat-system.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-chat"/></svg></span><span data-en="Team Chat" data-ur="ٹیم چیٹ">Team Chat</span></a>
-            <a class="quick-tile" href="ai-assistant.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-bot"/></svg></span><span data-en="AI Assistant" data-ur="AI اسسٹنٹ">AI Assistant</span></a>
-            <a class="quick-tile" href="gallery.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-image"/></svg></span><span data-en="Gallery" data-ur="گیلری">Gallery</span></a>
+            <a class="quick-tile" href="https://cmpofficepgp.org/weekly-court-roster/"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-calendar"/></svg></span><span data-en="Weekly Court Roster" data-ur="ویکلی کورٹ روسٹر">Weekly Court Roster</span></a>
+            <a class="quick-tile" href="register-desk.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-book"/></svg></span><span data-en="Register Desk" data-ur="رجسٹر ڈیسک">Register Desk</span></a>
             <a class="quick-tile" href="https://cmpofficepgp.org/bill-register-system/"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-receipt"/></svg></span><span data-en="Bill Register" data-ur="بل رجسٹر">Bill Register</span></a>
-            <a class="quick-tile" href="employee-directory.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-users"/></svg></span><span data-en="Employee Directory" data-ur="ایمپلائی ڈائریکٹری">Employee Directory</span></a>
-            <a class="quick-tile" href="backup-center.html"><span class="qi"><svg class="gi" aria-hidden="true" focusable="false"><use href="#ic-save"/></svg></span><span data-en="Backup Center" data-ur="بیک اپ سینٹر">Backup Center</span></a>
           </div>
         </div>
 
@@ -865,7 +860,7 @@ var I18N = {
     authLoadErrorTitle:"Could Not Load Your Profile",
     authLoadErrorBody:"You signed in successfully, but your account details could not be loaded. This is usually a temporary connection issue.",
     btnRetry:"Retry",
-    searchPh:"Search case no., party, AOR/signatory, employee…",
+    searchPh:"Quick search: case no., party, AOR… (Enter = full Lookup)",
     noResults:"No matches found.",
     caseTag:"CASE", noticeTag:"NOTICE",
     noUpcoming:"No upcoming hearings found.",
@@ -896,7 +891,7 @@ var I18N = {
     authLoadErrorTitle:"پروفائل لوڈ نہیں ہو سکا",
     authLoadErrorBody:"آپ کامیابی سے سائن اِن ہو گئے ہیں، مگر آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ عام طور پر یہ عارضی کنکشن کا مسئلہ ہوتا ہے۔",
     btnRetry:"دوبارہ کوشش کریں",
-    searchPh:"کیس نمبر، فریق، AOR/دستخط کنندہ، ایمپلائی تلاش کریں…",
+    searchPh:"فوری تلاش: کیس نمبر، فریق، AOR… (Enter = مکمل Lookup)",
     noResults:"کوئی نتیجہ نہیں ملا۔",
     caseTag:"کیس", noticeTag:"نوٹس",
     noUpcoming:"کوئی آئندہ سماعت موجود نہیں۔",
@@ -1237,7 +1232,7 @@ function enterApp(user, data){
   if(window.CampPerm) CampPerm.init(data);   /* hide menu entries the user has no View tick for */
   document.getElementById("masterDataLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("controlPanelLink").classList.toggle("hidden", role !== "super_admin");
-  if(location.hash === "#admin" && isAdminUp){ setTimeout(function(){ var b = document.getElementById("openAdminPanelBtn"), p = document.getElementById("adminPanel"); if(b && p && p.classList.contains("hidden")) b.click(); }, 600); }   /* opened from the Control Panel */
+  if(/^#(admin|user-approvals)$/.test(location.hash) && isAdminUp){ setTimeout(function(){ var b = document.getElementById("openAdminPanelBtn"), p = document.getElementById("adminPanel"); if(b && p && p.classList.contains("hidden")) b.click(); }, 600); }   /* opened from the Control Panel */
   document.getElementById("pendingBillsCard").classList.toggle("hidden", role !== "super_admin");   /* Pending Bills shortcut: Super Admin only */
   document.getElementById("resultListLink").classList.toggle("hidden", role !== "super_admin");
   document.getElementById("activityLogLink").classList.toggle("hidden", role !== "super_admin");
@@ -2518,7 +2513,20 @@ function renderUpcomingHearings(){
 var searchInput = document.getElementById("globalSearch");
 var searchResultsEl = document.getElementById("searchResults");
 searchInput.addEventListener("click", function(e){ e.stopPropagation(); });
-searchResultsEl.addEventListener("click", function(e){ e.stopPropagation(); });
+/* Quick search (top bar) shows the first matches only; a match, "All results" or Enter opens the Lookup page with the
+   same words already filled in (handed over in this tab's sessionStorage, never in the address) */
+function goLookup(q, tab){
+  try{ sessionStorage.setItem("miLookup", JSON.stringify({q: q, tab: tab || "cases", t: Date.now()})); }catch(e){}
+  location.href = "lookup.html";
+}
+searchResultsEl.addEventListener("click", function(e){
+  e.stopPropagation();
+  var a = e.target.closest("a[data-lq]"); if(!a) return;
+  e.preventDefault(); goLookup(a.getAttribute("data-lq"), a.getAttribute("data-lt"));
+});
+searchInput.addEventListener("keydown", function(e){
+  if(e.key === "Enter" && searchInput.value.trim()){ e.preventDefault(); goLookup(searchInput.value.trim(), "cases"); }
+});
 searchInput.addEventListener("input", function(){
   var q = searchInput.value.trim().toLowerCase();
   if(q.length < 2){ searchResultsEl.classList.add("hidden"); searchResultsEl.innerHTML=""; return; }
@@ -2532,15 +2540,16 @@ searchInput.addEventListener("input", function(){
   }).slice(0,6);
   var html = "";
   caseHits.forEach(function(c){
-    html += "<a class='sr-item' href='case-entry.html'><span class='sr-tag'>"+I18N[currentLang].caseTag+"</span>"+
+    html += "<a class='sr-item' href='lookup.html' data-lt='cases' data-lq='"+esc(c.caseNo||"")+"'><span class='sr-tag'>"+I18N[currentLang].caseTag+"</span>"+
       esc((c.caseNo||"")+"/"+(c.year||""))+" — "+esc(c.title||"—")+" vs "+esc(c.versus||"—")+" ("+esc(c.date||"—")+")</a>";
   });
   noticeHits.forEach(function(n){
-    html += "<a class='sr-item' href='case-notice.html'><span class='sr-tag'>"+I18N[currentLang].noticeTag+"</span>"+
+    html += "<a class='sr-item' href='lookup.html' data-lt='notices' data-lq='"+esc(n.caseNo||"")+"'><span class='sr-tag'>"+I18N[currentLang].noticeTag+"</span>"+
       esc((n.caseNo||"")+"/"+(n.year||""))+" — "+esc(n.title||"—")+" vs "+esc(n.versus||"—")+
       (n.signatory?" — AOR: "+esc(n.signatory):"")+"</a>";
   });
   if(!html) html = "<div class='sr-empty'>"+I18N[currentLang].noResults+"</div>";
+  html += "<a class='sr-item sr-all' href='lookup.html' data-lt='cases' data-lq='"+esc(searchInput.value.trim())+"' style='font-weight:700;border-top:1px solid var(--border)'>🔎 "+(currentLang==="ur" ? "تمام نتائج Lookup میں (فلٹر، پرنٹ، ایکسپورٹ) ←" : "All results in Lookup (filters, print, export) →")+"</a>";
   searchResultsEl.innerHTML = html;
   searchResultsEl.classList.remove("hidden");
 });

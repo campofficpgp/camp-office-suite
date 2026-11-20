@@ -366,7 +366,7 @@
   /* ---------- one language at a time: shared labels written "English / اردو" (sign-out chip, maintenance strip,
      accessibility button and panel, side-menu foot) show only the language chosen with the اردو / English button ---------- */
   var BI_SEL = '#a11y-root, #cg-dock, .cg-ro, [data-cg-pause], .sidebar-foot, #topbar2';
-  function biLang(){ var l = (document.documentElement.getAttribute('lang') || '').slice(0, 2).toLowerCase(); if(l === 'ur' || l === 'en') return l; try{ return localStorage.getItem('cmpLang') === 'ur' ? 'ur' : 'en'; }catch(e){ return 'en'; } }
+  function biLang(){ if(document.body && /(^|\s)lang-ur(\s|$)/.test(document.body.className)) return 'ur'; var l = (document.documentElement.getAttribute('lang') || '').slice(0, 2).toLowerCase(); if(l === 'ur' || l === 'en') return l; try{ return localStorage.getItem('cmpLang') === 'ur' ? 'ur' : 'en'; }catch(e){ return 'en'; } }
   function biPick(s, lang){
     var i = s.indexOf(' / '); if(i < 0) return s;
     var L = s.slice(0, i), R = s.slice(i + 3), AR = /[\u0600-\u06FF]/, LA = /[A-Za-z]/, en, ur;
@@ -399,6 +399,9 @@
   }
   var biT = null; function biSoon(){ clearTimeout(biT); biT = setTimeout(biRun, 120); }
   try{ new MutationObserver(biSoon).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']}); }catch(e){}
+  /* the Dashboard marks Urdu with a class on <body> */
+  function biBody(){ try{ if(document.body) new MutationObserver(biSoon).observe(document.body, {attributes: true, attributeFilter: ['class']}); biSoon(); }catch(e){} }
+  if(document.body) biBody(); else document.addEventListener('DOMContentLoaded', biBody);
   try{ setInterval(biRun, 20000); }catch(e){}   /* the sign-out chip rewrites its own text every minute */
   var tidyT = null; function tidySoon(){ clearTimeout(tidyT); tidyT = setTimeout(tidyButtons, 250); }
   /* ---------- top-menu designs: whatever does not fit on one line goes into a "More" menu ---------- */

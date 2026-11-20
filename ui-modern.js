@@ -363,6 +363,43 @@
     })();
   }
   try{ if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lookupHandoff); else lookupHandoff(); }catch(e){}
+  /* ---------- one language at a time: shared labels written "English / اردو" (sign-out chip, maintenance strip,
+     accessibility button and panel, side-menu foot) show only the language chosen with the اردو / English button ---------- */
+  var BI_SEL = '#a11y-root, #cg-dock, .cg-ro, [data-cg-pause], .sidebar-foot, #topbar2';
+  function biLang(){ var l = (document.documentElement.getAttribute('lang') || '').slice(0, 2).toLowerCase(); if(l === 'ur' || l === 'en') return l; try{ return localStorage.getItem('cmpLang') === 'ur' ? 'ur' : 'en'; }catch(e){ return 'en'; } }
+  function biPick(s, lang){
+    var i = s.indexOf(' / '); if(i < 0) return s;
+    var L = s.slice(0, i), R = s.slice(i + 3), AR = /[\u0600-\u06FF]/, LA = /[A-Za-z]/, en, ur;
+    if(LA.test(L) && !AR.test(L) && AR.test(R)){ en = L; ur = R; }
+    else if(AR.test(L) && LA.test(R) && !AR.test(R)){ ur = L; en = R; }
+    else return s;
+    var lead = /^[^A-Za-z\u0600-\u06FF]*/;
+    var pE = (en.match(lead) || [''])[0], pU = (ur.match(lead) || [''])[0];
+    return lang === 'ur' ? ((pU ? '' : pE) + ur.replace(/\s+$/, '')) : ((pE || !pU ? '' : pU) + en.replace(/\s+$/, ''));
+  }
+  function biRun(){
+    try{
+      var lang = biLang();
+      Array.prototype.forEach.call(document.querySelectorAll(BI_SEL), function(box){
+        var w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null), n;
+        while((n = w.nextNode())){
+          if(n.__biLast !== n.data) n.__biO = n.data;          /* new or rewritten by its page: remember the full text */
+          if(n.__biO.indexOf(' / ') < 0) continue;
+          var v = biPick(n.__biO, lang); if(n.data !== v) n.data = v; n.__biLast = n.data;
+        }
+        Array.prototype.forEach.call(box.querySelectorAll('[title],[aria-label]'), function(el){
+          ['title', 'aria-label'].forEach(function(at){
+            var cur = el.getAttribute(at); if(!cur) return;
+            var key = '__bi_' + at; if(el[key + 'L'] !== cur) el[key] = cur;
+            var v = biPick(el[key], lang); if(v !== cur) el.setAttribute(at, v); el[key + 'L'] = v;
+          });
+        });
+      });
+    }catch(e){}
+  }
+  var biT = null; function biSoon(){ clearTimeout(biT); biT = setTimeout(biRun, 120); }
+  try{ new MutationObserver(biSoon).observe(document.documentElement, {attributes: true, attributeFilter: ['lang']}); }catch(e){}
+  try{ setInterval(biRun, 20000); }catch(e){}   /* the sign-out chip rewrites its own text every minute */
   var tidyT = null; function tidySoon(){ clearTimeout(tidyT); tidyT = setTimeout(tidyButtons, 250); }
   /* ---------- top-menu designs: whatever does not fit on one line goes into a "More" menu ---------- */
   var moreBusy = false;
@@ -410,7 +447,7 @@
       if(ms.some(function(m){ return m.target && m.target.closest && m.target.closest('.sidebar-foot'); })) setTimeout(footFix, 60);
       ms.forEach(function(m){ Array.prototype.forEach.call(m.addedNodes, function(n){ if(n.nodeType === 1 && n.id !== 'cmp-ui-icons') pending.push(n); else if(n.nodeType === 3 && n.parentNode && n.parentNode.nodeType === 1) pending.push(n.parentNode); }); });
       if(pending.length && !timer) timer = setTimeout(flush, 120);
-      if(ms.some(function(m){ return m.addedNodes && m.addedNodes.length; })) tidySoon();
+      if(ms.some(function(m){ return m.addedNodes && m.addedNodes.length; })){ tidySoon(); biSoon(); }
     }).observe(document.body, {childList: true, subtree: true});
   }
   /* one employee record: Employee Directory and Bill Register keep each other up to date (Super Admin only) */

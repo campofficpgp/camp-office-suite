@@ -203,7 +203,12 @@
           var f = null;
           for(var i = 0; i < pool.length && !f; i++){ var el = pool[i]; if(used.indexOf(el) >= 0) continue; if((it[6] && el.id === it[6]) || keyOf(el) === it[0] || labelOf(el) === it[2].toLowerCase()) f = el; }
           if(it[0] === 'camp-office-suite' && !f){ for(var j = 0; j < pool.length && !f; j++){ if(used.indexOf(pool[j]) < 0 && labelOf(pool[j]) === 'dashboard') f = pool[j]; } }
-          var node = f ? asSub(f, it) : mkItem(it); if(f){ used.push(f); if(f.tagName === 'A' && ALIAS[hrefKey(f)]) f.setAttribute('href', linkFor(it[1])); }
+          /* User Approvals: the Dashboard's panel button stays (hidden) for the page's own code; the menu gets a real link,
+             index.html#user-approvals, which opens the panel (on the Dashboard at once, elsewhere after loading it) */
+          if(f && f.id === 'openAdminPanelBtn'){ used.push(f); f.classList.add('mi-dup'); f = null; }
+          var node = f ? asSub(f, it) : mkItem(it);
+          if(it[0] === 'user-approvals' && !f){ node.id = 'miUserApprovals'; node.addEventListener('click', function(ev){ var b = document.getElementById('openAdminPanelBtn'), p = document.getElementById('adminPanel'); if(!b || !p) return; ev.preventDefault(); try{ history.replaceState(null, '', '#user-approvals'); }catch(e){} if(p.classList.contains('hidden')) b.click(); setTimeout(function(){ p.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 150); }); }
+          if(f){ used.push(f); if(f.tagName === 'A' && ALIAS[hrefKey(f)]) f.setAttribute('href', linkFor(it[1])); }
           if(it[5] && !node.getAttribute('data-mi-role')) node.setAttribute('data-mi-role', it[5]);
           sub.appendChild(node);
         });
@@ -335,6 +340,9 @@
          header Sign Out button is used and the one at the bottom of the side menu is hidden */
       var hdrOut = document.querySelector('#mainSignOut, #logoutBtn, #signOutBtn'), footOut = document.querySelector('.sidebar-foot [data-cg-logout]');
       if(hdrOut && footOut){ var tn = isTopnav(); footOut.classList.toggle('mi-dup', !tn); hdrOut.classList.toggle('mi-dup', tn); }
+      /* Help: an icon at the right of the top menu; with the side menu it is already under Support & Info, so the bottom copy is hidden */
+      var grpHelp = !!document.querySelector('.mi-grp a[href$="help.html"]');
+      Array.prototype.forEach.call(document.querySelectorAll('.sidebar-foot > [data-mi-help], .sidebar-foot > a[href$="help.html"]'), function(h){ h.classList.toggle('mi-dup', grpHelp && !isTopnav()); });
       /* User Approvals on the Dashboard opens the panel; the address then shows #user-approvals so the page can be reopened or bookmarked */
       var ua = document.getElementById('openAdminPanelBtn');
       if(ua && !ua.__miUa){ ua.__miUa = true; ua.title = 'User Approvals — approve accounts, roles, permissions / یوزر منظوری'; ua.addEventListener('click', function(){ try{ history.replaceState(null, '', '#user-approvals'); }catch(e){} }); }
@@ -365,7 +373,7 @@
   try{ if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lookupHandoff); else lookupHandoff(); }catch(e){}
   /* ---------- one language at a time: shared labels written "English / اردو" (sign-out chip, maintenance strip,
      accessibility button and panel, side-menu foot) show only the language chosen with the اردو / English button ---------- */
-  var BI_SEL = '#a11y-root, #cg-dock, .cg-ro, [data-cg-pause], .sidebar-foot, #topbar2';
+  var BI_SEL = '#a11y-root, #cg-dock, .cg-ro, [data-cg-pause], .sidebar-foot, #topbar2, .topbar, .right-controls, .userbar, .userbar-ce, header';
   function biLang(){ if(document.body && /(^|\s)lang-ur(\s|$)/.test(document.body.className)) return 'ur'; var l = (document.documentElement.getAttribute('lang') || '').slice(0, 2).toLowerCase(); if(l === 'ur' || l === 'en') return l; try{ return localStorage.getItem('cmpLang') === 'ur' ? 'ur' : 'en'; }catch(e){ return 'en'; } }
   function biPick(s, lang){
     var i = s.indexOf(' / '); if(i < 0) return s;
